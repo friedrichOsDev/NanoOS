@@ -2,13 +2,16 @@
 [ORG 0x7C00]
 
 ; ===== stage 1 entry point =====
-start16:
+start16_stage1:
     ; initialize segment register and setup stack
     xor ax, ax
     mov ds, ax
     mov es, ax
     mov ss, ax
     mov sp, 0x7C00 
+    
+    ; save boot drive 
+    mov [BOOT_DRIVE], dl
 
     ; print "S1" (stage 1)
     mov ah, 0x0E
@@ -16,59 +19,58 @@ start16:
     int 0x10
     mov al, '1'
     int 0x10
-    
-    ; getting data for kernel
-    ; memory map (to 0x8000)
-.mem_map_start:
-    xor ebx, ebx        ; ebx must be 0 for the first call
-    mov di, 0x8000      ; Destination buffer offset
 
-.mem_map_repeat:
-    cld ; ensure forward direction
+    ; try LBA read
+    mov si, DAP
+    mov ah, 0x42
+    mov dl, [BOOT_DRIVE]
+    int 0x13
+    jc .lba_failed
 
-    xor ax, ax
-    mov es, ax ; es = 0
+    ; jump to stage2
+    jmp 0x0000:0x7E00
 
-    mov cx, 20 ; number of bytes to clear
-    mov al, 0
-
-.mem_clear_loop:
-    mov [es:di], al
-    inc di
-    loop .mem_clear_loop
-
-    ; call E820
-    xor eax, eax
-    mov eax, 0xE820     ; Function number
-    mov ecx, 20         ; Request a 20-byte ARD structure
-    mov edx, 0x534D4150 ; 'SMAP' signature
-    int 0x15
-    jc .mem_map_error   ; if carry flag jump to error
-
-    add di, 0           ; after mem clear loop di is incremented 20 times
-
-    test ebx, ebx       ; if ebx = 0 jump to done else repeat
-    jz .mem_map_done    
-    jmp .mem_map_repeat
-
-.mem_map_error:
-    ; print "EM" (error memory map)
+.lba_failed:
+    ; print "LF" (LBA fallback)
     mov ah, 0x0E
-    mov al, 'E'
+    mov al, 'L'
     int 0x10
-    mov al, 'M'
+    mov al, 'F'
     int 0x10
-    hlt
-    jmp $
 
-.mem_map_done:
-    ; continue here
-    ; for now print 'C'
+    ; try CHS read
+    mov ah, 0x02
+    mov al, 0x04
+    mov ch, 0x00
+    mov cl, 0x02
+    mov dh, 0x00
+    mov dl, [BOOT_DRIVE]
+    mov bx, 0x7E00
+    int 0x13
+    jc .chs_failed
+
+    ; jump to stage2
+    jmp 0x0000:0x7E00
+
+.chs_failed:
+    ; print "CE" (CHS error)
     mov ah, 0x0E
     mov al, 'C'
     int 0x10
+    mov al, 'E'
+    int 0x10
     hlt
     jmp $
+
+; ===== data =====
+BOOT_DRIVE: db 0
+DAP:
+    db 16         ; size of DAP = 16 bytes
+    db 0          ; reserved
+    dw 4          ; number of sectors to read
+    dw 0x7E00     ; offset
+    dw 0x0000     ; segment
+    dq 1          ; starting LBA = 1 (stage 2 starts after bootsector)
 
 ; ===== padding and bootsignature =====
 times 510 - ($ - $$) db 0
