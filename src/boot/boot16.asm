@@ -20,18 +20,34 @@ start16:
     ; getting data for kernel
     ; memory map (to 0x8000)
 .mem_map_start:
-    xor ebx, ebx       
-    mov di, 0x8000 
-.mem_map_repeat:
-    mov eax, 0xE820     ; EAX = function number
-    mov ecx, 24         ; ECX = size of the buffer
-    mov edx, 0x534D4150 ; EDX = 'SMAP' signature
+    xor ebx, ebx        ; ebx must be 0 for the first call
+    mov di, 0x8000      ; Destination buffer offset
 
+.mem_map_repeat:
+    cld ; ensure forward direction
+
+    xor ax, ax
+    mov es, ax ; es = 0
+
+    mov cx, 20 ; number of bytes to clear
+    mov al, 0
+
+.mem_clear_loop:
+    mov [es:di], al
+    inc di
+    loop .mem_clear_loop
+
+    ; call E820
+    xor eax, eax
+    mov eax, 0xE820     ; Function number
+    mov ecx, 20         ; Request a 20-byte ARD structure
+    mov edx, 0x534D4150 ; 'SMAP' signature
     int 0x15
     jc .mem_map_error   ; if carry flag jump to error
 
-    add di, 24          ; add 24 bytes to buffer
-    test ebx, ebx       ; if EBX = 0 jump to done else repeat
+    add di, 0           ; after mem clear loop di is incremented 20 times
+
+    test ebx, ebx       ; if ebx = 0 jump to done else repeat
     jz .mem_map_done    
     jmp .mem_map_repeat
 
