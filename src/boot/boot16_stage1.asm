@@ -24,13 +24,6 @@ start16_stage1:
     jmp 0x0000:0x7E00
 
 .lba_failed:
-    ; print "LF" (LBA fallback)
-    mov ah, 0x0E
-    mov al, 'L'
-    int 0x10
-    mov al, 'F'
-    int 0x10
-
     ; try CHS read
     mov ah, 0x02
     mov al, 0x04
@@ -46,12 +39,6 @@ start16_stage1:
     jmp 0x0000:0x7E00
 
 .chs_failed:
-    ; print "CE" (CHS error)
-    mov ah, 0x0E
-    mov al, 'C'
-    int 0x10
-    mov al, 'E'
-    int 0x10
     hlt
     jmp $
 

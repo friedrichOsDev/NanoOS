@@ -104,7 +104,7 @@ start16_stage2:
     jmp $
 
 .vbe_done:
-    ; get acpi tables
+    ; get acpi tables !!TODO!!
     jmp .acpi_done
 
 .acpi_error:
@@ -120,8 +120,34 @@ start16_stage2:
     cmp ax, 0x004F
     jne .vbe_error
 
-    ; enable 32 bit mode (later) 
+    ; load stage 3
+    mov si, DAP
+    mov ah, 0x42
+    mov dl, [BOOT_DRIVE]
+    int 0x13
+    jc .lba_failed
 
+    ; Sprung zu Stage 3 bei 0x1000:0000 (phys. 0x10000)
+    jmp 0x1000:0x0000
+
+.lba_failed:
+    ; chs
+    mov ah, 0x02
+    mov al, 0x04
+    mov ch, 0x00
+    mov cl, 0x06
+    mov dh, 0x00
+    mov dl, [BOOT_DRIVE]
+    mov bx, 0x1000  ; Set segment to 0x1000
+    mov es, bx      ; ES = 0x1000
+    mov bx, 0x0000  ; BX = 0x0000. Destination ES:BX = 0x1000:0x0000 (phys. 0x10000)
+    int 0x13
+    jc .chs_failed
+
+    ; jump to stage3
+    jmp 0x1000:0x0000
+
+.chs_failed:
     hlt
     jmp $
 
@@ -183,6 +209,15 @@ MODE_INFO_BLOCK:
     .off_screen_mem_off: dd 0       
     .off_screen_mem_size: dw 0      
     .reserved1: times 206 db 0      
+
+; disk address packet for stage 3
+DAP:
+    db 16         ; size of DAP = 16 bytes
+    db 0          ; reserved
+    dw 4          ; number of sectors to read
+    dw 0x0000     ; offset
+    dw 0x1000     ; segment
+    dq 5          ; starting LBA = 5
 
 ; ===== padding =====
 times 2048 - ($ - $$) db 0
