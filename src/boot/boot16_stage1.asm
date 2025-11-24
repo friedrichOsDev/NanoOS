@@ -13,13 +13,6 @@ start16_stage1:
     ; save boot drive 
     mov [BOOT_DRIVE], dl
 
-    ; print "S1" (stage 1)
-    mov ah, 0x0E
-    mov al, 'S'
-    int 0x10
-    mov al, '1'
-    int 0x10
-
     ; try LBA read
     mov si, DAP
     mov ah, 0x42

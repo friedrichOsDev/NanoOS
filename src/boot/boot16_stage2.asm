@@ -12,13 +12,6 @@ start16_stage2:
     ; save boot drive
     mov [BOOT_DRIVE], dl
 
-    ; print "S2" (stage 2)
-    mov ah, 0x0E
-    mov al, 'S'
-    int 0x10
-    mov al, '2'
-    int 0x10
-
     ; getting memory map
     xor ebx, ebx        ; ebx must be 0 for the first call
     mov di, 0x9000      ; Destination buffer offset
@@ -52,36 +45,16 @@ start16_stage2:
     jmp .mem_map_repeat
 
 .mem_map_error:
-    ; print "ME" (memory map error)
-    mov ah, 0x0E
-    mov al, 'M'
-    int 0x10
-    mov al, 'E'
-    int 0x10
     hlt
     jmp $
 
 .mem_map_done:
-    ; print "MC" (memory map complete)
-    mov ah, 0x0E
-    mov al, 'M'
-    int 0x10
-    mov al, 'C'
-    int 0x10
-
     ; get vbe info
     mov di, VBE_INFO_BLOCK
     mov ax, 0x4F00
     int 0x10
     cmp ax, 0x004F
     jne .vbe_error
-
-    ; print "VO" (VBE OK)
-    mov ah, 0x0E
-    mov al, 'V'
-    int 0x10
-    mov al, 'O'
-    int 0x10
 
     ; save mode infos
     ; get pointer to video mode list
@@ -99,41 +72,63 @@ start16_stage2:
     int 0x10
     cmp ax, 0x004F
     jne .vbe_error
+    
+    ; check if mode is 1680x1050x32
+    mov ax, [MODE_INFO_BLOCK.width]
+    cmp ax, 1680
+    jne .next_mode
 
-    jmp .vbe_done
+    mov ax, [MODE_INFO_BLOCK.height]
+    cmp ax, 1050
+    jne .next_mode
+
+    mov al, [MODE_INFO_BLOCK.bpp]
+    cmp al, 32
+    jne .next_mode
+
+    ; save the mode number
+    mov [VBE_MODE], cx
+
+    jmp .vbe_done ; found the mode
 
 .no_modes:
-    ; print "NM" (no modes)
-    mov ah, 0x0E
-    mov al, 'N'
-    int 0x10
-    mov al, 'M'
-    int 0x10
     hlt
     jmp $
 
+.next_mode:
+    add si, 2 ; move to the next mode in the list
+    jmp .find_mode
+
 .vbe_error:
-    ; print "VE" (VBE error) and halt
-    mov ah, 0x0E
-    mov al, 'V'
-    int 0x10
-    mov al, 'E'
-    int 0x10
     hlt
     jmp $
 
 .vbe_done:
-    ; print "GC" (graphics complete)
-    mov ah, 0x0E
-    mov al, 'G'
+    ; get acpi tables
+    jmp .acpi_done
+
+.acpi_error:
+    hlt
+    jmp $
+    
+.acpi_done:
+    ; set the video mode we found
+    mov bx, [VBE_MODE]
+    or bx, 0x4000 
+    mov ax, 0x4F02
     int 0x10
-    mov al, 'C'
-    int 0x10
+    cmp ax, 0x004F
+    jne .vbe_error
+
+    ; enable 32 bit mode (later) 
+
     hlt
     jmp $
 
 ; ===== data =====
 BOOT_DRIVE: db 0
+VBE_MODE: dw 0
+
 ; VBE Info Block structure
 VBE_INFO_BLOCK:
     .signature: times 4 db 0 
