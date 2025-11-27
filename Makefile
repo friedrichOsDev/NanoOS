@@ -1,5 +1,5 @@
 # Compilers
-ARGET = x86_64-elf
+TARGET = x86_64-elf
 NASM = nasm
 GCC = $(TARGET)-gcc
 LD = $(TARGET)-ld
