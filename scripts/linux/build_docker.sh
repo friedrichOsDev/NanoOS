@@ -1,0 +1,1 @@
+docker build -t nano-cross /home/friedrich/Projects/NanoOS/scripts

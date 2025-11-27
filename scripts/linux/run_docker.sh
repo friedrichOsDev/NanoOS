@@ -1,0 +1,1 @@
+docker run -it -v /home/friedrich/Projects/NanoOS:/workspace nano-cross
