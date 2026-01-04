@@ -52,7 +52,7 @@ start16_stage1:
 .lba_failed:
     ; try chs read (fallback)
     mov ah, 0x02 ; chs read function
-    mov al, 0x04 ; number of sectors to read
+    mov al, 0x01 ; number of sectors to read
     mov ch, 0x00 ; cylinder 0
     mov cl, 0x02 ; sector 2
     mov dh, 0x00 ; head 0
@@ -89,7 +89,7 @@ BOOT_DRIVE: db 0
 DAP:
     db 16 ; size of DAP = 16 bytes
     db 0 ; reserved
-    dw 4 ; number of sectors to read
+    dw 1 ; number of sectors to read
     dw 0x7E00 ; offset
     dw 0x0000 ; segment
     dq 1 ; starting LBA = 1 (sector 2 - stage 2)
