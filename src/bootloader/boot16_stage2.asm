@@ -24,17 +24,51 @@ start16_stage2:
     call vbe_set_mode
     jc .vbe_set_mode_failed ; if carry set, vbe_set_mode failed
 
-    ; <DEBUG> print "VOK"
+	; load the next stage of the bootloader
+    ; try lba read
+    mov si, DAP
+    mov ah, 0x42 ; lba read function
+    mov dl, [BOOT_DRIVE] ; boot drive
+    int 0x13 ; call BIOS disk service
+    jc .lba_failed ; jump if carry flag set (error)
+
+    ; restore boot drive for stage 3
+    mov dl, [BOOT_DRIVE]
+
+    ; jump to the next stage if successful
+    jmp 0x1000:0x0000
+
+.lba_failed:
+    ; try chs read (fallback)
+    mov ah, 0x02 ; chs read function
+    mov al, 0x01 ; number of sectors to read
+    mov ch, 0x00 ; cylinder 0
+    mov cl, 0x04 ; sector 4 (LBA 3)
+    mov dh, 0x00 ; head 0
+    mov dl, [BOOT_DRIVE] ; boot drive
+    mov bx, 0x1000 ; buffer address
+	mov es, bx
+    mov bx, 0x0000 ; offset
+    int 0x13 ; call BIOS disk service
+    jc .chs_failed ; jump if carry flag set (error)	
+
+    ; restore boot drive for stage 3
+    mov dl, [BOOT_DRIVE]
+
+    ; jump to the next stage if successful
+    jmp 0x1000:0x0000
+
+.chs_failed:
+    ; <DEBUG> print "E2"
+	mov bx, 0x000F
     mov ah, 0x0E
-    mov al, 'V'
+    mov al, 'E'
     int 0x10
-    mov al, 'O'
-    int 0x10
-    mov al, 'K'
+    mov al, '2'
     int 0x10
     ; </DEBUG>
-
-    hlt 
+    
+    hlt
     jmp $
 
 .e820_failed:
@@ -63,9 +97,9 @@ start16_stage2:
 
 ; SUBROUTINES
 ; get memory map via int 0x15, eax=0xe820
-mmap_entries equ 0x8000
+mmap_entries equ 0x8200
 do_e820:
-    mov di, 0x8004          ; Set di to 0x8004. Otherwise this code will get stuck in `int 0x15` after some entries are fetched 
+    mov di, 0x8204          ; Set di to 0x8004. Otherwise this code will get stuck in `int 0x15` after some entries are fetched 
 	xor ebx, ebx		; ebx must be 0 to start
 	xor bp, bp		; keep an entry count in bp
 	mov edx, 0x0534D4150	; Place "SMAP" into edx
@@ -234,9 +268,17 @@ vbe_set_mode:
 ; DATA
 ; boot drive
 BOOT_DRIVE: db 0
+; disk address packet for lba read
+DAP:
+    db 16 ; size of DAP = 16 bytes
+    db 0 ; reserved
+    dw 1 ; number of sectors to read
+    dw 0x0000 ; offset
+    dw 0x1000 ; segment
+    dq 3 ; starting LBA = 3 (sector 4 - stage 3)
 
 ; PADDING
-times 512 - ($ - $$) db 0
+times 1024 - ($ - $$) db 0
 
 absolute 0x9000
 
