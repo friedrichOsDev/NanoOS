@@ -1,1 +1,1 @@
-qemu-system-i386 -fda ./build/os.img -no-reboot -d int,cpu_reset -D q.log
+qemu-system-x86_64 -fda ./build/nanoos.img -no-reboot -d int,cpu_reset -D q.log
