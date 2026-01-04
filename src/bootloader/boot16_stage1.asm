@@ -10,6 +10,9 @@ start16_stage1:
     mov ss, ax ; stack segment = 0
     mov sp, 0x7C00 ; stack pointer = 0x7C00
 
+    ; save boot drive number
+    mov [BOOT_DRIVE], dl
+
     ; <DEBUG> print "S1"
     mov ah, 0x0E
     mov al, 'S'
@@ -18,9 +21,6 @@ start16_stage1:
     int 0x10
     ; </DEBUG>
 
-    ; save boot drive number
-    mov [BOOT_DRIVE], dl
-
     ; load the next stage of the bootloader
     ; try lba read
     mov si, DAP
@@ -28,6 +28,12 @@ start16_stage1:
     mov dl, [BOOT_DRIVE] ; boot drive
     int 0x13 ; call BIOS disk service
     jc .lba_failed ; jump if carry flag set (error)
+
+    ; <DEBUG> print "."
+    mov ah, 0x0E
+    mov al, '.'
+    int 0x10
+    ; </DEBUG>
 
     ; jump to the next stage if successful
     jmp 0x0000:0x7E00
@@ -43,6 +49,14 @@ start16_stage1:
     mov bx, 0x7E00 ; buffer address
     int 0x13 ; call BIOS disk service
     jc .chs_failed ; jump if carry flag set (error)
+
+    ; <DEBUG> print ".."
+    mov ah, 0x0E
+    mov al, '.'
+    int 0x10
+    mov al, '.'
+    int 0x10
+    ; </DEBUG>
 
     ; jump to the next stage if successful
     jmp 0x0000:0x7E00
@@ -62,6 +76,9 @@ start16_stage1:
 ; DATA
 ; boot drive
 BOOT_DRIVE: db 0
+
+align 4 ; align DAP to 4-byte boundary
+
 ; disk address packet for lba read
 DAP:
     db 16 ; size of DAP = 16 bytes
