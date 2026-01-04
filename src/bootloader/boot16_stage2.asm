@@ -8,7 +8,7 @@ start16_stage2:
     mov ds, ax ; data segment = 0
     mov es, ax ; extra segment = 0
     mov ss, ax ; stack segment = 0
-    mov sp, 0x7E00 ; stack pointer = 0x7E00
+    mov sp, 0x7C00 ; stack pointer = 0x7C00
 
     ; <DEBUG> print "S2"
     mov ah, 0x0E
