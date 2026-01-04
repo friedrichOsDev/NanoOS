@@ -13,14 +13,6 @@ start16_stage1:
     ; save boot drive number
     mov [BOOT_DRIVE], dl
 
-    ; <DEBUG> print "S1"
-    mov ah, 0x0E
-    mov al, 'S'
-    int 0x10
-    mov al, '1'
-    int 0x10
-    ; </DEBUG>
-
     ; load the next stage of the bootloader
     ; check lba extensions
     mov ah, 0x41
@@ -40,12 +32,6 @@ start16_stage1:
     int 0x13 ; call BIOS disk service
     jc .lba_failed ; jump if carry flag set (error)
 
-    ; <DEBUG> print "."
-    mov ah, 0x0E
-    mov al, '.'
-    int 0x10
-    ; </DEBUG>
-
     ; jump to the next stage if successful
     jmp 0x0000:0x7E00
 
@@ -60,12 +46,6 @@ start16_stage1:
     mov bx, 0x7E00 ; buffer address
     int 0x13 ; call BIOS disk service
     jc .chs_failed ; jump if carry flag set (error)
-
-    ; <DEBUG> print ".."
-    mov ah, 0x0E
-    mov al, '.'
-    int 0x10
-    ; </DEBUG>
 
     ; jump to the next stage if successful
     jmp 0x0000:0x7E00

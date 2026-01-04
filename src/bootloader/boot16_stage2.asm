@@ -13,29 +13,9 @@ start16_stage2:
     ; save boot drive number
     mov [BOOT_DRIVE], dl
 
-    ; <DEBUG> print "S2"
-    mov ah, 0x0E
-    mov al, 'S'
-    int 0x10
-    mov al, '2'
-    int 0x10
-    ; </DEBUG>
-
     ; getting memory map
     call do_e820
     jc .e820_failed ; if carry set, e820 failed
-
-    ; <DEBUG> print "MMOK"
-    mov ah, 0x0E
-    mov al, 'M'
-    int 0x10
-    mov al, 'M'
-    int 0x10
-    mov al, 'O'
-    int 0x10
-    mov al, 'K'
-    int 0x10
-    ; </DEBUG>
 
     ; set VESA mode 1680x1050x32
     mov ax, 1680
