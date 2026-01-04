@@ -10,6 +10,9 @@ start16_stage2:
     mov ss, ax ; stack segment = 0
     mov sp, 0x7C00 ; stack pointer = 0x7C00
 
+    ; save boot drive number
+    mov [BOOT_DRIVE], dl
+
     ; <DEBUG> print "S2"
     mov ah, 0x0E
     mov al, 'S'
@@ -49,6 +52,8 @@ start16_stage2:
     hlt
     jmp $
 
+; SUBROUTINES
+; get memory map via int 0x15, eax=0xe820
 mmap_entries equ 0x8000
 do_e820:
     mov di, 0x8004          ; Set di to 0x8004. Otherwise this code will get stuck in `int 0x15` after some entries are fetched 
@@ -96,5 +101,9 @@ do_e820:
 	stc			; "function unsupported" error exit
 	ret
 
-; fill to 1 sector
+; DATA
+; boot drive
+BOOT_DRIVE: db 0
+
+; PADDING
 times 512 - ($ - $$) db 0
