@@ -67,7 +67,7 @@ DAP:
     db 16 ; size of DAP = 16 bytes
     db 0 ; reserved
     dw 4 ; number of sectors to read
-    dq 0x7E00 ; offset
+    dw 0x7E00 ; offset
     dw 0x0000 ; segment
     dq 1 ; starting LBA = 1 (sector 2 - stage 2)
 
