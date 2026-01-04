@@ -22,6 +22,17 @@ start16_stage1:
     ; </DEBUG>
 
     ; load the next stage of the bootloader
+    ; check lba extensions
+    mov ah, 0x41
+    mov bx, 0x55AA
+    mov dl, [BOOT_DRIVE]
+    int 0x13
+    jc .lba_failed
+    cmp bx, 0xAA55
+    jne .lba_failed
+    test cx, 1
+    jz .lba_failed
+
     ; try lba read
     mov si, DAP
     mov ah, 0x42 ; lba read function
@@ -54,8 +65,6 @@ start16_stage1:
     mov ah, 0x0E
     mov al, '.'
     int 0x10
-    mov al, '.'
-    int 0x10
     ; </DEBUG>
 
     ; jump to the next stage if successful
@@ -76,9 +85,6 @@ start16_stage1:
 ; DATA
 ; boot drive
 BOOT_DRIVE: db 0
-
-align 4 ; align DAP to 4-byte boundary
-
 ; disk address packet for lba read
 DAP:
     db 16 ; size of DAP = 16 bytes
