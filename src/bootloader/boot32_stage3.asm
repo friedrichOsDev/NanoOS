@@ -49,6 +49,12 @@ start32_stage3:
     mov ss, ax
     mov esp, 0x90000    ; Set stack pointer
 
+    ; load kernel (sector 5) to 0x100000
+    ; !! TODO !!
+
+    ; jump to kernel start
+    jmp 0x08:0x00100000
+
     hlt
     jmp $
     

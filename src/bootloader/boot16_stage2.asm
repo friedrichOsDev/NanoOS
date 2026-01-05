@@ -17,9 +17,9 @@ start16_stage2:
     call do_e820
     jc .e820_failed ; if carry set, e820 failed
 
-    ; set VESA mode 1680x1050x32
-    mov ax, 1680
-    mov bx, 1050
+    ; set VESA mode 1024x768x32
+    mov ax, 1024
+    mov bx, 768
     mov cl, 32
     call vbe_set_mode
     jc .vbe_set_mode_failed ; if carry set, vbe_set_mode failed
