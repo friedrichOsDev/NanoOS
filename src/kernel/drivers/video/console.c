@@ -14,21 +14,21 @@ void console_init() {
 void console_putc(char c) {
     if (c == '\n') {
         console_x = 0;
-        console_y += FONT_HEIGHT;
+        console_y += FONT_HEIGHT * 2;
         return;
     }
 
     fb_draw_char(console_x, console_y, c, console_fg_color, console_bg_color);
-    console_x += FONT_WIDTH;
+    console_x += FONT_WIDTH * 2;
 
     if (console_x >= fb_get_width()) {
         console_x = 0;
-        console_y += FONT_HEIGHT;
+        console_y += FONT_HEIGHT * 2;
     }
 
     if (console_y >= fb_get_height()) {
-        fb_scroll(FONT_HEIGHT, 0x000000);
-        console_y -= FONT_HEIGHT;
+        fb_scroll(FONT_HEIGHT * 2, 0x000000);
+        console_y -= FONT_HEIGHT * 2;
     }
 }
 
@@ -42,6 +42,22 @@ void console_puts(const char* str) {
 void console_set_color(uint32_t fg_color, uint32_t bg_color) {
     console_fg_color = fg_color;
     console_bg_color = bg_color;
+}
+
+void console_set_fg_color(uint32_t fg_color) {
+    console_fg_color = fg_color;
+}
+
+uint32_t console_get_fg_color() {
+    return console_fg_color;
+}
+
+void console_set_bg_color(uint32_t bg_color) {
+    console_bg_color = bg_color;
+}
+
+uint32_t console_get_bg_color() {
+    return console_bg_color;
 }
 
 void console_clear() {
