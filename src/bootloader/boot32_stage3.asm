@@ -13,19 +13,15 @@ start16_stage3:
 
     mov [BOOT_DRIVE], dl ; save boot drive number
 
-    ; load kernel to 0x20000 (Buffer) using CHS read
-    mov ax, 0x2000
-    mov es, ax
-    xor bx, bx          ; Destination ES:BX = 0x2000:0000
-    mov ah, 0x02        ; BIOS Read Sectors
-    mov al, 10          ; Number of sectors
-    mov ch, 0           ; Cylinder 0
-    mov cl, 6           ; Start at Sector 6
-    mov dh, 0           ; Head 0
-    mov dl, [BOOT_DRIVE]; Boot drive
-    int 0x13            ; Call BIOS
-    jc .read_failed     ; Error?
+    ; load kernel to 0x20000 (Buffer) using LBA read
+    ; We load 50 sectors (25KB) to be safe for a growing kernel
+    mov si, DAP_KERNEL
+    mov ah, 0x42        ; Extended Read
+    mov dl, [BOOT_DRIVE]
+    int 0x13
+    jc .lba_failed     ; Error?
 
+.continue:
     ; Enable A20 Line (Fast A20 method)
     in al, 0x92
     or al, 2
@@ -43,7 +39,23 @@ start16_stage3:
 
     jmp dword 0x08:(start32_stage3 + 0x10000)
 
-.read_failed:
+.lba_failed:
+    ; try chs
+    mov ax, 0x2000
+    mov es, ax
+    xor bx, bx          ; Destination ES:BX = 0x2000:0000
+    mov ah, 0x02        ; BIOS Read Sectors
+    mov al, 50          ; Number of sectors (50 sectors = 25KB)
+    mov ch, 0           ; Cylinder 0
+    mov cl, 6           ; Start at Sector 6
+    mov dh, 0           ; Head 0
+    mov dl, [BOOT_DRIVE]; Boot drive
+    int 0x13            ; Call BIOS
+    jc .chs_failed
+
+    jmp .continue
+
+.chs_failed:
     ; <DEBUG> Print 'E3'
     mov ah, 0x0E
     mov bx, 0x000F
@@ -91,13 +103,22 @@ copy_kernel:
     cld                 ; Ensure forward copy
     mov esi, 0x20000    ; source address
     mov edi, 0x100000   ; destination address
-    mov ecx, 1280       ; number of dwords to copy (10 sectors * 512 / 4)
+    mov ecx, 6400       ; number of dwords to copy (50 sectors * 512 / 4)
     rep movsd           ; copy ECX dwords from [ESI] to [EDI]
     ret
 
 ; DATA
 ; boot drive number
 BOOT_DRIVE: db 0
+
+; Disk Address Packet for Kernel Load
+DAP_KERNEL:
+    db 0x10     ; size of packet
+    db 0        ; reserved
+    dw 50       ; number of sectors to read (25KB)
+    dw 0x0000   ; offset
+    dw 0x2000   ; segment (0x20000)
+    dq 5        ; starting LBA (Sector 6)
 
 ; PADDING to ensure full sector size
 times 1024 - ($ - $$) db 0
