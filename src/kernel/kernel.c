@@ -11,7 +11,7 @@ void __attribute__((section(".text.entry"))) _start() {
 
 void kernel_main() {
     fb_init();
-    fb_draw_rect(50, 50, 100, 100, 0xFF0000);
+    fb_draw_rect(50, 50, 100, 100, 0xFFFFFF);
     
     while(1);
 }

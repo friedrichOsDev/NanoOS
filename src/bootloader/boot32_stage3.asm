@@ -47,7 +47,7 @@ start16_stage3:
     mov ah, 0x02        ; BIOS Read Sectors
     mov al, 50          ; Number of sectors (50 sectors = 25KB)
     mov ch, 0           ; Cylinder 0
-    mov cl, 6           ; Start at Sector 6
+    mov cl, 5           ; Start at Sector 5
     mov dh, 0           ; Head 0
     mov dl, [BOOT_DRIVE]; Boot drive
     int 0x13            ; Call BIOS
@@ -118,7 +118,7 @@ DAP_KERNEL:
     dw 50       ; number of sectors to read (25KB)
     dw 0x0000   ; offset
     dw 0x2000   ; segment (0x20000)
-    dq 5        ; starting LBA (Sector 6)
+    dq 4        ; starting LBA (Sector 5)
 
 ; PADDING to ensure full sector size
-times 1024 - ($ - $$) db 0
+times 512 - ($ - $$) db 0
