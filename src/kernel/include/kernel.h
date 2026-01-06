@@ -14,7 +14,8 @@ typedef struct {
 } __attribute__((packed)) mmap_entry_t;
 
 typedef struct {
-    uint32_t entry_count;
+    uint16_t entry_count;
+    uint8_t reserved[2];
     mmap_entry_t entries[];
 } __attribute__((packed)) mmap_info_t;
 
@@ -79,5 +80,10 @@ typedef struct {
     uint16_t x_cur_max;
     uint16_t y_cur_max;
 } __attribute__((packed)) vbe_screen_info_t;
+
+#define mmap_info   ((mmap_info_t*)0x8200)
+#define video_info  ((video_block_info_t*)0x9000)
+#define mode_info   ((mode_info_block_t*)(0x9000 + sizeof(video_block_info_t)))
+#define screen_info ((vbe_screen_info_t*)(0x9000 + sizeof(video_block_info_t) + sizeof(mode_info_block_t)))
 
 #endif // KERNEL_H

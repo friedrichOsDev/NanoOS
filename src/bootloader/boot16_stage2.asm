@@ -298,6 +298,8 @@ do_e820:
 	mov edx, 0x0534D4150	; Some BIOSes apparently trash this register?
 	cmp eax, edx		; on success, eax must have been reset to "SMAP"
 	jne short .failed
+	test ebx, ebx		; ebx = 0 implies list is only 1 entry long (worthless)
+	je short .failed
 	jmp short .jmpin
 .e820lp:
 	mov eax, 0xe820		; eax, ecx get trashed on every int 0x15 call

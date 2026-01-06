@@ -81,7 +81,7 @@ start32_stage3:
 
     ; copy kernel (0x20000) to 0x100000
     call copy_kernel
-    
+
     ; jump to kernel start
     jmp 0x08:0x100000
 
