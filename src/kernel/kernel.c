@@ -1,5 +1,5 @@
 #include "include/kernel.h"
-#include "include/fb.h"
+#include "include/console.h"
 
 void kernel_main();
 
@@ -10,8 +10,12 @@ void __attribute__((section(".text.entry"))) _start() {
 }
 
 void kernel_main() {
-    fb_init();
-    fb_draw_rect(50, 50, 100, 100, 0xFFFFFF);
-    
+    console_init();
+
+    console_set_color(0x00FF00, 0x000000); // Green text on black background
+    console_puts("Welcome to the Kernel Console!\n");
+    console_set_color(0xFF0000, 0x000000); // Red text on black background
+    console_puts("This is a simple text output using framebuffer.\n");
+
     while(1);
 }
