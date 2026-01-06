@@ -10,9 +10,26 @@ start16_stage3:
     xor ax, ax
     mov ss, ax     ; stack segment = 0
     mov sp, 0x7C00 ; stack pointer = 0x7C00
-    
-    ; save boot drive number
-    mov [BOOT_DRIVE], dl
+
+    mov [BOOT_DRIVE], dl ; save boot drive number
+
+    ; load kernel to 0x20000 (Buffer) using CHS read
+    mov ax, 0x2000
+    mov es, ax
+    xor bx, bx          ; Destination ES:BX = 0x2000:0000
+    mov ah, 0x02        ; BIOS Read Sectors
+    mov al, 10          ; Number of sectors
+    mov ch, 0           ; Cylinder 0
+    mov cl, 6           ; Start at Sector 6
+    mov dh, 0           ; Head 0
+    mov dl, [BOOT_DRIVE]; Boot drive
+    int 0x13            ; Call BIOS
+    jc .read_failed     ; Error?
+
+    ; Enable A20 Line (Fast A20 method)
+    in al, 0x92
+    or al, 2
+    out 0x92, al
 
     cli ; disable interrupts
 
@@ -25,6 +42,19 @@ start16_stage3:
     mov cr0, eax
 
     jmp dword 0x08:(start32_stage3 + 0x10000)
+
+.read_failed:
+    ; <DEBUG> Print 'E3'
+    mov ah, 0x0E
+    mov bx, 0x000F
+    mov al, 'E'
+    int 0x10
+    mov al, '3'
+    int 0x10
+    ; </DEBUG>
+
+    hlt
+    jmp $
 
 ; GDT
 gdt_start:
@@ -49,18 +79,25 @@ start32_stage3:
     mov ss, ax
     mov esp, 0x90000    ; Set stack pointer
 
-    ; load kernel (sector 5) to 0x100000
-    ; !! TODO !!
-
-    ; jump to kernel start
-    jmp 0x08:0x00100000
-
-    hlt
-    jmp $
+    ; copy kernel (0x20000) to 0x100000
+    call copy_kernel
     
+    ; jump to kernel start
+    jmp 0x08:0x100000
+
+; SUBROUTINES
+; copy kernel 0x20000 to 0x100000
+copy_kernel:
+    cld                 ; Ensure forward copy
+    mov esi, 0x20000    ; source address
+    mov edi, 0x100000   ; destination address
+    mov ecx, 1280       ; number of dwords to copy (10 sectors * 512 / 4)
+    rep movsd           ; copy ECX dwords from [ESI] to [EDI]
+    ret
+
 ; DATA
-; Boot drive number
+; boot drive number
 BOOT_DRIVE: db 0
 
 ; PADDING to ensure full sector size
-times 512 - ($ - $$) db 0
+times 1024 - ($ - $$) db 0

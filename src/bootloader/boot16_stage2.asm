@@ -13,6 +13,10 @@ start16_stage2:
     ; save boot drive number
     mov [BOOT_DRIVE], dl
 
+    ; enable A20
+    call enable_a20
+    jc .a20_failed
+
     ; getting memory map
     call do_e820
     jc .e820_failed ; if carry set, e820 failed
@@ -41,7 +45,7 @@ start16_stage2:
 .lba_failed:
     ; try chs read (fallback)
     mov ah, 0x02 ; chs read function
-    mov al, 0x01 ; number of sectors to read
+    mov al, 0x02 ; number of sectors to read
     mov ch, 0x00 ; cylinder 0
     mov cl, 0x04 ; sector 4 (LBA 3)
     mov dh, 0x00 ; head 0
@@ -71,6 +75,18 @@ start16_stage2:
     hlt
     jmp $
 
+.a20_failed:
+    ; <DEBUG> print "EA"
+    mov ah, 0x0E
+    mov al, 'A'
+    int 0x10
+    mov al, '2'
+    int 0x10
+    ; </DEBUG>
+
+    hlt
+    jmp $
+
 .e820_failed:
     ; <DEBUG> print "E8"
     mov ah, 0x0E
@@ -96,10 +112,181 @@ start16_stage2:
     jmp $
 
 ; SUBROUTINES
+; enable A20
+;	out:
+;		ax - state (0 - disabled, 1 - enabled)
+get_a20_state:
+	pushf
+	push si
+	push di
+	push ds
+	push es
+	cli
+
+	mov ax, 0x0000					;	0x0000:0x0500(0x00000500) -> ds:si
+	mov ds, ax
+	mov si, 0x0500
+
+	not ax							;	0xffff:0x0510(0x00100500) -> es:di
+	mov es, ax
+	mov di, 0x0510
+
+	mov al, [ds:si]					;	save old values
+	mov byte [.BufferBelowMB], al
+	mov al, [es:di]
+	mov byte [.BufferOverMB], al
+
+	mov ah, 1						;	check byte [0x00100500] == byte [0x0500]
+	mov byte [ds:si], 0
+	mov byte [es:di], 1
+	mov al, [ds:si]
+	cmp al, [es:di]
+	jne .exit
+	dec ah
+.exit:
+	mov al, [.BufferBelowMB]
+	mov [ds:si], al
+	mov al, [.BufferOverMB]
+	mov [es:di], al
+	shr ax, 8
+	pop es
+	pop ds
+	pop di
+	pop si
+	popf
+	ret
+	
+	.BufferBelowMB:	db 0
+	.BufferOverMB	db 0
+
+;	out:
+;		ax - a20 support bits (bit #0 - supported on keyboard controller; bit #1 - supported with bit #1 of port 0x92)
+;		cf - set on error
+query_a20_support:
+	push bx
+	clc
+
+	mov ax, 0x2403
+	int 0x15
+	jc .error
+
+	test ah, ah
+	jnz .error
+
+	mov ax, bx
+	pop bx
+	ret
+.error:
+	stc
+	pop bx
+	ret
+
+enable_a20_keyboard_controller:
+	cli
+
+	call .wait_io1
+	mov al, 0xad
+	out 0x64, al
+	
+	call .wait_io1
+	mov al, 0xd0
+	out 0x64, al
+	
+	call .wait_io2
+	in al, 0x60
+	push eax
+	
+	call .wait_io1
+	mov al, 0xd1
+	out 0x64, al
+	
+	call .wait_io1
+	pop eax
+	or al, 2
+	out 0x60, al
+	
+	call .wait_io1
+	mov al, 0xae
+	out 0x64, al
+
+	sti
+	ret
+.wait_io1:
+	in al, 0x64
+	test al, 2
+	jnz .wait_io1
+	ret
+.wait_io2:
+	in al, 0x64
+	test al, 1
+	jz .wait_io2
+	ret
+
+;	out:
+;		cf - set on error
+enable_a20:
+	clc									;	clear cf
+	pusha
+	mov bh, 0							;	clear bh
+
+	call get_a20_state
+	jc .fast_gate
+
+	test ax, ax
+	jnz .done
+
+	call query_a20_support
+	mov bl, al
+	test bl, 1							;	enable A20 using keyboard controller
+	jnz .keybord_controller
+
+	test bl, 2							;	enable A20 using fast A20 gate
+	jnz .fast_gate
+.bios_int:
+	mov ax, 0x2401
+	int 0x15
+	jc .fast_gate
+	test ah, ah
+	jnz .failed
+	call get_a20_state
+	test ax, ax
+	jnz .done
+.fast_gate:
+	in al, 0x92
+	test al, 2
+	jnz .done
+
+	or al, 2
+	and al, 0xfe
+	out 0x92, al
+
+	call get_a20_state
+	test ax, ax
+	jnz .done
+
+	test bh, bh							;	test if there was an attempt using the keyboard controller
+	jnz .failed
+.keybord_controller:
+	call enable_a20_keyboard_controller
+	call get_a20_state
+	test ax, ax
+	jnz .done
+
+	mov bh, 1							;	flag enable attempt with keyboard controller
+
+	test bl, 2
+	jnz .fast_gate
+	jmp .failed
+.failed:
+	stc
+.done:
+	popa
+	ret
+
 ; get memory map via int 0x15, eax=0xe820
 mmap_entries equ 0x8200
 do_e820:
-    mov di, 0x8204          ; Set di to 0x8004. Otherwise this code will get stuck in `int 0x15` after some entries are fetched 
+    mov di, 0x8204          ; Set di to 0x8204. Otherwise this code will get stuck in `int 0x15` after some entries are fetched 
 	xor ebx, ebx		; ebx must be 0 to start
 	xor bp, bp		; keep an entry count in bp
 	mov edx, 0x0534D4150	; Place "SMAP" into edx
@@ -111,8 +298,6 @@ do_e820:
 	mov edx, 0x0534D4150	; Some BIOSes apparently trash this register?
 	cmp eax, edx		; on success, eax must have been reset to "SMAP"
 	jne short .failed
-	test ebx, ebx		; ebx = 0 implies list is only 1 entry long (worthless)
-	je short .failed
 	jmp short .jmpin
 .e820lp:
 	mov eax, 0xe820		; eax, ecx get trashed on every int 0x15 call
@@ -272,7 +457,7 @@ BOOT_DRIVE: db 0
 DAP:
     db 16 ; size of DAP = 16 bytes
     db 0 ; reserved
-    dw 1 ; number of sectors to read
+    dw 2 ; number of sectors to read
     dw 0x0000 ; offset
     dw 0x1000 ; segment
     dq 3 ; starting LBA = 3 (sector 4 - stage 3)

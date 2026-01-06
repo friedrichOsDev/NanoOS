@@ -29,6 +29,7 @@ rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(su
 KERNEL_SOURCES = $(call rwildcard,$(KERNEL_DIR),*.c)
 KERNEL_OBJECTS = $(patsubst $(KERNEL_DIR)/%.c, $(BUILD_DIR)/%.o, $(KERNEL_SOURCES))
 KERNEL_LINKER_SCRIPT = $(KERNEL_DIR)/linker.ld
+KERNEL_ELF = $(BUILD_DIR)/kernel.elf
 KERNEL_BIN = $(BUILD_DIR)/kernel.bin
 
 # OS Image
@@ -45,8 +46,11 @@ $(OS_IMAGE): $(BOOTLOADER_BIN) $(KERNEL_BIN) | build_directory
 
 kernel: $(KERNEL_BIN)
 
-$(KERNEL_BIN): $(KERNEL_OBJECTS) $(KERNEL_LINKER_SCRIPT) | build_directory
-	$(LD) $(LD_FLAGS) -T $(KERNEL_LINKER_SCRIPT) -o $(KERNEL_BIN) $(KERNEL_OBJECTS)
+$(KERNEL_BIN): $(KERNEL_ELF) | build_directory
+	$(OBJCOPY) -O binary $(KERNEL_ELF) $(KERNEL_BIN)
+
+$(KERNEL_ELF): $(KERNEL_OBJECTS) $(KERNEL_LINKER_SCRIPT) | build_directory
+	$(LD) $(LD_FLAGS) -T $(KERNEL_LINKER_SCRIPT) -o $(KERNEL_ELF) $(KERNEL_OBJECTS)
 
 $(BUILD_DIR)/%.o: $(KERNEL_DIR)/%.c | build_directory
 	@mkdir -p $(dir $@)
