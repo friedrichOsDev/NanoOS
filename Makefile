@@ -28,6 +28,8 @@ BOOTLOADER_BIN = $(BUILD_DIR)/bootloader.bin
 rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d)) # recursive wildcard function
 KERNEL_SOURCES = $(call rwildcard,$(KERNEL_DIR),*.c)
 KERNEL_OBJECTS = $(patsubst $(KERNEL_DIR)/%.c, $(BUILD_DIR)/%.o, $(KERNEL_SOURCES))
+KERNEL_ASM_SOURCES = $(call rwildcard,$(KERNEL_DIR),*.asm)
+KERNEL_ASM_OBJECTS = $(patsubst $(KERNEL_DIR)/%.asm, $(BUILD_DIR)/%.o, $(KERNEL_ASM_SOURCES))
 KERNEL_LINKER_SCRIPT = $(KERNEL_DIR)/linker.ld
 KERNEL_ELF = $(BUILD_DIR)/kernel.elf
 KERNEL_BIN = $(BUILD_DIR)/kernel.bin
@@ -49,12 +51,16 @@ kernel: $(KERNEL_BIN)
 $(KERNEL_BIN): $(KERNEL_ELF) | build_directory
 	$(OBJCOPY) -O binary $(KERNEL_ELF) $(KERNEL_BIN)
 
-$(KERNEL_ELF): $(KERNEL_OBJECTS) $(KERNEL_LINKER_SCRIPT) | build_directory
-	$(LD) $(LD_FLAGS) -T $(KERNEL_LINKER_SCRIPT) -o $(KERNEL_ELF) $(KERNEL_OBJECTS)
+$(KERNEL_ELF): $(KERNEL_OBJECTS) $(KERNEL_ASM_OBJECTS) $(KERNEL_LINKER_SCRIPT) | build_directory
+	$(LD) $(LD_FLAGS) -T $(KERNEL_LINKER_SCRIPT) -o $(KERNEL_ELF) $(KERNEL_OBJECTS) $(KERNEL_ASM_OBJECTS)
 
 $(BUILD_DIR)/%.o: $(KERNEL_DIR)/%.c | build_directory
 	@mkdir -p $(dir $@)
 	$(GCC) $(C_FLAGS) -c $< -o $@
+
+$(BUILD_DIR)/%.o: $(KERNEL_DIR)/%.asm | build_directory
+	@mkdir -p $(dir $@)
+	$(NASM) -f elf32 $< -o $@
 
 bootloader: $(BOOTLOADER_BIN)
 
