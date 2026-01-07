@@ -50,10 +50,7 @@ void fb_draw_char(uint32_t x, uint32_t y, char c, uint32_t fg_color, uint32_t bg
     for (int i = 0; i < FONT_HEIGHT; i++) {
         for (int j = 0; j < FONT_WIDTH; j++) {
             uint32_t color = ((font_char[i] >> j) & 0x01) ? fg_color : bg_color;
-            fb_put_pixel(x + j * 2, y + i * 2, color);
-            fb_put_pixel(x + j * 2 + 1, y + i * 2, color);
-            fb_put_pixel(x + j * 2, y + i * 2 + 1, color);
-            fb_put_pixel(x + j * 2 + 1, y + i * 2 + 1, color);
+            fb_put_pixel(x + j, y + i, color);
         }
     }
 }

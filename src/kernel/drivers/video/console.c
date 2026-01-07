@@ -14,21 +14,25 @@ void console_init() {
 void console_putc(char c) {
     if (c == '\n') {
         console_x = 0;
-        console_y += FONT_HEIGHT * 2;
+        console_y += FONT_HEIGHT;
+        if (console_y >= fb_get_height()) {
+            fb_scroll(FONT_HEIGHT, 0x000000);
+            console_y -= FONT_HEIGHT;
+        }
         return;
     }
 
     fb_draw_char(console_x, console_y, c, console_fg_color, console_bg_color);
-    console_x += FONT_WIDTH * 2;
+    console_x += FONT_WIDTH;
 
     if (console_x >= fb_get_width()) {
         console_x = 0;
-        console_y += FONT_HEIGHT * 2;
+        console_y += FONT_HEIGHT;
     }
 
     if (console_y >= fb_get_height()) {
-        fb_scroll(FONT_HEIGHT * 2, 0x000000);
-        console_y -= FONT_HEIGHT * 2;
+        fb_scroll(FONT_HEIGHT, 0x000000);
+        console_y -= FONT_HEIGHT;
     }
 }
 
