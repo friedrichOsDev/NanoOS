@@ -1,6 +1,6 @@
 #include <heap.h>
 #include <string.h>
-#include <print.h>
+#include <log.h>
 
 #define MIN_ALLOC_SIZE (sizeof(heap_block_t))
 #define HEAP_ALIGNMENT 4096
@@ -16,7 +16,8 @@ static size_t align_size(size_t size) {
 
 void heap_init(void* start_addr, size_t size) {
     if (!start_addr || size < MIN_ALLOC_SIZE) {
-        printf("ERROR: heap_init received invalid parameters.\n");
+        // Log an error message or handle the invalid parameters appropriately
+        log_error("heap_init received invalid parameters.");
         return;
     }
 
@@ -25,7 +26,7 @@ void heap_init(void* start_addr, size_t size) {
 
     size_t aligned_start_diff = (size_t)heap_start - (size_t)start_addr;
     if (size <= aligned_start_diff) {
-        printf("ERROR: Heap size too small after alignment adjustment.\n");
+        log_error("Heap size too small after alignment adjustment.");
         return;
     }
 
@@ -33,7 +34,7 @@ void heap_init(void* start_addr, size_t size) {
     heap_total_size = heap_total_size & ~ (HEAP_ALIGNMENT - 1); // ensure total size is aligned
 
     if (heap_total_size < MIN_ALLOC_SIZE) {
-        printf("ERROR: Heap total size %x is less than minimum alloc size after alignment.\n", (unsigned int)heap_total_size);
+        log_error("Heap total size is less than minimum alloc size after alignment.");
         return;
     }
 
@@ -42,7 +43,7 @@ void heap_init(void* start_addr, size_t size) {
     free_list_head->next = NULL;
     free_list_head->magic = HEAP_FREE_MAGIC;
 
-    printf("Heap initialized at %x with size %x.\n", (unsigned int)heap_start, (unsigned int)heap_total_size);
+    log_info("Heap initialized at %x with size %x.", (unsigned int)heap_start, (unsigned int)heap_total_size);
 }
 
 void* kmalloc(size_t size) {
@@ -60,7 +61,7 @@ void* kmalloc(size_t size) {
 
     while (current_block) {
         if (current_block->magic != HEAP_FREE_MAGIC) {
-            printf("KERNEL PANIC: Heap corruption detected in kmalloc: invalid magic number on free list.\n");
+            log_kernel_panic("Heap corruption detected in kmalloc: invalid magic number on free list.");
             return NULL;
         }
 
@@ -99,7 +100,7 @@ void* kmalloc(size_t size) {
         current_block = current_block->next;
     }
 
-    printf("WARNING: kmalloc failed to allocate %x bytes.\n", (unsigned int)size);
+    log_warning("kmalloc failed to allocate memory.");
     return NULL; // no block found
 }
 
@@ -113,7 +114,7 @@ void kfree(void* ptr) {
 
     // integrity check: verify the magic number
     if (block_to_free->magic != HEAP_ALLOC_MAGIC) {
-        printf("KERNEL PANIC: Heap corruption detected in kfree: invalid magic number. Double free or invalid pointer?\n");
+        log_kernel_panic("Heap corruption detected in kfree: invalid magic number. Double free or invalid pointer?");
         return;
     }
 
@@ -123,7 +124,7 @@ void kfree(void* ptr) {
     // find the correct insertion point to keep the free list sorted by address
     while (current != NULL && current < block_to_free) {
         if (current->magic != HEAP_FREE_MAGIC) {
-             printf("KERNEL PANIC: Heap corruption detected in kfree: invalid magic number on free list.\n");
+            log_kernel_panic("Heap corruption detected in kfree: invalid magic number on free list.");
             return;
         }
         prev = current;

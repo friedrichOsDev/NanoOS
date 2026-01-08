@@ -1,6 +1,6 @@
 #include <handler.h>
 #include <io.h>
-#include <print.h>
+#include <log.h>
 
 static irq_handler_t irq_routines[16];
 static isr_handler_t exception_handlers[32];
@@ -36,6 +36,6 @@ void isr_handler(uint32_t int_no) {
         exception_handlers[int_no](int_no);
     }
     
-    printf("Exception: %d\n", int_no);
+    log_cpu_exception(int_no, "CPU Exception occurred.");
     while(1);
 }

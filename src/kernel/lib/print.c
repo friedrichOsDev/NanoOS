@@ -60,10 +60,7 @@ void print_hex(unsigned int value) {
     }
 }
 
-void printf(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-
+void vprintf(const char* format, va_list args) {
     while (*format != '\0') {
         if (*format == '%') {
             format++;
@@ -112,6 +109,11 @@ void printf(const char* format, ...) {
         }
         format++;
     }
+}
 
+void printf(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
     va_end(args);
 }

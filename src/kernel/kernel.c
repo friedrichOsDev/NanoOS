@@ -6,6 +6,7 @@
 #include <irq.h>
 #include <handler.h>
 #include <heap.h>
+#include <log.h>
 
 void kernel_main();
 
@@ -17,19 +18,19 @@ void __attribute__((section(".text.entry"))) _start() {
 
 void kernel_main() {
     console_init();
-    printf("Welcome to NanoOS kernel!\n", 0x00FF00, 0xFFFFFF);
+    printf("Welcome to NanoOS kernel!\n");
 
     gdt_init();
-    printf("GDT initialized: %kSuccess%k\n", 0x00FF00, 0xFFFFFF);
+    log_success("GDT initialized.");
 
     idt_init();
-    printf("IDT initialized: %kSuccess%k\n", 0x00FF00, 0xFFFFFF);
+    log_success("IDT initialized.");
 
     irq_init();
-    printf("IRQ initialized: %kSuccess%k\n", 0x00FF00, 0xFFFFFF);
+    log_success("IRQ initialized.");
 
     enable_interrupts();
-    printf("Interrupts enabled: %kSuccess%k\n", 0x00FF00, 0xFFFFFF);
+    log_success("Interrupts enabled.");
 
     // find the largest available memory region for the heap
     uint32_t largest_region_base = 0;
@@ -51,10 +52,10 @@ void kernel_main() {
     if (largest_region_base != 0 && largest_region_length != 0) {
         heap_init((void*)largest_region_base, largest_region_length);
     } else {
-        printf("WARNING: No suitable memory region found for heap initialization.\n");
+        log_warning("No suitable memory region found for heap initialization.");
     }
 
-    printf("Heap initialized: %kSuccess%k\n", 0x00FF00, 0xFFFFFF);
+    log_success("Heap initialized.");
 
     while(1);
 }
