@@ -1,4 +1,4 @@
-#include "../../include/console.h"
+#include <console.h>
 
 static uint32_t console_x;
 static uint32_t console_y;

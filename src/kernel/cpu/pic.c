@@ -1,5 +1,5 @@
-#include "../include/pic.h"
-#include "../include/io.h"
+#include <pic.h>
+#include <io.h>
 
 void pic_remap(void) {
     uint8_t a1 = inb(0x21);

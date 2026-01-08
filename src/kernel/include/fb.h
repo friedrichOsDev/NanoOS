@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "kernel.h"
+#include <kernel.h>
 
 void fb_init();
 uint32_t fb_get_width();

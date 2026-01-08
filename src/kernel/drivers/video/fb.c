@@ -1,23 +1,23 @@
-#include "../../include/fb.h"
-#include "../../include/font.h"
+#include <fb.h>
+#include <font.h>
 
 void fb_init() {
-    // Initialize framebuffer
+    // initialize framebuffer
     fb_clear(0x000000);
 }
 
 uint32_t fb_get_width() {
-    // Return framebuffer width
+    // return framebuffer width
     return screen_info->width;
 }
 
 uint32_t fb_get_height() {
-    // Return framebuffer height
+    // return framebuffer height
     return screen_info->height;
 }
 
 void fb_put_pixel(uint32_t x, uint32_t y, uint32_t color) {
-    // Put a pixel at (x, y) with the specified color
+    // put a pixel at (x, y) with the specified color
     if (x >= screen_info->width || y >= screen_info->height) {
         return;
     }
@@ -36,7 +36,7 @@ void fb_put_pixel(uint32_t x, uint32_t y, uint32_t color) {
 }
 
 void fb_draw_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t color) {
-    // Draw a rectangle at (x, y) with specified width, height and color
+    // draw a rectangle at (x, y) with specified width, height and color
     for (uint32_t i = 0; i < width; i++) {
         for (uint32_t j = 0; j < height; j++) {
             fb_put_pixel(x + i, y + j, color);
@@ -60,12 +60,12 @@ void fb_scroll(uint32_t lines, uint32_t color) {
     uint32_t bytes_to_scroll = lines * screen_info->bytes_per_line;
     uint32_t total_bytes = screen_info->height * screen_info->bytes_per_line;
 
-    // Move existing content up
+    // move existing content up
     for (uint32_t i = 0; i < total_bytes - bytes_to_scroll; i++) {
         *((uint8_t*)(fb + i)) = *((uint8_t*)(fb + i + bytes_to_scroll));
     }
 
-    // Clear the newly exposed lines at the bottom using put pixel
+    // clear the new lines at the bottom using put pixel
     for (uint32_t y = screen_info->height - lines; y < screen_info->height; y++) {
         for (uint32_t x = 0; x < screen_info->width; x++) {
             fb_put_pixel(x, y, color);
@@ -75,7 +75,7 @@ void fb_scroll(uint32_t lines, uint32_t color) {
 }
 
 void fb_clear(uint32_t color) {
-    // Clear the framebuffer with the specified color
+    // clear the framebuffer with the specified color
     for (uint32_t x = 0; x < screen_info->width; x++) {
         for (uint32_t y = 0; y < screen_info->height; y++) {
             fb_put_pixel(x, y, color);

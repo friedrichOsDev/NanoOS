@@ -5,19 +5,17 @@
 
 #define IDT_ENTRIES 256
 
-// Structure for an IDT entry
 struct idt_entry {
-    uint16_t base_low;    // The lower 16 bits of the address to jump to
-    uint16_t selector;    // Kernel segment selector
-    uint8_t  zero;        // This must always be zero
-    uint8_t  flags;       // Type and attributes
-    uint16_t base_high;   // The upper 16 bits of the address to jump to
+    uint16_t base_low; 
+    uint16_t selector; 
+    uint8_t  zero;     
+    uint8_t  flags;    
+    uint16_t base_high;
 } __attribute__((packed));
 
-// Structure for the IDT pointer
 struct idt_ptr {
-    uint16_t limit;       // The upper 16 bits of all selector limits
-    uint32_t base;        // The address of the first idt_entry structure
+    uint16_t limit;       
+    uint32_t base;        
 } __attribute__((packed));
 
 void idt_init();

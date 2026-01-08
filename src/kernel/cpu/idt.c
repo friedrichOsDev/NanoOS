@@ -1,4 +1,4 @@
-#include "../include/idt.h"
+#include <idt.h>
 
 extern void idt_load(uint32_t);
 

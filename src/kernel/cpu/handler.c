@@ -1,6 +1,6 @@
-#include "../include/handler.h"
-#include "../include/io.h"
-#include "../include/print.h"
+#include <handler.h>
+#include <io.h>
+#include <print.h>
 
 static irq_handler_t irq_routines[16];
 static isr_handler_t exception_handlers[32];
@@ -24,13 +24,11 @@ void irq_handler(uint32_t irq) {
         handler(irq);
     }
 
-    // Send EOI (End of Interrupt) to the PICs
-    if (irq >= 40) { // If it's from the slave PIC
+    // send EOI (End of Interrupt) to the PICs
+    if (irq >= 40) { 
         outb(0xA0, 0x20);
     }
-    outb(0x20, 0x20); // Always send to master PIC
-
-    // printf("IRQ: %d\n", irq);
+    outb(0x20, 0x20);
 }
 
 void isr_handler(uint32_t int_no) {

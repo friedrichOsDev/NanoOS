@@ -1,8 +1,8 @@
-#include "../include/print.h"
-#include "../include/console.h"
+#include <print.h>
+#include <console.h>
 
 void print_int(int value) {
-    char buffer[12]; // Enough for 32-bit int
+    char buffer[12];
     int i = 0;
     int is_negative = 0;
 
@@ -25,14 +25,14 @@ void print_int(int value) {
         buffer[i++] = '-';
     }
 
-    // Reverse the string
+    // reverse the string
     for (int j = i - 1; j >= 0; j--) {
         console_putc(buffer[j]);
     }
 }
 
 void print_hex(unsigned int value) {
-    char buffer[9]; // Enough for 32-bit hex
+    char buffer[9];
     int i = 0;
 
     if (value == 0) {
@@ -54,7 +54,7 @@ void print_hex(unsigned int value) {
     buffer[i++] = 'x';
     buffer[i++] = '0';
 
-    // Reverse the string
+    // reverse the string
     for (int j = i - 1; j >= 0; j--) {
         console_putc(buffer[j]);
     }
@@ -74,7 +74,7 @@ void printf(const char* format, ...) {
                     break;
                 }
                 case 'c': {
-                    char c = (char)va_arg(args, int); // char is promoted to int
+                    char c = (char)va_arg(args, int);
                     console_putc(c);
                     break;
                 }

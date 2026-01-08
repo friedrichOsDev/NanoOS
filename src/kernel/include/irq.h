@@ -5,7 +5,6 @@
 
 void enable_interrupts(void);
 void disable_interrupts(void);
-
 void irq_init(void);
 
 #endif // IRQ_H

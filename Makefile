@@ -6,7 +6,7 @@ LD = $(TARGET)-ld
 OBJCOPY = $(TARGET)-objcopy
 
 # Flags
-C_FLAGS = -ffreestanding -m32 -O1 -Wall -Wextra -Werror -fno-builtin -fno-stack-protector
+C_FLAGS = -ffreestanding -m32 -O1 -Wall -Wextra -Werror -fno-builtin -fno-stack-protector -I$(KERNEL_DIR)/include
 LD_FLAGS = -m elf_i386
 
 # Directories

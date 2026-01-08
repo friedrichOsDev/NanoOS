@@ -48,7 +48,7 @@ isr%1:
     iret
 %endmacro
 
-; Alle 32 Exceptions
+; All 32 Exceptions
 ISR_NOERR 0
 ISR_NOERR 1
 ISR_NOERR 2
@@ -101,6 +101,7 @@ irq%1:
     iret
 %endmacro
 
+; All 16 IRQs
 IRQ 0
 IRQ 1
 IRQ 2

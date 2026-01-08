@@ -3,9 +3,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include "fb.h"
-#include "kernel.h"
-#include "font.h"
+#include <fb.h>
+#include <kernel.h>
+#include <font.h>
 
 void console_init();
 void console_putc(char c);

@@ -1,7 +1,7 @@
-#include "../include/irq.h"
-#include "../include/io.h"
-#include "../include/pic.h"
-#include "../include/idt.h"
+#include <irq.h>
+#include <io.h>
+#include <pic.h>
+#include <idt.h>
 
 extern void irq0();
 extern void irq1();
