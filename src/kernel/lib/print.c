@@ -4,6 +4,7 @@
 void print_int(int value) {
     char buffer[12];
     int i = 0;
+    unsigned int uvalue = value;
     int is_negative = 0;
 
     if (value == 0) {
@@ -13,12 +14,12 @@ void print_int(int value) {
 
     if (value < 0) {
         is_negative = 1;
-        value = -value;
+        uvalue = -value;
     }
 
-    while (value != 0) {
-        buffer[i++] = (value % 10) + '0';
-        value /= 10;
+    while (uvalue != 0) {
+        buffer[i++] = (uvalue % 10) + '0';
+        uvalue /= 10;
     }
 
     if (is_negative) {
@@ -32,31 +33,24 @@ void print_int(int value) {
 }
 
 void print_hex(unsigned int value) {
-    char buffer[9];
-    int i = 0;
+    char hex_str[8];
+    int i;
 
-    if (value == 0) {
-        console_putc('0');
-        return;
-    }
+    console_putc('0');
+    console_putc('x');
 
-    while (value != 0) {
-        unsigned int digit = value % 16;
+    for (i = 7; i >= 0; i--) {
+        unsigned int digit = value & 0xF;
         if (digit < 10) {
-            buffer[i++] = digit + '0';
+            hex_str[i] = digit + '0';
         } else {
-            buffer[i++] = digit - 10 + 'a';
+            hex_str[i] = digit - 10 + 'a';
         }
-        value /= 16;
+        value >>= 4;
     }
 
-    // 0x
-    buffer[i++] = 'x';
-    buffer[i++] = '0';
-
-    // reverse the string
-    for (int j = i - 1; j >= 0; j--) {
-        console_putc(buffer[j]);
+    for (i = 0; i < 8; i++) {
+        console_putc(hex_str[i]);
     }
 }
 

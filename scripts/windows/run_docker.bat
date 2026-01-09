@@ -1,1 +1,1 @@
-docker run -it -v C:/Users/Friedrich/Documents/GitHub/nanoOS:/workspace nano-cross
+docker run -it -v C:/Users/Friedrich/Documents/GitHub/nanoOS:/workspace nano-cross make clean os
