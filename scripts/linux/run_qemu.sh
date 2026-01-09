@@ -1,1 +1,1 @@
-qemu-system-x86_64 -fda ./build/nanoos.img -no-reboot -d int,cpu_reset -D q.log
+qemu-system-x86_64 -m 4G -fda ./build/nanoos.img -no-reboot -d int,cpu_reset -D q.log -serial file:serial.log

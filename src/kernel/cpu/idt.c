@@ -1,4 +1,5 @@
 #include <idt.h>
+#include <serial.h>
 
 extern void idt_load(uint32_t);
 
@@ -52,12 +53,15 @@ void idt_init() {
     for (int i = 0; i < IDT_ENTRIES; i++) {
         idt_set_gate(i, 0, 0, 0);
     }
+    serial_puts("idt_init: cleared idt entries\n");
 
     for (int i = 0; i < 32; i++) {
         idt_set_gate(i, (uint32_t)isr_table[i], 0x08, 0x8E);
     }
+    serial_puts("idt_init: set isr entries\n");
 
     idt_load((uint32_t)&idtp);
+    serial_puts("idt_init: loaded idt\n");
 }
 
 void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags) {

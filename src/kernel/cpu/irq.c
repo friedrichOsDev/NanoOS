@@ -2,6 +2,7 @@
 #include <io.h>
 #include <pic.h>
 #include <idt.h>
+#include <serial.h>
 
 extern void irq0();
 extern void irq1();
@@ -22,14 +23,17 @@ extern void irq15();
 
 void enable_interrupts(void) {
     asm volatile("sti");
+    serial_puts("enable_interrupts: interrupts enabled\n");
 }
 
 void disable_interrupts(void) {
     asm volatile("cli");
+    serial_puts("disable_interrupts: interrupts disabled\n");
 }
 
 void irq_init(void) {
     pic_remap();
+    serial_puts("irq_init: remapped pic\n");
 
     void *irq_table[] = {
         irq0, irq1, irq2, irq3, irq4, irq5, irq6, irq7,
@@ -39,4 +43,5 @@ void irq_init(void) {
     for (int i = 0; i < 16; i++) {
         idt_set_gate(32 + i, (uint32_t)irq_table[i], 0x08, 0x8E);
     }
+    serial_puts("irq_init: set irq entries\n");
 }

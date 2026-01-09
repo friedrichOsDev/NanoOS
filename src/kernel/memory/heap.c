@@ -1,6 +1,7 @@
 #include <heap.h>
 #include <string.h>
-#include <log.h>
+#include <kernel.h>
+#include <serial.h>
 
 #define MIN_ALLOC_SIZE (sizeof(heap_block_t))
 #define HEAP_ALIGNMENT 4096
@@ -14,10 +15,35 @@ static size_t align_size(size_t size) {
     return (size + HEAP_ALIGNMENT - 1) & ~(HEAP_ALIGNMENT - 1);
 }
 
-void heap_init(void* start_addr, size_t size) {
+void heap_init() {
+    // find the largest available memory region for the heap
+    uint32_t largest_region_base = 0;
+    uint32_t largest_region_length = 0;
+
+    for (int i = 0; i < mmap_info->entry_count; i++) {
+        mmap_entry_t* entry = &mmap_info->entries[i];
+
+        if (entry->type == 1) { // type 1 = available RAM
+            if (entry->base_addr_high == 0 && entry->length_high == 0) { // high bits must be 0 for 32-bit address space
+                // ensure the memory region starts at or above 1MB to avoid low memory areas
+                if (entry->base_addr_low >= 0x100000 && entry->length_low > largest_region_length) {
+                    largest_region_base = entry->base_addr_low;
+                    largest_region_length = entry->length_low;
+                }
+            }
+        }
+    }
+
+    if (largest_region_base != 0 && largest_region_length != 0) {
+        heap_setup((void*)largest_region_base, largest_region_length);
+    } else {
+        serial_puts("heap__init: no suitable memory region found.\n");
+    }
+}
+
+void heap_setup(void* start_addr, size_t size) {
     if (!start_addr || size < MIN_ALLOC_SIZE) {
-        // Log an error message or handle the invalid parameters appropriately
-        log_error("heap_init received invalid parameters.");
+        serial_puts("heap_setup: invalid start address or size.\n");
         return;
     }
 
@@ -26,7 +52,7 @@ void heap_init(void* start_addr, size_t size) {
 
     size_t aligned_start_diff = (size_t)heap_start - (size_t)start_addr;
     if (size <= aligned_start_diff) {
-        log_error("Heap size too small after alignment adjustment.");
+        serial_puts("heap_setup: size too small after alignment.\n");
         return;
     }
 
@@ -34,7 +60,7 @@ void heap_init(void* start_addr, size_t size) {
     heap_total_size = heap_total_size & ~ (HEAP_ALIGNMENT - 1); // ensure total size is aligned
 
     if (heap_total_size < MIN_ALLOC_SIZE) {
-        log_error("Heap total size is less than minimum alloc size after alignment.");
+        serial_puts("heap_setup: total size too small after alignment.\n");
         return;
     }
 
@@ -43,7 +69,13 @@ void heap_init(void* start_addr, size_t size) {
     free_list_head->next = NULL;
     free_list_head->magic = HEAP_FREE_MAGIC;
 
-    log_info("Heap initialized at %x with size %x.", (unsigned int)heap_start, (unsigned int)heap_total_size);
+    serial_puts("heap_setup: initialized at 0x");
+    serial_put_hex((uint32_t)(size_t)heap_start);
+    serial_puts(" with size 0x");
+    serial_put_hex((uint32_t)heap_total_size);
+    serial_puts(" (");
+    serial_put_int(heap_total_size / 1024);
+    serial_puts(" KB)\n");
 }
 
 void* kmalloc(size_t size) {
@@ -61,7 +93,7 @@ void* kmalloc(size_t size) {
 
     while (current_block) {
         if (current_block->magic != HEAP_FREE_MAGIC) {
-            log_kernel_panic("Heap corruption detected in kmalloc: invalid magic number on free list.");
+            serial_puts("kmalloc: heap corruption detected in free list.\n");
             return NULL;
         }
 
@@ -100,7 +132,10 @@ void* kmalloc(size_t size) {
         current_block = current_block->next;
     }
 
-    log_warning("kmalloc failed to allocate memory.");
+    serial_puts("kmalloc: out of memory trying to allocate ");
+    serial_put_int((int)size);
+    serial_puts(" bytes.\n");
+    
     return NULL; // no block found
 }
 
@@ -114,7 +149,7 @@ void kfree(void* ptr) {
 
     // integrity check: verify the magic number
     if (block_to_free->magic != HEAP_ALLOC_MAGIC) {
-        log_kernel_panic("Heap corruption detected in kfree: invalid magic number. Double free or invalid pointer?");
+        serial_puts("kfree: invalid pointer or double free detected.\n");
         return;
     }
 
@@ -124,7 +159,7 @@ void kfree(void* ptr) {
     // find the correct insertion point to keep the free list sorted by address
     while (current != NULL && current < block_to_free) {
         if (current->magic != HEAP_FREE_MAGIC) {
-            log_kernel_panic("Heap corruption detected in kfree: invalid magic number on free list.");
+            serial_puts("kfree: heap corruption detected in free list during insertion.\n");
             return;
         }
         prev = current;

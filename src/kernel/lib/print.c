@@ -36,9 +36,6 @@ void print_hex(unsigned int value) {
     char hex_str[8];
     int i;
 
-    console_putc('0');
-    console_putc('x');
-
     for (i = 7; i >= 0; i--) {
         unsigned int digit = value & 0xF;
         if (digit < 10) {

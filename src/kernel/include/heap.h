@@ -13,7 +13,8 @@ typedef struct heap_block {
     uint32_t magic;          
 } heap_block_t;
 
-void heap_init(void* start_addr, size_t size);
+void heap_init();
+void heap_setup(void* start_addr, size_t size);
 void* kmalloc(size_t size);
 void kfree(void* ptr);
 void* kzalloc(size_t size);

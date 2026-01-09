@@ -8,6 +8,7 @@
 #include <heap.h>
 #include <log.h>
 #include <string.h>
+#include <serial.h>
 
 void kernel_main();
 
@@ -68,48 +69,53 @@ void test_kernel() {
 }
 
 void kernel_main() {
+    serial_init();
+
+    gdt_init();
+    serial_puts("gdt_init: done\n");
+
+    idt_init();
+    serial_puts("idt_init: done\n");
+
+    irq_init();
+    serial_puts("irq_init: done\n");
+
+    enable_interrupts();
+    serial_puts("enable_interrupts: done\n");
+
+    heap_init();
+    serial_puts("heap_init: done\n");
+
     console_init();
     printf("Welcome to NanoOS kernel!\n\n");
 
-    gdt_init();
-    log_success("GDT initialized.");
-
-    idt_init();
-    log_success("IDT initialized.");
-
-    irq_init();
-    log_success("IRQ initialized.");
-
-    enable_interrupts();
-    log_success("Interrupts enabled.");
-
-    // find the largest available memory region for the heap
-    uint32_t largest_region_base = 0;
-    uint32_t largest_region_length = 0;
-
+    // debug print the mmap
     for (int i = 0; i < mmap_info->entry_count; i++) {
-        mmap_entry_t* entry = &mmap_info->entries[i];
-
-        if (entry->type == 1) { // type 1 = available RAM
-            if (entry->base_addr_high == 0 && entry->length_high == 0) { // high bits must be 0 for 32-bit address space
-                // ensure the memory region starts at or above 1MB to avoid low memory areas
-                if (entry->base_addr_low >= 0x100000 && entry->length_low > largest_region_length) {
-                    largest_region_base = entry->base_addr_low;
-                    largest_region_length = entry->length_low;
-                }
-            }
-        }
+        printf("mmap[%d]: base=0x%x%x, length=0x%x%x, type=%d\n",
+                i,
+                (uint32_t)(mmap_info->entries[i].base_addr_high),
+                (uint32_t)(mmap_info->entries[i].base_addr_low),
+                (uint32_t)(mmap_info->entries[i].length_high),
+                (uint32_t)(mmap_info->entries[i].length_low),
+                (uint32_t)(mmap_info->entries[i].type));
     }
 
-    if (largest_region_base != 0 && largest_region_length != 0) {
-        heap_init((void*)largest_region_base, largest_region_length);
-    } else {
-        log_warning("No suitable memory region found for heap initialization.");
+    // serial print the mmap
+    for (int i = 0; i < mmap_info->entry_count; i++) {
+        serial_puts("mmap[");
+        serial_put_int(i);
+        serial_puts("]: base=0x");
+        serial_put_hex(mmap_info->entries[i].base_addr_high);
+        serial_put_hex(mmap_info->entries[i].base_addr_low);
+        serial_puts(", length=0x");
+        serial_put_hex(mmap_info->entries[i].length_high);
+        serial_put_hex(mmap_info->entries[i].length_low);
+        serial_puts(", type=");
+        serial_put_int(mmap_info->entries[i].type);
+        serial_puts("\n");
     }
 
-    log_success("Heap initialized.");
-
-    // test_kernel();
+    test_kernel();
 
     while(1);
 }
