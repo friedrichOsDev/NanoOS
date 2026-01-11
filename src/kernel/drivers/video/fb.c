@@ -25,7 +25,6 @@ void fb_init() {
     }
     fb_info.back_buffer_size = buffer_size;
     fb_clear(0x000000);
-    fb_swap_buffers();
 }
 
 uint32_t fb_get_width() {

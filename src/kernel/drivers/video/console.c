@@ -66,5 +66,4 @@ void console_clear() {
     fb_clear(0x000000);
     console_x = 0;
     console_y = 0;
-    fb_swap_buffers();
 }

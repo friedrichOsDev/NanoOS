@@ -9,6 +9,7 @@
 #include <log.h>
 #include <string.h>
 #include <serial.h>
+#include <fb.h>
 
 void kernel_main();
 
@@ -89,33 +90,8 @@ void kernel_main() {
     console_init();
     printf("Welcome to NanoOS kernel!\n\n");
 
-    // debug print the mmap
-    for (int i = 0; i < mmap_info->entry_count; i++) {
-        printf("mmap[%d]: base=0x%x%x, length=0x%x%x, type=%d\n",
-                i,
-                (uint32_t)(mmap_info->entries[i].base_addr_high),
-                (uint32_t)(mmap_info->entries[i].base_addr_low),
-                (uint32_t)(mmap_info->entries[i].length_high),
-                (uint32_t)(mmap_info->entries[i].length_low),
-                (uint32_t)(mmap_info->entries[i].type));
-    }
-
-    // serial print the mmap
-    for (int i = 0; i < mmap_info->entry_count; i++) {
-        serial_puts("mmap[");
-        serial_put_int(i);
-        serial_puts("]: base=0x");
-        serial_put_hex(mmap_info->entries[i].base_addr_high);
-        serial_put_hex(mmap_info->entries[i].base_addr_low);
-        serial_puts(", length=0x");
-        serial_put_hex(mmap_info->entries[i].length_high);
-        serial_put_hex(mmap_info->entries[i].length_low);
-        serial_puts(", type=");
-        serial_put_int(mmap_info->entries[i].type);
-        serial_puts("\n");
-    }
-
-    test_kernel();
-
-    while(1);
+    while(1) {
+        fb_swap_buffers();
+        asm volatile("hlt");
+    };
 }

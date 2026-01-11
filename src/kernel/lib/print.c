@@ -101,7 +101,6 @@ void vprintf(const char* format, va_list args) {
         }
         format++;
     }
-    fb_swap_buffers();
 }
 
 void printf(const char* format, ...) {
