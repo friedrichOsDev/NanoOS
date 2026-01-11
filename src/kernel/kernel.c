@@ -91,7 +91,7 @@ void kernel_main() {
     console_init();
     printf("Welcome to NanoOS kernel!\n\n");
 
-    timer_init(30);
+    timer_init(60);
     serial_puts("timer_init: done\n");
 
     fb_swap_buffers();
