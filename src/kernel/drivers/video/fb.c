@@ -90,10 +90,32 @@ void fb_draw_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint3
 void fb_draw_char(uint32_t x, uint32_t y, char c, uint32_t fg_color, uint32_t bg_color) {
     uint8_t* font_char = font8x8_basic[(uint8_t)c];
 
-    for (int i = 0; i < FONT_HEIGHT; i++) {
-        for (int j = 0; j < FONT_WIDTH; j++) {
-            uint32_t color = ((font_char[i] >> j) & 0x01) ? fg_color : bg_color;
-            fb_put_pixel(x + j, y + i, color);
+    if (!font_char) return;
+    if (x >= screen_info->width || y >= screen_info->height) return;
+    if (x + FONT_WIDTH > screen_info->width || y + FONT_HEIGHT > screen_info->height) return;
+    if (fg_color == bg_color) {
+        fb_draw_rect(x, y, FONT_WIDTH, FONT_HEIGHT, bg_color);
+        return;
+    }
+    
+    if (screen_info->bytes_per_pixel == 4) {
+        // optimized for 32bpp
+        uint32_t* dest = (uint32_t*)(fb_info.back_buffer + (y * screen_info->bytes_per_line) + (x * screen_info->bytes_per_pixel));
+        uint32_t line_offset = screen_info->bytes_per_line / 4;
+
+        for (int i = 0; i < FONT_WIDTH; i++) {
+            for (int j = 0; j < FONT_HEIGHT; j++) {
+                dest[j] = ((font_char[i] >> j) & 0x01) ? fg_color : bg_color;
+            }
+            dest += line_offset;
+        }
+    } else {
+        // fallback for other bpp
+        for (int i = 0; i < FONT_WIDTH; i++) {
+            for (int j = 0; j < FONT_HEIGHT; j++) {
+                uint32_t pixel_color = ((font_char[i] >> j) & 0x01) ? fg_color : bg_color;
+                fb_put_pixel(x + i, y + j, pixel_color);
+            }
         }
     }
 }

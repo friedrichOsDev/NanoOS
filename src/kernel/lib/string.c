@@ -35,10 +35,23 @@ void* memset(void* ptr, int value, size_t num) {
 }
 
 void* memcpy(void* dest, const void* src, size_t n) {
-    unsigned char* d = dest;
-    const unsigned char* s = src;
-    while (n--) {
-        *d++ = *s++;
+    uint32_t* d32 = (uint32_t*)dest;
+    const uint32_t* s32 = (const uint32_t*)src;
+
+    // 4-bytes per copy
+    size_t words = n / 4;
+    for (size_t i = 0; i < words; i++) {
+        d32[i] = s32[i];
+    }
+
+    // n not multiple of 4, copy remaining bytes
+    size_t rest = n % 4;
+    if (rest > 0) {
+        uint8_t* d8 = (uint8_t*)(d32 + words);
+        const uint8_t* s8 = (const uint8_t*)(s32 + words);
+        for (size_t i = 0; i < rest; i++) {
+            d8[i] = s8[i];
+        }
     }
     return dest;
 }
