@@ -1,1 +1,1 @@
-docker build -t nano-cross C:/Users/Friedrich/Documents/GitHub/nanoOS/scripts/
+docker build -t nano-cross %~dp0..

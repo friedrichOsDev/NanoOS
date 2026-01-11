@@ -1,1 +1,2 @@
-docker build -t nano-cross /home/friedrich/Projects/NanoOS/scripts
+SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)
+docker build -t nano-cross "$SCRIPT_DIR/.."
