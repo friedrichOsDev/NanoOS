@@ -91,7 +91,7 @@ void kernel_main() {
     console_init();
     printf("Welcome to NanoOS kernel!\n\n");
 
-    timer_init(60);
+    timer_init(30);
     serial_puts("timer_init: done\n");
 
     fb_swap_buffers();
@@ -103,6 +103,7 @@ void kernel_main() {
     while(1) {
         tick = timer_get_ticks();
         if (tick != old_tick) {
+            // this block runs every tick (about 30 times per second, 33ms interval)
             diff = tick - old_tick;
             old_tick = tick;
             printf("tick %d, diff: %d\n", tick, diff);
