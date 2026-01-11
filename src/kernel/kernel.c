@@ -10,6 +10,7 @@
 #include <string.h>
 #include <serial.h>
 #include <fb.h>
+#include <timer.h>
 
 void kernel_main();
 
@@ -90,8 +91,19 @@ void kernel_main() {
     console_init();
     printf("Welcome to NanoOS kernel!\n\n");
 
+    timer_init(60);
+    serial_puts("timer_init: done\n");
+
+    fb_swap_buffers();
+
+    uint32_t old_tick = timer_get_ticks();
+
     while(1) {
-        fb_swap_buffers();
-        asm volatile("hlt");
+        uint32_t tick = timer_get_ticks();
+        if (tick != old_tick) {
+            printf("ticks: %d\n", timer_get_ticks());
+            fb_swap_buffers();
+        }
+        old_tick = tick;
     };
 }
