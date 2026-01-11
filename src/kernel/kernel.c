@@ -33,7 +33,7 @@ void test_kernel() {
     int* test_ptr1 = (int*)kmalloc(sizeof(int));
     if (test_ptr1) {
         *test_ptr1 = 123;
-        log_info("Allocated int at %x with value %d", (unsigned int)test_ptr1, *test_ptr1);
+        log_info("Allocated int at 0x%x with value %d", (unsigned int)test_ptr1, *test_ptr1);
     } else {
         log_error("Failed to allocate int.");
     }
@@ -41,14 +41,14 @@ void test_kernel() {
     char* test_ptr2 = (char*)kmalloc(20 * sizeof(char));
     if (test_ptr2) {
         strcpy(test_ptr2, "Hello, Heap!");
-        log_info("Allocated string at %x with value '%s'", (unsigned int)test_ptr2, test_ptr2);
+        log_info("Allocated string at 0x%x with value '%s'", (unsigned int)test_ptr2, test_ptr2);
     } else {
         log_error("Failed to allocate string.");
     }
 
     int* test_ptr3 = (int*)kzalloc(sizeof(int));
     if (test_ptr3) {
-        log_info("Allocated zero-initialized int at %x with value %d", (unsigned int)test_ptr3, *test_ptr3);
+        log_info("Allocated zero-initialized int at 0x%x with value %d", (unsigned int)test_ptr3, *test_ptr3);
     } else {
         log_error("Failed to allocate zero-initialized int.");
     }

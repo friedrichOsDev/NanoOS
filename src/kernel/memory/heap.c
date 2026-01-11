@@ -10,6 +10,8 @@ static heap_block_t* free_list_head = NULL;
 static void* heap_start = NULL;
 static size_t heap_total_size = 0;
 
+extern char end[]; 
+
 // function to align a size
 static size_t align_size(size_t size) {
     return (size + HEAP_ALIGNMENT - 1) & ~(HEAP_ALIGNMENT - 1);
@@ -19,16 +21,35 @@ void heap_init() {
     // find the largest available memory region for the heap
     uint32_t largest_region_base = 0;
     uint32_t largest_region_length = 0;
+    
+    uint32_t kernel_end = (uint32_t)end;
+    // Align kernel_end to next page boundary to be safe
+
+    kernel_end = (kernel_end + (HEAP_ALIGNMENT - 1)) & ~(HEAP_ALIGNMENT - 1);
+
+    serial_puts("heap_init: kernel ends at 0x");
+    serial_put_hex(kernel_end);
+    serial_puts("\n");
 
     for (int i = 0; i < mmap_info->entry_count; i++) {
         mmap_entry_t* entry = &mmap_info->entries[i];
 
         if (entry->type == 1) { // type 1 = available RAM
             if (entry->base_addr_high == 0 && entry->length_high == 0) { // high bits must be 0 for 32-bit address space
+                uint32_t base = entry->base_addr_low;
+                uint32_t length = entry->length_low;
+
+                // If the region overlaps with the kernel, adjust the base to start after the kernel
+                if (base < kernel_end && (base + length) > kernel_end) {
+                    uint32_t overlap = kernel_end - base;
+                    base += overlap;
+                    length -= overlap;
+                }
+
                 // ensure the memory region starts at or above 1MB to avoid low memory areas
-                if (entry->base_addr_low >= 0x100000 && entry->length_low > largest_region_length) {
-                    largest_region_base = entry->base_addr_low;
-                    largest_region_length = entry->length_low;
+                if (base >= 0x100000 && length > largest_region_length) {
+                    largest_region_base = base;
+                    largest_region_length = length;
                 }
             }
         }

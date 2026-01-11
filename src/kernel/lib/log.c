@@ -76,7 +76,7 @@ void log_kernel_panic(const char *format, ...) {
 }
 
 void log_cpu_exception(uint32_t exception_code, const char *format, ...) {
-    printf("%k[CPU EXCEPTION %x]%k: ", LOG_EXCEPTION_COLOR, exception_code, LOG_NO_COLOR);
+    printf("%k[CPU EXCEPTION 0x%x]%k: ", LOG_EXCEPTION_COLOR, exception_code, LOG_NO_COLOR);
     va_list args;
     va_start(args, format);
     vprintf(format, args);

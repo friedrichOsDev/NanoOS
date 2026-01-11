@@ -1,5 +1,6 @@
 #include <print.h>
 #include <console.h>
+#include <fb.h>
 
 void print_int(int value) {
     char buffer[12];
@@ -100,6 +101,7 @@ void vprintf(const char* format, va_list args) {
         }
         format++;
     }
+    fb_swap_buffers();
 }
 
 void printf(const char* format, ...) {
