@@ -11,6 +11,7 @@
 #include <serial.h>
 #include <fb.h>
 #include <timer.h>
+#include <cpu.h>
 
 void kernel_main();
 
@@ -82,8 +83,8 @@ void kernel_main() {
     irq_init();
     serial_puts("irq_init: done\n");
 
-    enable_interrupts();
-    serial_puts("enable_interrupts: done\n");
+    cpu_enable_interrupts();
+    serial_puts("cpu_enable_interrupts: done\n");
 
     heap_init();
     serial_puts("heap_init: done\n");

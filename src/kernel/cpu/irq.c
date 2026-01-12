@@ -21,16 +21,6 @@ extern void irq13();
 extern void irq14();
 extern void irq15();
 
-void enable_interrupts(void) {
-    asm volatile("sti");
-    serial_puts("enable_interrupts: interrupts enabled\n");
-}
-
-void disable_interrupts(void) {
-    asm volatile("cli");
-    serial_puts("disable_interrupts: interrupts disabled\n");
-}
-
 void irq_init(void) {
     pic_remap();
     serial_puts("irq_init: remapped pic\n");

@@ -3,6 +3,11 @@
 #include <heap.h>
 #include <string.h>
 #include <serial.h>
+#include <cpu.h>
+
+#define MTRR_PHYS_BASE_0 0x200
+#define MTRR_PHYS_MASK_0 0x201
+#define MTRR_TYPE_WC 0x01
 
 static fb_info_t fb_info;
 static uint32_t dirty_x1;
@@ -12,12 +17,25 @@ static uint32_t dirty_y2;
 
 // optimized 32-bit memory fill
 static inline void memset32(void* dest, uint32_t val, size_t count) {
-    asm volatile ("cld; rep stosl" : "+D"(dest), "+c"(count) : "a"(val) : "memory");
+    __asm__ __volatile__ ("cld; rep stosl" : "+D"(dest), "+c"(count) : "a"(val) : "memory");
 }
 
 // optimized 32-bit memory copy
 static inline void memcpy32(void* dest, const void* src, size_t count) {
-    asm volatile ("cld; rep movsl" : "+D"(dest), "+S"(src), "+c"(count) : : "memory");
+    __asm__ __volatile__ ("cld; rep movsl" : "+D"(dest), "+S"(src), "+c"(count) : : "memory");
+}
+
+void fb_enable_write_combining(uint32_t base, uint32_t size) {
+    uint32_t mask = ~(size - 1) | 0x800;
+
+    serial_puts("fb_enable_write_combining: enabling write combining for base 0x");
+    serial_put_hex(base);
+    serial_puts("\n");
+
+    cpu_set_msr(MTRR_PHYS_BASE_0, base | MTRR_TYPE_WC, 0);
+    cpu_set_msr(MTRR_PHYS_MASK_0, mask, 0x0000000F);
+
+    serial_puts("fb_enable_write_combining: MTRR WC enabled\n");
 }
 
 static void fb_mark_dirty(uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
@@ -63,6 +81,13 @@ void fb_init() {
         return;
     }
     fb_info.back_buffer_size = buffer_size;
+
+    uint32_t pot_size = 1;
+    while (pot_size < buffer_size) {
+        pot_size <<= 1;
+    }
+
+    fb_enable_write_combining(screen_info->physical_buffer, pot_size);
     
     // reset dirty rects
     dirty_x1 = dirty_y1 = dirty_x2 = dirty_y2 = 0;
@@ -238,20 +263,22 @@ void fb_swap_buffers() {
 
     uint32_t bpp = screen_info->bytes_per_pixel;
     uint32_t pitch = screen_info->bytes_per_line;
-    uint32_t row_len = (dirty_x2 - dirty_x1) * bpp;
-
-    // copy only the dirty lines
-    for (uint32_t y = dirty_y1; y < dirty_y2; y++) {
-        uint32_t offset = (y * pitch) + (dirty_x1 * bpp);
-        void* dest = (void*)(screen_info->physical_buffer + offset);
-        void* src = fb_info.back_buffer + offset;
-
-        if (bpp == 4) {
-            memcpy32(dest, src, row_len / 4);
-        } else {
-            memcpy(dest, src, row_len);
+    
+    if (dirty_y1 == 0 && dirty_y2 == screen_info->height) {
+        memcpy32((void*)screen_info->physical_buffer, fb_info.back_buffer, fb_info.back_buffer_size / 4);
+    } 
+    else {
+        uint32_t row_len_words = ((dirty_x2 - dirty_x1) * bpp) / 4;
+        for (uint32_t y = dirty_y1; y < dirty_y2; y++) {
+            uint32_t offset = (y * pitch) + (dirty_x1 * bpp);
+            memcpy32((void*)(screen_info->physical_buffer + offset), 
+                     (void*)(fb_info.back_buffer + offset), 
+                     row_len_words);
         }
     }
+
+    // clear cpu cache
+    __asm__ __volatile__ ("mfence" ::: "memory");
 
     // reset dirty rect
     dirty_x1 = 0;
