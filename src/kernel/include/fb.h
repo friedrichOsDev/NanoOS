@@ -8,6 +8,7 @@
 typedef struct {
     uint8_t* back_buffer;
     size_t back_buffer_size;
+    uint32_t scroll_offset;
 } fb_info_t;
 
 void fb_init();
