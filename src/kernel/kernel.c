@@ -99,16 +99,12 @@ void kernel_main() {
 
     uint32_t tick = 0;
     uint32_t old_tick = 0;
-    uint32_t diff = 0;
 
     while(1) {
         tick = timer_get_ticks();
         if (tick != old_tick) {
-            // this block runs every tick (about 30 times per second, 33ms interval)
-            diff = tick - old_tick;
-            old_tick = tick;
-            printf("tick %d, diff: %d\n", tick, diff);
+            // this block runs every tick (about 60 times per second)
             fb_swap_buffers();
         }
-    };
+    }
 }
