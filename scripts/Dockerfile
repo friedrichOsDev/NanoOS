@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     g++ \
     nasm \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Vars

@@ -1,4 +1,5 @@
 build
 .vscode
+.devcontainer
 q.log
 serial.log
