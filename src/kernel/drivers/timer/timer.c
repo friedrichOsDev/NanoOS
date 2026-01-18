@@ -25,5 +25,4 @@ void timer_init(uint32_t frequency) {
     serial_puts("timer_init: frequency set to ");
     serial_put_int(frequency);
     serial_puts(" Hz\n");
-    
 }
