@@ -24,15 +24,6 @@ void __attribute__((section(".text.entry"))) _start() {
 
 void test_kernel() {
     printf("\nTest the kernel functionalities:\n\n");
-
-    // Test Logging System
-    log_info("This is an info message.");
-    log_warning("This is a warning message.");
-    log_error("This is an error message.");
-    log_debug("This is a debug message.");
-    log_success("This is a success message.");
-    log_failed("This is a failed message.");
-
     // Test kmalloc and kfree
     int* test_ptr1 = (int*)kmalloc(sizeof(int));
     if (test_ptr1) {
@@ -98,6 +89,8 @@ void kernel_main() {
 
     timer_init(60);
     serial_puts("timer_init: done\n");
+
+    test_kernel();
 
     uint32_t tick = 0;
     uint32_t old_tick = 0;
