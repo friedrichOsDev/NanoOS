@@ -12,6 +12,7 @@
 #include <fb.h>
 #include <timer.h>
 #include <cpu.h>
+#include <paging.h>
 
 void kernel_main();
 
@@ -88,6 +89,9 @@ void kernel_main() {
 
     heap_init();
     serial_puts("heap_init: done\n");
+
+    paging_init();
+    serial_puts("paging_init: done\n");
 
     console_init();
     printf("Welcome to NanoOS kernel!\n\n");

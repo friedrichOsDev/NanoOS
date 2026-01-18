@@ -16,4 +16,6 @@
 #define PAGING_IS_WRITABLE     0b00000010
 #define PAGING_IS_PRESENT      0b00000001
 
+void paging_init();
+
 #endif // PAGING_H
