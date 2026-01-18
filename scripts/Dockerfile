@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     g++ \
     nasm \
     git \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Vars
