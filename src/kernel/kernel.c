@@ -99,8 +99,6 @@ void kernel_main() {
     timer_init(60);
     serial_puts("timer_init: done\n");
 
-    fb_swap_buffers();
-
     uint32_t tick = 0;
     uint32_t old_tick = 0;
 

@@ -16,7 +16,9 @@ typedef struct heap_block {
 void heap_init();
 void heap_setup(void* start_addr, size_t size);
 void* kmalloc(size_t size);
-void kfree(void* ptr);
 void* kzalloc(size_t size);
+void* kmalloc_aligned(size_t size, size_t alignment);
+void* kzalloc_aligned(size_t size, size_t alignment);
+void kfree(void* ptr);
 
 #endif // HEAP_H
