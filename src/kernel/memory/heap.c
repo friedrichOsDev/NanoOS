@@ -171,8 +171,8 @@ void* kzalloc(size_t size) {
 }
 
 void* kmalloc_aligned(size_t size, size_t alignment) {
-    if (size == 0) return;
-    if ((alignment & (alignment - 1)) != 0) return; // Alignment must be power of 2
+    if (size == 0) return NULL;
+    if ((alignment & (alignment - 1)) != 0) return NULL; // Alignment must be power of 2
 
     size_t actual_size = align_size(size + sizeof(heap_block_t));
     
