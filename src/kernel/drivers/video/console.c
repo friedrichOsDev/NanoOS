@@ -28,7 +28,7 @@ void console_putc(char c) {
             // Scan the previous line to find the last character
             int found_x = 0;
             int found = 0;
-            int start_x = fb_get_width() - (fb_get_width() % FONT_WIDTH) - FONT_WIDTH;
+            int start_x = fb_get_width();
 
             for (int x = start_x; x >= 0; x -= FONT_WIDTH) {
                 for (int py = 0; py < FONT_HEIGHT; py++) {
@@ -42,7 +42,7 @@ void console_putc(char c) {
                 }
             }
             scan_end:
-            console_x = found ? found_x : 0;
+            console_x = found ? (found_x - FONT_WIDTH) : 0;
         }
         fb_draw_char(console_x, console_y, ' ', console_fg_color, console_bg_color);
     } else if (c == '\t') {

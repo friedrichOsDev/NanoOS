@@ -14,6 +14,7 @@
 #include <cpu.h>
 #include <paging.h>
 #include <keyboard.h>
+#include <shell.h>
 
 void kernel_main();
 
@@ -21,47 +22,6 @@ void kernel_main();
 void __attribute__((section(".text.entry"))) _start() {
     kernel_main();
     while(1);
-}
-
-void test_kernel() {
-    printf("\nTest the kernel functionalities:\n\n");
-    // Test kmalloc and kfree
-    int* test_ptr1 = (int*)kmalloc(sizeof(int));
-    if (test_ptr1) {
-        *test_ptr1 = 123;
-        log_info("Allocated int at 0x%x with value %d", (unsigned int)test_ptr1, *test_ptr1);
-    } else {
-        log_error("Failed to allocate int.");
-    }
-
-    char* test_ptr2 = (char*)kmalloc(20 * sizeof(char));
-    if (test_ptr2) {
-        strcpy(test_ptr2, "Hello, Heap!");
-        log_info("Allocated string at 0x%x with value '%s'", (unsigned int)test_ptr2, test_ptr2);
-    } else {
-        log_error("Failed to allocate string.");
-    }
-
-    int* test_ptr3 = (int*)kzalloc(sizeof(int));
-    if (test_ptr3) {
-        log_info("Allocated zero-initialized int at 0x%x with value %d", (unsigned int)test_ptr3, *test_ptr3);
-    } else {
-        log_error("Failed to allocate zero-initialized int.");
-    }
-
-    kfree(test_ptr1);
-    log_info("Freed test_ptr1.");
-    kfree(test_ptr2);
-    log_info("Freed test_ptr2.");
-    kfree(test_ptr3);
-    log_info("Freed test_ptr3.");
-
-    // Test double free detection (should cause a kernel panic)
-    // kfree(test_ptr1); 
-
-    // Test invalid pointer free detection (should cause a kernel panic)
-    // int invalid_var;
-    // kfree(&invalid_var);
 }
 
 void kernel_main() {
@@ -86,7 +46,7 @@ void kernel_main() {
     serial_puts("paging_init: done\n");
 
     console_init();
-    printf("Welcome to NanoOS kernel!\n\n");
+    serial_puts("console_init: done\n");
 
     timer_init(60);
     serial_puts("timer_init: done\n");
@@ -94,19 +54,18 @@ void kernel_main() {
     keyboard_init("de");
     serial_puts("keyboard_init: done\n");
 
-    test_kernel();
+    shell_init();
+    serial_puts("shell_init: done\n");
 
     uint32_t tick = 0;
     uint32_t old_tick = 0;
-    char c = 0;
 
     while(1) {
         tick = timer_get_ticks();
         if (tick != old_tick) {
             old_tick = tick;
             // this block runs every tick (about 60 times per second)
-            c = keyboard_getchar();
-            if (c != 0) printf("%c", c);
+            shell_handle_input(keyboard_getchar());
             fb_swap_buffers();
         }
     }

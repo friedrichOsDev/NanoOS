@@ -209,6 +209,7 @@ void fb_clear(uint32_t color) {
     uint32_t* dest = (uint32_t*)fb_info.back_buffer;
     size_t num_pixels = fb_info.back_buffer_size / 4;
     memset32(dest, color, num_pixels);
+    fb_mark_dirty(0, 0, screen_info->width, screen_info->height);
 }
 
 void fb_swap_buffers() {
