@@ -13,6 +13,7 @@
 #include <timer.h>
 #include <cpu.h>
 #include <paging.h>
+#include <keyboard.h>
 
 void kernel_main();
 
@@ -90,15 +91,22 @@ void kernel_main() {
     timer_init(60);
     serial_puts("timer_init: done\n");
 
+    keyboard_init("de");
+    serial_puts("keyboard_init: done\n");
+
     test_kernel();
 
     uint32_t tick = 0;
     uint32_t old_tick = 0;
+    char c = 0;
 
     while(1) {
         tick = timer_get_ticks();
         if (tick != old_tick) {
+            old_tick = tick;
             // this block runs every tick (about 60 times per second)
+            c = keyboard_getchar();
+            if (c != 0) printf("%c", c);
             fb_swap_buffers();
         }
     }

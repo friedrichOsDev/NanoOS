@@ -105,6 +105,17 @@ void fb_put_pixel(uint32_t x, uint32_t y, uint32_t color) {
     *((uint32_t*)(fb_info.back_buffer + offset)) = color;
 }
 
+uint32_t fb_get_pixel(uint32_t x, uint32_t y) {
+    if (!fb_info.back_buffer) return 0;
+    if (screen_info->bytes_per_pixel != 4) return 0;
+    if (x >= screen_info->width || y >= screen_info->height) return 0;
+
+    uint32_t offset = (y * screen_info->bytes_per_line) + (x * screen_info->bytes_per_pixel) + fb_info.scroll_offset;
+    if (offset >= fb_info.back_buffer_size) offset -= fb_info.back_buffer_size;
+
+    return *((uint32_t*)(fb_info.back_buffer + offset));
+}
+
 void fb_draw_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t color) {
     if (!fb_info.back_buffer) return;
     if (screen_info->bytes_per_pixel != 4) return;

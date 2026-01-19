@@ -19,6 +19,36 @@ void console_putc(char c) {
             fb_scroll(FONT_HEIGHT, 0x000000);
             console_y -= FONT_HEIGHT;
         }
+    } else if (c == '\b') {
+        if (console_x >= FONT_WIDTH) {
+            console_x -= FONT_WIDTH;
+        } else if (console_y >= FONT_HEIGHT) {
+            console_y -= FONT_HEIGHT;
+            
+            // Scan the previous line to find the last character
+            int found_x = 0;
+            int found = 0;
+            int start_x = fb_get_width() - (fb_get_width() % FONT_WIDTH) - FONT_WIDTH;
+
+            for (int x = start_x; x >= 0; x -= FONT_WIDTH) {
+                for (int py = 0; py < FONT_HEIGHT; py++) {
+                    for (int px = 0; px < FONT_WIDTH; px++) {
+                        if (fb_get_pixel(x + px, console_y + py) != console_bg_color) {
+                            found_x = x + FONT_WIDTH;
+                            found = 1;
+                            goto scan_end;
+                        }
+                    }
+                }
+            }
+            scan_end:
+            console_x = found ? found_x : 0;
+        }
+        fb_draw_char(console_x, console_y, ' ', console_fg_color, console_bg_color);
+    } else if (c == '\t') {
+        for (int i = 0; i < 4; i++) {
+            console_putc(' ');
+        }
     } else {
         fb_draw_char(console_x, console_y, c, console_fg_color, console_bg_color);
         console_x += FONT_WIDTH;
