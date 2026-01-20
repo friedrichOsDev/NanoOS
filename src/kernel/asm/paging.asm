@@ -1,4 +1,4 @@
-[bits 32]
+[BITS 32]
 
 global load_page_directory
 global enable_paging
