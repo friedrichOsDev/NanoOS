@@ -1,26 +1,43 @@
-#include <gdt.h>
-#include <serial.h>
+/*
+ * @file gdt.c
+ * @brief Global Descriptor Table (GDT) implementation
+ * @author friedrichOsDev
+ */
 
+#include <gdt.h>
+
+/*
+ * External assembly function to load the GDT
+ * @param uint32_t Pointer to the GDT pointer structure
+ */
 extern void gdt_flush(uint32_t);
 
 struct gdt_entry gdt[3];
 struct gdt_ptr gp;
 
+/*
+ * A function to initialize the GDT
+ * @param void
+ */
 void gdt_init(void) {
     gp.limit = (sizeof(struct gdt_entry) * 3) - 1;
     gp.base = (uint32_t)&gdt;
 
     gdt_set_gate(0, 0, 0, 0, 0);
-    serial_puts("gdt_init: set null segment\n");
     gdt_set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF);
-    serial_puts("gdt_init: set code segment\n");
     gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF);
-    serial_puts("gdt_init: set data segment\n");
 
     gdt_flush((uint32_t)&gp);
-    serial_puts("gdt_init: flushed gdt\n");
 }
 
+/*
+ * A function to set a GDT entry
+ * @param num The entry number
+ * @param base The base address
+ * @param limit The limit
+ * @param access The access flags
+ * @param gran The granularity flags
+ */
 void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran) {
     gdt[num].base_low = (base & 0xFFFF);
     gdt[num].base_middle = (base >> 16) & 0xFF;

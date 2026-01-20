@@ -1,3 +1,9 @@
+/*
+ * @file keymap_de.c
+ * @brief German keymap for the keyboard driver
+ * @author friedrichOsDev
+ */
+
 #include <keyboard.h>
 
 static const key_t de_keys[] = {

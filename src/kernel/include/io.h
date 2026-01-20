@@ -1,3 +1,9 @@
+/*
+ * @file io.h
+ * @brief Header file for low-level I/O port operations
+ * @author friedrichOsDev
+ */
+
 #ifndef IO_H
 #define IO_H
 

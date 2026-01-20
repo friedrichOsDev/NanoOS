@@ -1,9 +1,19 @@
+/*
+ * @file kernel.h
+ * @brief Header file for kernel main source file
+ * @author friedrichOsDev
+ */
+
 #ifndef KERNEL_H
 #define KERNEL_H
 
 #include <stdint.h>
 #include <stddef.h>
 
+/*
+ * Memory map entry structure
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
 typedef struct {
     uint32_t base_addr_low;
     uint32_t base_addr_high;
@@ -13,12 +23,20 @@ typedef struct {
     uint32_t acpi;
 } __attribute__((packed)) mmap_entry_t;
 
+/*
+ * Memory map information structure
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
 typedef struct {
     uint16_t entry_count;
     uint8_t reserved[2];
     mmap_entry_t entries[];
 } __attribute__((packed)) mmap_info_t;
 
+/*
+ * Video block information structure
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
 typedef struct {
     char signature[4];
     uint16_t version;
@@ -34,6 +52,10 @@ typedef struct {
     uint8_t oem_data[256];
 } __attribute__((packed)) video_block_info_t;
 
+/*
+ * VBE Mode Information Block structure
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
 typedef struct {
     uint16_t attributes;
     uint8_t window_a;
@@ -70,6 +92,10 @@ typedef struct {
     uint8_t reserved1[206];
 } __attribute__((packed)) mode_info_block_t;
 
+/*
+ * VBE Screen Information structure
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
 typedef struct {
     uint16_t width;
     uint16_t height;
@@ -85,5 +111,7 @@ typedef struct {
 #define video_info  ((video_block_info_t*)0x9000)
 #define mode_info   ((mode_info_block_t*)(0x9000 + sizeof(video_block_info_t)))
 #define screen_info ((vbe_screen_info_t*)(0x9000 + sizeof(video_block_info_t) + sizeof(mode_info_block_t)))
+
+void kernel_main(void);
 
 #endif // KERNEL_H

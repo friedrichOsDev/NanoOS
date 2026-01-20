@@ -1,3 +1,9 @@
+/*
+ * @file log.h
+ * @brief Header file for logging functions implementation
+ * @author friedrichOsDev
+ */
+
 #ifndef LOG_H
 #define LOG_H
 

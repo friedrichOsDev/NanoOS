@@ -1,3 +1,9 @@
+/*
+ * @file string.h
+ * @brief Header file for string manipulation functions
+ * @author friedrichOsDev
+ */
+
 #ifndef STRING_H
 #define STRING_H
 

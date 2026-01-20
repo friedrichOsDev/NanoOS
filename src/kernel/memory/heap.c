@@ -1,53 +1,57 @@
+/*
+ * @file heap.c
+ * @brief Heap memory allocator implementation
+ * @author friedrichOsDev
+ */
+
 #include <heap.h>
 #include <string.h>
 #include <kernel.h>
 #include <serial.h>
 
-#define MIN_ALLOC_SIZE (sizeof(heap_block_t))
-#define HEAP_ALIGNMENT 16
-#define HEAP_PAGE_SIZE 4096
-
 static heap_block_t* free_list_head = NULL;
 static void* heap_start = NULL;
 static size_t heap_total_size = 0;
 
+/*
+ * External symbol defined in the linker script indicating the end of the kernel binary
+ */
 extern char end[]; 
 
-// function to align a size
-static size_t align_size(size_t size) {
+/*
+ * Aligns the given size up to the nearest multiple of HEAP_ALIGNMENT
+ * @param size The size to align
+ */
+static inline size_t align_size(size_t size) {
     return (size + HEAP_ALIGNMENT - 1) & ~(HEAP_ALIGNMENT - 1);
 }
 
-void heap_init() {
-    // find the largest available memory region for the heap
+/*
+ * A function to initialize the heap by finding a suitable memory region
+ * @param void
+ */
+void heap_init(void) {
     uint32_t largest_region_base = 0;
     uint32_t largest_region_length = 0;
     
     uint32_t kernel_end = (uint32_t)end;
-    // Align kernel_end to next page boundary to be safe
 
     kernel_end = (kernel_end + (HEAP_PAGE_SIZE - 1)) & ~(HEAP_PAGE_SIZE - 1);
-
-    serial_puts("heap_init: kernel ends at 0x");
-    serial_put_hex(kernel_end);
-    serial_puts("\n");
 
     for (int i = 0; i < mmap_info->entry_count; i++) {
         mmap_entry_t* entry = &mmap_info->entries[i];
 
-        if (entry->type == 1) { // type 1 = available RAM
-            if (entry->base_addr_high == 0 && entry->length_high == 0) { // high bits must be 0 for 32-bit address space
+        if (entry->type == 1) { 
+            if (entry->base_addr_high == 0 && entry->length_high == 0) { 
                 uint32_t base = entry->base_addr_low;
                 uint32_t length = entry->length_low;
 
-                // If the region overlaps with the kernel, adjust the base to start after the kernel
                 if (base < kernel_end && (base + length) > kernel_end) {
                     uint32_t overlap = kernel_end - base;
                     base += overlap;
                     length -= overlap;
                 }
 
-                // ensure the memory region starts at or above 1MB to avoid low memory areas
                 if (base >= 0x100000 && length > largest_region_length) {
                     largest_region_base = base;
                     largest_region_length = length;
@@ -63,13 +67,17 @@ void heap_init() {
     }
 }
 
+/*
+ * Sets up the heap memory region
+ * @param start_addr The starting address of the heap region
+ * @param size The size of the heap region
+ */
 void heap_setup(void* start_addr, size_t size) {
     if (!start_addr || size < MIN_ALLOC_SIZE) {
         serial_puts("heap_setup: invalid start address or size.\n");
         return;
     }
 
-    // align the start address
     size_t start_val = (size_t)start_addr;
     heap_start = (void*)((start_val + HEAP_PAGE_SIZE - 1) & ~(HEAP_PAGE_SIZE - 1));
 
@@ -80,7 +88,7 @@ void heap_setup(void* start_addr, size_t size) {
     }
 
     heap_total_size = size - aligned_start_diff;
-    heap_total_size = heap_total_size & ~ (HEAP_ALIGNMENT - 1); // ensure total size is aligned
+    heap_total_size = heap_total_size & ~ (HEAP_ALIGNMENT - 1);
 
     if (heap_total_size < MIN_ALLOC_SIZE) {
         serial_puts("heap_setup: total size too small after alignment.\n");
@@ -101,6 +109,11 @@ void heap_setup(void* start_addr, size_t size) {
     serial_puts(" KB)\n");
 }
 
+/*
+ * Allocates a block of memory of the given size
+ * @param size The size of memory to allocate
+ * @return Pointer to the allocated memory or NULL if allocation fails
+ */
 void* kmalloc(size_t size) {
     if (size == 0) {
         return NULL;
@@ -124,7 +137,6 @@ void* kmalloc(size_t size) {
 
             // check if we need to split the block
             if (current_block->size - total_required_size >= MIN_ALLOC_SIZE) {
-                // split the block
                 heap_block_t* new_free_block = (heap_block_t*)((char*)current_block + total_required_size);
                 new_free_block->size = current_block->size - total_required_size;
                 new_free_block->next = current_block->next;
@@ -147,7 +159,6 @@ void* kmalloc(size_t size) {
             }
             current_block->magic = HEAP_ALLOC_MAGIC;
 
-            // return pointer to data area
             return (void*)((char*)current_block + sizeof(heap_block_t));
         }
 
@@ -159,9 +170,14 @@ void* kmalloc(size_t size) {
     serial_put_int((int)size);
     serial_puts(" bytes.\n");
     
-    return NULL; // no block found
+    return NULL;
 }
 
+/*
+ * Allocates a block of memory of the given size and initializes it to zero
+ * @param size The size of memory to allocate
+ * @return Pointer to the allocated memory or NULL if allocation fails
+ */
 void* kzalloc(size_t size) {
     void* ptr = kmalloc(size);
     if (ptr) {
@@ -170,6 +186,12 @@ void* kzalloc(size_t size) {
     return ptr;
 }
 
+/*
+ * Allocates a block of memory of the given size with the specified alignment
+ * @param size The size of memory to allocate
+ * @param alignment The required alignment for the memory block
+ * @return Pointer to the allocated memory or NULL if allocation fails
+ */
 void* kmalloc_aligned(size_t size, size_t alignment) {
     if (size == 0) return NULL;
     if ((alignment & (alignment - 1)) != 0) return NULL; // Alignment must be power of 2
@@ -197,7 +219,6 @@ void* kmalloc_aligned(size_t size, size_t alignment) {
         size_t required_block_start = aligned_data_addr - sizeof(heap_block_t);
         size_t gap = required_block_start - current_addr;
 
-        // If gap is too small to be a block, try next alignment
         if (gap > 0 && gap < MIN_ALLOC_SIZE) {
              aligned_data_addr += alignment;
              required_block_start = aligned_data_addr - sizeof(heap_block_t);
@@ -205,9 +226,6 @@ void* kmalloc_aligned(size_t size, size_t alignment) {
         }
 
         if (gap + actual_size <= current->size) {
-            // Found fit
-            
-            // 1. Handle gap (split previous part)
             if (gap > 0) {
                 heap_block_t* new_free = (heap_block_t*)((char*)current + gap);
                 new_free->size = current->size - gap;
@@ -221,8 +239,6 @@ void* kmalloc_aligned(size_t size, size_t alignment) {
                 current = new_free;
             }
             
-            // 2. Allocate from current (which is now aligned)
-            // Check if we need to split the rest
             if (current->size - actual_size >= MIN_ALLOC_SIZE) {
                 heap_block_t* new_free = (heap_block_t*)((char*)current + actual_size);
                 new_free->size = current->size - actual_size;
@@ -247,6 +263,12 @@ void* kmalloc_aligned(size_t size, size_t alignment) {
     return NULL;
 }
 
+/*
+ * Allocates a block of memory of the given size with the specified alignment and initializes it to zero
+ * @param size The size of memory to allocate
+ * @param alignment The required alignment for the memory block
+ * @return Pointer to the allocated memory or NULL if allocation fails
+ */
 void* kzalloc_aligned(size_t size, size_t alignment) {
     void* ptr = kmalloc_aligned(size, alignment);
     if (ptr) {
@@ -255,12 +277,15 @@ void* kzalloc_aligned(size_t size, size_t alignment) {
     return ptr;
 }
 
+/*
+ * Frees a previously allocated block of memory
+ * @param ptr Pointer to the memory block to free
+ */
 void kfree(void* ptr) {
     if (!ptr) {
         return;
     }
 
-    // get the block header from the user pointer
     heap_block_t* block_to_free = (heap_block_t*)((char*)ptr - sizeof(heap_block_t));
 
     // integrity check: verify the magic number
@@ -282,10 +307,8 @@ void kfree(void* ptr) {
         current = current->next;
     }
 
-    // mark the block as free
     block_to_free->magic = HEAP_FREE_MAGIC;
 
-    // insert the freed block into the list
     if (prev == NULL) {
         free_list_head = block_to_free;
     } else {
@@ -293,15 +316,12 @@ void kfree(void* ptr) {
     }
     block_to_free->next = current;
 
-    // --- Coalescing ---
-
-    // 1. Coalesce with the *next* block if it's adjacent and free
+    // coalescing
     if (current != NULL && current->magic == HEAP_FREE_MAGIC && (char*)block_to_free + block_to_free->size == (char*)current) {
         block_to_free->size += current->size;
         block_to_free->next = current->next;
     }
 
-    // 2. Coalesce with the *previous* block if it's adjacent and free
     if (prev != NULL && prev->magic == HEAP_FREE_MAGIC && (char*)prev + prev->size == (char*)block_to_free) {
         prev->size += block_to_free->size;
         prev->next = block_to_free->next;

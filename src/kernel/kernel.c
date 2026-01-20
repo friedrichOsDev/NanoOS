@@ -1,3 +1,9 @@
+/*
+ * @file kernel.c
+ * @brief Kernel main source file
+ * @author friedrichOsDev
+ */
+
 #include <kernel.h>
 #include <console.h>
 #include <print.h>
@@ -16,16 +22,23 @@
 #include <keyboard.h>
 #include <shell.h>
 
-void kernel_main();
-
-// entry point of the kernel
-void __attribute__((section(".text.entry"))) _start() {
+/*
+ * Kernel entry point
+ * @param void
+ * @note This function is linked to the .text.entry section (aka start of the kernel binary)
+ */
+void __attribute__((section(".text.entry"))) _start(void) {
     kernel_main();
     while(1);
 }
 
-void kernel_main() {
+/*
+ * Kernel main function
+ * @param void
+ */
+void kernel_main(void) {
     serial_init();
+    serial_puts("serial_init: done\n");
 
     gdt_init();
     serial_puts("gdt_init: done\n");

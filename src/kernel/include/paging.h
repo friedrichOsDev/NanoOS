@@ -1,3 +1,9 @@
+/*
+ * @file paging.h
+ * @brief Header file for paging implementation
+ * @author friedrichOsDev
+ */
+
 #ifndef PAGING_H
 #define PAGING_H
 
@@ -16,6 +22,6 @@
 #define PAGING_IS_WRITABLE     0b00000010
 #define PAGING_IS_PRESENT      0b00000001
 
-void paging_init();
+void paging_init(void);
 
 #endif // PAGING_H

@@ -1,3 +1,9 @@
+/*
+ * @file timer.h
+ * @brief Header file for timer driver implementation
+ * @author friedrichOsDev
+ */
+
 #ifndef TIMER_H
 #define TIMER_H
 

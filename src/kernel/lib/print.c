@@ -1,8 +1,18 @@
+/*
+ * @file print.c
+ * @brief printf implementation
+ * @author friedrichOsDev
+ */
+
 #include <print.h>
 #include <console.h>
 #include <fb.h>
 
-void print_int(int value) {
+/*
+ * Helper function to print an integer in decimal format
+ * @param value The integer value to print
+ */
+static void print_int(int value) {
     char buffer[12];
     int i = 0;
     unsigned int uvalue = value;
@@ -27,13 +37,16 @@ void print_int(int value) {
         buffer[i++] = '-';
     }
 
-    // reverse the string
     for (int j = i - 1; j >= 0; j--) {
         console_putc(buffer[j]);
     }
 }
 
-void print_hex(unsigned int value) {
+/*
+ * Helper function to print an unsigned integer in hexadecimal format
+ * @param value The unsigned integer value to print
+ */
+static void print_hex(unsigned int value) {
     char hex_str[8];
     int i;
 
@@ -52,6 +65,11 @@ void print_hex(unsigned int value) {
     }
 }
 
+/*
+ * Variadic printf function to handle formatted output
+ * @param format The format string
+ * @param args The va_list of arguments
+ */
 void vprintf(const char* format, va_list args) {
     while (*format != '\0') {
         if (*format == '%') {
@@ -103,6 +121,11 @@ void vprintf(const char* format, va_list args) {
     }
 }
 
+/*
+ * Printf function to print formatted output to the console
+ * @param format The format string
+ * @param ... The arguments to format
+ */
 void printf(const char* format, ...) {
     va_list args;
     va_start(args, format);

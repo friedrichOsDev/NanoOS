@@ -1,16 +1,50 @@
-#include <console.h>
+/*
+ * @file console.c
+ * @brief Console driver implementation
+ * @author friedrichOsDev
+ */
 
+#include <console.h>
+#include <fb.h>
+#include <kernel.h>
+#include <font.h>
+
+/*
+ * Current cursor x position
+ * @note x value is in pixels
+ */
 static uint32_t console_x;
+
+/*
+ * Current cursor y position
+ * @note y value is in pixels
+ */
 static uint32_t console_y;
+
+/*
+ * Current foreground color
+ */
 static uint32_t console_fg_color;
+
+/*
+ * Current background color
+ */
 static uint32_t console_bg_color;
 
-void console_init() {
+/*
+ * A function to initialize the console
+ * @param void
+ */
+void console_init(void) {
     fb_init();
     console_clear();
     console_set_color(0xFFFFFF, 0x000000);
 }
 
+/*
+ * Output a character to the console
+ * @param c The character to output
+ */
 void console_putc(char c) {
     if (c == '\n') {
         console_x = 0;
@@ -25,7 +59,6 @@ void console_putc(char c) {
         } else if (console_y >= FONT_HEIGHT) {
             console_y -= FONT_HEIGHT;
             
-            // Scan the previous line to find the last character
             int found_x = 0;
             int found = 0;
             int start_x = fb_get_width();
@@ -65,34 +98,65 @@ void console_putc(char c) {
     }
 }
 
+/*
+ * Output a string to the console
+ * @param str The string to output
+ */
 void console_puts(const char* str) {
     while (*str) {
         console_putc(*str++);
     }
 }
 
+/*
+ * Set the console colors
+ * @param fg_color The foreground color
+ * @param bg_color The background color
+ */
 void console_set_color(uint32_t fg_color, uint32_t bg_color) {
     console_fg_color = fg_color;
     console_bg_color = bg_color;
 }
 
+/*
+ * Set the foreground color
+ * @param fg_color The foreground color
+ */
 void console_set_fg_color(uint32_t fg_color) {
     console_fg_color = fg_color;
 }
 
-uint32_t console_get_fg_color() {
-    return console_fg_color;
-}
-
+/*
+ * Set the background color
+ * @param bg_color The background color
+ */
 void console_set_bg_color(uint32_t bg_color) {
     console_bg_color = bg_color;
 }
 
-uint32_t console_get_bg_color() {
+/*
+ * Get the foreground color
+ * @param void
+ * @return The foreground color
+ */
+uint32_t console_get_fg_color(void) {
+    return console_fg_color;
+}
+
+/*
+ * Get the background color
+ * @param void
+ * @return The background color
+ */
+uint32_t console_get_bg_color(void) {
     return console_bg_color;
 }
 
-void console_clear() {
+/*
+ * Clear the console
+ * @param void
+ */
+void console_clear(void) {
     fb_clear(0x000000);
     console_x = 0;
     console_y = 0;

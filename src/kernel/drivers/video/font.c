@@ -1,3 +1,10 @@
+/*
+ * @file font.c
+ * @brief 8x8 monochrome bitmap fonts
+ * @author Daniel Hepper <daniel@hepper.net>
+ * @note GitHub: https://github.com/dhepper/font8x8/
+ */
+
 #include <font.h>
 
 uint8_t font8x8_basic[128][8] = {

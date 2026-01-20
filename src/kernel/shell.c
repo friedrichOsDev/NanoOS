@@ -1,3 +1,9 @@
+/*
+ * @file shell.c
+ * @brief Kernel shell application
+ * @author friedrichOsDev
+ */
+
 #include <shell.h>
 #include <console.h>
 #include <serial.h>
@@ -8,24 +14,36 @@ char command_buffer[MAX_COMMAND_LENGTH];
 size_t command_buffer_pos = 0;
 command_list_t commands;
 
+/*
+ * Clear command implementation
+ * @param argc: Number of arguments
+ * @param argv: Array of argument strings
+ */
 void shell_command_clear(int argc, char** argv) {
     (void)argc;
     (void)argv;
-    serial_puts("Executing clear command\n");
     console_clear();
 }
 
+/*
+ * Version command implementation
+ * @param argc: Number of arguments
+ * @param argv: Array of argument strings
+ */
 void shell_command_version(int argc, char** argv) {
     (void)argc;
     (void)argv;
-    serial_puts("Executing version command\n");
     console_puts("Kernel Version 1.0.0\n");
 }
 
+/*
+ * Reboot command implementation
+ * @param argc: Number of arguments
+ * @param argv: Array of argument strings
+ */
 void shell_command_reboot(int argc, char** argv) {
     (void)argc;
     (void)argv;
-    serial_puts("Executing reboot command\n");
     console_puts("Rebooting system...\n");
     
     // for now a Triple fault will cause a reboot
@@ -33,16 +51,19 @@ void shell_command_reboot(int argc, char** argv) {
     __asm__ __volatile__ ("lidt %0" : : "m"(empty_idt));
 }
 
+/*
+ * A function to initialize the shell
+ * @param void
+ */
 void shell_init(void) {
     console_clear();
-    console_puts("> ");
+    console_puts(SHELL_PROMPT);
 
     commands.command_count = 0;
     command_buffer_pos = 0;
     command_buffer[0] = '\0';
     serial_puts("shell_init: initialized command buffer\n");
 
-    // Register default commands
     shell_command_t clear_command = {
         .name = "clear",
         .handler = shell_command_clear,
@@ -63,14 +84,15 @@ void shell_init(void) {
         .description = "Reboots the system"
     };
     shell_register_command(&reboot_command);
-
-    serial_puts("shell_init: registered default commands\n");
 }
 
+/*
+ * Handle a complete command
+ * @param command: The command string to handle
+ */
 void shell_handle_command(const char* command) {
     if (command == NULL || command[0] == '\0') return;
     
-    // split command into args
     char* argv[MAX_ARGUMENTS];
     int argc = 0;
 
@@ -106,6 +128,10 @@ void shell_handle_command(const char* command) {
     console_putc('\n');
 }
 
+/*
+ * Register a new command
+ * @param command: Pointer to the command structure of the command to register
+ */
 void shell_register_command(const shell_command_t *command) {
     if (!command) return;
 
@@ -122,9 +148,12 @@ void shell_register_command(const shell_command_t *command) {
     commands.commands[commands.command_count].handler = command->handler;
     commands.commands[commands.command_count].description = command->description;
     commands.command_count++;
-    serial_puts("Shell: Command registered successfully\n");
 }
 
+/*
+ * Handle input character for the shell
+ * @param c: The input character
+ */
 void shell_handle_input(char c) {
     if (c != (char)0) {
         if (c == '\b') {
@@ -141,11 +170,10 @@ void shell_handle_input(char c) {
 
             shell_handle_command(command_buffer);
 
-            // reset command buffer
             command_buffer_pos = 0;
             command_buffer[0] = '\0';
 
-            console_puts("> ");
+            console_puts(SHELL_PROMPT);
             return;
         }
 
@@ -156,6 +184,5 @@ void shell_handle_input(char c) {
             console_putc(c);
             return;
         }
-    }
-    
+    }   
 }

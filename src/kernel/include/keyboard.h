@@ -1,3 +1,9 @@
+/*
+ * @file keyboard.h
+ * @brief Header file for keyboard driver implementation
+ * @author friedrichOsDev
+ */
+
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
@@ -7,14 +13,20 @@
 
 #define KEYBOARD_BUFFER_SIZE 256
 
-// keyboard buffer
+/*
+ * Keyboard buffer structure
+ * @note The keyboard buffer is a circular buffer
+ */
 typedef struct {
     char buffer[KEYBOARD_BUFFER_SIZE];
     uint8_t head;
     uint8_t tail;
 } keyboard_buffer_t;
 
-// keyboard global states
+/*
+ * Keyboard state structure
+ * @note Keeps track of modifier keys and locks
+ */
 typedef struct {
     bool shift;
     bool ctrl;
@@ -25,21 +37,30 @@ typedef struct {
     uint8_t last_prefix;
 } keyboard_state_t;
 
-// normal key (a, b, ...)
+/*
+ * Key structure
+ * @note Represents a standard key with normal and shifted ASCII values
+ */
 typedef struct {
     uint8_t scancode;
     char ascii_normal;
     char ascii_shift;
 } key_t;
 
-// action key (SHIFT, CAPSLOCK, ...)
+/*
+ * Action key structure
+ * @note Represents a key that performs an action (e.g., Enter, Shift)
+ */
 typedef struct {
     uint8_t scancode;
     void (*action_make)(void);
     void (*action_break)(void);
 } action_key_t;
 
-// extended scancode key (UP, DOWN, WIN, ...)
+/*
+ * Extended key structure
+ * @note Represents a key with a prefix (e.g., 0xE0)
+ */
 typedef struct {
     uint8_t prefix;
     uint8_t scancode;
@@ -47,7 +68,10 @@ typedef struct {
     void (*action_break)(void);
 } extended_key_t;
 
-// map of all keys
+/*
+ * Keymap structure
+ * @note Contains arrays of standard keys, action keys, and extended keys for a specific language
+ */
 typedef struct {
     const char* language;
     const key_t* keys;
@@ -58,11 +82,10 @@ typedef struct {
     uint16_t extended_keys_count;
 } keymap_t;
 
-// map of all languages
-// languages i want to support
-// us international
-// de german (DONE)
-// en english
+/*
+ * Keyboard structure
+ * @note Contains all keymaps, keyboard state, and the active keymap
+ */
 typedef struct {
     const keymap_t* const* keymaps;
     uint16_t keymaps_count;
@@ -72,12 +95,13 @@ typedef struct {
     const keymap_t* active_keymap;
 } keyboard_t;
 
+/*
+ * TODO: Add support for more keymaps (US, EN)
+ */
+
 extern const keymap_t keymap_de;
-// extern const keymap_t keymap_us;
-// extern const keymap_t keymap_en;
 extern keyboard_t keyboard;
 
-// action key handlers
 void esc_make(void);
 void esc_break(void);
 void oem_4_make(void);
@@ -172,14 +196,12 @@ void num_delete_make(void);
 void num_delete_break(void);
 void snapshot_make(void);
 void snapshot_break(void);
-// 0x55 doesn't exists
 void oem_102_make(void);
 void oem_102_break(void);
 void f11_make(void);
 void f11_break(void);
 void f12_make(void);
 void f12_break(void);
-// 0xE0 prefix
 void num_enter_make(void);
 void num_enter_break(void);
 void rctrl_make(void);
@@ -214,15 +236,11 @@ void rwin_make(void);
 void rwin_break(void);
 void apps_make(void);
 void apps_break(void);
-// 0xE1 prefix
 void pause_make(void);
 void pause_break(void);
 
-// keyboard handlers
 void scancode_handler(uint8_t scancode);
 void keyboard_callback(uint32_t irq);
-
-// keyboard init
 void keyboard_init(const char* language);
 char keyboard_getchar(void);
 
