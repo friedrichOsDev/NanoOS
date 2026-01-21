@@ -8,6 +8,10 @@
 #include <io.h>
 
 /*
+ * TODO: Replace the 0x... magic numbers with defined constants
+ */
+
+/*
  * A function to remap the PICs to avoid conflicts with CPU exceptions
  * @param void
  */

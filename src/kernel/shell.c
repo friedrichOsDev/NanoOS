@@ -9,6 +9,8 @@
 #include <serial.h>
 #include <string.h>
 #include <heap.h>
+#include <rtc.h>
+#include <print.h>
 
 char command_buffer[MAX_COMMAND_LENGTH];
 size_t command_buffer_pos = 0;
@@ -52,6 +54,18 @@ void shell_command_reboot(int argc, char** argv) {
 }
 
 /*
+ * Time command implementation
+ * @param argc: Number of arguments
+ * @param argv: Array of argument strings
+ */
+void shell_command_time(int argc, char** argv) {
+    (void)argc;
+    (void)argv;
+    rtc_time_t time = rtc_get_time();
+    printf("%d:%d:%d %d.%d.%d\n", time.hours, time.minutes, time.seconds, time.day, time.month, time.year);
+}
+
+/*
  * A function to initialize the shell
  * @param void
  */
@@ -84,6 +98,13 @@ void shell_init(void) {
         .description = "Reboots the system"
     };
     shell_register_command(&reboot_command);
+
+    shell_command_t time_command = {
+        .name = "time",
+        .handler = shell_command_time,
+        .description = "Displays the current RTC time"
+    };
+    shell_register_command(&time_command);
 }
 
 /*

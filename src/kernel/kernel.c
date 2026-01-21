@@ -21,6 +21,7 @@
 #include <paging.h>
 #include <keyboard.h>
 #include <shell.h>
+#include <rtc.h>
 
 /*
  * Kernel entry point
@@ -67,6 +68,9 @@ void kernel_main(void) {
     keyboard_init("de");
     serial_puts("keyboard_init: done\n");
 
+    rtc_init();
+    serial_puts("rtc_init: done\n");
+
     shell_init();
     serial_puts("shell_init: done\n");
 
@@ -78,6 +82,7 @@ void kernel_main(void) {
         if (tick != old_tick) {
             old_tick = tick;
             // this block runs every tick (about 60 times per second)
+            rtc_update_time();
             shell_handle_input(keyboard_getchar());
             fb_swap_buffers();
         }
