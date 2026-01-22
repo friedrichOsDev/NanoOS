@@ -11,6 +11,8 @@
 #include <heap.h>
 #include <rtc.h>
 #include <print.h>
+#include <acpi.h>
+#include <kernel.h>
 
 char command_buffer[MAX_COMMAND_LENGTH];
 size_t command_buffer_pos = 0;
@@ -66,6 +68,57 @@ void shell_command_time(int argc, char** argv) {
 }
 
 /*
+ * Get RSDP Info command implementation
+ * @param argc: Number of arguments
+ * @param argv: Array of argument strings
+ */
+void shell_command_rsdpinfo(int argc, char** argv) {
+    (void)argc;
+    (void)argv;
+    rsdp_t* rsdp = acpi_get_rsdp();
+    if (rsdp == NULL) {
+        console_puts("RSDP not found.\n");
+        return;
+    }
+
+    // null terminate signature and oemid for safe printing
+    char signature[9];
+    memcpy(signature, rsdp->signature, 8);
+    signature[8] = '\0';
+    char oemid[7];
+    memcpy(oemid, rsdp->oemid, 6);
+    oemid[6] = '\0';
+
+    printf("RSDP Address: 0x%x\n", (uint32_t)rsdp);
+    printf("RSDP Signature: %s\n", signature);
+    printf("RSDP Checksum: 0x%x\n", rsdp->checksum);
+    printf("RSDP OEM ID: %s\n", oemid);
+    printf("RSDP Revision: %d\n", rsdp->revision);
+    printf("RSDP RSDT Address: 0x%x\n", rsdp->rsdt_address);
+
+    if (rsdp->revision >= 2) {
+        printf("RSDP Length: %d\n", rsdp->length);
+        printf("RSDP XSDT Address: 0x%x\n", (uint32_t)rsdp->xsdt_address);
+        printf("RSDP Extended Checksum: 0x%x\n", rsdp->extended_checksum);
+    }
+}
+
+/*
+ * Get MMAP Info command implementation
+ * @param argc: Number of arguments
+ * @param argv: Array of argument strings
+ */
+void shell_command_mmapinfo(int argc, char** argv) {
+    (void)argc;
+    (void)argv;
+    printf("Memory Map:\n");
+    for (size_t i = 0; i < mmap_info->entry_count; i++) {
+        mmap_entry_t* entry = &mmap_info->entries[i];
+        printf("Base: 0x%x%x, Length: 0x%x%x, Type: %d\n", entry->base_addr_high, entry->base_addr_low, entry->length_high, entry->length_low, entry->type);
+    }
+}
+
+/*
  * A function to initialize the shell
  * @param void
  */
@@ -105,6 +158,20 @@ void shell_init(void) {
         .description = "Displays the current RTC time"
     };
     shell_register_command(&time_command);
+
+    shell_command_t rsdpinfo_command = {
+        .name = "rsdpinfo",
+        .handler = shell_command_rsdpinfo,
+        .description = "Displays ACPI RSDP information"
+    };
+    shell_register_command(&rsdpinfo_command);
+
+    shell_command_t mmapinfo_command = {
+        .name = "mmapinfo",
+        .handler = shell_command_mmapinfo,
+        .description = "Displays memory map information"
+    };
+    shell_register_command(&mmapinfo_command);
 }
 
 /*

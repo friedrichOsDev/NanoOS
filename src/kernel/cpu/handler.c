@@ -7,6 +7,7 @@
 #include <handler.h>
 #include <io.h>
 #include <log.h>
+#include <fb.h>
 
 static irq_handler_t irq_routines[16];
 static isr_handler_t exception_handlers[32];
@@ -59,5 +60,6 @@ void isr_handler(uint32_t int_no) {
     }
     
     log_cpu_exception(int_no, "CPU Exception occurred.");
+    fb_swap_buffers();
     while(1);
 }

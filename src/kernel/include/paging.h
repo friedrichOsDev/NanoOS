@@ -22,6 +22,8 @@
 #define PAGING_IS_WRITABLE     0b00000010
 #define PAGING_IS_PRESENT      0b00000001
 
+void paging_map(uint32_t* directory, void* virtual_address, uint32_t value);
+uint32_t* paging_get_current_directory(void);
 void paging_init(void);
 
 #endif // PAGING_H

@@ -31,7 +31,7 @@ static uint32_t* current_directory = 0;
  * @param flags The flags to apply to the page directory and tables
  * @return A pointer to the new page directory
  */
-uint32_t* paging_new_directory(uint8_t flags) {
+static uint32_t* paging_new_directory(uint8_t flags) {
     uint32_t* directory = kzalloc_aligned(sizeof(uint32_t) * PAGING_TOTAL_ENTRIES_PER_TABLE, PAGING_PAGE_SIZE);
     uint32_t offset = 0;
 
@@ -50,7 +50,7 @@ uint32_t* paging_new_directory(uint8_t flags) {
  * Switch to a new page directory
  * @param directory A pointer to the new page directory
  */
-void paging_switch(uint32_t* directory) {
+static void paging_switch(uint32_t* directory) {
     load_page_directory(directory);
     current_directory = directory;
 }
@@ -71,7 +71,7 @@ static inline bool paging_is_aligned(void* address) {
  * @param table_index_out A pointer to store the table index
  * @return 0 on success, -1 on failure
  */
-int paging_get_indexes(void* virtual_address, uint32_t* directory_index_out, uint32_t* table_index_out) {
+static int paging_get_indexes(void* virtual_address, uint32_t* directory_index_out, uint32_t* table_index_out) {
     if (!paging_is_aligned(virtual_address)) return -1;
 
     *directory_index_out = (uint32_t)virtual_address / (PAGING_TOTAL_ENTRIES_PER_TABLE * PAGING_PAGE_SIZE);
@@ -86,7 +86,7 @@ int paging_get_indexes(void* virtual_address, uint32_t* directory_index_out, uin
  * @param virtual_address The virtual address to map
  * @param value The physical address and flags to map to
  */
-void paging_set(uint32_t* directory, void* virtual_address, uint32_t value) {
+void paging_map(uint32_t* directory, void* virtual_address, uint32_t value) {
     uint32_t directory_index = 0;
     uint32_t table_index = 0;
 
@@ -95,6 +95,8 @@ void paging_set(uint32_t* directory, void* virtual_address, uint32_t value) {
     uint32_t entry = directory[directory_index];
     uint32_t* table = (uint32_t*)(entry & PAGE_DIRECTORY_MASK);
     table[table_index] = value;
+
+    paging_switch(directory);
     
     serial_puts("paging_set: mapped virtual address ");
     serial_put_hex((uint32_t)virtual_address);
@@ -107,11 +109,20 @@ void paging_set(uint32_t* directory, void* virtual_address, uint32_t value) {
  * Page fault handler
  * @param error_code The error code of the page fault
  */
-void page_fault_handler(uint32_t error_code) {
+static void page_fault_handler(uint32_t error_code) {
     serial_puts("page_fault_handler: Page fault occurred with error code: ");
     serial_put_int(error_code);
     serial_puts("\n");
     while (1); 
+}
+
+/*
+ * A function to get the current page directory
+ * @param void
+ * @return A pointer to the current page directory
+ */
+uint32_t* paging_get_current_directory(void) {
+    return current_directory;
 }
 
 /*

@@ -22,6 +22,7 @@
 #include <keyboard.h>
 #include <shell.h>
 #include <rtc.h>
+#include <acpi.h>
 
 /*
  * Kernel entry point
@@ -61,6 +62,9 @@ void kernel_main(void) {
 
     console_init();
     serial_puts("console_init: done\n");
+
+    acpi_init();
+    serial_puts("acpi_init: done\n");
 
     timer_init(60);
     serial_puts("timer_init: done\n");
