@@ -11,6 +11,7 @@
 #include <stdbool.h>
 
 #define RSDP_SIGNATURE "RSD PTR "
+#define FADT_SIGNATURE "FACP"
 
 /*
  * Structure representing the RSDP (Root System Description Pointer)
@@ -45,6 +46,18 @@ typedef struct {
 } __attribute__((packed)) acpi_sdt_header_t;
 
 /*
+ * Structure representing the GAS (Generic Address Structure)
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
+typedef struct {
+    uint8_t address_space_id;
+    uint8_t register_bit_width;
+    uint8_t register_bit_offset;
+    uint8_t access_size;
+    uint64_t address;
+} __attribute__((packed)) gas_t;
+
+/*
  * Structure representing the RSDT (Root System Description Table)
  * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
  */
@@ -53,8 +66,76 @@ typedef struct {
     uint32_t pointer_to_other_sdt[];
 } __attribute__((packed)) rsdt_t;
 
+/*
+ * Structure representing the XSDT (Extended System Description Table)
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
+typedef struct {
+    acpi_sdt_header_t header;
+    uint64_t pointer_to_other_sdt[];
+} __attribute__((packed)) xsdt_t;
+
+/*
+ * Structure representing the FADT (Fixed ACPI Description Table)
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
+typedef struct {
+    acpi_sdt_header_t header;
+    uint32_t firmware_ctrl;
+    uint32_t dsdt;
+    uint8_t  reserved;
+    uint8_t  preferred_power_management_profile;
+    uint16_t SCI_interrupt;
+    uint32_t SMI_command_port;
+    uint8_t  acpi_enable;
+    uint8_t  acpi_disable;
+    uint8_t  s4bios_req;
+    uint8_t  pstate_control;
+    uint32_t PM1a_event_block;
+    uint32_t PM1b_event_block;
+    uint32_t PM1a_control_block;
+    uint32_t PM1b_control_block;
+    uint32_t PM2_control_block;
+    uint32_t PM_timer_block;
+    uint32_t GPE0_block;
+    uint32_t GPE1_block;
+    uint8_t  PM1_event_length;
+    uint8_t  PM1_control_length;
+    uint8_t  PM2_control_length;
+    uint8_t  GPE0_length;
+    uint8_t  GPE1_length;
+    uint8_t  GPE1_base;
+    uint8_t  c_state_register;
+    uint16_t worst_case_c2_latency;
+    uint16_t worst_case_c3_latency;
+    uint16_t flush_size;
+    uint16_t flush_stride;
+    uint8_t  duty_offset;
+    uint8_t  duty_width;
+    uint8_t  day_alarm;
+    uint8_t  month_alarm;
+    uint8_t  century;
+    uint16_t boot_architecture_flags;
+    uint8_t  reserved2;
+    uint32_t flags;
+    gas_t reset_register;
+    uint8_t reset_command;
+    uint8_t reserved3[3];
+    uint64_t X_firmware_control;
+    uint64_t X_dsdt;
+    gas_t X_PM1a_event_block;
+    gas_t X_PM1b_event_block;
+    gas_t X_PM1a_control_block;
+    gas_t X_PM1b_control_block;
+    gas_t X_PM2_control_block;
+    gas_t X_PM_timer_block;
+    gas_t X_GPE0_block;
+    gas_t X_GPE1_block;
+} __attribute__((packed)) fadt_t;
+
 void acpi_init(void);
 rsdp_t* acpi_get_rsdp(void);
 rsdt_t* acpi_get_rsdt(void);
+fadt_t* acpi_get_fadt(void);
 
 #endif // ACPI_H

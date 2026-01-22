@@ -152,6 +152,88 @@ void shell_command_rsdtinfo(int argc, char** argv) {
 }
 
 /*
+ * Get FADT Info command implementation
+ * @param argc: Number of arguments
+ * @param argv: Array of argument strings
+ */
+void shell_command_fadtinfo(int argc, char** argv) {
+    (void)argc;
+    (void)argv;
+    fadt_t* fadt = acpi_get_fadt();
+    if (fadt == NULL) {
+        console_puts("FADT not found.\n");
+        return;
+    }
+
+    char signature[5];
+    memcpy(signature, fadt->header.signature, 4);
+    signature[4] = '\0';
+    char oemid[7];
+    memcpy(oemid, fadt->header.oemid, 6);
+    oemid[6] = '\0';
+    char oem_table_id[9];
+    memcpy(oem_table_id, fadt->header.oem_table_id, 8);
+    oem_table_id[8] = '\0';
+
+    printf("FADT Address: 0x%x\n", (uint32_t)fadt);
+    printf("FADT Signature: %s\n", signature);
+    printf("FADT Length: %d\n", fadt->header.length);
+    printf("FADT Revision: %d\n", fadt->header.revision);
+    printf("FADT Checksum: 0x%x\n", fadt->header.checksum);
+    printf("FADT OEM ID: %s\n", oemid);
+    printf("FADT OEM Table ID: %s\n", oem_table_id);
+    printf("FADT OEM Revision: 0x%x\n", fadt->header.oem_revision);
+    printf("FADT Creator ID: 0x%x\n", fadt->header.creator_id);
+    printf("FADT Creator Revision: 0x%x\n", fadt->header.creator_revision);
+    printf("FADT Firmware Control: 0x%x\n", fadt->firmware_ctrl);
+    printf("FADT DSDT: 0x%x\n", fadt->dsdt);
+    printf("FADT Preferred Power Management Profile: %d\n", fadt->preferred_power_management_profile);
+    printf("FADT SCI Interrupt: %d\n", fadt->SCI_interrupt);
+    printf("FADT SMI Command Port: 0x%x\n", fadt->SMI_command_port);
+    printf("FADT ACPI Enable: 0x%x\n", fadt->acpi_enable);
+    printf("FADT ACPI Disable: 0x%x\n", fadt->acpi_disable);
+    printf("FADT S4BIOS Request: 0x%x\n", fadt->s4bios_req);
+    printf("FADT PM1a Event Block: 0x%x\n", fadt->PM1a_event_block);
+    printf("FADT PM1b Event Block: 0x%x\n", fadt->PM1b_event_block);
+    printf("FADT PM1a Control Block: 0x%x\n", fadt->PM1a_control_block);
+    printf("FADT PM1b Control Block: 0x%x\n", fadt->PM1b_control_block);
+    printf("FADT PM2 Control Block: 0x%x\n", fadt->PM2_control_block);
+    printf("FADT PM Timer Block: 0x%x\n", fadt->PM_timer_block);
+    printf("FADT GPE0 Block: 0x%x\n", fadt->GPE0_block);
+    printf("FADT GPE1 Block: 0x%x\n", fadt->GPE1_block);
+    printf("FADT PM1 Event Length: %d\n", fadt->PM1_event_length);
+    printf("FADT PM1 Control Length: %d\n", fadt->PM1_control_length);
+    printf("FADT PM2 Control Length: %d\n", fadt->PM2_control_length);
+    printf("FADT GPE0 Length: %d\n", fadt->GPE0_length);
+    printf("FADT GPE1 Length: %d\n", fadt->GPE1_length);
+    printf("FADT GPE1 Base: %d\n", fadt->GPE1_base);
+    printf("FADT C-State Register: 0x%x\n", fadt->c_state_register);
+    printf("FADT Worst Case C2 Latency: %d\n", fadt->worst_case_c2_latency);
+    printf("FADT Worst Case C3 Latency: %d\n", fadt->worst_case_c3_latency);
+    printf("FADT Flush Size: %d\n", fadt->flush_size);
+    printf("FADT Flush Stride: %d\n", fadt->flush_stride);
+    printf("FADT Duty Offset: %d\n", fadt->duty_offset);
+    printf("FADT Duty Width: %d\n", fadt->duty_width);
+    printf("FADT Day Alarm: %d\n", fadt->day_alarm);
+    printf("FADT Month Alarm: %d\n", fadt->month_alarm);
+    printf("FADT Century: %d\n", fadt->century);
+    printf("FADT Boot Architecture Flags: 0x%x\n", fadt->boot_architecture_flags);
+    printf("FADT Flags: 0x%x\n", fadt->flags);
+    printf("FADT Reset Register Address: in gas_t format\n");
+    printf("FADT Reset Command: 0x%x\n", fadt->reset_command);
+    printf("FADT X Firmware Control (64-bit address casted to 32-bit address): 0x%x\n", (uint32_t)fadt->X_firmware_control);
+    printf("FADT X DSDT (64-bit address casted to 32-bit address): 0x%x\n", (uint32_t)fadt->X_dsdt);
+    printf("FADT X PM1a Event Block Address: in gas_t format\n");
+    printf("FADT X PM1b Event Block Address: in gas_t format\n");
+    printf("FADT X PM1a Control Block Address: in gas_t format\n");
+    printf("FADT X PM1b Control Block Address: in gas_t format\n");
+    printf("FADT X PM2 Control Block Address: in gas_t format\n");
+    printf("FADT X PM Timer Block Address: in gas_t format\n");
+    printf("FADT X GPE0 Block Address: in gas_t format\n");
+    printf("FADT X GPE1 Block Address: in gas_t format\n");
+}
+
+/*
  * Get MMAP Info command implementation
  * @param argc: Number of arguments
  * @param argv: Array of argument strings
@@ -220,6 +302,13 @@ void shell_init(void) {
         .description = "Displays ACPI RSDT information"
     };
     shell_register_command(&rsdtinfo_command);
+
+    shell_command_t fadtinfo_command = {
+        .name = "fadtinfo",
+        .handler = shell_command_fadtinfo,
+        .description = "Displays ACPI FADT information"
+    };
+    shell_register_command(&fadtinfo_command);
 
     shell_command_t mmapinfo_command = {
         .name = "mmapinfo",

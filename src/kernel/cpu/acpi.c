@@ -19,6 +19,11 @@ rsdp_t* rsdp;
 rsdt_t* rsdt;
 
 /*
+ * Global FADT structure variable
+ */
+fadt_t* fadt;
+
+/*
  * A function to verify the RSDP checksum
  * @param rsdp Pointer to the RSDP structure
  * @return True if the checksum is valid, false otherwise
@@ -109,12 +114,34 @@ static void acpi_find_rsdt(void) {
 }
 
 /*
+ * A function to get the FADT structure
+ */
+static void acpi_find_fadt(void) {
+    if (rsdt == NULL) {
+        fadt = NULL;
+        return;
+    }
+
+    uint32_t num_sdts = (rsdt->header.length - sizeof(acpi_sdt_header_t)) / sizeof(uint32_t);
+    for (uint32_t i = 0; i < num_sdts; i++) {
+        acpi_sdt_header_t* header = (acpi_sdt_header_t*)(rsdt->pointer_to_other_sdt[i]);
+        if (memcmp(header->signature, FADT_SIGNATURE, 4) == 0) {
+            fadt = (fadt_t*)header;
+            return;
+        }
+    }
+
+    fadt = NULL; 
+}
+
+/*
  * A function to initialize ACPI
  * @param void
  */
 void acpi_init(void) {
     acpi_find_rsdp();
     acpi_find_rsdt();
+    acpi_find_fadt();
 }
 
 /*
@@ -133,4 +160,13 @@ rsdp_t* acpi_get_rsdp(void) {
  */
 rsdt_t* acpi_get_rsdt(void) {
     return rsdt;
+}
+
+/*
+ * A function to get the FADT structure
+ * @param void
+ * @return Pointer to the FADT structure
+ */
+fadt_t* acpi_get_fadt(void) {
+    return fadt;
 }
