@@ -14,12 +14,9 @@
 rsdp_t* rsdp;
 
 /*
- * A function to initialize ACPI
- * @param void
+ * Global RSDT structure variable
  */
-void acpi_init(void) {
-    acpi_find_rsdp();
-}
+rsdt_t* rsdt;
 
 /*
  * A function to verify the RSDP checksum
@@ -50,7 +47,7 @@ static bool acpi_verify_rsdp_checksum(rsdp_t* rsdp) {
  * A function to find and initialize the RSDP structure
  * @param void
  */
-void acpi_find_rsdp(void) {
+static void acpi_find_rsdp(void) {
     // Search for RSDP in the BIOS memory area (0x000E0000 to 0x000FFFFF)
     for (uint32_t addr = 0x000E0000; addr < 0x00100000; addr += 16) {
         rsdp_t* current_rsdp = (rsdp_t*)addr;
@@ -83,10 +80,57 @@ void acpi_find_rsdp(void) {
 }
 
 /*
+ * A function to verify the RSDT checksum
+ * @param rsdt Pointer to the RSDT structure
+ * @return True if the checksum is valid, false otherwise
+ */
+static bool acpi_verify_rsdt_checksum(rsdt_t* rsdt) {
+    uint8_t sum = 0;
+    for (size_t i = 0; i < rsdt->header.length; i++) {
+        sum += ((uint8_t*)rsdt)[i];
+    }
+    return (sum == 0);
+}
+
+/*
+ * A function to find and initialize the RSDT structure
+ * @param void
+ */
+static void acpi_find_rsdt(void) {
+    if (rsdp == NULL) {
+        rsdt = NULL;
+        return;
+    }
+
+    rsdt = (rsdt_t*)(rsdp->rsdt_address);
+    if (!acpi_verify_rsdt_checksum(rsdt)) {
+        rsdt = NULL;
+    }
+}
+
+/*
+ * A function to initialize ACPI
+ * @param void
+ */
+void acpi_init(void) {
+    acpi_find_rsdp();
+    acpi_find_rsdt();
+}
+
+/*
  * A function to get the RSDP structure
  * @param void
  * @return Pointer to the RSDP structure
  */
 rsdp_t* acpi_get_rsdp(void) {
     return rsdp;
+}
+
+/*
+ * A function to get the RSDT structure
+ * @param void
+ * @return Pointer to the RSDT structure
+ */
+rsdt_t* acpi_get_rsdt(void) {
+    return rsdt;
 }

@@ -104,6 +104,54 @@ void shell_command_rsdpinfo(int argc, char** argv) {
 }
 
 /*
+ * Get RSDT Info command implementation
+ * @param argc: Number of arguments
+ * @param argv: Array of argument strings
+ */
+void shell_command_rsdtinfo(int argc, char** argv) {
+    (void)argc;
+    (void)argv;
+    rsdp_t* rsdp = acpi_get_rsdp();
+    if (rsdp == NULL) {
+        console_puts("RSDP not found.\n");
+        return;
+    }
+
+    rsdt_t* rsdt = acpi_get_rsdt();
+    if (rsdt == NULL) {
+        console_puts("RSDT not found.\n");
+        return;
+    }
+
+    char signature[5];
+    memcpy(signature, rsdt->header.signature, 4);
+    signature[4] = '\0';
+    char oemid[7];
+    memcpy(oemid, rsdt->header.oemid, 6);
+    oemid[6] = '\0';
+    char oem_table_id[9];
+    memcpy(oem_table_id, rsdt->header.oem_table_id, 8);
+    oem_table_id[8] = '\0';
+
+    printf("RSDT Address: 0x%x\n", (uint32_t)rsdt);
+    printf("RSDT Signature: %s\n", signature);
+    printf("RSDT Length: %d\n", rsdt->header.length);
+    printf("RSDT Revision: %d\n", rsdt->header.revision);
+    printf("RSDT Checksum: 0x%x\n", rsdt->header.checksum);
+    printf("RSDT OEM ID: %s\n", oemid);
+    printf("RSDT OEM Table ID: %s\n", oem_table_id);
+    printf("RSDT OEM Revision: 0x%x\n", rsdt->header.oem_revision);
+    printf("RSDT Creator ID: 0x%x\n", rsdt->header.creator_id);
+    printf("RSDT Creator Revision: 0x%x\n", rsdt->header.creator_revision);
+
+    uint32_t num_sdts = (rsdt->header.length - sizeof(acpi_sdt_header_t)) / sizeof(uint32_t);
+    printf("RSDT Contains %d other SDT entries:\n", num_sdts);
+    for (uint32_t i = 0; i < num_sdts; i++) {
+        printf("  SDT %d Address: 0x%x\n", i, rsdt->pointer_to_other_sdt[i]);
+    }
+}
+
+/*
  * Get MMAP Info command implementation
  * @param argc: Number of arguments
  * @param argv: Array of argument strings
@@ -165,6 +213,13 @@ void shell_init(void) {
         .description = "Displays ACPI RSDP information"
     };
     shell_register_command(&rsdpinfo_command);
+
+    shell_command_t rsdtinfo_command = {
+        .name = "rsdtinfo",
+        .handler = shell_command_rsdtinfo,
+        .description = "Displays ACPI RSDT information"
+    };
+    shell_register_command(&rsdtinfo_command);
 
     shell_command_t mmapinfo_command = {
         .name = "mmapinfo",
