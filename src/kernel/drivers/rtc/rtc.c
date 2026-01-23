@@ -8,6 +8,7 @@
 #include <io.h>
 #include <cpu.h>
 #include <serial.h>
+#include <acpi.h>
 
 /*
  * Global RTC time variable
@@ -26,6 +27,7 @@ static uint8_t rtc_century = 0;
  */
 
 void rtc_init(void) {
+    rtc_century = acpi_get_fadt_century();
     rtc_time.hours = 0;
     rtc_time.minutes = 0;
     rtc_time.seconds = 0;

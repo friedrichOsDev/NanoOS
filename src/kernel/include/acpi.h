@@ -137,5 +137,6 @@ void acpi_init(void);
 rsdp_t* acpi_get_rsdp(void);
 rsdt_t* acpi_get_rsdt(void);
 fadt_t* acpi_get_fadt(void);
+uint8_t acpi_get_fadt_century(void);
 
 #endif // ACPI_H

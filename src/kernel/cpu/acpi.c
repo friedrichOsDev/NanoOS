@@ -114,24 +114,54 @@ static void acpi_find_rsdt(void) {
 }
 
 /*
- * A function to get the FADT structure
+ * A function to verify a table checksum
+ * @param header Pointer to the ACPI SDT Header
+ * @return True if the checksum is valid, false otherwise
  */
-static void acpi_find_fadt(void) {
+static bool acpi_verify_sdt_checksum(acpi_sdt_header_t* header) {
+    uint8_t sum = 0;
+    for (size_t i = 0; i < header->length; i++) {
+        sum += ((uint8_t*)header)[i];
+    }
+    return (sum == 0);
+}
+
+/*
+ * A function to find a table based on its signature
+ * @param signature The signature of the table to find
+ * @return Pointer to the ACPI SDT Header if found, NULL otherwise
+ */
+static acpi_sdt_header_t* acpi_find_table(const char* signature) {
     if (rsdt == NULL) {
-        fadt = NULL;
-        return;
+        return NULL;
     }
 
     uint32_t num_sdts = (rsdt->header.length - sizeof(acpi_sdt_header_t)) / sizeof(uint32_t);
     for (uint32_t i = 0; i < num_sdts; i++) {
         acpi_sdt_header_t* header = (acpi_sdt_header_t*)(rsdt->pointer_to_other_sdt[i]);
-        if (memcmp(header->signature, FADT_SIGNATURE, 4) == 0) {
-            fadt = (fadt_t*)header;
-            return;
+        if (memcmp(header->signature, signature, 4) == 0) {
+            if (acpi_verify_sdt_checksum(header)) {
+                return header;
+            } else {
+                continue;
+            }
         }
     }
+    return NULL;
+}
 
-    fadt = NULL; 
+
+/*
+ * A function to get the FADT structure
+ * @param void
+ */
+static void acpi_find_fadt(void) {
+    acpi_sdt_header_t* header = acpi_find_table(FADT_SIGNATURE);
+    if (header == NULL) {
+        fadt = NULL;
+        return;
+    }
+    fadt = (fadt_t*)header;
 }
 
 /*
@@ -169,4 +199,14 @@ rsdt_t* acpi_get_rsdt(void) {
  */
 fadt_t* acpi_get_fadt(void) {
     return fadt;
+}
+
+/*
+ * A function to get the century byte from the FADT
+ * @param void
+ * @return uint8_t: The century byte
+ */
+uint8_t acpi_get_fadt_century(void) {
+    if (fadt == NULL) return 20;
+    return fadt->century;
 }
