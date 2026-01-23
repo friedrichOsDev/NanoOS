@@ -12,6 +12,15 @@
 
 #define RSDP_SIGNATURE "RSD PTR "
 #define FADT_SIGNATURE "FACP"
+#define MADT_SIGNATURE "APIC"
+
+#define MADT_LAPIC_TYPE 0
+#define MADT_IOAPIC_TYPE 1
+#define MADT_ISO_TYPE 2
+#define MADT_IOAPIC_NMI_TYPE 3
+#define MADT_LAPIC_NMI_TYPE 4
+#define MADT_LAPIC_ADDRESS_OVERRIDE_TYPE 5
+#define MADT_LX2APIC_TYPE 9
 
 /*
  * Structure representing the RSDP (Root System Description Pointer)
@@ -132,6 +141,105 @@ typedef struct {
     gas_t X_GPE0_block;
     gas_t X_GPE1_block;
 } __attribute__((packed)) fadt_t;
+
+/*
+ * Structure representing the MADT (Multiple APIC Description Table)
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
+typedef struct {
+    acpi_sdt_header_t header;
+    uint32_t local_apic_address;
+    uint32_t flags;
+} __attribute__((packed)) madt_t;
+
+/*
+ * Structure representing the MADT entry header
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
+typedef struct {
+    uint8_t type;
+    uint8_t length;
+} __attribute__((packed)) madt_entry_header_t;
+
+/*
+ * Structure representing a Processor Local APIC entry in MADT
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
+typedef struct {
+    madt_entry_header_t header;
+    uint8_t processor_id;
+    uint8_t apic_id;
+    uint32_t flags;
+} __attribute__((packed)) madt_lapic_entry_t;
+
+/*
+ * Structure representing an I/O APIC entry in MADT
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
+typedef struct {
+    madt_entry_header_t header;
+    uint8_t io_apic_id;
+    uint8_t reserved;
+    uint32_t io_apic_address;
+    uint32_t global_system_interrupt_base;
+} __attribute__((packed)) madt_ioapic_entry_t;
+
+/*
+ * Structure representing an Interrupt Source Override (ISO) entry in MADT
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
+typedef struct {
+    madt_entry_header_t header;
+    uint8_t bus_source;
+    uint8_t irq_source;
+    uint32_t global_system_interrupt;
+    uint16_t flags;
+} __attribute__((packed)) madt_iso_entry_t;
+
+/*
+ * Structure representing a I/O APIC Non-maskable Interrupt (NMI) entry in MADT
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
+typedef struct {
+    madt_entry_header_t header;
+    uint8_t nmi_source;
+    uint8_t reserved;
+    uint16_t flags;
+    uint32_t global_system_interrupt;
+} __attribute__((packed)) madt_ioapic_nmi_entry_t;
+
+/*
+ * Structure representing a Local APIC NMI entry in MADT
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
+typedef struct {
+    madt_entry_header_t header;
+    uint8_t processor_id;
+    uint16_t flags;
+    uint8_t lintin;
+} __attribute__((packed)) madt_lapic_nmi_entry_t;
+
+/*
+ * Structure representing a Local APIC Address Override entry in MADT
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
+typedef struct {
+    madt_entry_header_t header;
+    uint16_t reserved;
+    uint64_t local_apic_address;
+} __attribute__((packed)) madt_lapic_address_override_entry_t;
+
+/*
+ * Structure representing a Processor Local x2APIC entry in MADT
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
+typedef struct {
+    madt_entry_header_t header;
+    uint16_t reserved;
+    uint32_t x2apic_id;
+    uint32_t flags;
+    uint32_t acpi_id;
+} __attribute__((packed)) madt_lx2apic_entry_t;
 
 void acpi_init(void);
 rsdp_t* acpi_get_rsdp(void);
