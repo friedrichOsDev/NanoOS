@@ -68,6 +68,21 @@ void shell_command_time(int argc, char** argv) {
 }
 
 /*
+ * Get MMAP Info command implementation
+ * @param argc: Number of arguments
+ * @param argv: Array of argument strings
+ */
+void shell_command_mmapinfo(int argc, char** argv) {
+    (void)argc;
+    (void)argv;
+    printf("Memory Map:\n");
+    for (size_t i = 0; i < mmap_info->entry_count; i++) {
+        mmap_entry_t* entry = &mmap_info->entries[i];
+        printf("Base: 0x%x%x, Length: 0x%x%x, Type: %d\n", entry->base_addr_high, entry->base_addr_low, entry->length_high, entry->length_low, entry->type);
+    }
+}
+
+/*
  * Get RSDP Info command implementation
  * @param argc: Number of arguments
  * @param argv: Array of argument strings
@@ -234,17 +249,57 @@ void shell_command_fadtinfo(int argc, char** argv) {
 }
 
 /*
- * Get MMAP Info command implementation
+ * Get MADT Info command implementation
  * @param argc: Number of arguments
  * @param argv: Array of argument strings
  */
-void shell_command_mmapinfo(int argc, char** argv) {
+void shell_command_madtinfo(int argc, char** argv) {
     (void)argc;
     (void)argv;
-    printf("Memory Map:\n");
-    for (size_t i = 0; i < mmap_info->entry_count; i++) {
-        mmap_entry_t* entry = &mmap_info->entries[i];
-        printf("Base: 0x%x%x, Length: 0x%x%x, Type: %d\n", entry->base_addr_high, entry->base_addr_low, entry->length_high, entry->length_low, entry->type);
+    madt_t* madt = acpi_get_madt();
+    madt_parsed_t* madt_parsed = acpi_get_madt_parsed();
+    if (madt == NULL || madt_parsed == NULL) {
+        console_puts("MADT not found.\n");
+        return;
+    }
+
+    printf("MADT Address: 0x%x\n", (uint32_t)madt);
+    printf("Local APIC Address: 0x%x\n", madt->local_apic_address);
+    printf("Flags: 0x%x\n", madt->flags);
+
+    for (size_t i = 0; i < madt_parsed->lapic_count; i++) {
+        madt_lapic_entry_t* lapic = &madt_parsed->lapics[i];
+        printf("LAPIC %d: Processor ID: %d, APIC ID: %d, Flags: 0x%x\n", i, lapic->processor_id, lapic->apic_id, lapic->flags);
+    }
+
+    for (size_t i = 0; i < madt_parsed->ioapic_count; i++) {
+        madt_ioapic_entry_t* ioapic = &madt_parsed->ioapics[i];
+        printf("IOAPIC %d: IOAPIC ID: %d, Address: 0x%x, Global System Interrupt Base: %d\n", i, ioapic->io_apic_id, ioapic->io_apic_address, ioapic->global_system_interrupt_base);
+    }
+
+    for (size_t i = 0; i < madt_parsed->iso_count; i++) {
+        madt_iso_entry_t* iso = &madt_parsed->isos[i];
+        printf("ISO %d: Bus Source: %d, IRQ Source: %d, Global System Interrupt: %d, Flags: 0x%x\n", i, iso->bus_source, iso->irq_source, iso->global_system_interrupt, iso->flags);
+    }
+
+    for (size_t i = 0; i < madt_parsed->ioapic_nmi_count; i++) {
+        madt_ioapic_nmi_entry_t* ioapic_nmi = &madt_parsed->ioapic_nmis[i];
+        printf("IOAPIC NMI %d: NMI Source: %d, Flags: 0x%x, Global System Interrupt: %d\n", i, ioapic_nmi->nmi_source, ioapic_nmi->flags, ioapic_nmi->global_system_interrupt);
+    }
+
+    for (size_t i = 0; i < madt_parsed->lapic_nmi_count; i++) {
+        madt_lapic_nmi_entry_t* lapic_nmi = &madt_parsed->lapic_nmis[i];
+        printf("LAPIC NMI %d: Processor ID: %d, Flags: 0x%x, LINTIN: %d\n", i, lapic_nmi->processor_id, lapic_nmi->flags, lapic_nmi->lintin);
+    }
+
+    for (size_t i = 0; i < madt_parsed->lapic_address_override_count; i++) {
+        madt_lapic_address_override_entry_t* lapic_address_override = &madt_parsed->lapic_address_overrides[i];
+        printf("LAPIC Address Override %d: Local APIC Address: 0x%x%x\n", i, (uint32_t)(lapic_address_override->local_apic_address >> 32), (uint32_t)(lapic_address_override->local_apic_address & 0xFFFFFFFF));
+    }
+
+    for (size_t i = 0; i < madt_parsed->lx2apic_count; i++) {
+        madt_lx2apic_entry_t* lx2apic = &madt_parsed->lx2apics[i];
+        printf("Lx2APIC %d: x2APIC ID: %d, Flags: 0x%x, ACPI ID: %d\n", i, lx2apic->x2apic_id, lx2apic->flags, lx2apic->acpi_id);
     }
 }
 
@@ -288,6 +343,13 @@ void shell_init(void) {
         .description = "Displays the current RTC time"
     };
     shell_register_command(&time_command);
+    
+    shell_command_t mmapinfo_command = {
+        .name = "mmapinfo",
+        .handler = shell_command_mmapinfo,
+        .description = "Displays memory map information"
+    };
+    shell_register_command(&mmapinfo_command);
 
     shell_command_t rsdpinfo_command = {
         .name = "rsdpinfo",
@@ -310,12 +372,12 @@ void shell_init(void) {
     };
     shell_register_command(&fadtinfo_command);
 
-    shell_command_t mmapinfo_command = {
-        .name = "mmapinfo",
-        .handler = shell_command_mmapinfo,
-        .description = "Displays memory map information"
+    shell_command_t madtinfo_command = {
+        .name = "madtinfo",
+        .handler = shell_command_madtinfo,
+        .description = "Displays ACPI MADT information"
     };
-    shell_register_command(&mmapinfo_command);
+    shell_register_command(&madtinfo_command);
 }
 
 /*

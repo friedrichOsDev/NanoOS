@@ -7,6 +7,7 @@
 #include <acpi.h>
 #include <string.h>
 #include <serial.h>
+#include <heap.h>
 
 /*
  * Global RSDP structure variable
@@ -22,6 +23,16 @@ rsdt_t* rsdt;
  * Global FADT structure variable
  */
 fadt_t* fadt;
+
+/*
+ * Global MADT structure variable
+ */
+madt_t* madt;
+
+/*
+ * Global MADT parsed structure variable
+ */
+madt_parsed_t madt_parsed;
 
 /*
  * A function to verify the RSDP checksum
@@ -165,6 +176,170 @@ static void acpi_find_fadt(void) {
 }
 
 /*
+ * A function to find and initialize the MADT structure
+ * @param void
+ */
+static void acpi_find_madt(void) {
+    acpi_sdt_header_t* header = acpi_find_table(MADT_SIGNATURE);
+    if (header == NULL) {
+        madt = NULL;
+        return;
+    }
+    madt = (madt_t*)header;
+}
+
+/*
+ * A function to parse the MADT
+ * @param void
+ */
+static void acpi_parse_madt(void) {
+    madt_parsed.lapics = NULL;
+    madt_parsed.lapic_count = 0;
+    madt_parsed.ioapics = NULL;
+    madt_parsed.ioapic_count = 0;
+    madt_parsed.isos = NULL;
+    madt_parsed.iso_count = 0;
+    madt_parsed.ioapic_nmis = NULL;
+    madt_parsed.ioapic_nmi_count = 0;
+    madt_parsed.lapic_nmis = NULL;
+    madt_parsed.lapic_nmi_count = 0;
+    madt_parsed.lapic_address_overrides = NULL;
+    madt_parsed.lapic_address_override_count = 0;
+    madt_parsed.lx2apics = NULL;
+    madt_parsed.lx2apic_count = 0;
+
+    if (madt == NULL) return;
+
+    uint8_t* ptr = (uint8_t*)madt + sizeof(madt_t);
+    uint8_t* end = (uint8_t*)madt + madt->header.length;
+
+    size_t lapic_count = 0;
+    size_t ioapic_count = 0;
+    size_t iso_count = 0;
+    size_t ioapic_nmi_count = 0;
+    size_t lapic_nmi_count = 0;
+    size_t lapic_address_override_count = 0;
+    size_t lx2apic_count = 0;
+
+    while (ptr < end) {
+        madt_entry_header_t* header = (madt_entry_header_t*)ptr;
+        switch (header->type) {
+            case MADT_LAPIC_TYPE: {
+                lapic_count++;
+                break;
+            }
+            case MADT_IOAPIC_TYPE: {
+                ioapic_count++;
+                break;
+            }
+            case MADT_ISO_TYPE: {
+                iso_count++;
+                break;
+            }
+            case MADT_IOAPIC_NMI_TYPE: {
+                ioapic_nmi_count++;
+                break;
+            }
+            case MADT_LAPIC_NMI_TYPE: {
+                lapic_nmi_count++;
+                break;
+            }
+            case MADT_LAPIC_ADDRESS_OVERRIDE_TYPE: {
+                lapic_address_override_count++;
+                break;
+            }
+            case MADT_LX2APIC_TYPE: {
+                lx2apic_count++;
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+        ptr += header->length;
+    }
+
+    madt_parsed.lapic_count = 0;
+    madt_parsed.ioapic_count = 0;
+    madt_parsed.iso_count = 0;
+    madt_parsed.ioapic_nmi_count = 0;
+    madt_parsed.lapic_nmi_count = 0;
+    madt_parsed.lapic_address_override_count = 0;
+    madt_parsed.lx2apic_count = 0;
+    
+    ptr = (uint8_t*)madt + sizeof(madt_t);
+    end = (uint8_t*)madt + madt->header.length;
+
+    madt_lapic_entry_t* lapics = kzalloc(sizeof(madt_lapic_entry_t) * lapic_count);
+    madt_ioapic_entry_t* ioapics = kzalloc(sizeof(madt_ioapic_entry_t) * ioapic_count);
+    madt_iso_entry_t* isos = kzalloc(sizeof(madt_iso_entry_t) * iso_count);
+    madt_ioapic_nmi_entry_t* ioapic_nmis = kzalloc(sizeof(madt_ioapic_nmi_entry_t) * ioapic_nmi_count);
+    madt_lapic_nmi_entry_t* lapic_nmis = kzalloc(sizeof(madt_lapic_nmi_entry_t) * lapic_nmi_count);
+    madt_lapic_address_override_entry_t* lapic_address_overrides = kzalloc(sizeof(madt_lapic_address_override_entry_t) * lapic_address_override_count);
+    madt_lx2apic_entry_t* lx2apics = kzalloc(sizeof(madt_lx2apic_entry_t) * lx2apic_count);
+
+    while (ptr < end) {
+        madt_entry_header_t* header = (madt_entry_header_t*)ptr;
+        switch (header->type) {
+            case MADT_LAPIC_TYPE: {
+                madt_lapic_entry_t* lapic = (madt_lapic_entry_t*)ptr;
+                memcpy(&lapics[madt_parsed.lapic_count++], lapic, sizeof(madt_lapic_entry_t));
+                break;
+            }
+            case MADT_IOAPIC_TYPE: {
+                madt_ioapic_entry_t* ioapic = (madt_ioapic_entry_t*)ptr;
+                memcpy(&ioapics[madt_parsed.ioapic_count++], ioapic, sizeof(madt_ioapic_entry_t));
+                break;
+            }
+            case MADT_ISO_TYPE: {
+                madt_iso_entry_t* iso = (madt_iso_entry_t*)ptr;
+                memcpy(&isos[madt_parsed.iso_count++], iso, sizeof(madt_iso_entry_t));
+                break;
+            }
+            case MADT_IOAPIC_NMI_TYPE: {
+                madt_ioapic_nmi_entry_t* ioapic_nmi = (madt_ioapic_nmi_entry_t*)ptr;
+                memcpy(&ioapic_nmis[madt_parsed.ioapic_nmi_count++], ioapic_nmi, sizeof(madt_ioapic_nmi_entry_t));
+                break;
+            }
+            case MADT_LAPIC_NMI_TYPE: {
+                madt_lapic_nmi_entry_t* lapic_nmi = (madt_lapic_nmi_entry_t*)ptr;
+                memcpy(&lapic_nmis[madt_parsed.lapic_nmi_count++], lapic_nmi, sizeof(madt_lapic_nmi_entry_t));
+                break;
+            }
+            case MADT_LAPIC_ADDRESS_OVERRIDE_TYPE: {
+                madt_lapic_address_override_entry_t* lapic_address_override = (madt_lapic_address_override_entry_t*)ptr;
+                memcpy(&lapic_address_overrides[madt_parsed.lapic_address_override_count++], lapic_address_override, sizeof(madt_lapic_address_override_entry_t));
+                break;
+            }
+            case MADT_LX2APIC_TYPE: {
+                madt_lx2apic_entry_t* lx2apic = (madt_lx2apic_entry_t*)ptr;
+                memcpy(&lx2apics[madt_parsed.lx2apic_count++], lx2apic, sizeof(madt_lx2apic_entry_t));
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+        ptr += header->length;
+    }
+
+    madt_parsed.lapics = lapics;
+    madt_parsed.lapic_count = lapic_count;
+    madt_parsed.ioapics = ioapics;
+    madt_parsed.ioapic_count = ioapic_count;
+    madt_parsed.isos = isos;
+    madt_parsed.iso_count = iso_count;
+    madt_parsed.ioapic_nmis = ioapic_nmis;
+    madt_parsed.ioapic_nmi_count = ioapic_nmi_count;
+    madt_parsed.lapic_nmis = lapic_nmis;
+    madt_parsed.lapic_nmi_count = lapic_nmi_count;
+    madt_parsed.lapic_address_overrides = lapic_address_overrides;
+    madt_parsed.lapic_address_override_count = lapic_address_override_count;
+    madt_parsed.lx2apics = lx2apics;
+    madt_parsed.lx2apic_count = lx2apic_count;
+}
+
+/*
  * A function to initialize ACPI
  * @param void
  */
@@ -172,6 +347,8 @@ void acpi_init(void) {
     acpi_find_rsdp();
     acpi_find_rsdt();
     acpi_find_fadt();
+    acpi_find_madt();
+    acpi_parse_madt();
 }
 
 /*
@@ -199,6 +376,24 @@ rsdt_t* acpi_get_rsdt(void) {
  */
 fadt_t* acpi_get_fadt(void) {
     return fadt;
+}
+
+/*
+ * A function to get the MADT structure
+ * @param void
+ * @return Pointer to the MADT structure
+ */
+madt_t* acpi_get_madt(void) {
+    return madt;
+}
+
+/*
+ * A function to get the parsed MADT structure
+ * @param void
+ * @return Pointer to the parsed MADT structure
+ */
+madt_parsed_t* acpi_get_madt_parsed(void) {
+    return &madt_parsed;
 }
 
 /*

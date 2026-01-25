@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #define RSDP_SIGNATURE "RSD PTR "
 #define FADT_SIGNATURE "FACP"
@@ -241,10 +242,33 @@ typedef struct {
     uint32_t acpi_id;
 } __attribute__((packed)) madt_lx2apic_entry_t;
 
+/*
+ * Structure to save the parsed MADT
+ * @note The __attribute__((packed)) directive is used to prevent the compiler from adding padding bytes
+ */
+typedef struct {
+    madt_lapic_entry_t* lapics;
+    size_t lapic_count;
+    madt_ioapic_entry_t* ioapics;
+    size_t ioapic_count;
+    madt_iso_entry_t* isos;
+    size_t iso_count;
+    madt_ioapic_nmi_entry_t* ioapic_nmis;
+    size_t ioapic_nmi_count;
+    madt_lapic_nmi_entry_t* lapic_nmis;
+    size_t lapic_nmi_count;
+    madt_lapic_address_override_entry_t* lapic_address_overrides;
+    size_t lapic_address_override_count;
+    madt_lx2apic_entry_t* lx2apics;
+    size_t lx2apic_count;
+} __attribute__((packed)) madt_parsed_t;
+
 void acpi_init(void);
 rsdp_t* acpi_get_rsdp(void);
 rsdt_t* acpi_get_rsdt(void);
 fadt_t* acpi_get_fadt(void);
+madt_t* acpi_get_madt(void);
+madt_parsed_t* acpi_get_madt_parsed(void);
 uint8_t acpi_get_fadt_century(void);
 
 #endif // ACPI_H
