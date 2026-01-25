@@ -25,10 +25,6 @@
 #define RTC_STATUS_B 0x0B
 
 /*
- * TODO: Add century support
- */
-
-/*
  * Structure to hold RTC time information
  * @note All fields are in dezimal format (not Byte-Coded Decimal (BCD))
  */

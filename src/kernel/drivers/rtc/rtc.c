@@ -84,7 +84,8 @@ void rtc_update_time(void) {
     uint8_t raw_day = read_rtc_register(RTC_DAY);
     uint8_t raw_month = read_rtc_register(RTC_MONTH);
     uint8_t raw_year = read_rtc_register(RTC_YEAR);
-    uint8_t raw_century = read_rtc_register(RTC_CENTURY);
+    
+    if (rtc_century == 0) rtc_century = 20;
 
     int seconds = is_bcd ? bcd_to_decimal(raw_seconds) : raw_seconds;
     int minutes = is_bcd ? bcd_to_decimal(raw_minutes) : raw_minutes;
@@ -92,7 +93,6 @@ void rtc_update_time(void) {
     int day = is_bcd ? bcd_to_decimal(raw_day) : raw_day;
     int month = is_bcd ? bcd_to_decimal(raw_month) : raw_month;
     int year = is_bcd ? bcd_to_decimal(raw_year) : raw_year;
-    rtc_century = is_bcd ? bcd_to_decimal(raw_century) : raw_century;
     
     if (!(status_b & 0x02)) { 
         if (raw_hours & 0x80) { 

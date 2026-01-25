@@ -7,8 +7,6 @@
 #include <serial.h>
 #include <io.h>
 
-#define COM1_PORT 0x3F8
-
 /*
  * A function to initialize the serial port (COM1)
  * @param void
@@ -31,10 +29,6 @@ void serial_init(void) {
 static bool serial_is_transmit_empty(void) {
     return (inb(COM1_PORT + 5) & 0x20) != 0;
 }
-
-/*
- * TODO: Remove the target attributes (__attribute__((__target__("no-sse")))) if they are not necessary
- */
 
 /*
  * Writes a character to the serial port
