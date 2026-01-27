@@ -12,7 +12,7 @@
  * @param val The value to write
  */
 void outb(uint16_t port, uint8_t val) {
-    asm volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
+    __asm__ __volatile__ ("outb %0, %1" : : "a"(val), "Nd"(port));
 }
 
 /*
@@ -22,7 +22,7 @@ void outb(uint16_t port, uint8_t val) {
  */
 uint8_t inb(uint16_t port) {
     uint8_t ret;
-    asm volatile ("inb %1, %0" : "=a"(ret) : "Nd"(port));
+    __asm__ __volatile__ ("inb %1, %0" : "=a"(ret) : "Nd"(port));
     return ret;
 }
 
@@ -32,7 +32,7 @@ uint8_t inb(uint16_t port) {
  * @param val The value to write
  */
 void outw(uint16_t port, uint16_t val) {
-    asm volatile ("outw %0, %1" : : "a"(val), "Nd"(port));
+    __asm__ __volatile__ ("outw %0, %1" : : "a"(val), "Nd"(port));
 }
 
 /*
@@ -42,7 +42,7 @@ void outw(uint16_t port, uint16_t val) {
  */
 uint16_t inw(uint16_t port) {
     uint16_t ret;
-    asm volatile ("inw %1, %0" : "=a"(ret) : "Nd"(port));
+    __asm__ __volatile__ ("inw %1, %0" : "=a"(ret) : "Nd"(port));
     return ret;
 }
 
@@ -52,7 +52,7 @@ uint16_t inw(uint16_t port) {
  * @param val The value to write
  */
 void outl(uint16_t port, uint32_t val) {
-    asm volatile ("outl %0, %1" : : "a"(val), "Nd"(port));
+    __asm__ __volatile__ ("outl %0, %1" : : "a"(val), "Nd"(port));
 }
 
 /*
@@ -62,6 +62,26 @@ void outl(uint16_t port, uint32_t val) {
  */
 uint32_t inl(uint16_t port) {
     uint32_t ret;
-    asm volatile ("inl %1, %0" : "=a"(ret) : "Nd"(port));
+    __asm__ __volatile__ ("inl %1, %0" : "=a"(ret) : "Nd"(port));
     return ret;
+}
+
+/*
+ * Read multiple words from the bus into memory
+ * @param port The port to read from
+ * @param addr The memory address to store the data
+ * @param count The number of words to read
+ */
+void insw(uint16_t port, void* addr, uint32_t count) {
+    __asm__ __volatile__ ("cld; rep insw" : "+D"(addr), "+c"(count) : "d"(port) : "memory");
+}
+
+/*
+ * Write multiple words from memory to the bus
+ * @param port The port to write to
+ * @param addr The memory address containing the data
+ * @param count The number of words to write
+ */
+void outsw(uint16_t port, const void* addr, uint32_t count) {
+    __asm__ __volatile__ ("cld; rep outsw" : "+S"(addr), "+c"(count) : "d"(port));
 }

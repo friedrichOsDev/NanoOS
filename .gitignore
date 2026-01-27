@@ -4,3 +4,4 @@ build
 q.log
 serial.log
 *.drawio
+structure_*.txt

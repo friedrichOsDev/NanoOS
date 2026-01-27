@@ -23,6 +23,7 @@
 #include <shell.h>
 #include <rtc.h>
 #include <acpi.h>
+#include <ata.h>
 
 /*
  * Kernel entry point
@@ -74,6 +75,9 @@ void kernel_main(void) {
 
     rtc_init();
     serial_puts("rtc_init: done\n");
+
+    ata_init();
+    serial_puts("ata_init: done\n");
 
     shell_init();
     serial_puts("shell_init: done\n");

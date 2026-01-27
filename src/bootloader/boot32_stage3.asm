@@ -45,7 +45,7 @@ start16_stage3:
     mov es, ax
     xor bx, bx          ; Destination ES:BX = 0x2000:0000
     mov ah, 0x02        ; BIOS Read Sectors
-    mov al, 50          ; Number of sectors (50 sectors = 25KB)
+    mov al, 64          ; Number of sectors (64 sectors = 32KB)
     mov ch, 0           ; Cylinder 0
     mov cl, 5           ; Start at Sector 5
     mov dh, 0           ; Head 0
@@ -103,7 +103,7 @@ copy_kernel:
     cld                 ; Ensure forward copy
     mov esi, 0x20000    ; source address
     mov edi, 0x100000   ; destination address
-    mov ecx, 6400       ; number of dwords to copy (50 sectors * 512 / 4)
+    mov ecx, 8192       ; number of dwords to copy (64 sectors * 512 / 4)
     rep movsd           ; copy ECX dwords from [ESI] to [EDI]
     ret
 
@@ -115,7 +115,7 @@ BOOT_DRIVE: db 0
 DAP_KERNEL:
     db 0x10     ; size of packet
     db 0        ; reserved
-    dw 50       ; number of sectors to read (25KB)
+    dw 64       ; number of sectors to read (32KB)
     dw 0x0000   ; offset
     dw 0x2000   ; segment (0x20000)
     dq 4        ; starting LBA (Sector 5)
