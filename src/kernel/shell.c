@@ -13,6 +13,7 @@
 #include <print.h>
 #include <acpi.h>
 #include <kernel.h>
+#include <disk.h>
 
 char command_buffer[MAX_COMMAND_LENGTH];
 size_t command_buffer_pos = 0;
@@ -304,6 +305,30 @@ void shell_command_madtinfo(int argc, char** argv) {
 }
 
 /*
+ * Get disk info command implementation
+ * @param argc: Number of arguments
+ * @param argv: Array of argument strings
+ */
+void shell_command_diskinfo(int argc, char** argv) {
+    if (argc != 2) {
+        console_puts("Usage: diskinfo <disk_number>\n");
+        return;
+    }
+    
+    int disk_number = atoi(argv[1]);
+    disk_t* disk = get_disk(disk_number);
+    if (disk == NULL) {
+        console_puts("Disk not found.\n");
+        return;
+    } else {
+        printf("Disk %d Info:\n", disk_number);
+        printf("Name: %s\n", disk->name);
+        printf("Sector Count: %d\n", disk->sector_count);
+        printf("Type: %d\n", disk->type);
+    }
+}
+
+/*
  * A function to initialize the shell
  * @param void
  */
@@ -378,6 +403,13 @@ void shell_init(void) {
         .description = "Displays ACPI MADT information"
     };
     shell_register_command(&madtinfo_command);
+
+    shell_command_t diskinfo_command = {
+        .name = "diskinfo",
+        .handler = shell_command_diskinfo,
+        .description = "Displays information about a specific disk"
+    };
+    shell_register_command(&diskinfo_command);
 }
 
 /*

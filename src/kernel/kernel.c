@@ -24,6 +24,11 @@
 #include <rtc.h>
 #include <acpi.h>
 #include <ata.h>
+#include <pci.h>
+
+/*
+ * TODO: implement dynamic kernel loading in bootloader stage 3
+ */
 
 /*
  * Kernel entry point
@@ -76,8 +81,8 @@ void kernel_main(void) {
     rtc_init();
     serial_puts("rtc_init: done\n");
 
-    ata_init();
-    serial_puts("ata_init: done\n");
+    pci_init();
+    serial_puts("pci_init: done\n");
 
     shell_init();
     serial_puts("shell_init: done\n");

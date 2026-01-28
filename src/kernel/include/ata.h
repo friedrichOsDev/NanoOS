@@ -8,6 +8,7 @@
 #define ATA_H
 
 #include <stdint.h>
+#include <pci.h>
 
 #define ATA_PRIMARY_IO 0x1F0
 #define ATA_PRIMARY_CTRL 0x3F6
@@ -31,6 +32,14 @@ typedef enum {
 } ATA_DRIVE_TYPE;
 
 /*
+ * Structure to represent an ATA device
+ */
+typedef struct {
+    ATA_BUS bus;
+    ATA_DRIVE_TYPE drive;
+} ata_device_t;
+
+/*
  * Structure to represent an ATA bus
  */
 typedef struct {
@@ -40,7 +49,6 @@ typedef struct {
 } ata_bus_info_t;
 
 void ata_init(void);
-uint8_t ata_read_sector(ATA_BUS bus, ATA_DRIVE_TYPE drive, uint32_t lba, uint8_t* buffer);
-uint8_t ata_write_sector(ATA_BUS bus, ATA_DRIVE_TYPE drive, uint32_t lba, uint8_t* buffer);
+void ata_pci_init(pci_device_t* device);
 
 #endif // ATA_H

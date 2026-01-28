@@ -118,3 +118,62 @@ int memcmp(const void* ptr1, const void* ptr2, size_t num) {
     }
     return 0;
 }
+
+/*
+ * TODO: replace all manual implementations with standard library versions of atoi and itoa
+ */
+
+/*
+ * A atoi implementation
+ * @param str The string to convert
+ * @return The converted integer value
+ */
+int atoi(const char* str) {
+    int res = 0;
+    int sign = 1;
+    int i = 0;
+    if (str[0] == '-') {
+        sign = -1;
+        i++;
+    }
+    for (; str[i] != '\0'; ++i) {
+        res = res * 10 + str[i] - '0';
+    }
+    return sign * res;
+}
+
+/*
+ * An itoa implementation
+ * @param value The integer value to convert
+ * @param str The string to store the result
+ * @param base The numerical base for conversion
+ * @return The converted string
+ */
+char* itoa(int value, char* str, int base) {
+    char* ptr = str;
+    char* ptr1 = str;
+    char tmp_char;
+    int tmp_value;
+
+    if (value < 0 && base == 10) {
+        value = -value;
+        *ptr++ = '-';
+        ptr1++;
+    }
+
+    do {
+        tmp_value = value;
+        value /= base;
+        *ptr++ = "0123456789ABCDEF"[tmp_value - value * base];
+    } while (value);
+
+    *ptr-- = '\0';
+
+    while (ptr1 < ptr) {
+        tmp_char = *ptr;
+        *ptr-- = *ptr1;
+        *ptr1++ = tmp_char;
+    }
+
+    return str;
+}

@@ -7,10 +7,8 @@
 #include <ata.h>
 #include <io.h>
 #include <serial.h>
-
-/*
- * TODO: use acpi to get the hardware topology
- */
+#include <disk.h>
+#include <heap.h>
 
 /*
  * Global ATA bus information
@@ -60,6 +58,97 @@ static int ata_wait_drq(ATA_BUS bus) {
 }
 
 /*
+ * Read a sector from an ATA drive
+ * @param bus The ATA bus (primary or secondary)
+ * @param drive The ATA drive type (master or slave)
+ * @param lba The logical block address to read from
+ * @param buffer The buffer to store the read data
+ * @return 0 on success, non-zero on failure
+ */
+static int ata_read_sector(ATA_BUS bus, ATA_DRIVE_TYPE drive, uint32_t lba, uint8_t* buffer) {
+    uint16_t io = buses[bus].io_base;
+
+    outb(io + 6, 0xE0 | (drive << 4) | ((lba >> 24) & 0x0F)); // select drive and LBA mode
+    ata_io_wait(bus);
+
+    outb(io + 1, 0x00); // 0 for standard read
+    outb(io + 2, 1); // sector count
+    outb(io + 3, (uint8_t)lba); // LBA low byte
+    outb(io + 4, (uint8_t)(lba >> 8)); // LBA mid byte
+    outb(io + 5, (uint8_t)(lba >> 16)); // LBA high byte
+    outb(io + 7, 0x20); // command: read sectors
+
+    if (ata_wait_bsy(bus)) return 1;
+    if (ata_wait_drq(bus)) return 1;
+
+    insw(io, buffer, 256);
+    return 0;
+}
+
+/*
+ * Write a sector to an ATA drive
+ * @param bus The ATA bus (primary or secondary)
+ * @param drive The ATA drive type (master or slave)
+ * @param lba The logical block address to write to
+ * @param buffer The buffer containing the data to write
+ * @return 0 on success, non-zero on failure
+ */
+static int ata_write_sector(ATA_BUS bus, ATA_DRIVE_TYPE drive, uint32_t lba, uint8_t* buffer) {
+    uint16_t io = buses[bus].io_base;
+
+    outb(io + 6, 0xE0 | (drive << 4) | ((lba >> 24) & 0x0F)); // select drive and LBA mode
+    ata_io_wait(bus);
+    
+    outb(io + 2, 1); // sector count
+    outb(io + 3, (uint8_t)lba); // LBA low byte
+    outb(io + 4, (uint8_t)(lba >> 8)); // LBA mid byte
+    outb(io + 5, (uint8_t)(lba >> 16)); // LBA high byte
+    outb(io + 7, 0x30); // command: write sectors
+
+    if (ata_wait_bsy(bus)) return 1;
+    if (ata_wait_drq(bus)) return 1;
+
+    outsw(io, (uint16_t*)buffer, 256);
+
+    outb(io + 7, 0xE7); // command: flush cache
+    while (inb(buses[bus].ctrl_base) & 0x80); // wait until flush completes
+
+    return 0;
+}
+
+/*
+ * ATA disk read wrapper for disk_t interface
+ * @param d The disk_t structure
+ * @param lba The logical block address to read from
+ * @param buffer The buffer to store the read data
+ * @return 0 on success, non-zero on failure
+ */
+static int ata_disk_read_wrapper(disk_t* d, uint32_t lba, uint8_t* buffer) {
+    ata_device_t* dev = (ata_device_t*)d->device_specific;
+    return ata_read_sector(dev->bus, dev->drive, lba, buffer);
+}
+
+/*
+ * ATA disk write wrapper for disk_t interface
+ * @param d The disk_t structure
+ * @param lba The logical block address to write to
+ * @param buffer The buffer containing the data to write
+ * @return 0 on success, non-zero on failure
+ */
+static int ata_disk_write_wrapper(disk_t* d, uint32_t lba, uint8_t* buffer) {
+    ata_device_t* dev = (ata_device_t*)d->device_specific;
+    return ata_write_sector(dev->bus, dev->drive, lba, buffer);
+}
+
+/*
+ * ATA disk operations
+ */
+static disk_ops_t ata_ops = {
+    .read_sector = ata_disk_read_wrapper,
+    .write_sector = ata_disk_write_wrapper
+};
+
+/*
  * Identify an ATA drive
  * @param bus The ATA bus (primary or secondary)
  * @param drive The ATA drive type (master or slave)
@@ -101,9 +190,17 @@ static uint8_t ata_identify(ATA_BUS bus, ATA_DRIVE_TYPE drive) {
     serial_put_int(sectors);
     serial_puts("\n");
 
-    /*
-     * TODO: register the disk in some disk management system
-     */
+    ata_device_t* dev = kmalloc(sizeof(ata_device_t));
+    dev->bus = bus;
+    dev->drive = drive;
+
+    disk_t* d = kmalloc(sizeof(disk_t));
+    d->sector_count = *((uint32_t*)(info + 60));
+    d->type = DISK_TYPE_ATA;
+    d->ops = &ata_ops;
+    d->device_specific = dev;
+
+    disk_register(d);
 
     return 0;
 }
@@ -130,60 +227,26 @@ void ata_init(void) {
 }
 
 /*
- * Read a sector from an ATA drive
- * @param bus The ATA bus (primary or secondary)
- * @param drive The ATA drive type (master or slave)
- * @param lba The logical block address to read from
- * @param buffer The buffer to store the read data
- * @return 0 on success, non-zero on failure
+ * PCI initialization function for ATA driver
+ * @param device The PCI device structure
  */
-uint8_t ata_read_sector(ATA_BUS bus, ATA_DRIVE_TYPE drive, uint32_t lba, uint8_t* buffer) {
-    uint16_t io = buses[bus].io_base;
+void ata_pci_init(pci_device_t* device) {
+    serial_puts("ATA: Initializing PCI IDE Controller...\n");
 
-    outb(io + 6, 0xE0 | (drive << 4) | ((lba >> 24) & 0x0F)); // select drive and LBA mode
-    ata_io_wait(bus);
-
-    outb(io + 1, 0x00); // 0 for standard read
-    outb(io + 2, 1); // sector count
-    outb(io + 3, (uint8_t)lba); // LBA low byte
-    outb(io + 4, (uint8_t)(lba >> 8)); // LBA mid byte
-    outb(io + 5, (uint8_t)(lba >> 16)); // LBA high byte
-    outb(io + 7, 0x20); // command: read sectors
-
-    if (ata_wait_bsy(bus)) return 1;
-    if (ata_wait_drq(bus)) return 1;
-
-    insw(io, buffer, 256);
-    return 0;
-}
-
-/*
- * Write a sector to an ATA drive
- * @param bus The ATA bus (primary or secondary)
- * @param drive The ATA drive type (master or slave)
- * @param lba The logical block address to write to
- * @param buffer The buffer containing the data to write
- * @return 0 on success, non-zero on failure
- */
-uint8_t ata_write_sector(ATA_BUS bus, ATA_DRIVE_TYPE drive, uint32_t lba, uint8_t* buffer) {
-    uint16_t io = buses[bus].io_base;
-
-    outb(io + 6, 0xE0 | (drive << 4) | ((lba >> 24) & 0x0F)); // select drive and LBA mode
-    ata_io_wait(bus);
+    uint32_t bar0 = pci_config_read(device->bus, device->slot, device->function, 0x10);
+    uint32_t bar1 = pci_config_read(device->bus, device->slot, device->function, 0x14);
+    uint32_t bar2 = pci_config_read(device->bus, device->slot, device->function, 0x18);
+    uint32_t bar3 = pci_config_read(device->bus, device->slot, device->function, 0x1C);
     
-    outb(io + 2, 1); // sector count
-    outb(io + 3, (uint8_t)lba); // LBA low byte
-    outb(io + 4, (uint8_t)(lba >> 8)); // LBA mid byte
-    outb(io + 5, (uint8_t)(lba >> 16)); // LBA high byte
-    outb(io + 7, 0x30); // command: write sectors
+    if (bar0 & 0x1) buses[ATA_BUS_PRIMARY].io_base = bar0 & 0xFFFC;
+    if (bar1 & 0x1) buses[ATA_BUS_PRIMARY].ctrl_base = (bar1 & 0xFFFC) + 2;
+    if (bar2 & 0x1) buses[ATA_BUS_SECONDARY].io_base = bar2 & 0xFFFC;
+    if (bar3 & 0x1) buses[ATA_BUS_SECONDARY].ctrl_base = (bar3 & 0xFFFC) + 2;
 
-    if (ata_wait_bsy(bus)) return 1;
-    if (ata_wait_drq(bus)) return 1;
+    serial_puts("ATA: Primary IO: "); serial_put_hex(buses[ATA_BUS_PRIMARY].io_base); serial_puts("\n");
+    serial_puts("ATA: Primary CTRL: "); serial_put_hex(buses[ATA_BUS_PRIMARY].ctrl_base); serial_puts("\n");
+    serial_puts("ATA: Secondary IO: "); serial_put_hex(buses[ATA_BUS_SECONDARY].io_base); serial_puts("\n");
+    serial_puts("ATA: Secondary CTRL: "); serial_put_hex(buses[ATA_BUS_SECONDARY].ctrl_base); serial_puts("\n");
 
-    outsw(io, (uint16_t*)buffer, 256);
-
-    outb(io + 7, 0xE7); // command: flush cache
-    while (inb(buses[bus].ctrl_base) & 0x80); // wait until flush completes
-
-    return 0;
+    ata_init();
 }
