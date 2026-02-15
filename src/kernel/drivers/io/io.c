@@ -4,16 +4,16 @@
  * @author friedrichOsDev
  */
 
- #include <io.h>
+#include <io.h>
 
  /*
   * Writes a byte to the specified I/O port
   * @param port The I/O port to write to
   * @param value The byte value to write
   */
- void outb(uint16_t port, uint8_t value) {
-     __asm__ __volatile__ ("outb %0, %1" : : "a"(value), "Nd"(port));
- }
+void outb(uint16_t port, uint8_t value) {
+    __asm__ __volatile__ ("outb %0, %1" : : "a"(value), "Nd"(port));
+}
 
 /*
  * Reads a byte from the specified I/O port
