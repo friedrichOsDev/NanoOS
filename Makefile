@@ -30,11 +30,11 @@ ASM_OBJECTS = $(patsubst $(KERNEL_DIR)/%.asm,$(BUILD_DIR)/%.o,$(ASM_SOURCES))
 OBJECTS     = $(C_OBJECTS) $(ASM_OBJECTS)
 
 # Flags
-CFLAGS = -ffreestanding -m32 -O2 -Wall -Wextra -fno-stack-protector -fno-builtin -nostdlib -I$(KERNEL_DIR)/include
+CFLAGS = -ffreestanding -m32 -O2 -Wall -Wextra -Werror -fno-stack-protector -fno-builtin -nostdlib -I$(KERNEL_DIR)/include
 LDFLAGS = -m elf_i386 -T $(LINKER)
 
 # Targets
-.PHONY: all clean iso kernel
+.PHONY: all clean iso kernel run
 
 all: iso
 
@@ -59,6 +59,10 @@ iso: $(KERNEL_ELF)
 	cp $(KERNEL_ELF) $(ISO_DIR)/boot/kernel.elf
 	cp $(GRUB_DIR)/grub.cfg $(ISO_DIR)/boot/grub/
 	grub-mkrescue -o $(ISO_IMAGE) $(ISO_DIR)
+
+# --- Run ---
+run: iso
+	qemu-system-i386 -m 4G -cdrom $(ISO_IMAGE) -no-reboot -d int,cpu_reset -D q.log -serial file:serial.log
 
 # --- Clean ---
 clean:
