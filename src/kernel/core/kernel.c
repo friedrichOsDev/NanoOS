@@ -6,6 +6,7 @@
 
 #include <kernel.h>
 #include <serial.h>
+#include <gdt.h>
 
 /*
  * Kernel entry point
@@ -15,12 +16,19 @@
 void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     serial_init();
 
-    if (multiboot_info == 0) serial_printf("Warning: Multiboot Info structure is NULL!\n");
-    if (multiboot_magic != 0x36D76289) serial_printf("Error: Invalid Multiboot Magic! Expected 0x36D76289\n");
+    if (multiboot_info == 0) {
+        serial_printf("Error: Multiboot Info structure is NULL! Expected a pointer to the multiboot structure\n");
+        while (1);
+    }
 
-    serial_printf("Welcome to NanoOS!\n");
-    serial_printf("Multiboot Magic: %x\n", multiboot_magic);
-    serial_printf("Multiboot Info:  %x\n", multiboot_info);
+    if (multiboot_magic != 0x36D76289) {
+        serial_printf("Error: Invalid Multiboot Magic! Expected 0x36D76289\n");
+        while (1);
+    }
+
+    gdt_init();
+
+    serial_printf("Kernel: Welcome to NanoOS!\n");
 
     while (1);
 }
