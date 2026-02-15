@@ -7,6 +7,8 @@
 #include <kernel.h>
 #include <serial.h>
 #include <gdt.h>
+#include <idt.h>
+#include <irq.h>
 
 /*
  * Kernel entry point
@@ -27,6 +29,9 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     }
 
     gdt_init();
+    idt_init();
+    irq_init();
+    idt_enable();
 
     serial_printf("Kernel: Welcome to NanoOS!\n");
 
