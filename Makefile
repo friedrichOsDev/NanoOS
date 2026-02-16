@@ -30,7 +30,7 @@ ASM_OBJECTS = $(patsubst $(KERNEL_DIR)/%.asm,$(BUILD_DIR)/%.o,$(ASM_SOURCES))
 OBJECTS     = $(C_OBJECTS) $(ASM_OBJECTS)
 
 # Flags
-CFLAGS = -ffreestanding -m32 -O2 -Wall -Wextra -Werror -fno-stack-protector -fno-builtin -nostdlib -I$(KERNEL_DIR)/include
+CFLAGS = -ffreestanding -m32 -O1 -Wall -Wextra -Werror -fno-stack-protector -fno-builtin -nostdlib -I$(KERNEL_DIR)/include
 LDFLAGS = -m elf_i386 -T $(LINKER)
 
 # Targets
