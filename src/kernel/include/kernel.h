@@ -8,6 +8,11 @@
 
 #include <stdint.h>
 
+extern uint8_t end[];
+
+#define KERNEL_START_PHYS 0x100000
+#define KERNEL_END_PHYS ((uintptr_t)end)
+
 #define MULTIBOOT_TAG_TYPE_END 0
 #define MULTIBOOT_TAG_TYPE_CMDLINE 1
 #define MULTIBOOT_TAG_TYPE_BOOT_LOADER 2
@@ -122,3 +127,4 @@ typedef struct {
 
 extern mmap_t kernel_mmap;
 extern fb_info_t kernel_fb_info;
+extern multiboot_info_t* kernel_multiboot_info;

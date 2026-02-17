@@ -9,9 +9,12 @@
 #include <gdt.h>
 #include <idt.h>
 #include <irq.h>
+#include <panic.h>
+#include <pmm.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
+multiboot_info_t* kernel_multiboot_info;
 
 /*
  * Parse the multiboot information structure provided by the bootloader
@@ -19,18 +22,11 @@ fb_info_t kernel_fb_info;
  * @param multiboot_info The address of the multiboot information structure
  */
 void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
-    if (multiboot_info == 0) {
-        serial_printf("Error: Multiboot Info structure is NULL! Expected a pointer to the multiboot structure\n");
-        while (1);
-    }
+    if (multiboot_info == 0) kernel_panic("Multiboot info structure is missing!", 0);
+    if (multiboot_magic != 0x36D76289) kernel_panic("Invalid multiboot magic number! Expected 0x36D76289", 0);
 
-    if (multiboot_magic != 0x36D76289) {
-        serial_printf("Error: Invalid Multiboot Magic! Expected 0x36D76289\n");
-        while (1);
-    }
-
-    multiboot_info_t* mbi = (multiboot_info_t*)multiboot_info;
-    serial_printf("Multiboot: Info at %x with size %d\n", multiboot_info, mbi->total_size);
+    kernel_multiboot_info = (multiboot_info_t*)multiboot_info;
+    serial_printf("Multiboot: Info at %x with size %d\n", multiboot_info, kernel_multiboot_info->total_size);
 
     multiboot_tag_t* tag = (multiboot_tag_t*)(multiboot_info + sizeof(multiboot_info_t));
 
@@ -59,10 +55,7 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
                         kernel_mmap.entries[kernel_mmap.entry_count].type = (mmap_type_t)entry->type;
                         kernel_mmap.entry_count++;
                     }
-                    serial_printf("Multiboot: Memory region: base=%x:%x, len=%x:%x, type=%d\n",
-                        (uint32_t)(entry->base_addr >> 32), (uint32_t)entry->base_addr,
-                        (uint32_t)(entry->length >> 32), (uint32_t)entry->length,
-                        entry->type);
+                    serial_printf("Multiboot: Memory region: base=%x:%x, len=%x:%x, type=%d\n", (uint32_t)(entry->base_addr >> 32), (uint32_t)entry->base_addr, (uint32_t)(entry->length >> 32), (uint32_t)entry->length, entry->type);
                 }
                 break;
             case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
@@ -73,13 +66,9 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
                 kernel_fb_info.fb_pitch = fb_tag->framebuffer_pitch;
                 kernel_fb_info.fb_bpp = fb_tag->framebuffer_bpp;
                 
-                serial_printf("Multiboot: Framebuffer: %dx%dx%d at %x, type: %d\n", 
-                    fb_tag->framebuffer_width, fb_tag->framebuffer_height, fb_tag->framebuffer_bpp, 
-                    (uint32_t)fb_tag->framebuffer_addr, fb_tag->framebuffer_type);
+                serial_printf("Multiboot: Framebuffer: %dx%dx%d at %x, type: %d\n", fb_tag->framebuffer_width, fb_tag->framebuffer_height, fb_tag->framebuffer_bpp, (uint32_t)fb_tag->framebuffer_addr, fb_tag->framebuffer_type);
                 
-                if (fb_tag->framebuffer_type == 2) {
-                    serial_printf("Multiboot: Warning: Framebuffer is in TEXT MODE (0xB8000). Update Multiboot Header!\n");
-                }
+                if (fb_tag->framebuffer_type == 2) kernel_panic("Unsupported framebuffer type: EGA text mode is not supported", 0);
                 break;
             default: break;
         }
@@ -100,6 +89,8 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     idt_enable();
 
     multiboot_parse(multiboot_magic, multiboot_info);
+
+    pmm_init();
 
     serial_printf("Kernel: Welcome to NanoOS!\n");
 
