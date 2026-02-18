@@ -10,15 +10,16 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#define PAGE_SIZE 4096
+#define PMM_PAGE_SIZE 4096
 #define PMM_MAX_PHYS_ADDR 0xFFFFFFFF
-#define IS_PAGE_ALIGNED(addr) (((uint32_t)(addr) & 0xFFF) == 0)
-#define ALIGN_UP(addr) (((addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
-#define ALIGN_DOWN(addr) ((addr) & ~(PAGE_SIZE - 1))
-#define BYTES_TO_PAGES(bytes) (((bytes) + PAGE_SIZE - 1) / PAGE_SIZE)
-#define PAGES_TO_BYTES(pages) ((pages) * PAGE_SIZE)
-#define BITMAP_INDEX(addr) ((addr) / PAGE_SIZE / 8)
-#define BITMAP_OFFSET(addr) (((addr) / PAGE_SIZE) % 8)
+#define PMM_ZERO_WINDOW_ADDR 0xFFFFE000
+#define PMM_IS_PAGE_ALIGNED(addr) (((uint32_t)(addr) & (PMM_PAGE_SIZE - 1)) == 0)
+#define PMM_ALIGN_UP(addr) (((addr) + PMM_PAGE_SIZE - 1) & ~(PMM_PAGE_SIZE - 1))
+#define PMM_ALIGN_DOWN(addr) ((addr) & ~(PMM_PAGE_SIZE - 1))
+#define PMM_BYTES_TO_PAGES(bytes) (((bytes) + PMM_PAGE_SIZE - 1) / PMM_PAGE_SIZE)
+#define PMM_PAGES_TO_BYTES(pages) ((pages) * PMM_PAGE_SIZE)
+#define PMM_BITMAP_INDEX(addr) ((addr) / PMM_PAGE_SIZE / 8)
+#define PMM_BITMAP_OFFSET(addr) (((addr) / PMM_PAGE_SIZE) % 8)
 
 typedef uintptr_t phys_addr_t;
 
@@ -43,8 +44,6 @@ phys_addr_t pmm_zalloc_pages(size_t count);
 void pmm_zfree_pages(phys_addr_t addr, size_t count);
 
 // memory protection functions
-void pmm_lock_page(phys_addr_t addr);
-void pmm_unlock_page(phys_addr_t addr);
 void pmm_lock_pages(phys_addr_t addr, size_t count);
 void pmm_unlock_pages(phys_addr_t addr, size_t count);
 
@@ -54,3 +53,4 @@ bool pmm_is_page_free(phys_addr_t addr);
 uint64_t pmm_get_free_memory(void);
 uint64_t pmm_get_used_memory(void);
 uint64_t pmm_get_total_memory(void);
+pmm_state_t* pmm_get_state(void);

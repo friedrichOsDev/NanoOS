@@ -11,6 +11,7 @@
 #include <irq.h>
 #include <panic.h>
 #include <pmm.h>
+#include <vmm.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
@@ -92,7 +93,37 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
 
     pmm_init();
 
+    phys_addr_t test_ptr = pmm_zalloc_page();
+    serial_printf("Kernel (before paging): Zero allocated page at physical address %x\n", test_ptr);
+    pmm_zfree_page(test_ptr);
+
+    vmm_init();
+
     serial_printf("Kernel: Welcome to NanoOS!\n");
+
+    virt_addr_t test_virt_addr = 0xDEADB000;
+    phys_addr_t test_phys_addr = 0x00100000;
+
+    vmm_map_page(vmm_get_page_directory(), test_virt_addr, test_phys_addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
+    serial_printf("Kernel: Mapped virtual address %x to physical address %x\n", test_virt_addr, test_phys_addr);
+
+    uint32_t val_virt = *(volatile uint32_t*)test_virt_addr;
+    serial_printf("Kernel: Read value %x from virtual address %x\n", val_virt, test_virt_addr);
+
+    vmm_unmap_page(vmm_get_page_directory(), test_virt_addr);
+    
+    uint32_t val_phys = *(volatile uint32_t*)test_phys_addr;
+    serial_printf("Kernel: Read value %x from physical address %x\n", val_phys, test_phys_addr);
+
+    if (val_virt == val_phys) {
+        serial_printf("Kernel: SUCCESS! Values match.\n");
+    } else {
+        serial_printf("Kernel: FAILURE! Values mismatch.\n");
+    }
+
+    test_ptr = pmm_zalloc_page();
+    serial_printf("Kernel (after paging): Zero allocated page at physical address %x\n", test_ptr);
+    pmm_zfree_page(test_ptr);
 
     while (1);
 }

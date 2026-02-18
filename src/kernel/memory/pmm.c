@@ -9,6 +9,7 @@
 #include <kernel.h>
 #include <panic.h>
 #include <string.h>
+#include <vmm.h>
 
 static pmm_state_t pmm_state;
 
@@ -16,9 +17,11 @@ static pmm_state_t pmm_state;
  * Initialize the Physical Memory Manager
  */
 void pmm_init(void) {
+    serial_printf("PMM: start\n");
     phys_addr_t max_addr = 0;
 
     // get the highest physical address from the memory map
+    serial_printf("PMM: Parsing memory map with %d entries\n", kernel_mmap.entry_count);
     for (uint32_t i = 0; i < kernel_mmap.entry_count; i++) {
         if (kernel_mmap.entries[i].type == MMAP_USABLE) {
             uint64_t full_end = (uint64_t)kernel_mmap.entries[i].base_addr + kernel_mmap.entries[i].length;
@@ -29,7 +32,7 @@ void pmm_init(void) {
         }
     }
 
-    pmm_state.max_pages = max_addr / PAGE_SIZE;
+    pmm_state.max_pages = max_addr / PMM_PAGE_SIZE;
     uint32_t bitmap_size = (pmm_state.max_pages + 7) / 8;
 
     // search for space for the bitmaps in mmap
@@ -45,11 +48,11 @@ void pmm_init(void) {
             uint64_t block_end = kernel_mmap.entries[i].base_addr + kernel_mmap.entries[i].length;
 
             // Avoid placing bitmap at address 0 (NULL)
-            if (candidate == 0) candidate += PAGE_SIZE;
+            if (candidate == 0) candidate += PMM_PAGE_SIZE;
 
             // Check for kernel overlap
-            phys_addr_t kernel_start = ALIGN_DOWN(KERNEL_START_PHYS);
-            phys_addr_t kernel_end = ALIGN_UP(KERNEL_END_PHYS);
+            phys_addr_t kernel_start = PMM_ALIGN_DOWN(KERNEL_START_PHYS);
+            phys_addr_t kernel_end = PMM_ALIGN_UP(KERNEL_END_PHYS);
 
             if (candidate < kernel_end && (candidate + bitmap_size) > kernel_start) {
                 // Overlap detected, try to place after kernel
@@ -76,33 +79,37 @@ void pmm_init(void) {
     // unlock usable mem
     for (uint32_t i = 0; i < kernel_mmap.entry_count; i++) {
         if (kernel_mmap.entries[i].type == MMAP_USABLE) {
-            phys_addr_t start = ALIGN_UP(kernel_mmap.entries[i].base_addr);
-            phys_addr_t end = ALIGN_DOWN(kernel_mmap.entries[i].base_addr + kernel_mmap.entries[i].length);
-            pmm_unlock_pages(start, (end - start) / PAGE_SIZE);
+            phys_addr_t start = PMM_ALIGN_UP(kernel_mmap.entries[i].base_addr);
+            phys_addr_t end = PMM_ALIGN_DOWN(kernel_mmap.entries[i].base_addr + kernel_mmap.entries[i].length);
+            pmm_unlock_pages(start, (end - start) / PMM_PAGE_SIZE);
         }
     }
 
     // lock kernel && bitmap && framebuffer && multiboot structure && (later acpi __TODO__)
-    phys_addr_t kernel_start_aligned = ALIGN_DOWN(KERNEL_START_PHYS);
-    phys_addr_t kernel_end_aligned = ALIGN_UP(KERNEL_END_PHYS);
-    pmm_lock_pages(kernel_start_aligned, (kernel_end_aligned - kernel_start_aligned) / PAGE_SIZE);
+    serial_printf("PMM: Locking kernel, bitmap, framebuffer, and multiboot structure\n");
+    phys_addr_t kernel_start_aligned = PMM_ALIGN_DOWN(KERNEL_START_PHYS);
+    phys_addr_t kernel_end_aligned = PMM_ALIGN_UP(KERNEL_END_PHYS);
+    pmm_lock_pages(kernel_start_aligned, (kernel_end_aligned - kernel_start_aligned) / PMM_PAGE_SIZE);
 
-    phys_addr_t bitmap_start_aligned = ALIGN_DOWN((phys_addr_t)pmm_state.bitmap);
-    phys_addr_t bitmap_end_aligned = ALIGN_UP((phys_addr_t)pmm_state.bitmap + bitmap_size);
-    pmm_lock_pages(bitmap_start_aligned, (bitmap_end_aligned - bitmap_start_aligned) / PAGE_SIZE);
+    phys_addr_t bitmap_start_aligned = PMM_ALIGN_DOWN((phys_addr_t)pmm_state.bitmap);
+    phys_addr_t bitmap_end_aligned = PMM_ALIGN_UP((phys_addr_t)pmm_state.bitmap + bitmap_size);
+    pmm_lock_pages(bitmap_start_aligned, (bitmap_end_aligned - bitmap_start_aligned) / PMM_PAGE_SIZE);
 
     if (kernel_fb_info.fb_addr) {
-        phys_addr_t fb_start_aligned = ALIGN_DOWN((uintptr_t)kernel_fb_info.fb_addr);
-        phys_addr_t fb_end_aligned = ALIGN_UP((uintptr_t)kernel_fb_info.fb_addr + (kernel_fb_info.fb_height * kernel_fb_info.fb_pitch));
-        pmm_lock_pages(fb_start_aligned, (fb_end_aligned - fb_start_aligned) / PAGE_SIZE);
+        phys_addr_t fb_start_aligned = PMM_ALIGN_DOWN((uintptr_t)kernel_fb_info.fb_addr);
+        phys_addr_t fb_end_aligned = PMM_ALIGN_UP((uintptr_t)kernel_fb_info.fb_addr + (kernel_fb_info.fb_height * kernel_fb_info.fb_pitch));
+        pmm_lock_pages(fb_start_aligned, (fb_end_aligned - fb_start_aligned) / PMM_PAGE_SIZE);
     }
 
-    phys_addr_t multiboot_start_aligned = ALIGN_DOWN((phys_addr_t)kernel_multiboot_info);
-    phys_addr_t multiboot_end_aligned = ALIGN_UP((phys_addr_t)kernel_multiboot_info + kernel_multiboot_info->total_size);
-    pmm_lock_pages(multiboot_start_aligned, (multiboot_end_aligned - multiboot_start_aligned) / PAGE_SIZE);
+    phys_addr_t multiboot_start_aligned = PMM_ALIGN_DOWN((phys_addr_t)kernel_multiboot_info);
+    phys_addr_t multiboot_end_aligned = PMM_ALIGN_UP((phys_addr_t)kernel_multiboot_info + kernel_multiboot_info->total_size);
+    pmm_lock_pages(multiboot_start_aligned, (multiboot_end_aligned - multiboot_start_aligned) / PMM_PAGE_SIZE);
+
+    pmm_lock_pages(0x00000000, 1);
 
     serial_printf("PMM: Initialized with max address %x, total pages: %d\n", max_addr, pmm_state.max_pages);
     serial_printf("PMM: Free memory: %d KB, Used memory: %d KB\n", (uint32_t)(pmm_get_free_memory() / 1024), (uint32_t)(pmm_get_used_memory() / 1024));
+    serial_printf("PMM: done\n");
 }
 
 /*
@@ -118,6 +125,11 @@ phys_addr_t pmm_alloc_page() {
  * @param addr The physical address of the page to free
  */
 void pmm_free_page(phys_addr_t addr) {
+    if (!PMM_IS_PAGE_ALIGNED(addr)) {
+        serial_printf("PMM: Error: Attempt to free unaligned page at address %x\n", addr);
+        return;
+    }
+    
     pmm_free_pages(addr, 1);
 }
 
@@ -127,7 +139,33 @@ void pmm_free_page(phys_addr_t addr) {
  */
 phys_addr_t pmm_zalloc_page() {
     phys_addr_t addr = pmm_alloc_page();
-    if (addr) memset((void*)addr, 0, PAGE_SIZE);
+    if (!addr) {
+        serial_printf("PMM: Error: Failed to allocate page\n");
+        return 0;
+    }
+
+    if (!paging_is_active()) {
+        memset((void*)addr, 0, PMM_PAGE_SIZE);
+
+        if (!PMM_IS_PAGE_ALIGNED(addr)) {
+            serial_printf("PMM: Error: Allocated page at unaligned address %x\n", addr);
+            return 0;
+        }
+
+        return addr;
+    }
+
+    vmm_map_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW, (phys_addr_t)addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
+
+    memset((void*)VMM_ZERO_WINDOW, 0, PMM_PAGE_SIZE);
+
+    vmm_unmap_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW);
+
+    if (!PMM_IS_PAGE_ALIGNED(addr)) {
+        serial_printf("PMM: Error: Allocated page at unaligned address %x\n", addr);
+        return 0;
+    }
+
     return addr;
 }
 
@@ -136,7 +174,28 @@ phys_addr_t pmm_zalloc_page() {
  * @param addr The physical address of the page to free
  */
 void pmm_zfree_page(phys_addr_t addr) {
-    if (addr) memset((void*)addr, 0, PAGE_SIZE);
+    if (!addr) {
+        serial_printf("PMM: Error: Attempt to free null page\n");
+        return;
+    }
+
+    if (!PMM_IS_PAGE_ALIGNED(addr)) {
+        serial_printf("PMM: Error: Attempt to free unaligned page at address %x\n", addr);
+        return;
+    }
+
+    if (!paging_is_active()) {
+        memset((void*)addr, 0, PMM_PAGE_SIZE);
+        pmm_free_page(addr);
+        return;
+    }
+
+    vmm_map_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW, (phys_addr_t)addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
+
+    memset((void*)VMM_ZERO_WINDOW, 0, PMM_PAGE_SIZE);
+
+    vmm_unmap_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW);
+
     pmm_free_page(addr);
 }
 
@@ -146,7 +205,10 @@ void pmm_zfree_page(phys_addr_t addr) {
  * @return The physical address of the first page, or 0 if not found
  */
 phys_addr_t pmm_alloc_pages(size_t count) {
-    if (count == 0 || count > pmm_state.max_pages) return 0;
+    if (count == 0 || count > pmm_state.max_pages) {
+        serial_printf("PMM: Error: Invalid page count %d for allocation\n", count);
+        return 0;
+    }
 
     uint32_t* bitmap32 = (uint32_t*)pmm_state.bitmap;
     uint32_t max_blocks = (pmm_state.max_pages / 8) / 4;
@@ -164,7 +226,7 @@ phys_addr_t pmm_alloc_pages(size_t count) {
                     consecutive_found++;
                     if (consecutive_found == count) {
                         uint32_t page_index = (index * 32) + (bit - count + 1);
-                        phys_addr_t addr = page_index * PAGE_SIZE;
+                        phys_addr_t addr = page_index * PMM_PAGE_SIZE;
                         pmm_lock_pages(addr, count);
                         pmm_state.last_checked_index = index; // start next search from here
                         return addr;
@@ -181,10 +243,10 @@ phys_addr_t pmm_alloc_pages(size_t count) {
     consecutive_found = 0;
 
     for (uint32_t page_index = start_page_for_rest; page_index < pmm_state.max_pages; page_index++) {
-        if (pmm_is_page_free(page_index * PAGE_SIZE)) {
+        if (pmm_is_page_free(page_index * PMM_PAGE_SIZE)) {
             consecutive_found++;
             if (consecutive_found == count) {
-                phys_addr_t addr = (page_index - count + 1) * PAGE_SIZE;
+                phys_addr_t addr = (page_index - count + 1) * PMM_PAGE_SIZE;
                 pmm_lock_pages(addr, count);
                 pmm_state.last_checked_index = page_index / 32; // start next search from here
                 return addr;
@@ -203,10 +265,22 @@ phys_addr_t pmm_alloc_pages(size_t count) {
  * @param count The number of pages to free
  */
 void pmm_free_pages(phys_addr_t addr, size_t count) {
-    if (!IS_PAGE_ALIGNED(addr)) return;
-    for (size_t i = 0; i < count; i++) {
-        pmm_unlock_page(addr + (i * PAGE_SIZE));
+    if (!addr) {
+        serial_printf("PMM: Error: Attempt to free pages with null starting address\n");
+        return;
     }
+
+    if (!PMM_IS_PAGE_ALIGNED(addr)) {
+        serial_printf("PMM: Error: Attempt to free pages with unaligned starting address %x\n", addr);
+        return;
+    }
+
+    if (count == 0 || count > pmm_state.max_pages) {
+        serial_printf("PMM: Error: Invalid page count %d for freeing\n", count);
+        return;
+    }
+
+    pmm_unlock_pages(addr, count);
 }
 
 /*
@@ -215,8 +289,34 @@ void pmm_free_pages(phys_addr_t addr, size_t count) {
  * @return The physical address of the first page, or 0 if not found
  */
 phys_addr_t pmm_zalloc_pages(size_t count) {
+    if (count == 0 || count > pmm_state.max_pages) {
+        serial_printf("PMM: Error: Invalid page count %d for allocation\n", count);
+        return 0;
+    }
+
     phys_addr_t addr = pmm_alloc_pages(count);
-    if (addr) memset((void*)addr, 0, count * PAGE_SIZE);
+
+    if (!addr) {
+        serial_printf("PMM: Error: Failed to allocate pages\n");
+        return 0;
+    }
+
+    if (!PMM_IS_PAGE_ALIGNED(addr)) {
+        serial_printf("PMM: Error: Allocated pages at unaligned address %x\n", addr);
+        return 0;
+    }
+
+    if (!paging_is_active()) {
+        memset((void*)addr, 0, count * PMM_PAGE_SIZE);
+        return addr;
+    }
+
+    vmm_map_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW, (phys_addr_t)addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
+
+    memset((void*)VMM_ZERO_WINDOW, 0, count * PMM_PAGE_SIZE);
+
+    vmm_unmap_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW);
+
     return addr;
 }
 
@@ -226,36 +326,34 @@ phys_addr_t pmm_zalloc_pages(size_t count) {
  * @param count The number of pages to free
  */
 void pmm_zfree_pages(phys_addr_t addr, size_t count) {
-    if (addr && IS_PAGE_ALIGNED(addr)) {
-        memset((void*)addr, 0, count * PAGE_SIZE);
+    if (count == 0 || count > pmm_state.max_pages) {
+        serial_printf("PMM: Error: Invalid page count %d for freeing\n", count);
+        return;
+    }
+
+    if (!addr) {
+        serial_printf("PMM: Error: Attempt to free pages with null starting address\n");
+        return;
+    }
+
+    if (!PMM_IS_PAGE_ALIGNED(addr)) {
+        serial_printf("PMM: Error: Attempt to free pages with unaligned starting address %x\n", addr);
+        return;
+    }
+
+    if (!paging_is_active()) {
+        memset((void*)addr, 0, count * PMM_PAGE_SIZE);
         pmm_free_pages(addr, count);
+        return;
     }
-}
 
-/*
- * Lock a specific physical page
- * @param addr The physical address of the page to lock
- */
-void pmm_lock_page(phys_addr_t addr) {
-    if (addr >= pmm_state.max_pages * PAGE_SIZE) return;
-    if (!IS_PAGE_ALIGNED(addr)) return;
-    if (pmm_is_page_free(addr)) {
-        pmm_state.bitmap[BITMAP_INDEX(addr)] |= (1 << BITMAP_OFFSET(addr));
-        pmm_state.used_pages++;
-    }
-}
+    vmm_map_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW, (phys_addr_t)addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
 
-/*
- * Unlock a specific physical page
- * @param addr The physical address of the page to unlock
- */
-void pmm_unlock_page(phys_addr_t addr) {
-    if (addr >= pmm_state.max_pages * PAGE_SIZE) return;
-    if (!IS_PAGE_ALIGNED(addr)) return;
-    if (!pmm_is_page_free(addr)) {
-        pmm_state.bitmap[BITMAP_INDEX(addr)] &= ~(1 << BITMAP_OFFSET(addr));
-        pmm_state.used_pages--;
-    }
+    memset((void*)VMM_ZERO_WINDOW, 0, count * PMM_PAGE_SIZE);
+
+    vmm_unmap_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW);
+
+    pmm_free_pages(addr, count);
 }
 
 /*
@@ -264,9 +362,32 @@ void pmm_unlock_page(phys_addr_t addr) {
  * @param count The number of pages to lock
  */
 void pmm_lock_pages(phys_addr_t addr, size_t count) {
-    for (size_t i = 0; i < count; i++) {
-        pmm_lock_page(addr + (i * PAGE_SIZE));
+    if (!PMM_IS_PAGE_ALIGNED(addr)) {
+        serial_printf("PMM: Error: Attempt to lock pages with unaligned starting address %x\n", addr);
+        return;
     }
+
+    if (count == 0 || count > pmm_state.max_pages) {
+        serial_printf("PMM: Error: Invalid page count %d for locking\n", count);
+        return;
+    }
+
+    uint32_t* bitmap32 = (uint32_t*)pmm_state.bitmap;
+    size_t start_page = addr / PMM_PAGE_SIZE;
+    size_t end_page = start_page + count;
+
+    for (size_t i = start_page; i < end_page; ) {
+        // check for 32 bit boundary
+        if (i % 32 == 0 && (end_page - i) >= 32) {
+            bitmap32[i / 32] |= 0xFFFFFFFF; // lock 32 pages
+            i += 32; // skip 32 pages
+        } else {
+            pmm_state.bitmap[i / 8] |= (1 << (i % 8)); // lock 1 page
+            i++; // skip 1 page
+        }
+    }
+
+    pmm_state.used_pages += count;
 }
 
 /*
@@ -275,9 +396,32 @@ void pmm_lock_pages(phys_addr_t addr, size_t count) {
  * @param count The number of pages to unlock
  */
 void pmm_unlock_pages(phys_addr_t addr, size_t count) {
-    for (size_t i = 0; i < count; i++) {
-        pmm_unlock_page(addr + (i * PAGE_SIZE));
+    if (!PMM_IS_PAGE_ALIGNED(addr)) {
+        serial_printf("PMM: Error: Attempt to unlock pages with unaligned starting address %x\n", addr);
+        return;
     }
+
+    if (count == 0 || count > pmm_state.max_pages) {
+        serial_printf("PMM: Error: Invalid page count %d for unlocking\n", count);
+        return;
+    }
+
+    uint32_t* bitmap32 = (uint32_t*)pmm_state.bitmap;
+    size_t start_page = addr / PMM_PAGE_SIZE;
+    size_t end_page = start_page + count;
+
+    for (size_t i = start_page; i < end_page; ) {
+        // check for 32 bit boundary
+        if (i % 32 == 0 && (end_page - i) >= 32) {
+            bitmap32[i / 32] &= 0x00000000; // unlock 32 pages
+            i += 32; // skip 32 pages
+        } else {
+            pmm_state.bitmap[i / 8] &= ~(1 << (i % 8)); // unlock 1 page
+            i++; // skip 1 page
+        }
+    }
+
+    pmm_state.used_pages -= count;
 }
 
 /*
@@ -286,8 +430,17 @@ void pmm_unlock_pages(phys_addr_t addr, size_t count) {
  * @return True if the page is free, false otherwise
  */
 bool pmm_is_page_free(phys_addr_t addr) {
-    if (addr >= pmm_state.max_pages * PAGE_SIZE) return false;
-    return !(pmm_state.bitmap[BITMAP_INDEX(addr)] & (1 << BITMAP_OFFSET(addr)));
+    if (!PMM_IS_PAGE_ALIGNED(addr)) {
+        serial_printf("PMM: Error: Attempt to check unaligned page at address %x\n", addr);
+        return false;
+    }
+
+    if (addr >= pmm_state.max_pages * PMM_PAGE_SIZE) {
+        serial_printf("PMM: Error: Attempt to check page at out-of-bounds address %x\n", addr);
+        return false;
+    }
+
+    return !(pmm_state.bitmap[PMM_BITMAP_INDEX(addr)] & (1 << PMM_BITMAP_OFFSET(addr)));
 }
 
 /*
@@ -295,7 +448,7 @@ bool pmm_is_page_free(phys_addr_t addr) {
  * @return The amount of free memory in bytes
  */
 uint64_t pmm_get_free_memory(void) {
-    return (pmm_state.max_pages - pmm_state.used_pages) * PAGE_SIZE;
+    return (pmm_state.max_pages - pmm_state.used_pages) * PMM_PAGE_SIZE;
 }
 
 /*
@@ -303,7 +456,7 @@ uint64_t pmm_get_free_memory(void) {
  * @return The amount of used memory in bytes
  */
 uint64_t pmm_get_used_memory(void) {
-    return pmm_state.used_pages * PAGE_SIZE;
+    return pmm_state.used_pages * PMM_PAGE_SIZE;
 }
 
 /*
@@ -311,5 +464,13 @@ uint64_t pmm_get_used_memory(void) {
  * @return The total amount of memory in bytes
  */
 uint64_t pmm_get_total_memory(void) {
-    return pmm_state.max_pages * PAGE_SIZE;
+    return pmm_state.max_pages * PMM_PAGE_SIZE;
+}
+
+/*
+ * Get the current state of the Physical Memory Manager
+ * @return A pointer to the pmm_state_t structure
+ */
+pmm_state_t* pmm_get_state(void) {
+    return &pmm_state;
 }

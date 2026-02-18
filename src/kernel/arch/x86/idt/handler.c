@@ -65,7 +65,6 @@ void isr_handler(struct registers *regs) {
     if (handler) {
         handler(regs);
     } else {
-        serial_printf("Unhandled Exception: %d\n", regs->int_no);
         while (1);
     }
 }
