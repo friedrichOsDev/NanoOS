@@ -311,11 +311,12 @@ phys_addr_t pmm_zalloc_pages(size_t count) {
         return addr;
     }
 
-    vmm_map_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW, (phys_addr_t)addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
-
-    memset((void*)VMM_ZERO_WINDOW, 0, count * PMM_PAGE_SIZE);
-
-    vmm_unmap_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW);
+    for (size_t i = 0; i < count; i++) {
+        phys_addr_t page_addr = addr + (i * PMM_PAGE_SIZE);
+        vmm_map_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW, page_addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
+        memset((void*)VMM_ZERO_WINDOW, 0, PMM_PAGE_SIZE);
+        vmm_unmap_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW);
+    }
 
     return addr;
 }
@@ -347,11 +348,12 @@ void pmm_zfree_pages(phys_addr_t addr, size_t count) {
         return;
     }
 
-    vmm_map_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW, (phys_addr_t)addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
-
-    memset((void*)VMM_ZERO_WINDOW, 0, count * PMM_PAGE_SIZE);
-
-    vmm_unmap_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW);
+    for (size_t i = 0; i < count; i++) {
+        phys_addr_t page_addr = addr + (i * PMM_PAGE_SIZE);
+        vmm_map_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW, page_addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
+        memset((void*)VMM_ZERO_WINDOW, 0, PMM_PAGE_SIZE);
+        vmm_unmap_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW);
+    }
 
     pmm_free_pages(addr, count);
 }

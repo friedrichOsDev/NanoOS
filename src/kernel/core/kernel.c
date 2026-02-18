@@ -78,6 +78,51 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
 }
 
 /*
+ * Test the kernel functionality
+ * @param void
+ */
+void kernel_tests(void) {
+    // memory management test
+    // - pmm
+    serial_printf("-----\n");
+
+    serial_printf("Kernel: Tests: PMM: Total memory: %d KiB\n", (uint32_t)pmm_get_total_memory() / 1024);
+    serial_printf("Kernel: Tests: PMM: Used memory: %d KiB\n", (uint32_t)pmm_get_used_memory() / 1024);
+    serial_printf("Kernel: Tests: PMM: Free memory: %d KiB\n", (uint32_t)pmm_get_free_memory() / 1024);
+
+    serial_printf("-----\n");
+
+    phys_addr_t test_alloc = pmm_zalloc_pages(1024);
+    serial_printf("Kernel: Tests: PMM: Allocated 1024 pages at %x\n", test_alloc);
+    serial_printf("Kernel: Tests: PMM: Used memory: %d KiB\n", (uint32_t)pmm_get_used_memory() / 1024);
+    pmm_zfree_pages(test_alloc, 1024);
+    serial_printf("Kernel: Tests: PMM: Freed 1024 pages at %x\n", test_alloc);
+    serial_printf("Kernel: Tests: PMM: Used memory: %d KiB\n", (uint32_t)pmm_get_used_memory() / 1024);
+
+    serial_printf("-----\n");
+
+    // - vmm
+    virt_addr_t test_virtual_addr = 0x400000; // 4 MiB
+    phys_addr_t test_physical_addr = pmm_alloc_page();
+    serial_printf("Kernel: Tests: VMM: Mapping virtual %x to physical %x\n", test_virtual_addr, test_physical_addr);
+    vmm_map_page(vmm_get_page_directory(), test_virtual_addr, test_physical_addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
+
+    serial_printf("Kernel: Tests: VMM: Verifying mapping...\n");
+    phys_addr_t translated = vmm_virtual_to_physical(vmm_get_page_directory(), test_virtual_addr);
+    if (translated == test_physical_addr) {
+        serial_printf("Kernel: Tests: VMM: SUCCESS: %x -> %x\n", test_virtual_addr, translated);
+    } else {
+        serial_printf("Kernel: Tests: VMM: FAILURE: %x -> %x (expected %x)\n", test_virtual_addr, translated, test_physical_addr);
+    }
+
+    serial_printf("Kernel: Tests: VMM: Unmapping %x\n", test_virtual_addr);
+    vmm_unmap_page(vmm_get_page_directory(), test_virtual_addr);
+    pmm_free_page(test_physical_addr);
+
+    serial_printf("-----\n");
+}
+
+/*
  * Kernel entry point
  * @param multiboot_magic The magic number passed by the bootloader
  * @param multiboot_info The address of the multiboot information structure
@@ -93,6 +138,8 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
 
     pmm_init();
     vmm_init();
+
+    kernel_tests();
 
     serial_printf("Kernel: Welcome to NanoOS!\n");
 

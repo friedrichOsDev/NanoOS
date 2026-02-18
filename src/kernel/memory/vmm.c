@@ -236,7 +236,6 @@ void vmm_unmap_pages(page_directory_t* dir, virt_addr_t virtual_start_address, u
             if (empty) {
                 pmm_free_page((phys_addr_t)table);
                 dir->entries[cur_dir_index] = 0;
-                serial_printf("VMM: Debug: SUCCESS deleting table\n");
             }
         }
         vmm_flush_tlb(virtual_start_address);
@@ -269,7 +268,6 @@ void vmm_unmap_pages(page_directory_t* dir, virt_addr_t virtual_start_address, u
         if (empty) {
             pmm_free_page(dir->entries[cur_dir_index] & VMM_PAGE_MASK);
             dir->entries[cur_dir_index] = 0;
-            serial_printf("VMM: Debug: SUCCESS deleting table\n");
         }
     }
 
