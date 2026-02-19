@@ -56,6 +56,7 @@ void vmm_map_page(page_directory_t* dir, virt_addr_t virtual_address, phys_addr_
 void vmm_unmap_page(page_directory_t* dir, virt_addr_t virtual_address);
 void vmm_map_pages(page_directory_t* dir, virt_addr_t virtual_start_address, phys_addr_t physical_start_address, uint32_t flags, uint32_t count);
 void vmm_unmap_pages(page_directory_t* dir, virt_addr_t virtual_start_address, uint32_t count);
+bool vmm_is_region_free(page_directory_t* dir, virt_addr_t start, uint32_t count);
 phys_addr_t vmm_virtual_to_physical(page_directory_t* dir, virt_addr_t virtual_address);
 page_directory_t* vmm_get_page_directory(void);
 bool paging_is_active(void);

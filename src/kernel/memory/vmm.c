@@ -47,30 +47,29 @@ void vmm_init(void) {
     if (!zero_page_table) kernel_panic("Failed to allocate zero page table", 0);
     current_directory->entries[VMM_ZERO_SLOT] = ((phys_addr_t)zero_page_table & VMM_PAGE_MASK) | VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE;
 
-    // identity map the page dir, kernel, pmm bitmap, framebuffer and multiboot strukture
-    serial_printf("VMM: identity mapping kernel, PMM bitmap, framebuffer and multiboot structure\n");
+    // identity map the page dir, kernel, pmm bitmap, framebuffer
+    serial_printf("VMM: identity mapping kernel, PMM bitmap, framebuffer\n");
 
+    serial_printf("VMM: Debug: map page dir\n");
     vmm_map_page(current_directory, (virt_addr_t)current_directory, (phys_addr_t)current_directory, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
     
+    serial_printf("VMM: Debug: map kernel\n");
     phys_addr_t kernel_start_addr = (phys_addr_t)PMM_ALIGN_DOWN(KERNEL_START_PHYS);
     phys_addr_t kernel_end_addr = (phys_addr_t)PMM_ALIGN_UP(KERNEL_END_PHYS);
     // for (phys_addr_t addr = PMM_ALIGN_DOWN(KERNEL_START_PHYS); addr < PMM_ALIGN_UP(KERNEL_END_PHYS); addr += VMM_PAGE_SIZE) vmm_map_page(current_directory, (virt_addr_t)addr, (phys_addr_t)addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
     vmm_map_pages(current_directory, kernel_start_addr, kernel_start_addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE, (kernel_end_addr - kernel_start_addr) / VMM_PAGE_SIZE);
 
+    serial_printf("VMM: Debug: map bitmap\n");
     phys_addr_t bitmap_start_addr = (phys_addr_t)PMM_ALIGN_DOWN((phys_addr_t)pmm_get_state()->bitmap);
     phys_addr_t bitmap_end_addr = (phys_addr_t)PMM_ALIGN_UP((phys_addr_t)pmm_get_state()->bitmap + ((pmm_get_state()->max_pages + 7) / 8));
     // for (phys_addr_t addr = bitmap_start_addr; addr < bitmap_end_addr; addr += VMM_PAGE_SIZE) vmm_map_page(current_directory, (virt_addr_t)addr, (phys_addr_t)addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
     vmm_map_pages(current_directory, bitmap_start_addr, bitmap_start_addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE, (bitmap_end_addr - bitmap_start_addr) / VMM_PAGE_SIZE);
 
+    serial_printf("VMM: Debug: map framebuffer\n");
     phys_addr_t fb_start_addr = (phys_addr_t)PMM_ALIGN_DOWN((phys_addr_t)kernel_fb_info.fb_addr);
     phys_addr_t fb_end_addr = (phys_addr_t)PMM_ALIGN_UP((phys_addr_t)kernel_fb_info.fb_addr + (kernel_fb_info.fb_height * kernel_fb_info.fb_pitch));
     // for (phys_addr_t addr = fb_start_addr; addr < fb_end_addr; addr += VMM_PAGE_SIZE) vmm_map_page(current_directory, (virt_addr_t)addr, (phys_addr_t)addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
     vmm_map_pages(current_directory, fb_start_addr, fb_start_addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE, (fb_end_addr - fb_start_addr) / VMM_PAGE_SIZE);
-
-    phys_addr_t multiboot_start_addr = (phys_addr_t)PMM_ALIGN_DOWN((phys_addr_t)kernel_multiboot_info);
-    phys_addr_t multiboot_end_addr = (phys_addr_t)PMM_ALIGN_UP((phys_addr_t)kernel_multiboot_info + kernel_multiboot_info->total_size);
-    // for (phys_addr_t addr = multiboot_start_addr; addr < multiboot_end_addr; addr += VMM_PAGE_SIZE) vmm_map_page(current_directory, (virt_addr_t)addr, (phys_addr_t)addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
-    vmm_map_pages(current_directory, multiboot_start_addr, multiboot_start_addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE, (multiboot_end_addr - multiboot_start_addr) / VMM_PAGE_SIZE);
 
     serial_printf("VMM: switching to new page directory at %x\n", (phys_addr_t)current_directory);
     vmm_switch_directory(current_directory);
@@ -145,6 +144,20 @@ void vmm_map_pages(page_directory_t* dir, virt_addr_t virtual_start_address, phy
     if (count == 0 || count > pmm_get_state()->max_pages) {
         serial_printf("VMM: Error: Invalid page count %d for mapping\n", count);
         return;
+    }
+
+    if (!vmm_is_region_free(dir, virtual_start_address, count)) {
+        if (!(virtual_start_address == VMM_ZERO_WINDOW)) {
+            serial_printf("VMM: Error: Attempt to map pages to virtual address range %x - %x which is not free to map\n", virtual_start_address, virtual_start_address + (count * VMM_PAGE_SIZE));
+            
+        } else {
+            if (count > 1) {
+                serial_printf("VMM: Error: Attempt to map %d pages to zero window at virtual address %x which is only 1 page -> this would cause an overflow\n", count, virtual_start_address);
+                return;
+            }
+            serial_printf("VMM: Warning: Mapping %d pages to zero window at virtual address %x which is currently mapped -> overwrite the existing mapping\n", count, virtual_start_address);
+        }
+        
     }
 
     if (!paging_is_active()) {
@@ -272,6 +285,40 @@ void vmm_unmap_pages(page_directory_t* dir, virt_addr_t virtual_start_address, u
     }
 
     vmm_flush_tlb(virtual_start_address);
+}
+
+/*
+ * Check if a range of virtual addresses is free (not mapped)
+ * @param dir The page directory to check
+ * @param start The starting virtual address
+ * @param count The number of pages to check
+ * @return True if the entire region is free, false otherwise
+ */
+bool vmm_is_region_free(page_directory_t* dir, virt_addr_t start, uint32_t count) {
+    for (uint32_t i = 0; i < count; i++) {
+        virt_addr_t cur_v = start + (i * VMM_PAGE_SIZE);
+        uint32_t dir_index = VMM_GET_DIR_INDEX(cur_v);
+        uint32_t table_index = VMM_GET_TABLE_INDEX(cur_v);
+
+        if (!(dir->entries[dir_index] & VMM_PAGE_MASK)) {
+            // skip to next dir entry
+            i += (VMM_PAGE_TABLE_ENTRIES - table_index - 1);
+            continue;
+        } else {
+            if (!paging_is_active()) {
+                page_table_t* table = (page_table_t*)(dir->entries[dir_index] & VMM_PAGE_MASK);
+                if (table->entries[table_index] & VMM_PAGE_PRESENT) {
+                    return false;
+                }
+            } else {
+                page_table_t* table = VMM_GET_TABLE_ADDR(cur_v);
+                if (table->entries[table_index] & VMM_PAGE_PRESENT) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
 }
 
 /*

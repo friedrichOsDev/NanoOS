@@ -115,6 +115,13 @@ void kernel_tests(void) {
         serial_printf("Kernel: Tests: VMM: FAILURE: %x -> %x (expected %x)\n", test_virtual_addr, translated, test_physical_addr);
     }
 
+    // test mapping second phys to same virt
+    virt_addr_t test_virtual_addr2 = 0x400000 - VMM_PAGE_SIZE; // 4 MiB - 4 KiB
+    phys_addr_t test_physical_addr2 = pmm_alloc_pages(2);
+    serial_printf("Kernel: Tests: VMM: Attempting to map 2 physical pages at %x to overlap with the virtual address %x (should fail)\n", test_physical_addr2, test_virtual_addr);
+    vmm_map_pages(vmm_get_page_directory(), test_virtual_addr2, test_physical_addr2, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE, 2);
+    pmm_free_pages(test_physical_addr2, 2);
+
     serial_printf("Kernel: Tests: VMM: Unmapping %x\n", test_virtual_addr);
     vmm_unmap_page(vmm_get_page_directory(), test_virtual_addr);
     pmm_free_page(test_physical_addr);
