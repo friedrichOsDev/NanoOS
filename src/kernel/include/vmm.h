@@ -20,7 +20,7 @@
 #define VMM_RECURSIVE_SLOT (VMM_PAGE_DIR_ENTRIES - 1)
 #define VMM_ZERO_SLOT (VMM_PAGE_DIR_ENTRIES - 2)
 #define VMM_TABLES_BASE 0xFFC00000
-#define VMM_ZERO_WINDOW (VMM_TABLES_BASE + (VMM_ZERO_SLOT * VMM_PAGE_SIZE))
+#define VMM_ZERO_WINDOW ((uintptr_t)VMM_ZERO_SLOT << 22)
 #define VMM_PAGE_DIRECTORY_BASE (VMM_TABLES_BASE + (VMM_RECURSIVE_SLOT * VMM_PAGE_SIZE))
 #define VMM_IS_ADDR_ALIGNED(addr) (((uint32_t)(addr) & (VMM_PAGE_SIZE - 1)) == 0)
 
@@ -47,10 +47,11 @@ typedef struct {
 
 #define VMM_GET_TABLE_ADDR(virt) ((page_table_t*)(VMM_TABLES_BASE + (VMM_GET_DIR_INDEX(virt) * VMM_PAGE_SIZE)))
 
-extern void load_page_directory(page_directory_t* dir);
+extern void load_page_directory(phys_addr_t phys);
 extern void enable_paging(void);
 extern void disable_paging(void);
 
+void vmm_prepare_zero_window(phys_addr_t phys, uint32_t window);
 void vmm_init(void);
 void vmm_map_page(page_directory_t* dir, virt_addr_t virtual_address, phys_addr_t physical_address, uint32_t flags);
 void vmm_unmap_page(page_directory_t* dir, virt_addr_t virtual_address);
@@ -59,4 +60,3 @@ void vmm_unmap_pages(page_directory_t* dir, virt_addr_t virtual_start_address, u
 bool vmm_is_region_free(page_directory_t* dir, virt_addr_t start, uint32_t count);
 phys_addr_t vmm_virtual_to_physical(page_directory_t* dir, virt_addr_t virtual_address);
 page_directory_t* vmm_get_page_directory(void);
-bool paging_is_active(void);

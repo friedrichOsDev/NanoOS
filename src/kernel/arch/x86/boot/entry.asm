@@ -6,6 +6,7 @@ extern kernel_main
 
 _start:
     mov esi, eax
+    mov ebp, ebx
 
     extern sbss
     extern ebss
@@ -18,7 +19,7 @@ _start:
 
     mov esp, stack_top
 
-    push ebx ; multiboot info pointer
+    push ebp ; multiboot info pointer
     push esi ; multiboot magic 
 
     call kernel_main

@@ -8,10 +8,15 @@
 
 #include <stdint.h>
 
-extern uint8_t end[];
+extern uint8_t _kernel_start[];
+extern uint8_t _kernel_end[];
+extern uint8_t _kernel_start_phys[];
+extern uint8_t _kernel_end_phys[];
 
-#define KERNEL_START_PHYS 0x100000
-#define KERNEL_END_PHYS ((uintptr_t)end)
+#define KERNEL_START ((uintptr_t)_kernel_start)
+#define KERNEL_END ((uintptr_t)_kernel_end)
+#define KERNEL_START_PHYS ((uintptr_t)_kernel_start_phys)
+#define KERNEL_END_PHYS ((uintptr_t)_kernel_end_phys)
 
 #define MULTIBOOT_TAG_TYPE_END 0
 #define MULTIBOOT_TAG_TYPE_CMDLINE 1

@@ -12,6 +12,7 @@
 #include <vmm.h>
 
 static pmm_state_t pmm_state;
+extern uint8_t boot_page_directory[];
 
 /*
  * Initialize the Physical Memory Manager
@@ -85,11 +86,14 @@ void pmm_init(void) {
         }
     }
 
-    // lock kernel && bitmap && framebuffer && multiboot structure && (later acpi __TODO__)
+    // lock kernel + boot page dir/table && bitmap && framebuffer && multiboot structure && (later acpi __TODO__)
     serial_printf("PMM: Locking kernel, bitmap, framebuffer, and multiboot structure\n");
     phys_addr_t kernel_start_aligned = PMM_ALIGN_DOWN(KERNEL_START_PHYS);
     phys_addr_t kernel_end_aligned = PMM_ALIGN_UP(KERNEL_END_PHYS);
     pmm_lock_pages(kernel_start_aligned, (kernel_end_aligned - kernel_start_aligned) / PMM_PAGE_SIZE);
+
+    phys_addr_t boot_page_dir = PMM_ALIGN_DOWN((phys_addr_t)boot_page_directory);
+    pmm_lock_pages(boot_page_dir, 3); // lock the page directory and tables
 
     phys_addr_t bitmap_start_aligned = PMM_ALIGN_DOWN((phys_addr_t)pmm_state.bitmap);
     phys_addr_t bitmap_end_aligned = PMM_ALIGN_UP((phys_addr_t)pmm_state.bitmap + bitmap_size);
@@ -144,22 +148,8 @@ phys_addr_t pmm_zalloc_page() {
         return 0;
     }
 
-    if (!paging_is_active()) {
-        memset((void*)addr, 0, PMM_PAGE_SIZE);
-
-        if (!PMM_IS_PAGE_ALIGNED(addr)) {
-            serial_printf("PMM: Error: Allocated page at unaligned address %x\n", addr);
-            return 0;
-        }
-
-        return addr;
-    }
-
-    vmm_map_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW, (phys_addr_t)addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
-
-    memset((void*)VMM_ZERO_WINDOW, 0, PMM_PAGE_SIZE);
-
-    vmm_unmap_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW);
+    vmm_prepare_zero_window(addr, 7);
+    memset((void*)(VMM_ZERO_WINDOW + (7 * PMM_PAGE_SIZE)), 0, PMM_PAGE_SIZE);
 
     if (!PMM_IS_PAGE_ALIGNED(addr)) {
         serial_printf("PMM: Error: Allocated page at unaligned address %x\n", addr);
@@ -184,17 +174,8 @@ void pmm_zfree_page(phys_addr_t addr) {
         return;
     }
 
-    if (!paging_is_active()) {
-        memset((void*)addr, 0, PMM_PAGE_SIZE);
-        pmm_free_page(addr);
-        return;
-    }
-
-    vmm_map_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW, (phys_addr_t)addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
-
-    memset((void*)VMM_ZERO_WINDOW, 0, PMM_PAGE_SIZE);
-
-    vmm_unmap_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW);
+    vmm_prepare_zero_window(addr, 8);
+    memset((void*)(VMM_ZERO_WINDOW + (8 * PMM_PAGE_SIZE)), 0, PMM_PAGE_SIZE);
 
     pmm_free_page(addr);
 }
@@ -306,16 +287,10 @@ phys_addr_t pmm_zalloc_pages(size_t count) {
         return 0;
     }
 
-    if (!paging_is_active()) {
-        memset((void*)addr, 0, count * PMM_PAGE_SIZE);
-        return addr;
-    }
-
     for (size_t i = 0; i < count; i++) {
         phys_addr_t page_addr = addr + (i * PMM_PAGE_SIZE);
-        vmm_map_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW, page_addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
-        memset((void*)VMM_ZERO_WINDOW, 0, PMM_PAGE_SIZE);
-        vmm_unmap_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW);
+        vmm_prepare_zero_window(page_addr, 9);
+        memset((void*)(VMM_ZERO_WINDOW + (9 * PMM_PAGE_SIZE)), 0, PMM_PAGE_SIZE);
     }
 
     return addr;
@@ -342,17 +317,10 @@ void pmm_zfree_pages(phys_addr_t addr, size_t count) {
         return;
     }
 
-    if (!paging_is_active()) {
-        memset((void*)addr, 0, count * PMM_PAGE_SIZE);
-        pmm_free_pages(addr, count);
-        return;
-    }
-
     for (size_t i = 0; i < count; i++) {
         phys_addr_t page_addr = addr + (i * PMM_PAGE_SIZE);
-        vmm_map_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW, page_addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
-        memset((void*)VMM_ZERO_WINDOW, 0, PMM_PAGE_SIZE);
-        vmm_unmap_page(vmm_get_page_directory(), (virt_addr_t)VMM_ZERO_WINDOW);
+        vmm_prepare_zero_window(page_addr, 10);
+        memset((void*)(VMM_ZERO_WINDOW + (10 * PMM_PAGE_SIZE)), 0, PMM_PAGE_SIZE);
     }
 
     pmm_free_pages(addr, count);
