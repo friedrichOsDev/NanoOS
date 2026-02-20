@@ -115,7 +115,7 @@ void vmm_init(void) {
     phys_addr_t fb_phys = (phys_addr_t)kernel_fb_info.fb_addr;
     phys_addr_t fb_start_phys = (phys_addr_t)PMM_ALIGN_DOWN(fb_phys);
     phys_addr_t fb_end_phys = (phys_addr_t)PMM_ALIGN_UP(fb_phys + (kernel_fb_info.fb_height * kernel_fb_info.fb_pitch));
-    virt_addr_t fb_start_virt = (virt_addr_t)0xD0000000;
+    virt_addr_t fb_start_virt = (virt_addr_t)VMM_FRAMEBUFFER_BASE;
     uint32_t fb_total_pages = (fb_end_phys - fb_start_phys) / VMM_PAGE_SIZE;
     vmm_map_pages(working_dir, fb_start_virt, fb_start_phys, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE | VMM_PAGE_CACHE_DISABLED | VMM_PAGE_WRITE_THROUGH, fb_total_pages);
 

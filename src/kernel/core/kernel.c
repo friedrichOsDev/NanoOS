@@ -12,6 +12,7 @@
 #include <panic.h>
 #include <pmm.h>
 #include <vmm.h>
+#include <heap.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
@@ -82,6 +83,13 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
  * @param void
  */
 void kernel_tests(void) {
+    // idt
+    // serial_printf("Kernel: Tests: IDT: Triggering division by zero exception to test IDT setup...\n");
+    // int a = 5;
+    // int b = 0;
+    // int c = a / b;
+    // serial_printf("Kernel: Tests: IDT: Division by zero test: 5 / 0 = %d (should not be reached)\n", c);
+
     // memory management test
     // - pmm
     serial_printf("-----\n");
@@ -127,6 +135,41 @@ void kernel_tests(void) {
     pmm_free_page(test_physical_addr);
 
     serial_printf("-----\n");
+
+    // - heap
+    serial_printf("Kernel: Tests: Heap: Allocating 128 bytes...\n");
+    virt_addr_t ptr1 = kmalloc(128);
+    serial_printf("Kernel: Tests: Heap: Allocating 256 bytes...\n");
+    virt_addr_t ptr2 = kmalloc(256);
+    serial_printf("Kernel: Tests: Heap: Allocating 512 bytes...\n");
+    virt_addr_t ptr3 = kmalloc(512);
+    serial_printf("Kernel: Tests: Heap: Allocated 3 blocks: %x, %x, %x\n", ptr1, ptr2, ptr3);
+    heap_dump();
+
+    serial_printf("Kernel: Tests: Heap: Freeing block 2 (256 bytes) to test Best-Fit...\n");
+    kfree(ptr2);
+    heap_dump();
+
+    virt_addr_t ptr_fit = kmalloc(128);
+    serial_printf("Kernel: Tests: Heap: New 128 byte block allocated at: %x\n", ptr_fit);
+    if (ptr_fit == ptr2) {
+        serial_printf("Kernel: Tests: Heap: SUCCESS: Best-Fit picked the hole at %x\n", ptr2);
+    }
+    heap_dump();
+
+    serial_printf("Kernel: Tests: Heap: Testing Heap extension by allocating a large block of 2 MiB...\n");
+    virt_addr_t ptr_large = kmalloc(2 * 1024 * 1024);
+    serial_printf("Kernel: Tests: Heap: Large block allocated at: %x\n", ptr_large);
+    heap_dump();
+
+    serial_printf("Kernel: Tests: Heap: Freeing all blocks to test Coalescing...\n");
+    kfree(ptr1);
+    kfree(ptr_fit);
+    kfree(ptr3);
+    kfree(ptr_large);
+    heap_dump();
+
+    serial_printf("-----\n");
 }
 
 /*
@@ -145,6 +188,7 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
 
     pmm_init();
     vmm_init();
+    heap_init();
 
     kernel_tests();
 

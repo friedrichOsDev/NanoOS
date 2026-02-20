@@ -16,10 +16,10 @@
 
 #define VMM_PAGE_TABLE_ENTRIES 1024
 #define VMM_PAGE_DIR_ENTRIES 1024
-#define VMM_PAGE_SIZE 4096
+#define VMM_PAGE_SIZE PMM_PAGE_SIZE
 #define VMM_RECURSIVE_SLOT (VMM_PAGE_DIR_ENTRIES - 1)
 #define VMM_ZERO_SLOT (VMM_PAGE_DIR_ENTRIES - 2)
-#define VMM_TABLES_BASE 0xFFC00000
+#define VMM_TABLES_BASE ((uintptr_t)VMM_RECURSIVE_SLOT << 22)
 #define VMM_ZERO_WINDOW ((uintptr_t)VMM_ZERO_SLOT << 22)
 #define VMM_PAGE_DIRECTORY_BASE (VMM_TABLES_BASE + (VMM_RECURSIVE_SLOT * VMM_PAGE_SIZE))
 #define VMM_IS_ADDR_ALIGNED(addr) (((uint32_t)(addr) & (VMM_PAGE_SIZE - 1)) == 0)
@@ -31,6 +31,20 @@
 #define VMM_PAGE_USER_SUPERVISOR 0b00000100
 #define VMM_PAGE_READ_WRITE      0b00000010
 #define VMM_PAGE_PRESENT         0b00000001
+
+// higher half memory layout
+#define VMM_USER_BASE            0x00000000
+#define VMM_USER_END             0xBFFFFFFF
+#define VMM_KERNEL_BASE          0xC0000000
+#define VMM_KERNEL_END           0xCFFFFFFF
+#define VMM_HEAP_START           0xD0000000
+#define VMM_HEAP_END             0xDFFFFFFF
+#define VMM_FRAMEBUFFER_BASE     0xE0000000
+#define VMM_FRAMEBUFFER_END      0xEFFFFFFF
+#define VMM_RESERVED_BASE        0xF0000000
+#define VMM_RESERVED_END         VMM_ZERO_WINDOW - 1
+#define VMM_ZERO_WINDOW_BASE     VMM_ZERO_WINDOW
+#define VMM_RECURSIVE_BASE       VMM_TABLES_BASE
 
 // define virt_addr_t
 typedef uintptr_t virt_addr_t;
