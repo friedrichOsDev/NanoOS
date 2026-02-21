@@ -13,6 +13,7 @@
 #include <pmm.h>
 #include <vmm.h>
 #include <heap.h>
+#include <fb.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
@@ -137,6 +138,7 @@ void kernel_tests(void) {
     serial_printf("-----\n");
 
     // - heap
+    heap_dump();
     serial_printf("Kernel: Tests: Heap: Allocating 128 bytes...\n");
     virt_addr_t ptr1 = kmalloc(128);
     serial_printf("Kernel: Tests: Heap: Allocating 256 bytes...\n");
@@ -170,6 +172,60 @@ void kernel_tests(void) {
     heap_dump();
 
     serial_printf("-----\n");
+
+    // - framebuffer
+    serial_printf("Kernel: Tests: Framebuffer: Testing framebuffer drawing and scrolling...\n");
+    for (uint32_t i = 0; i < 32; i++) {
+        color_t color = {255, (i * 255) / 32, 0, 0};
+        fb_scroll(fb_get_height(), color);
+        color_t fcolor = {255, i * 255 / 32, (i * 255) / 32, (i * 255) / 32};
+        fb_draw_char(fb_get_width() / 2 - 4, fb_get_height() / 2 - 4, 'R', fcolor, color);
+        fb_swap_buffers();
+    }
+    for (uint32_t i = 32; i > 0; i--) {
+        color_t color = {255, ((i - 1) * 255) / 32, 0, 0};
+        fb_scroll(fb_get_height(), color);
+        color_t fcolor = {255, i * 255 / 32, (i * 255) / 32, (i * 255) / 32};
+        fb_draw_char(fb_get_width() / 2 - 4, fb_get_height() / 2 - 4, 'R', fcolor, color);
+        fb_swap_buffers();
+    }
+    for (uint32_t i = 0; i < 32; i++) {
+        color_t color = {255, 0, (i * 255) / 32, 0};
+        fb_scroll(fb_get_height(), color);
+        color_t fcolor = {255, i * 255 / 32, (i * 255) / 32, (i * 255) / 32};
+        fb_draw_char(fb_get_width() / 2 - 4, fb_get_height() / 2 - 4, 'G', fcolor, color);
+        fb_swap_buffers();
+    }
+    for (uint32_t i = 32; i > 0; i--) {
+        color_t color = {255, 0, ((i - 1) * 255) / 32, 0};
+        fb_scroll(fb_get_height(), color);
+        color_t fcolor = {255, i * 255 / 32, (i * 255) / 32, (i * 255) / 32};
+        fb_draw_char(fb_get_width() / 2 - 4, fb_get_height() / 2 - 4, 'G', fcolor, color);
+        fb_swap_buffers();
+    }
+    for (uint32_t i = 0; i < 32; i++) {
+        color_t color = {255, 0, 0, (i * 255) / 32};
+        fb_scroll(fb_get_height(), color);
+        color_t fcolor = {255, i * 255 / 32, (i * 255) / 32, (i * 255) / 32};
+        fb_draw_char(fb_get_width() / 2 - 4, fb_get_height() / 2 - 4, 'B', fcolor, color);
+        fb_swap_buffers();
+    }
+    for (uint32_t i = 32; i > 0; i--) {
+        color_t color = {255, 0, 0, ((i - 1) * 255) / 32};
+        fb_scroll(fb_get_height(), color);
+        color_t fcolor = {255, i * 255 / 32, (i * 255) / 32, (i * 255) / 32};
+        fb_draw_char(fb_get_width() / 2 - 4, fb_get_height() / 2 - 4, 'B', fcolor, color);
+        fb_swap_buffers();
+    }
+    for (uint32_t y = 0; y < fb_get_height(); y += 10) {
+        for (uint32_t x = 0; x < fb_get_width(); x += 10) {
+            color_t color = {255, (x * 255) / fb_get_width(), (y * 255) / fb_get_height(), 128};
+            fb_draw_rect(x, y, 10, 10, color);
+        }
+    }
+    fb_swap_buffers();
+
+    serial_printf("-----\n");
 }
 
 /*
@@ -189,6 +245,8 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     pmm_init();
     vmm_init();
     heap_init();
+
+    fb_init();
 
     kernel_tests();
 
