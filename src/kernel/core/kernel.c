@@ -27,7 +27,7 @@ multiboot_info_t* kernel_multiboot_info;
  */
 void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
     if (multiboot_info == 0) kernel_panic("Multiboot info structure is missing!", 0);
-    if (multiboot_magic != 0x36D76289) kernel_panic("Invalid multiboot magic number! Expected 0x36D76289", 0);
+    if (multiboot_magic != MULTIBOOT2_BOOTLOADER_MAGIC) kernel_panic("Invalid multiboot magic number!", 0);
 
     kernel_multiboot_info = (multiboot_info_t*)multiboot_info;
     serial_printf("Multiboot: Info at %x with size %d\n", multiboot_info, kernel_multiboot_info->total_size);
