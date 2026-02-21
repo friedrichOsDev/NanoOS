@@ -133,7 +133,7 @@ void vmm_init(void) {
     pmm_get_state()->bitmap = (uint8_t*)bitmap_addr_new;
 
     // update framebuffer addr
-    virt_addr_t fb_addr_new = fb_start_virt + (fb_phys - bitmap_start_phys);
+    virt_addr_t fb_addr_new = fb_start_virt + (fb_phys - fb_start_phys);
     kernel_fb_info.fb_addr = (void*)fb_addr_new;
 
     serial_printf("VMM: done\n");
@@ -245,11 +245,11 @@ void vmm_map_pages(page_directory_t* dir, virt_addr_t virtual_start_address, phy
             phys_addr_t pt_phys = pmm_zalloc_page();
             dir->entries[cur_dir_index] = pt_phys | VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE;
             vmm_flush_tlb(cur_v);
-            if (current_directory == NULL) {
-                vmm_prepare_zero_window(pt_phys, 3);
-                table = (page_table_t*)(VMM_ZERO_WINDOW + (3 * VMM_PAGE_SIZE));
-            } else {
-                table = VMM_GET_TABLE_ADDR(cur_v);
+        if (current_directory == NULL) {
+            vmm_prepare_zero_window(pt_phys, 3);
+            table = (page_table_t*)(VMM_ZERO_WINDOW + (3 * VMM_PAGE_SIZE));
+        } else {
+            table = VMM_GET_TABLE_ADDR(cur_v);
             }
         }
         

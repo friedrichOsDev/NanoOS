@@ -58,7 +58,7 @@ bool heap_extend(size_t size) {
 
     // map new pages
     for (size_t i = 0; i < pages_needed; i++) {
-        phys_addr_t phys = pmm_alloc_page();
+        phys_addr_t phys = pmm_zalloc_page();
         if (!phys) return false;
 
         vmm_map_page(vmm_get_page_directory(), extend_base + (i * HEAP_PAGE_SIZE), phys, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);

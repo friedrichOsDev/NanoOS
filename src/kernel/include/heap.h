@@ -25,7 +25,7 @@ typedef struct heap_block {
     size_t size;
     heap_magic_t magic;
     struct heap_block* next;
-} heap_block_t;
+} __attribute__((packed)) heap_block_t;
 
 void heap_init(void);
 virt_addr_t kmalloc(size_t size);

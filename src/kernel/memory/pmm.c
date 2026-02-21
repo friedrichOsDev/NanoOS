@@ -109,7 +109,7 @@ void pmm_init(void) {
     phys_addr_t multiboot_end_aligned = PMM_ALIGN_UP((phys_addr_t)kernel_multiboot_info + kernel_multiboot_info->total_size);
     pmm_lock_pages(multiboot_start_aligned, (multiboot_end_aligned - multiboot_start_aligned) / PMM_PAGE_SIZE);
 
-    pmm_lock_pages(0x00000000, 1);
+    pmm_lock_pages(0x00000000, 256);
 
     serial_printf("PMM: Initialized with max address %x, total pages: %d\n", max_addr, pmm_state.max_pages);
     serial_printf("PMM: Free memory: %d KB, Used memory: %d KB\n", (uint32_t)(pmm_get_free_memory() / 1024), (uint32_t)(pmm_get_used_memory() / 1024));
