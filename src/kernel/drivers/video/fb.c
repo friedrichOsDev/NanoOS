@@ -88,7 +88,8 @@ void fb_init(void) {
     bb_info.backbuffer_size = buffer_size;
     bb_info.scroll_offset = scroll_offset;
     
-    dirty_x1 = dirty_y1 = dirty_x2 = dirty_y2 = 0;
+    dirty_x1 = dirty_y1 = 0xFFFFFFFF;
+    dirty_x2 = dirty_y2 = 0;
 
     serial_printf("FB: clear screen\n");
     fb_clear(black);
@@ -343,5 +344,6 @@ void fb_swap_buffers(void) {
         return;
     }
 
-    dirty_x1 = dirty_y1 = dirty_x2 = dirty_y2 = 0;
+    dirty_x1 = dirty_y1 = 0xFFFFFFFF;
+    dirty_x2 = dirty_y2 = 0;
 }
