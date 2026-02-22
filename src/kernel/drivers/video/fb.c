@@ -143,10 +143,18 @@ void fb_put_pixel(uint32_t x, uint32_t y, color_t color) {
     uint8_t* pixel_addr = bb_info.backbuffer + offset;
     
     if (kernel_fb_info.fb_bpp == 32) {
-        pixel_addr[0] = color.b;
-        pixel_addr[1] = color.g;
-        pixel_addr[2] = color.r;
-        pixel_addr[3] = color.a;
+        if (color.a < 255) {
+            uint32_t inv_a = 255 - color.a;
+            pixel_addr[0] = (uint8_t)((color.b * color.a + pixel_addr[0] * inv_a) / 255);
+            pixel_addr[1] = (uint8_t)((color.g * color.a + pixel_addr[1] * inv_a) / 255);
+            pixel_addr[2] = (uint8_t)((color.r * color.a + pixel_addr[2] * inv_a) / 255);
+            pixel_addr[3] = color.a;
+        } else {
+            pixel_addr[0] = color.b;
+            pixel_addr[1] = color.g;
+            pixel_addr[2] = color.r;
+            pixel_addr[3] = color.a;
+        }
         return;
     } else if (kernel_fb_info.fb_bpp == 24) {
         pixel_addr[0] = color.b;
@@ -216,13 +224,35 @@ void fb_draw_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, color
     fb_mark_dirty(x, y, width, height);
 
     if (kernel_fb_info.fb_bpp == 32) {
-        for (uint32_t i = 0; i < height; i++) {
-            uint32_t row = y + i;
-            uint32_t offset = (row * kernel_fb_info.fb_pitch) + (x * 4) + bb_info.scroll_offset;
-            if (offset >= bb_info.backbuffer_size) offset -= bb_info.backbuffer_size;
-            uint32_t* dest = (uint32_t*)(bb_info.backbuffer + offset);
-            uint32_t val = (color.a << 24) | (color.r << 16) | (color.g << 8) | color.b;
-            memset32(dest, val, width);
+        if (color.a < 255) {
+            uint32_t inv_a = 255 - color.a;
+            for (uint32_t i = 0; i < height; i++) {
+                uint32_t row = y + i;
+                uint32_t offset = (row * kernel_fb_info.fb_pitch) + (x * 4) + bb_info.scroll_offset;
+                if (offset >= bb_info.backbuffer_size) offset -= bb_info.backbuffer_size;
+                uint32_t* dest = (uint32_t*)(bb_info.backbuffer + offset);
+                for (uint32_t j = 0; j < width; j++) {
+                    uint32_t existing_pixel = dest[j];
+                    uint8_t existing_b = existing_pixel & 0xFF;
+                    uint8_t existing_g = (existing_pixel >> 8) & 0xFF;
+                    uint8_t existing_r = (existing_pixel >> 16) & 0xFF;
+                    dest[j] = (
+                        (color.a << 24) | 
+                        ((color.r * color.a + existing_r * inv_a) / 255 << 16) | 
+                        ((color.g * color.a + existing_g * inv_a) / 255 << 8) | 
+                        ((color.b * color.a + existing_b * inv_a) / 255)
+                    );
+                }
+            }
+        } else {
+            for (uint32_t i = 0; i < height; i++) {
+                uint32_t row = y + i;
+                uint32_t offset = (row * kernel_fb_info.fb_pitch) + (x * 4) + bb_info.scroll_offset;
+                if (offset >= bb_info.backbuffer_size) offset -= bb_info.backbuffer_size;
+                uint32_t* dest = (uint32_t*)(bb_info.backbuffer + offset);
+                uint32_t val = (color.a << 24) | (color.r << 16) | (color.g << 8) | color.b;
+                memset32(dest, val, width);
+            }
         }
     } else if (kernel_fb_info.fb_bpp == 24) {
         for (uint32_t i = 0; i < height; i++) {
