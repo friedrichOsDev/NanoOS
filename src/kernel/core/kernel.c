@@ -199,9 +199,6 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     kernel_tests();
 
     serial_printf("Kernel: Welcome to NanoOS!\n");
-    console_set_color((font_color_t){ .fg_color = green, .bg_color = black });
-    console_puts("Kernel: All tests completed.\n");
-    console_set_color((font_color_t){ .fg_color = white, .bg_color = black });
     console_puts("Kernel: Welcome to NanoOS!\n");
     fb_swap_buffers();
     
