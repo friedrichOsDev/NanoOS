@@ -1,5 +1,7 @@
-*.log
-build
-iso
 .devcontainer
 .vscode
+build
+iso
+*.log
+*.drawio
+structure_*.txt
