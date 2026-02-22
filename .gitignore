@@ -4,4 +4,4 @@ build
 iso
 *.log
 *.drawio
-structure_*.txt
+structure_*.*
