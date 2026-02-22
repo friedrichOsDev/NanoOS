@@ -15,6 +15,7 @@
 #include <heap.h>
 #include <fb.h>
 #include <console.h>
+#include <convert.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
@@ -202,14 +203,8 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     console_puts("Kernel: All tests completed.\n");
     console_set_color((font_color_t){ .fg_color = white, .bg_color = black });
     console_puts("Kernel: Welcome to NanoOS!\n");
-    // try drawing a rect with alpha value
-    fb_draw_rect(0, 0, fb_get_width(), 10, (color_t){ .a = 64, .r = 255, .g = 0, .b = 0 });
-    fb_draw_rect(0, fb_get_height() - 25, fb_get_width(), 25, (color_t){ .a = 255, .r = 255, .g = 0, .b = 0 });
-    fb_draw_rect(0, fb_get_height() - 50, fb_get_width(), 25, (color_t){ .a = 128, .r = 0, .g = 255, .b = 0 });
-    fb_draw_rect(0, fb_get_height() - 75, fb_get_width(), 25, (color_t){ .a = 64, .r = 0, .g = 0, .b = 255 });
     fb_swap_buffers();
     
-
     while (1) {
         __asm__ __volatile__("hlt");
     }
