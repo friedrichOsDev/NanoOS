@@ -89,5 +89,18 @@ typedef struct {
     uint8_t framebuffer_bpp;
     uint8_t framebuffer_type;
     uint16_t reserved;
-    uint8_t framebuffer_data[];
+    union {
+        struct {
+            uint16_t framebuffer_palette_num_colors;
+            multiboot_tag_framebuffer_palette_t framebuffer_palette[];
+        };
+        struct {
+            uint8_t framebuffer_red_field_position;
+            uint8_t framebuffer_red_mask_size;
+            uint8_t framebuffer_green_field_position;
+            uint8_t framebuffer_green_mask_size;
+            uint8_t framebuffer_blue_field_position;
+            uint8_t framebuffer_blue_mask_size;
+        };
+    };
 } __attribute__((packed)) multiboot_tag_framebuffer_t;
