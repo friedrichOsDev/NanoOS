@@ -19,9 +19,6 @@
 void pic_remap(void) {
     serial_printf("PIC: remapping\n");
     
-    uint8_t a1 = inb(0x21);
-    uint8_t a2 = inb(0xA1);
-
     outb(0x20, 0x11);
     outb(0xA0, 0x11);
     outb(0x21, 0x20);
@@ -30,9 +27,8 @@ void pic_remap(void) {
     outb(0xA1, 0x02);
     outb(0x21, 0x01);
     outb(0xA1, 0x01);
+    outb(0x21, 0x00);
+    outb(0xA1, 0x00);
 
-    outb(0x21, a1);
-    outb(0xA1, a2);
-    
     serial_printf("PIC: remapped\n");
 }
