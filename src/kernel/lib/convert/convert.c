@@ -108,3 +108,12 @@ uint32_t str_to_hex(const char* str) {
 
     return res;
 }
+
+/*
+ * Convert a Binary Coded Decimal (BCD) ti a dezimal value
+ * @param bcd The BCD value to convert
+ * @return The dezimal value of the BCD input
+ */
+uint8_t bcd_to_dezimal(uint8_t bcd) {
+    return ((bcd >> 4) * 10) + (bcd & 0x0F);
+}

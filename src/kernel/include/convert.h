@@ -12,3 +12,4 @@ const char* hex_to_str(uint32_t value);
 const char* int_to_str(int32_t value);
 int32_t str_to_int(const char* str);
 uint32_t str_to_hex(const char* str);
+uint8_t bcd_to_dezimal(uint8_t bcd);

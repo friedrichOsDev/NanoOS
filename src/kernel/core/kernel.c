@@ -16,6 +16,8 @@
 #include <fb.h>
 #include <console.h>
 #include <convert.h>
+#include <timer.h>
+#include <rtc.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
@@ -194,15 +196,17 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     vmm_init();
     heap_init();
 
+    timer_init();
+    rtc_init();
+
     console_init();
 
     kernel_tests();
 
     serial_printf("Kernel: Welcome to NanoOS!\n");
     console_puts("Kernel: Welcome to NanoOS!\n");
-    fb_swap_buffers();
     
     while (1) {
-        __asm__ __volatile__("hlt");
+        fb_update();
     }
 }

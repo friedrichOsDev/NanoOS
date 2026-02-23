@@ -10,12 +10,14 @@
 #include <font.h>
 #include <string.h>
 #include <heap.h>
+#include <timer.h>
 
 static backbuffer_info_t bb_info;
 static uint32_t dirty_x1;
 static uint32_t dirty_y1;
 static uint32_t dirty_x2;
 static uint32_t dirty_y2;
+static bool update_flag = false;
 color_t black = {255, 0, 0, 0};
 color_t white = {255, 255, 255, 255};
 color_t red = {255, 255, 0, 0};
@@ -69,6 +71,25 @@ static void fb_mark_dirty(uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
 }
 
 /*
+ * Timer event handler to set the update flag for framebuffer swapping
+ * @param void
+ */
+static void fb_update_event(void) {
+    update_flag = true;
+}
+
+/*
+ * Update the framebuffer if the update flag is set
+ * @param void
+ */
+void fb_update(void) {
+    if (update_flag) {
+        fb_swap_buffers();
+        update_flag = false;
+    }
+}
+
+/*
  * Initializes the framebuffer driver, sets up backbuffer and dirty region
  * @param void
  */
@@ -93,7 +114,18 @@ void fb_init(void) {
 
     serial_printf("FB: clear screen\n");
     fb_clear(black);
-    fb_swap_buffers();
+    event_t update_event = {
+        .event_id = 0,
+        .handler = fb_update_event,
+        .interval = 1,
+        .target_tick = timer_get_ticks() + 1,
+        .repeat = true,
+        .active = true
+    };
+
+    uint32_t update_event_id = timer_add_event(update_event);
+    (void)update_event_id;
+
     serial_printf("FB: done");
 }
 
@@ -328,6 +360,51 @@ void fb_scroll(uint32_t lines, color_t color) {
     }
 
     fb_draw_rect(0, fb_get_height() - lines, fb_get_width(), lines, color);
+}
+
+/*
+ * Scroll a rectangle area of the framebuffer by a given number of lines
+ * @param x x coordinate of the top-left corner of the rectangle
+ * @param y y coordinate of the top-left corner of the rectangle
+ * @param width width of the rectangle
+ * @param height height of the rectangle
+ * @param lines number of lines to scroll
+ * @param color color to fill the new lines with
+ */
+void fb_scroll_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t lines, color_t color) {
+    if (!bb_info.backbuffer) {
+        serial_printf("FB: Error: Backbuffer not initialized\n");
+        return;
+    }
+    if (lines == 0) return;
+    if (lines >= height) {
+        fb_draw_rect(x, y, width, height, color);
+        return;
+    }
+
+    fb_mark_dirty(x, y, width, height);
+
+    for (uint32_t i = 0; i < height - lines; i++) {
+        uint32_t src_offset = ((y + lines + i) * kernel_fb_info.fb_pitch) + (x * (kernel_fb_info.fb_bpp / 8)) + bb_info.scroll_offset;
+        if (src_offset >= bb_info.backbuffer_size) src_offset -= bb_info.backbuffer_size;
+        uint32_t dest_offset = ((y + i) * kernel_fb_info.fb_pitch) + (x * (kernel_fb_info.fb_bpp / 8)) + bb_info.scroll_offset;
+        if (dest_offset >= bb_info.backbuffer_size) dest_offset -= bb_info.backbuffer_size;
+
+        if (kernel_fb_info.fb_bpp == 32) {
+            uint32_t* src = (uint32_t*)(bb_info.backbuffer + src_offset);
+            uint32_t* dest = (uint32_t*)(bb_info.backbuffer + dest_offset);
+            memcpy32(dest, src, width);
+        } else if (kernel_fb_info.fb_bpp == 24) {
+            uint8_t* src = bb_info.backbuffer + src_offset;
+            uint8_t* dest = bb_info.backbuffer + dest_offset;
+            memcpy(dest, src, width * 3);
+        } else {
+            serial_printf("FB: Error: Unsupported bits per pixel: %d\n", kernel_fb_info.fb_bpp);
+            return;
+        }
+    }
+
+    fb_draw_rect(x, y + height - lines, width, lines, color);
 }
 
 /*
