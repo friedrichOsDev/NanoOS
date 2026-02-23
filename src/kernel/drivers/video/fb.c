@@ -99,9 +99,7 @@ void fb_init(void) {
     uint32_t scroll_offset = 0;
     serial_printf("FB: Initializing framebuffer: %dx%d, %d bpp, pitch: %d, buffer size: %d bytes\n", kernel_fb_info.fb_width, kernel_fb_info.fb_height, kernel_fb_info.fb_bpp, kernel_fb_info.fb_pitch, buffer_size);
     bb_info.backbuffer = (uint8_t*)kzalloc(buffer_size);
-    serial_printf("FB: Backbuffer Virt: %x, Phys: %x\n", 
-              bb_info.backbuffer, 
-              vmm_virtual_to_physical(vmm_get_page_directory(), (virt_addr_t)bb_info.backbuffer));
+    serial_printf("FB: Backbuffer Virt: %x, Phys: %x\n", bb_info.backbuffer, vmm_virtual_to_physical(vmm_get_page_directory(), (virt_addr_t)bb_info.backbuffer));
     if (!bb_info.backbuffer) {
         serial_printf("FB: Error: Failed to allocate backbuffer\n");
         return;
@@ -126,7 +124,7 @@ void fb_init(void) {
     uint32_t update_event_id = timer_add_event(update_event);
     (void)update_event_id;
 
-    serial_printf("FB: done");
+    serial_printf("FB: done\n");
 }
 
 /*
@@ -424,33 +422,46 @@ void fb_swap_buffers(void) {
         serial_printf("FB: Error: Backbuffer not initialized\n");
         return;
     }
-    if (dirty_x1 >= dirty_x2 || dirty_y1 >= dirty_y2) return; // No dirty region
+
+    __asm__ __volatile__("cli");
+
+    if (dirty_x1 >= dirty_x2 || dirty_y1 >= dirty_y2) {
+        __asm__ __volatile__("sti");
+        return; // No dirty region
+    }
+
+    uint32_t x1 = dirty_x1;
+    uint32_t y1 = dirty_y1;
+    uint32_t x2 = dirty_x2;
+    uint32_t y2 = dirty_y2;
+
+    dirty_x1 = dirty_y1 = 0xFFFFFFFF;
+    dirty_x2 = dirty_y2 = 0;
+
+    __asm__ __volatile__("sti");
 
     uint8_t* vram_base = (uint8_t*)kernel_fb_info.fb_addr;
 
     if (kernel_fb_info.fb_bpp == 32) {
-        for (uint32_t y = dirty_y1; y < dirty_y2; y++) {
-            uint32_t offset = (y * kernel_fb_info.fb_pitch) + (dirty_x1 * 4);
+        for (uint32_t y = y1; y < y2; y++) {
+            uint32_t offset = (y * kernel_fb_info.fb_pitch) + (x1 * 4);
             uint32_t src_offset = offset + bb_info.scroll_offset;
             if (src_offset >= bb_info.backbuffer_size) src_offset -= bb_info.backbuffer_size;
             uint32_t* dest = (uint32_t*)(vram_base + offset);
             uint32_t* src = (uint32_t*)(bb_info.backbuffer + src_offset);
-            memcpy32(dest, src, (dirty_x2 - dirty_x1));
+            memcpy32(dest, src, (x2 - x1));
         }
     } else if (kernel_fb_info.fb_bpp == 24) {
-        for (uint32_t y = dirty_y1; y < dirty_y2; y++) {
-            uint32_t offset = (y * kernel_fb_info.fb_pitch) + (dirty_x1 * 3);
+        for (uint32_t y = y1; y < y2; y++) {
+            uint32_t offset = (y * kernel_fb_info.fb_pitch) + (x1 * 3);
             uint32_t src_offset = offset + bb_info.scroll_offset;
             if (src_offset >= bb_info.backbuffer_size) src_offset -= bb_info.backbuffer_size;
             uint8_t* dest = vram_base + offset;
             uint8_t* src = bb_info.backbuffer + src_offset;
-            memcpy(dest, src, (dirty_x2 - dirty_x1) * 3);
+            memcpy(dest, src, (x2 - x1) * 3);
         }
     } else {
         serial_printf("FB: Error: Unsupported bits per pixel: %d\n", kernel_fb_info.fb_bpp);
         return;
     }
-
-    dirty_x1 = dirty_y1 = 0xFFFFFFFF;
-    dirty_x2 = dirty_y2 = 0;
 }

@@ -15,13 +15,17 @@ static event_t events[TIMER_MAX_EVENTS];
 static uint32_t event_count = 0;
 static uint32_t next_id = 0;
 
+static void timer_io_wait(void) {
+    outb(0x80, 0);
+}
+
 /*
  * Timer interrupt callback function
  * @param regs Pointer to the registers structure containing the CPU state at the time of the interrupt
  */
 void timer_callback(struct registers *regs) {
     (void)regs;
-    
+
     // event handling
     for (uint32_t i = 0; i < event_count; i++) {
         if (!events[i].active) continue;
@@ -44,13 +48,18 @@ void timer_callback(struct registers *regs) {
  * @param void
  */
 void timer_init(void) {
-    // set frequency
+    serial_printf("Timer: start\n");
+    serial_printf("Timer: set PIT frequency\n");
     uint32_t divisor = 1193180 / TIMER_FREQUENCY;
     outb(0x43, 0x36); // command byte: channel
+    timer_io_wait();
     outb(0x40, divisor & 0xFF); // low byte
+    timer_io_wait();
     outb(0x40, (divisor >> 8) & 0xFF); // high byte
 
+    serial_printf("Timer: install IRQ handler\n");
     irq_install_handler(0, timer_callback);
+    serial_printf("Timer: done\n");
 }
 
 /*

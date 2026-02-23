@@ -178,6 +178,17 @@ void kernel_tests(void) {
     serial_printf("-----\n");
 }
 
+static uint32_t idx = 0;
+static void print_event_handler() {
+    idx += 1;
+    if (idx % 2 == 0) {
+        console_set_color((font_color_t){ .fg_color = blue, .bg_color = black });
+    } else {
+        console_set_color((font_color_t){ .fg_color = green, .bg_color = black });
+    }
+    console_puts(int_to_str(idx));
+}
+
 /*
  * Kernel entry point
  * @param multiboot_magic The magic number passed by the bootloader
@@ -199,13 +210,24 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     timer_init();
     rtc_init();
 
-    console_init();
+    console_init(fb_get_width() / 2 - 300, fb_get_height() / 2 - 200, 600, 400);
 
-    kernel_tests();
+    //kernel_tests();
 
     serial_printf("Kernel: Welcome to NanoOS!\n");
     console_puts("Kernel: Welcome to NanoOS!\n");
-    
+
+    event_t print_event = {
+        .event_id = 0,
+        .handler = print_event_handler,
+        .interval = 1,
+        .target_tick = timer_get_ticks() + 1,
+        .repeat = true,
+        .active = true
+    };
+    uint32_t print_event_id = timer_add_event(print_event);
+    (void)print_event_id;
+
     while (1) {
         fb_update();
     }
