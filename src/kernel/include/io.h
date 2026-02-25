@@ -1,6 +1,5 @@
-/*
+/**
  * @file io.h
- * @brief Header file for I/O port driver
  * @author friedrichOsDev
  */
 

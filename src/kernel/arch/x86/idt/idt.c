@@ -1,22 +1,13 @@
-/*
+/**
  * @file idt.c
- * @brief Interrupt Descriptor Table (IDT)
  * @author friedrichOsDev
  */
 
 #include <idt.h>
 #include <serial.h>
 
-/*
- * External assembly function to load the IDT
- * @param idt_ptr The address of the IDT pointer structure
- */
 extern void idt_load(uint32_t idt_ptr);
 
-/*
- * External assembly ISR handlers
- * @param void
- */
 extern void isr0();
 extern void isr1();
 extern void isr2();
@@ -53,15 +44,19 @@ extern void isr31();
 struct idt_entry idt[IDT_ENTRIES];
 struct idt_ptr idtp;
 
-/*
- * Initialize the IDT
- * @param void
+/**
+ * @brief Initializes the Interrupt Descriptor Table (IDT).
+ * 
+ * Sets up the IDT pointer, populates the first 32 entries with ISR stubs,
+ * and loads the IDT into the CPU.
  */
 void idt_init(void) {
     serial_printf("IDT: start\n");
 
     idtp.limit = (sizeof(struct idt_entry) * IDT_ENTRIES) - 1;
     idtp.base = (uint32_t)&idt;
+
+    serial_printf("IDT: setting up ISR gates\n");
 
     void *isr_table[] = {
         isr0, isr1, isr2, isr3, isr4, isr5, isr6, isr7,
@@ -73,23 +68,24 @@ void idt_init(void) {
     for (int i = 0; i < IDT_ENTRIES; i++) {
         if (i < 32) {
             idt_set_gate(i, (uint32_t)isr_table[i], 0x08, 0x8E);
-            serial_printf("IDT: ISR %d set\n", i);
         } else {
             idt_set_gate(i, 0, 0, 0);
         }
     }
 
+    serial_printf("IDT: loading IDT\n");
     idt_load((uint32_t)&idtp);
 
     serial_printf("IDT: done\n");
 }
 
-/*
- * Set an IDT entry with the specified parameters
- * @param num The index of the IDT entry to set
- * @param base The address of the ISR
- * @param sel The segment selector
- * @param flags The flags for the IDT entry
+/**
+ * @brief Sets an IDT gate.
+ * 
+ * @param num The index of the IDT entry.
+ * @param base The address of the interrupt handler.
+ * @param sel The kernel segment selector.
+ * @param flags The gate flags (type and attributes).
  */
 void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags) {
     idt[num].base_low = base & 0xFFFF;
@@ -100,9 +96,10 @@ void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags) {
     idt[num].flags = flags;
 }
 
-/*
- * Enable interrupts
- * @param void
+/**
+ * @brief Enables interrupts on the CPU.
+ * 
+ * Executes the 'sti' instruction.
  */
 void idt_enable(void) {
     __asm__ __volatile__ ("sti");

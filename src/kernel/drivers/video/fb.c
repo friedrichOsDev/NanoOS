@@ -1,6 +1,5 @@
-/*
+/**
  * @file fb.c
- * @brief framebuffer driver
  * @author friedrichOsDev
  */
 
@@ -24,11 +23,11 @@ color_t red = {255, 255, 0, 0};
 color_t green = {255, 0, 255, 0};
 color_t blue = {255, 0, 0, 255};
 
-/*
- * Optimized memset for 32-bit values using rep stosl instruction
- * @param dest destination pointer
- * @param value 32-bit value to set
- * @param count number of 32-bit values to set
+/**
+ * @brief Fast 32-bit memory set using x86 assembly.
+ * @param dest Destination address.
+ * @param value 32-bit value to set.
+ * @param count Number of 32-bit words to set.
  */
 static inline void memset32(void* dest, uint32_t value, size_t count) {
     __asm__ __volatile__(
@@ -39,11 +38,11 @@ static inline void memset32(void* dest, uint32_t value, size_t count) {
     );
 }
 
-/*
- * Optimized memcpy for 32-bit values using rep movsl instruction
- * @param dest destination pointer
- * @param src source pointer
- * @param count number of 32-bit values to copy
+/**
+ * @brief Fast 32-bit memory copy using x86 assembly.
+ * @param dest Destination address.
+ * @param src Source address.
+ * @param count Number of 32-bit words to copy.
  */
 static inline void memcpy32(void* dest, const void* src, size_t count) {
     __asm__ __volatile__(
@@ -54,12 +53,12 @@ static inline void memcpy32(void* dest, const void* src, size_t count) {
     );
 }
 
-/*
- * Marks a region of the framebuffer as dirty, so it will be updated on the next swap
- * @param x top-left x coordinate of the dirty region
- * @param y top-left y coordinate of the dirty region
- * @param w width of the dirty region
- * @param h height of the dirty region
+/**
+ * @brief Expands the current dirty region to include the specified rectangle.
+ * @param x X coordinate.
+ * @param y Y coordinate.
+ * @param w Width.
+ * @param h Height.
  */
 static void fb_mark_dirty(uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
     if (x < dirty_x1) dirty_x1 = x;
@@ -70,17 +69,16 @@ static void fb_mark_dirty(uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
     if (dirty_y2 > fb_get_height()) dirty_y2 = fb_get_height();
 }
 
-/*
- * Timer event handler to set the update flag for framebuffer swapping
- * @param void
+/**
+ * @brief Timer callback to signal that a buffer swap is requested.
  */
 static void fb_update_event(void) {
     update_flag = true;
 }
 
-/*
- * Update the framebuffer if the update flag is set
- * @param void
+/**
+ * @brief Checks if an update is pending and performs a buffer swap if necessary.
+ * Should be called in the main kernel loop.
  */
 void fb_update(void) {
     if (update_flag) {
@@ -89,9 +87,9 @@ void fb_update(void) {
     }
 }
 
-/*
- * Initializes the framebuffer driver, sets up backbuffer and dirty region
- * @param void
+/**
+ * @brief Initializes the framebuffer subsystem.
+ * Allocates the backbuffer and sets up the periodic update timer.
  */
 void fb_init(void) {
     serial_printf("FB: start\n");
@@ -127,38 +125,32 @@ void fb_init(void) {
     serial_printf("FB: done\n");
 }
 
-/*
- * Get the width of the framebuffer
- * @param void
- * @return The width of the framebuffer in pixels
+/**
+ * @brief Returns the screen width in pixels.
  */
 uint32_t fb_get_width(void) {
     return kernel_fb_info.fb_width;
 }
 
-/*
- * Get the height of the framebuffer
- * @param void
- * @return The height of the framebuffer in pixels
+/**
+ * @brief Returns the screen height in pixels.
  */
 uint32_t fb_get_height(void) {
     return kernel_fb_info.fb_height;
 }
 
-/*
- * Get the size of the backbuffer
- * @param void
- * @return The size of the backbuffer in bytes
+/**
+ * @brief Returns the size of the backbuffer in bytes.
  */
 size_t fb_get_backbuffer_size(void) {
     return bb_info.backbuffer_size;
 }
 
-/*
- * Put a pixel on the screen
- * @param x x coordinate of the pixel
- * @param y y coordinate of the pixel
- * @param color color of the pixel
+/**
+ * @brief Draws a single pixel to the backbuffer.
+ * @param x X coordinate.
+ * @param y Y coordinate.
+ * @param color Color to draw. Supports alpha blending on 32bpp.
  */
 void fb_put_pixel(uint32_t x, uint32_t y, color_t color) {
     if (!bb_info.backbuffer) {
@@ -197,11 +189,10 @@ void fb_put_pixel(uint32_t x, uint32_t y, color_t color) {
     }
 }
 
-/*
- * Get the color of a pixel on the screen
- * @param x x coordinate of the pixel
- * @param y y coordinate of the pixel
- * @return The color of the pixel at the given coordinates
+/**
+ * @brief Retrieves the color of a pixel from the backbuffer.
+ * @param x X coordinate.
+ * @param y Y coordinate.
  */
 color_t fb_get_pixel(uint32_t x, uint32_t y) {
     color_t color = {0, 0, 0, 0};
@@ -233,13 +224,13 @@ color_t fb_get_pixel(uint32_t x, uint32_t y) {
     }
 }
 
-/*
- * Draw a rectangle on the screen
- * @param x x coordinate of the top-left corner
- * @param y y coordinate of the top-left corner
- * @param width width of the rectangle
- * @param height height of the rectangle
- * @param color color of the rectangle
+/**
+ * @brief Draws a filled rectangle.
+ * @param x X coordinate.
+ * @param y Y coordinate.
+ * @param width Width.
+ * @param height Height.
+ * @param color Color of the rectangle.
  */
 void fb_draw_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, color_t color) {
     if (!bb_info.backbuffer) {
@@ -302,13 +293,13 @@ void fb_draw_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, color
     }
 }
 
-/*
- * Draw a character on the screen using the 8x8 font
- * @param x x coordinate of the top-left corner
- * @param y y coordinate of the top-left corner
- * @param c character to draw
- * @param fg_color foreground color
- * @param bg_color background color
+/**
+ * @brief Draws a character using the built-in 8x8 font.
+ * @param x X coordinate.
+ * @param y Y coordinate.
+ * @param c Character to draw.
+ * @param fg_color Foreground color.
+ * @param bg_color Background color.
  */
 void fb_draw_char(uint32_t x, uint32_t y, char c, color_t fg_color, color_t bg_color) {
     if (!bb_info.backbuffer) {
@@ -332,10 +323,10 @@ void fb_draw_char(uint32_t x, uint32_t y, char c, color_t fg_color, color_t bg_c
     }
 }
 
-/*
- * Scroll the framebuffer by a given number of lines
- * @param lines number of lines to scroll
- * @param color color to fill the new lines with
+/**
+ * @brief Scrolls the entire screen upwards.
+ * @param lines Number of lines to scroll.
+ * @param color Color to fill the newly exposed area at the bottom.
  */
 void fb_scroll(uint32_t lines, color_t color) {
     if (!bb_info.backbuffer) {
@@ -360,14 +351,14 @@ void fb_scroll(uint32_t lines, color_t color) {
     fb_draw_rect(0, fb_get_height() - lines, fb_get_width(), lines, color);
 }
 
-/*
- * Scroll a rectangle area of the framebuffer by a given number of lines
- * @param x x coordinate of the top-left corner of the rectangle
- * @param y y coordinate of the top-left corner of the rectangle
- * @param width width of the rectangle
- * @param height height of the rectangle
- * @param lines number of lines to scroll
- * @param color color to fill the new lines with
+/**
+ * @brief Scrolls a specific rectangular region upwards.
+ * @param x X coordinate of the region.
+ * @param y Y coordinate of the region.
+ * @param width Width of the region.
+ * @param height Height of the region.
+ * @param lines Number of lines to scroll.
+ * @param color Color to fill the newly exposed area.
  */
 void fb_scroll_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t lines, color_t color) {
     if (!bb_info.backbuffer) {
@@ -405,17 +396,17 @@ void fb_scroll_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uin
     fb_draw_rect(x, y + height - lines, width, lines, color);
 }
 
-/*
- * Clear the framebuffer with a given color
- * @param color color to clear the screen with
+/**
+ * @brief Clears the entire screen with a specific color.
  */
 void fb_clear(color_t color) {
     fb_draw_rect(0, 0, fb_get_width(), fb_get_height(), color);
 }
 
-/*
- * Swap the backbuffer to the frontbuffer (physical framebuffer)
- * Only updates the dirty region for performance
+/**
+ * @brief Swaps the backbuffer to the frontbuffer (VRAM).
+ * Only copies the region marked as dirty since the last swap.
+ * Disables interrupts during dirty-rect reset to ensure atomicity.
  */
 void fb_swap_buffers(void) {
     if (!bb_info.backbuffer) {

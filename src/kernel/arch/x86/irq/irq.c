@@ -1,6 +1,5 @@
-/*
+/**
  * @file irq.c
- * @brief Interrupt Request (IRQ)
  * @author friedrichOsDev
  */
 
@@ -10,10 +9,6 @@
 #include <idt.h>
 #include <serial.h>
 
-/*
- * External assembly IRQ handlers
- * @param void
- */
 extern void irq0(void);
 extern void irq1(void);
 extern void irq2(void);
@@ -31,9 +26,11 @@ extern void irq13(void);
 extern void irq14(void);
 extern void irq15(void);
 
-/*
- * Initialize IRQs by remapping the PIC and setting up IDT entries for each IRQ
- * @param void
+/**
+ * @brief Initializes the Interrupt Requests (IRQs).
+ * 
+ * Remaps the PICs and populates the IDT with IRQ stubs starting at 
+ * interrupt vector 32.
  */
 void irq_init(void) {
     serial_printf("IRQ: start\n");

@@ -1,6 +1,5 @@
-/*
+/**
  * @file gdt.h
- * @brief Header file for Global Descriptor Table (GDT)
  * @author friedrichOsDev
  */
 
@@ -8,9 +7,7 @@
 
 #include <stdint.h>
 
-/*
- * GDT entry structure
- */
+/** @brief Structure representing a GDT entry. */
 struct gdt_entry {
     uint16_t limit_low;
     uint16_t base_low;
@@ -20,9 +17,7 @@ struct gdt_entry {
     uint8_t base_high;
 } __attribute__((packed));
 
-/*
- * GDT pointer structure
- */
+/** @brief Structure representing the GDT pointer for the LGDT instruction. */
 struct gdt_ptr {
     uint16_t limit;
     uint32_t base;

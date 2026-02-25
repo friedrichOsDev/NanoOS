@@ -1,6 +1,5 @@
-/*
+/**
  * @file timer.h
- * @brief Header file for timer driver
  * @author friedrichOsDev
  */
 
@@ -10,12 +9,15 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define TIMER_FREQUENCY 60
-#define TIMER_MAX_EVENTS 64
+#define TIMER_FREQUENCY 60 /**< PIT frequency in Hz. */
+#define TIMER_MAX_EVENTS 64 /**< Maximum number of concurrent timer events. */
 
-// Timer event structure
+/**
+ * @brief Structure representing a timed event.
+ */
 typedef struct {
-    uint32_t event_id;
+    uint32_t event_id; /**< Unique ID for the event. */
+    /** @brief Function to call when the event triggers. */
     void (*handler)(void);
     uint32_t interval;
     uint32_t target_tick;

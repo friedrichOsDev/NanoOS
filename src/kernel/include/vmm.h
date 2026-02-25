@@ -1,6 +1,5 @@
-/*
+/**
  * @file vmm.h
- * @brief Header file for Virtual Memory Manager (VMM)
  * @author friedrichOsDev
  */
 
@@ -46,15 +45,21 @@
 #define VMM_ZERO_WINDOW_BASE     VMM_ZERO_WINDOW
 #define VMM_RECURSIVE_BASE       VMM_TABLES_BASE
 
-// define virt_addr_t
+/**
+ * @brief Type representing a virtual memory address.
+ */
 typedef uintptr_t virt_addr_t;
 
-// page table structure
+/**
+ * @brief Structure representing a page table.
+ */
 typedef struct {
     uint32_t entries[VMM_PAGE_TABLE_ENTRIES];
 } page_table_t;
 
-// page dir structure
+/**
+ * @brief Structure representing a page directory.
+ */
 typedef struct {
     uint32_t entries[VMM_PAGE_DIR_ENTRIES];
 } page_directory_t;

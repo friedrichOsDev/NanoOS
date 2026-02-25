@@ -1,6 +1,5 @@
-/*
+/**
  * @file console.h
- * @brief Header file for text console interface
  * @author friedrichOsDev
  */
 
@@ -10,8 +9,11 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <fb.h>
+#include <font.h>
 
-// one data type for foreground and background color
+/**
+ * @brief Structure representing foreground and background colors for the console.
+ */
 typedef struct {
     color_t fg_color;
     color_t bg_color;

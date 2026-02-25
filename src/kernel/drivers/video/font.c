@@ -1,6 +1,5 @@
-/*
+/**
  * @file font.c
- * @brief 8x8 monochrome bitmap fonts
  * @author Daniel Hepper <daniel@hepper.net>
  * @note GitHub: https://github.com/dhepper/font8x8/
  */

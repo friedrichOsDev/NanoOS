@@ -1,6 +1,5 @@
-/*
+/**
  * @file pmm.h
- * @brief Header file for Physical Memory Manager (PMM)
  * @author friedrichOsDev
  */
 
@@ -21,19 +20,26 @@
 #define PMM_BITMAP_INDEX(addr) ((addr) / PMM_PAGE_SIZE / 8)
 #define PMM_BITMAP_OFFSET(addr) (((addr) / PMM_PAGE_SIZE) % 8)
 
+/**
+ * @brief Type representing a physical memory address.
+ */
 typedef uintptr_t phys_addr_t;
 
+/**
+ * @brief Structure representing the internal state of the Physical Memory Manager.
+ */
 typedef struct {
-    uint8_t* bitmap;
-    uint64_t max_pages;
-    uint64_t used_pages;
-    uint64_t last_checked_index;
+    uint8_t* bitmap;             /**< Pointer to the allocation bitmap. */
+    uint64_t max_pages;          /**< Total number of pages in the system. */
+    uint64_t used_pages;         /**< Number of pages currently marked as used. */
+    /**
+     * @brief Index of the last checked 32-bit block in the bitmap.
+     * Used to optimize the next allocation search.
+     */
+    uint64_t last_checked_index; 
 } pmm_state_t; 
 
-// initialization function
 void pmm_init(void);
-
-// allocation and deallocation functions
 phys_addr_t pmm_alloc_page();
 void pmm_free_page(phys_addr_t addr);
 phys_addr_t pmm_zalloc_page();
@@ -42,14 +48,9 @@ phys_addr_t pmm_alloc_pages(size_t count);
 void pmm_free_pages(phys_addr_t addr, size_t count);
 phys_addr_t pmm_zalloc_pages(size_t count);
 void pmm_zfree_pages(phys_addr_t addr, size_t count);
-
-// memory protection functions
 void pmm_lock_pages(phys_addr_t addr, size_t count);
 void pmm_unlock_pages(phys_addr_t addr, size_t count);
-
 bool pmm_is_page_free(phys_addr_t addr);
-
-// statistics functions
 uint64_t pmm_get_free_memory(void);
 uint64_t pmm_get_used_memory(void);
 uint64_t pmm_get_total_memory(void);

@@ -1,6 +1,5 @@
-/*
+/**
  * @file rtc.c
- * @brief Real-Time Clock (RTC) driver
  * @author friedrichOsDev
  */
 
@@ -9,35 +8,38 @@
 #include <serial.h>
 #include <convert.h>
 #include <timer.h>
+#include <print.h>
 // #include <acpi.h>
 
 static rtc_time_t rtc_time;
 static uint32_t rtc_update_event_id;
 static uint8_t rtc_century = 20; // later fadt_get_century() in rtc_init()
 
-/*
- * Check if the RTC is currently updating
- * @return true if update is in progress, false otherwise
+/**
+ * @brief Checks if the RTC is currently updating.
+ * 
+ * @return true if an update is in progress.
  */
 static bool is_update_in_progress(void) {
     outb(CMOS_ADDRESS, RTC_STATUS_A);
     return (inb(CMOS_DATA) & 0x80);
 }
 
-/*
- * Read a value from the specified RTC register
- * @param reg The RTC register to read from
- * @return The value read from the RTC register
+/**
+ * @brief Reads a value from a specific RTC register.
+ * 
+ * @param reg The register address to read.
+ * @return The byte read from the register.
  */
 static uint8_t read_rtc_register(uint8_t reg) {
     outb(CMOS_ADDRESS, reg);
     return inb(CMOS_DATA);
 }
 
-
-/*
- * Update the current time from the RTC registers
- * @param void
+/**
+ * @brief Updates the internal rtc_time structure with current CMOS values.
+ * 
+ * Handles BCD to decimal conversion and 12/24 hour format normalization.
  */
 void rtc_update_time(void) {
     rtc_time_t last;
@@ -87,10 +89,10 @@ void rtc_update_time(void) {
     } while (last.seconds != rtc_time.seconds || last.minutes != rtc_time.minutes);
 }
 
-
-/*
- * Initialize the RTC driver
- * @param void
+/**
+ * @brief Initializes the Real Time Clock.
+ * 
+ * Sets up a recurring timer event to update the time every second.
  */
 void rtc_init(void) {
     // TODO: get century from FADT
@@ -112,13 +114,39 @@ void rtc_init(void) {
     };
 
     rtc_update_event_id = timer_add_event(rtc_update_event);
+    (void)rtc_update_event_id;
+    rtc_update_time();
 }
 
-/*
- * Get the current time from the RTC
- * @param void
- * @return The current time as an rtc_time_t structure
+/**
+ * @brief Gets the current RTC time.
+ * 
+ * @return A structure containing the current date and time.
  */
 rtc_time_t rtc_get_time(void) {
     return rtc_time;
+}
+
+/**
+ * @brief Returns a formatted string of the current time.
+ * 
+ * @param type The format type (1 for European, default for ISO-like).
+ * @return A pointer to a static buffer containing the formatted string.
+ */
+const char* rtc_get_time_format(uint32_t type) {
+    static char buffer[20];
+    int length = 0;
+    switch (type) {
+        case 1: {
+            // Format: dd.mm.yyyy hh:mm:ss
+            length = snprintf(buffer, sizeof(buffer), "%02d.%02d.%04d %02d:%02d:%02d", rtc_time.day, rtc_time.month, rtc_time.year, rtc_time.hours, rtc_time.minutes, rtc_time.seconds);
+            break;
+        }
+        default:
+            // Format: yyyy-mm-dd hh:mm:ss
+            length = snprintf(buffer, sizeof(buffer), "%04d.%02d.%02d %02d:%02d:%02d", rtc_time.year, rtc_time.month, rtc_time.day, rtc_time.hours, rtc_time.minutes, rtc_time.seconds);
+            break;
+    }
+    (void)length;
+    return buffer;
 }

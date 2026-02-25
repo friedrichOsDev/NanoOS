@@ -1,6 +1,5 @@
-/*
+/**
  * @file idt.h
- * @brief Header file for Interrupt Descriptor Table (IDT)
  * @author friedrichOsDev
  */
 
@@ -8,11 +7,9 @@
 
 #include <stdint.h>
 
-#define IDT_ENTRIES 256
+#define IDT_ENTRIES 256 /**< Total number of entries in the IDT. */
 
-/*
- * IDT entry structure
- */
+/** @brief Structure representing an IDT entry (gate). */
 struct idt_entry {
     uint16_t base_low;
     uint16_t selector;
@@ -21,9 +18,7 @@ struct idt_entry {
     uint16_t base_high;
 } __attribute__((packed));
 
-/*
- * IDT pointer structure
- */
+/** @brief Structure representing the IDT pointer for the LIDT instruction. */
 struct idt_ptr {
     uint16_t limit;
     uint32_t base;

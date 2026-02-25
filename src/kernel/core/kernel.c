@@ -1,6 +1,5 @@
-/*
+/**
  * @file kernel.c
- * @brief Main entry point for the NanoOS kernel
  * @author friedrichOsDev
  */
 
@@ -18,15 +17,21 @@
 #include <convert.h>
 #include <timer.h>
 #include <rtc.h>
+#include <print.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
 multiboot_info_t* kernel_multiboot_info;
+char kernel_cmdline[256];
+char kernel_bootloader_name[64];
 
-/*
- * Parse the multiboot information structure provided by the bootloader
- * @param multiboot_magic The magic number passed by the bootloader
- * @param multiboot_info The address of the multiboot information structure
+/**
+ * @brief Parses the Multiboot2 information structure.
+ *
+ * Iterates through the Multiboot2 tags to extract command line, bootloader name,
+ * memory map, and framebuffer information.
+ * @param multiboot_magic The magic value passed by the bootloader.
+ * @param multiboot_info The physical address of the Multiboot2 information structure.
  */
 void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
     if (multiboot_info == 0) kernel_panic("Multiboot info structure is missing!", 0);
@@ -43,6 +48,11 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
             case MULTIBOOT_TAG_TYPE_CMDLINE:
                 multiboot_tag_cmdline_t* cmdline_tag = (multiboot_tag_cmdline_t*)tag;
                 if (cmdline_tag->size > 8 && cmdline_tag->string[0] != '\0') {
+                    size_t len = cmdline_tag->size - 8;
+                    if (len > sizeof(kernel_cmdline) - 1) len = sizeof(kernel_cmdline) - 1;
+                    for (size_t i = 0; i < len; i++) kernel_cmdline[i] = cmdline_tag->string[i];
+                    kernel_cmdline[len] = '\0';
+
                     serial_printf("Multiboot: Command line: '%s'\n", cmdline_tag->string);
                 } else {
                     serial_printf("Multiboot: Command line: (empty)\n");
@@ -50,6 +60,11 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
                 break;
             case MULTIBOOT_TAG_TYPE_BOOT_LOADER:
                 multiboot_tag_boot_loader_t* boot_loader_tag = (multiboot_tag_boot_loader_t*)tag;
+                size_t bl_len = boot_loader_tag->size - 8;
+                if (bl_len > sizeof(kernel_bootloader_name) - 1) bl_len = sizeof(kernel_bootloader_name) - 1;
+                for (size_t i = 0; i < bl_len; i++) kernel_bootloader_name[i] = boot_loader_tag->string[i];
+                kernel_bootloader_name[bl_len] = '\0';
+
                 serial_printf("Multiboot: Boot loader name: %s\n", boot_loader_tag->string);
                 break;
             case MULTIBOOT_TAG_TYPE_MMAP:
@@ -83,116 +98,22 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
     }
 }
 
-/*
- * Test the kernel functionality
- * @param void
+/**
+ * @brief Executes kernel-level tests and demonstrations.
+ * 
+ * This function is used to verify kernel components during development.
  */
 void kernel_tests(void) {
-    // idt
-    // serial_printf("Kernel: Tests: IDT: Triggering division by zero exception to test IDT setup...\n");
-    // int a = 5;
-    // int b = 0;
-    // int c = a / b;
-    // serial_printf("Kernel: Tests: IDT: Division by zero test: 5 / 0 = %d (should not be reached)\n", c);
-
-    // memory management test
-    // - pmm
-    serial_printf("-----\n");
-
-    serial_printf("Kernel: Tests: PMM: Total memory: %d KiB\n", (uint32_t)pmm_get_total_memory() / 1024);
-    serial_printf("Kernel: Tests: PMM: Used memory: %d KiB\n", (uint32_t)pmm_get_used_memory() / 1024);
-    serial_printf("Kernel: Tests: PMM: Free memory: %d KiB\n", (uint32_t)pmm_get_free_memory() / 1024);
-
-    serial_printf("-----\n");
-
-    phys_addr_t test_alloc = pmm_zalloc_pages(1024);
-    serial_printf("Kernel: Tests: PMM: Allocated 1024 pages at %x\n", test_alloc);
-    serial_printf("Kernel: Tests: PMM: Used memory: %d KiB\n", (uint32_t)pmm_get_used_memory() / 1024);
-    pmm_zfree_pages(test_alloc, 1024);
-    serial_printf("Kernel: Tests: PMM: Freed 1024 pages at %x\n", test_alloc);
-    serial_printf("Kernel: Tests: PMM: Used memory: %d KiB\n", (uint32_t)pmm_get_used_memory() / 1024);
-
-    serial_printf("-----\n");
-
-    // - vmm
-    virt_addr_t test_virtual_addr = 0x400000; // 4 MiB
-    phys_addr_t test_physical_addr = pmm_alloc_page();
-    serial_printf("Kernel: Tests: VMM: Mapping virtual %x to physical %x\n", test_virtual_addr, test_physical_addr);
-    vmm_map_page(vmm_get_page_directory(), test_virtual_addr, test_physical_addr, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
-
-    serial_printf("Kernel: Tests: VMM: Verifying mapping...\n");
-    phys_addr_t translated = vmm_virtual_to_physical(vmm_get_page_directory(), test_virtual_addr);
-    if (translated == test_physical_addr) {
-        serial_printf("Kernel: Tests: VMM: SUCCESS: %x -> %x\n", test_virtual_addr, translated);
-    } else {
-        serial_printf("Kernel: Tests: VMM: FAILURE: %x -> %x (expected %x)\n", test_virtual_addr, translated, test_physical_addr);
-    }
-
-    // test mapping second phys to same virt
-    virt_addr_t test_virtual_addr2 = 0x400000 - VMM_PAGE_SIZE; // 4 MiB - 4 KiB
-    phys_addr_t test_physical_addr2 = pmm_alloc_pages(2);
-    serial_printf("Kernel: Tests: VMM: Attempting to map 2 physical pages at %x to overlap with the virtual address %x (should fail)\n", test_physical_addr2, test_virtual_addr);
-    vmm_map_pages(vmm_get_page_directory(), test_virtual_addr2, test_physical_addr2, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE, 2);
-    pmm_free_pages(test_physical_addr2, 2);
-
-    serial_printf("Kernel: Tests: VMM: Unmapping %x\n", test_virtual_addr);
-    vmm_unmap_page(vmm_get_page_directory(), test_virtual_addr);
-    pmm_free_page(test_physical_addr);
-
-    serial_printf("-----\n");
-
-    // - heap
-    heap_dump();
-    serial_printf("Kernel: Tests: Heap: Allocating 128 bytes...\n");
-    virt_addr_t ptr1 = kmalloc(128);
-    serial_printf("Kernel: Tests: Heap: Allocating 256 bytes...\n");
-    virt_addr_t ptr2 = kmalloc(256);
-    serial_printf("Kernel: Tests: Heap: Allocating 512 bytes...\n");
-    virt_addr_t ptr3 = kmalloc(512);
-    serial_printf("Kernel: Tests: Heap: Allocated 3 blocks: %x, %x, %x\n", ptr1, ptr2, ptr3);
-    heap_dump();
-
-    serial_printf("Kernel: Tests: Heap: Freeing block 2 (256 bytes) to test Best-Fit...\n");
-    kfree(ptr2);
-    heap_dump();
-
-    virt_addr_t ptr_fit = kmalloc(128);
-    serial_printf("Kernel: Tests: Heap: New 128 byte block allocated at: %x\n", ptr_fit);
-    if (ptr_fit == ptr2) {
-        serial_printf("Kernel: Tests: Heap: SUCCESS: Best-Fit picked the hole at %x\n", ptr2);
-    }
-    heap_dump();
-
-    serial_printf("Kernel: Tests: Heap: Testing Heap extension by allocating a large block of 2 MiB...\n");
-    virt_addr_t ptr_large = kmalloc(2 * 1024 * 1024);
-    serial_printf("Kernel: Tests: Heap: Large block allocated at: %x\n", ptr_large);
-    heap_dump();
-
-    serial_printf("Kernel: Tests: Heap: Freeing all blocks to test Coalescing...\n");
-    kfree(ptr1);
-    kfree(ptr_fit);
-    kfree(ptr3);
-    kfree(ptr_large);
-    heap_dump();
-
-    serial_printf("-----\n");
+    // TODO
 }
 
-static uint32_t idx = 0;
-static void print_event_handler() {
-    idx += 1;
-    if (idx % 2 == 0) {
-        console_set_color((font_color_t){ .fg_color = blue, .bg_color = black });
-    } else {
-        console_set_color((font_color_t){ .fg_color = green, .bg_color = black });
-    }
-    console_puts(int_to_str(idx));
-}
-
-/*
- * Kernel entry point
- * @param multiboot_magic The magic number passed by the bootloader
- * @param multiboot_info The address of the multiboot information structure
+/**
+ * @brief The main entry point of the kernel.
+ *
+ * This function initializes all core kernel subsystems, parses multiboot information,
+ * sets up memory management, and enters the main kernel loop.
+ * @param multiboot_magic The magic value passed by the bootloader.
+ * @param multiboot_info The physical address of the Multiboot2 information structure.
  */
 void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     serial_init();
@@ -210,23 +131,12 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     timer_init();
     rtc_init();
 
-    console_init(fb_get_width() / 2 - 300, fb_get_height() / 2 - 200, 600, 400);
+    console_init(0, 0, fb_get_width(), fb_get_height());
 
-    //kernel_tests();
+    kernel_tests();
+    printf("Welcome to NanoOS!\n");
 
     serial_printf("Kernel: Welcome to NanoOS!\n");
-    console_puts("Kernel: Welcome to NanoOS!\n");
-
-    event_t print_event = {
-        .event_id = 0,
-        .handler = print_event_handler,
-        .interval = 1,
-        .target_tick = timer_get_ticks() + 1,
-        .repeat = true,
-        .active = true
-    };
-    uint32_t print_event_id = timer_add_event(print_event);
-    (void)print_event_id;
 
     while (1) {
         fb_update();

@@ -1,9 +1,7 @@
-/*
+/**
  * @file multiboot2.h
- * @brief Header file for Multiboot 2 structures and constants
  * @author friedrichOsDev
  */
-
 #pragma once
 
 #include <stdint.h>
@@ -16,6 +14,9 @@
 #define MULTIBOOT_TAG_TYPE_MMAP 6
 #define MULTIBOOT_TAG_TYPE_FRAMEBUFFER 8
 
+/**
+ * @brief The Multiboot2 information structure header.
+ */
 typedef struct {
     uint32_t total_size;
     uint32_t reserved;
@@ -26,18 +27,27 @@ typedef struct {
     uint32_t size;
 } __attribute__((packed)) multiboot_tag_t;
 
+/**
+ * @brief Tag containing the kernel command line.
+ */
 typedef struct {
     uint32_t type;
     uint32_t size;
     char string[];
 } __attribute__((packed)) multiboot_tag_cmdline_t;
 
+/**
+ * @brief Tag containing the bootloader name.
+ */
 typedef struct {
     uint32_t type;
     uint32_t size;
     char string[];
 } __attribute__((packed)) multiboot_tag_boot_loader_t;
 
+/**
+ * @brief A single entry in the Multiboot2 memory map.
+ */
 typedef struct {
     uint64_t base_addr;
     uint64_t length;
@@ -45,6 +55,9 @@ typedef struct {
     uint32_t reserved;
 } __attribute__((packed)) multiboot_tag_mmap_entry_t;
 
+/**
+ * @brief Tag containing the memory map.
+ */
 typedef struct {
     uint32_t type;
     uint32_t size;
@@ -53,8 +66,6 @@ typedef struct {
     multiboot_tag_mmap_entry_t entries[];
 } __attribute__((packed)) multiboot_tag_mmap_t;
 
-
-// FB-TYPE = 0
 typedef struct {
     uint8_t red;
     uint8_t green;
@@ -66,7 +77,6 @@ typedef struct {
     multiboot_tag_framebuffer_palette_t framebuffer_palette[];
 } __attribute__((packed)) multiboot_tag_framebuffer_color_info_t;
 
-// FB-TYPE = 1
 typedef struct {
     uint8_t framebuffer_red_field_position;
     uint8_t framebuffer_red_mask_size;
@@ -76,9 +86,9 @@ typedef struct {
     uint8_t framebuffer_blue_mask_size;
 } __attribute__((packed)) multiboot_tag_framebuffer_rgb_info_t;
 
-// FB-TYPE = 2
-// --> no additional color info
-
+/**
+ * @brief Tag containing framebuffer information.
+ */
 typedef struct {
     uint32_t type;
     uint32_t size;

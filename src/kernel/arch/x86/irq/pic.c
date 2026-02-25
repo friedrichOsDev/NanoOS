@@ -1,6 +1,5 @@
-/*
+/**
  * @file pic.c
- * @brief Programmable Interrupt Controller (PIC)
  * @author friedrichOsDev
  */
 
@@ -8,27 +7,34 @@
 #include <io.h>
 #include <serial.h>
 
-/*
- * TODO: Replace the 0x... magic numbers with defined constants
- */
-
-/*
- * Remap the PIC to avoid conflicts with CPU exceptions
- * @param void
+/**
+ * @brief Remaps the Programmable Interrupt Controllers (PICs).
+ * 
+ * Moves the IRQ base vectors from the default (0x08-0x0F) to 0x20-0x2F 
+ * to avoid conflicts with CPU exceptions.
  */
 void pic_remap(void) {
     serial_printf("PIC: remapping\n");
     
-    outb(0x20, 0x11);
-    outb(0xA0, 0x11);
-    outb(0x21, 0x20);
-    outb(0xA1, 0x28);
-    outb(0x21, 0x04);
-    outb(0xA1, 0x02);
-    outb(0x21, 0x01);
-    outb(0xA1, 0x01);
-    outb(0x21, 0x00);
-    outb(0xA1, 0x00);
+    // ICW1: Start initialization
+    outb(PIC1_COMMAND, ICW1_INIT);
+    outb(PIC2_COMMAND, ICW1_INIT);
+
+    // ICW2: Vector offsets (0x20 for Master, 0x28 for Slave)
+    outb(PIC1_DATA, 0x20);
+    outb(PIC2_DATA, 0x28);
+
+    // ICW3: Cascading
+    outb(PIC1_DATA, 0x04); // Master has slave on IRQ2
+    outb(PIC2_DATA, 0x02); // Slave identity
+
+    // ICW4: Environment info
+    outb(PIC1_DATA, ICW4_8086);
+    outb(PIC2_DATA, ICW4_8086);
+
+    // Mask: Enable all interrupts
+    outb(PIC1_DATA, 0x00);
+    outb(PIC2_DATA, 0x00);
 
     serial_printf("PIC: remapped\n");
 }

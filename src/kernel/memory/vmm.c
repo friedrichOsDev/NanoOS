@@ -1,6 +1,5 @@
-/*
+/**
  * @file vmm.c
- * @brief Virtual Memory Manager (VMM)
  * @author friedrichOsDev
  */
 
@@ -13,18 +12,17 @@
 extern uint32_t boot_page_table_zero_window[1024];
 static page_directory_t* current_directory = NULL;
 
-/*
- * Switch to a new page directory
- * @param dir The new page directory to switch to
+/**
+ * @brief Switches the active page directory.
+ * @param phys_dir Physical address of the new page directory.
  */
 static inline void vmm_switch_directory(phys_addr_t phys_dir) {
     load_page_directory(phys_dir);
     current_directory = (page_directory_t*)(VMM_TABLES_BASE + VMM_RECURSIVE_SLOT * VMM_PAGE_SIZE);
 }
 
-/*
- * Reload the current page directory to flush the TLB
- * @param void
+/**
+ * @brief Reloads the CR3 register to flush the TLB.
  */
 static inline void vmm_reload_directory(void) {
     uint32_t cr3_val;
@@ -37,18 +35,19 @@ static inline void vmm_reload_directory(void) {
     );
 }
 
-/*
- * Flush the TLB entry for a specific virtual address
- * @param addr The virtual address to flush from the TLB
+/**
+ * @brief Flushes a single TLB entry.
+ * @param addr The virtual address to flush.
  */
 static inline void vmm_flush_tlb(virt_addr_t addr) {
     __asm__ __volatile__("invlpg (%0)" : : "r" (addr) : "memory");
 }
 
-/*
- * Prepare the zero page mapping for use in page clearing
- * @param phys The physical address to map to the zero page
- * @param window The index for the zero window
+/**
+ * @brief Maps a physical address into the temporary zero window.
+ * Used for accessing memory before the full VMM is initialized or for paging structures.
+ * @param phys The physical address to map.
+ * @param window The index within the zero window (0-1023).
  */
 void vmm_prepare_zero_window(phys_addr_t phys, uint32_t window) {
     if (window >= VMM_PAGE_TABLE_ENTRIES) {
@@ -67,9 +66,9 @@ void vmm_prepare_zero_window(phys_addr_t phys, uint32_t window) {
     vmm_flush_tlb(VMM_ZERO_WINDOW + (window * VMM_PAGE_SIZE));
 }
 
-/*
- * Initialize the Virtual Memory Manager (VMM)
- * @param void
+/**
+ * @brief Initializes the Virtual Memory Manager.
+ * Sets up the kernel page directory, maps the kernel, bitmap, and framebuffer.
  */
 void vmm_init(void) {
     serial_printf("VMM: start\n");
@@ -139,12 +138,12 @@ void vmm_init(void) {
     serial_printf("VMM: done\n");
 }
 
-/*
- * Map a virtual address to a physical address in the given page directory
- * @param dir The page directory to modify
- * @param virtual_address The virtual address to map
- * @param physical_address The physical address to map to
- * @param flags The flags for the page (e.g., present, read/write, user/supervisor)
+/**
+ * @brief Maps a single virtual page to a physical page.
+ * @param dir The page directory to use.
+ * @param virtual_address The virtual address.
+ * @param physical_address The physical address.
+ * @param flags Mapping flags (Present, RW, etc).
  */
 void vmm_map_page(page_directory_t* dir, virt_addr_t virtual_address, phys_addr_t physical_address, uint32_t flags) {
     if (!dir) {
@@ -163,10 +162,10 @@ void vmm_map_page(page_directory_t* dir, virt_addr_t virtual_address, phys_addr_
     vmm_map_pages(dir, virtual_address, physical_address, flags, 1);
 }
 
-/*
- * Unmap a virtual address in the given page directory
- * @param dir The page directory to modify
- * @param virtual_address The virtual address to unmap
+/**
+ * @brief Unmaps a single virtual page.
+ * @param dir The page directory to use.
+ * @param virtual_address The virtual address to unmap.
  */
 void vmm_unmap_page(page_directory_t* dir, virt_addr_t virtual_address) {
     if (!dir) {
@@ -181,13 +180,13 @@ void vmm_unmap_page(page_directory_t* dir, virt_addr_t virtual_address) {
     vmm_unmap_pages(dir, virtual_address, 1);
 }
 
-/*
- * Map a range of virtual addresses to physical addresses in the given page directory
- * @param dir The page directory to modify
- * @param virtual_start_address The virtual address to map
- * @param physical_start_address The physical address to map to
- * @param flags The flags for the page (e.g., present, read/write, user/supervisor)
- * @param count The number of pages to map
+/**
+ * @brief Maps a range of contiguous virtual pages to a range of physical pages.
+ * @param dir The page directory to use.
+ * @param virtual_start_address Starting virtual address.
+ * @param physical_start_address Starting physical address.
+ * @param flags Mapping flags.
+ * @param count Number of pages to map.
  */
 void vmm_map_pages(page_directory_t* dir, virt_addr_t virtual_start_address, phys_addr_t physical_start_address, uint32_t flags, uint32_t count) {
     if (!dir) {
@@ -260,11 +259,11 @@ void vmm_map_pages(page_directory_t* dir, virt_addr_t virtual_start_address, phy
     if (reload_dir) vmm_reload_directory();
 }
 
-/*
- * Unmap a range of virtual addresses in the given page directory
- * @param dir The page directory to modify
- * @param virtual_start_address The virtual address to unmap
- * @param count The number of pages to unmap
+/**
+ * @brief Unmaps a range of virtual pages.
+ * @param dir The page directory to use.
+ * @param virtual_start_address Starting virtual address.
+ * @param count Number of pages to unmap.
  */
 void vmm_unmap_pages(page_directory_t* dir, virt_addr_t virtual_start_address, uint32_t count) {
     if (!dir) {
@@ -324,12 +323,12 @@ void vmm_unmap_pages(page_directory_t* dir, virt_addr_t virtual_start_address, u
     if (reload_dir) vmm_reload_directory();
 }
 
-/*
- * Check if a range of virtual addresses is free (not mapped)
- * @param dir The page directory to check
- * @param start The starting virtual address
- * @param count The number of pages to check
- * @return True if the entire region is free, false otherwise
+/**
+ * @brief Checks if a virtual memory region is currently unmapped.
+ * @param dir The page directory to check.
+ * @param start Starting virtual address.
+ * @param count Number of pages to check.
+ * @return true if the entire region is free, false otherwise.
  */
 bool vmm_is_region_free(page_directory_t* dir, virt_addr_t start, uint32_t count) {
     for (uint32_t i = 0; i < count; i++) {
@@ -358,11 +357,11 @@ bool vmm_is_region_free(page_directory_t* dir, virt_addr_t start, uint32_t count
     return true;
 }
 
-/*
- * Get the physical address mapped to a virtual address
- * @param dir The page directory to search
- * @param virtual_address The virtual address to translate
- * @return The physical address, or 0 if not mapped
+/**
+ * @brief Translates a virtual address to its corresponding physical address.
+ * @param dir The page directory to use for translation.
+ * @param virtual_address The virtual address to translate.
+ * @return The physical address, or 0 if not mapped.
  */
 phys_addr_t vmm_virtual_to_physical(page_directory_t* dir, virt_addr_t virtual_address) {
     if (!dir) {
@@ -401,10 +400,9 @@ phys_addr_t vmm_virtual_to_physical(page_directory_t* dir, virt_addr_t virtual_a
     return 0;
 }
 
-/*
- * Get the current page directory
- * @param void
- * @return A pointer to the current page directory
+/**
+ * @brief Returns the currently active page directory.
+ * @return Pointer to the current page_directory_t.
  */
 page_directory_t* vmm_get_page_directory(void) {
     return current_directory;

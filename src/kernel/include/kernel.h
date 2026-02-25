@@ -1,6 +1,5 @@
-/*
+/**
  * @file kernel.h
- * @brief Header file for main entry point of the NanoOS kernel
  * @author friedrichOsDev
  */
 
@@ -21,15 +20,20 @@ extern uint8_t _kernel_end_phys[];
 
 #define MMAP_MAX_ENTRIES 128
 
-// simpler structures
+/**
+ * @brief Structure containing basic framebuffer information.
+ */
 typedef struct {
-    void* fb_addr;
-    uint32_t fb_width;
-    uint32_t fb_height;
-    uint32_t fb_pitch;
-    uint8_t fb_bpp;
+    void* fb_addr;      /**< Virtual address of the framebuffer. */
+    uint32_t fb_width;  /**< Width in pixels. */
+    uint32_t fb_height; /**< Height in pixels. */
+    uint32_t fb_pitch;  /**< Number of bytes per scanline. */
+    uint8_t fb_bpp;     /**< Bits per pixel. */
 } fb_info_t;
 
+/**
+ * @brief Memory map entry types as defined by Multiboot2.
+ */
 typedef enum {
     MMAP_USABLE = 1,
     MMAP_RESERVED = 2,
@@ -38,12 +42,18 @@ typedef enum {
     MMAP_BADRAM = 5
 } mmap_type_t;
 
+/**
+ * @brief A single entry in the kernel's internal memory map.
+ */
 typedef struct {
     uint64_t base_addr;
     uint64_t length;
     mmap_type_t type;
 } mmap_entry_t;
 
+/**
+ * @brief Internal memory map structure.
+ */
 typedef struct {
     uint32_t entry_count;
     mmap_entry_t entries[MMAP_MAX_ENTRIES];
@@ -52,3 +62,5 @@ typedef struct {
 extern mmap_t kernel_mmap;
 extern fb_info_t kernel_fb_info;
 extern multiboot_info_t* kernel_multiboot_info;
+extern char kernel_cmdline[256];
+extern char kernel_bootloader_name[64];

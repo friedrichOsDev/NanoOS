@@ -1,15 +1,12 @@
-/*
+/**
  * @file convert.h
- * @brief Header file for type conversion functions
  * @author friedrichOsDev
  */
 
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
-const char* hex_to_str(uint32_t value);
-const char* int_to_str(int32_t value);
-int32_t str_to_int(const char* str);
-uint32_t str_to_hex(const char* str);
+int uint_to_str(uint32_t value, char* buffer, int base);
 uint8_t bcd_to_dezimal(uint8_t bcd);

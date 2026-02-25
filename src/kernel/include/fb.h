@@ -1,6 +1,5 @@
-/*
+/**
  * @file fb.h
- * @brief Header file for framebuffer driver
  * @author friedrichOsDev
  */
 
@@ -9,14 +8,22 @@
 #include <stdint.h>
 #include <stddef.h>
 
-// structure for backbuffer infos
+/**
+ * @brief Structure containing information about the backbuffer.
+ */
 typedef struct {
     uint8_t* backbuffer;
     size_t backbuffer_size;
     uint32_t scroll_offset;
 } backbuffer_info_t;
 
-// color definition
+/**
+ * @brief Structure representing a 32-bit ARGB color.
+ * @param a Alpha channel.
+ * @param r Red channel.
+ * @param g Green channel.
+ * @param b Blue channel.
+ */
 typedef struct {
     uint8_t a;
     uint8_t r;
@@ -24,7 +31,6 @@ typedef struct {
     uint8_t b;
 } color_t;
 
-// predefined colors
 extern color_t black;
 extern color_t white;
 extern color_t red;

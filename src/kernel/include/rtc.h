@@ -1,6 +1,5 @@
-/*
+/**
  * @file rtc.h
- * @brief Header file for Real-Time Clock (RTC) driver
  * @author friedrichOsDev
  */
 
@@ -22,14 +21,18 @@
 #define RTC_STATUS_A 0x0A
 #define RTC_STATUS_B 0x0B
 
+/**
+ * @brief Structure representing the current date and time from the RTC.
+ */
 typedef struct {
-    uint8_t seconds;
-    uint8_t minutes;
-    uint8_t hours;
-    uint8_t day;
-    uint8_t month;
-    uint16_t year;
+    uint8_t seconds; /**< Seconds (0-59) */
+    uint8_t minutes; /**< Minutes (0-59) */
+    uint8_t hours;   /**< Hours (0-23) */
+    uint8_t day;     /**< Day of the month (1-31) */
+    uint8_t month;   /**< Month (1-12) */
+    uint16_t year;   /**< Full year (e.g., 2023) */
 } rtc_time_t;
 
 void rtc_init(void);
 rtc_time_t rtc_get_time(void);
+const char* rtc_get_time_format(uint32_t type);

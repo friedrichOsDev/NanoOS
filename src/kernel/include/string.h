@@ -1,6 +1,5 @@
-/*
+/**
  * @file string.h
- * @brief Header file for basic string and memory manipulation functions
  * @author friedrichOsDev
  */
 

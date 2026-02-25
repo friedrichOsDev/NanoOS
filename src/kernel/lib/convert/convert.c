@@ -1,118 +1,58 @@
-/*
+/**
  * @file convert.c
- * @brief Type conversion functions
  * @author friedrichOsDev
  */
 
 #include <convert.h>
+#include <serial.h>
 
-/*
- * Convert a hexadecimal value to a string
- * @param value The hexadecimal value to convert
- * @return A string representation of the hexadecimal value
+/**
+ * @brief Reverses a string in place.
+ * 
+ * @param str The string to reverse.
+ * @param length The length of the string.
  */
-const char* hex_to_str(uint32_t value) {
-    static char buffer[11];
-    const char* hex_digits = "0123456789ABCDEF";
-    
-    buffer[0] = '0';
-    buffer[1] = 'x';
-    
-    for (int i = 0; i < 8; i++) {
-        buffer[2 + i] = hex_digits[(value >> (28 - i * 4)) & 0xF];
+static void reverse_str(char* str, int length) {
+    for (int i = 0; i < length / 2; ++i) {
+        char temp = str[i];
+        str[i] = str[length - i - 1];
+        str[length - i - 1] = temp;
     }
-    
-    buffer[10] = '\0';
-    return buffer;
 }
 
-/*
- * Convert an integer value to a string
- * @param value The integer value to convert
- * @return A string representation of the integer value
+/**
+ * @brief Converts an unsigned 32-bit integer to a string.
+ * 
+ * @param value The value to convert.
+ * @param buffer The destination buffer.
+ * @param base The numerical base (e.g., 10 for decimal, 16 for hex).
+ * @return int The length of the resulting string.
  */
-const char* int_to_str(int32_t value) {
-    static char buffer[12];
-    int i = 10;
-    int negative = 0;
-
-    buffer[11] = '\0';
+int uint_to_str(uint32_t value, char* buffer, int base) {
+    int i = 0;
 
     if (value == 0) {
-        buffer[10] = '0';
-        return &buffer[10];
+        buffer[i++] = '0';
+        buffer[i] = '\0';
+        return i;
     }
 
-    if (value < 0) {
-        negative = 1;
-        value = -value;
+    while (value != 0) {
+        uint32_t rem = value % base;
+        buffer[i++] = rem > 9 ? (rem - 10) + 'A' : rem + '0';
+        value /= base;
     }
 
-    while (value > 0 && i >= 0) {
-        buffer[i--] = '0' + (value % 10);
-        value /= 10;
-    }
-
-    if (negative) {
-        buffer[i--] = '-';
-    }
-
-    return &buffer[i + 1];
+    buffer[i] = '\0';
+    reverse_str(buffer, i);
+    return i;
 }
 
-/*
- * Convert a string to an integer
- * @param str The string to convert
- * @return The integer value of the string
- */
-int32_t str_to_int(const char* str) {
-    int32_t res = 0;
-    int sign = 1;
-    int i = 0;
-
-    if (str[0] == '-') {
-        sign = -1;
-        i++;
-    }
-
-    for (; str[i] != '\0'; ++i) {
-        if (str[i] < '0' || str[i] > '9') break;
-        res = res * 10 + str[i] - '0';
-    }
-
-    return sign * res;
-}
-
-/*
- * Convert a string to a hexadecimal value
- * @param str The string to convert
- * @return The hexadecimal value of the string
- */
-uint32_t str_to_hex(const char* str) {
-    uint32_t res = 0;
-    int i = 0;
-
-    if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X')) {
-        i = 2;
-    }
-
-    for (; str[i] != '\0'; ++i) {
-        uint8_t byte = str[i];
-        if (byte >= '0' && byte <= '9') byte = byte - '0';
-        else if (byte >= 'a' && byte <= 'f') byte = byte - 'a' + 10;
-        else if (byte >= 'A' && byte <= 'F') byte = byte - 'A' + 10;
-        else break;
-
-        res = (res << 4) | (byte & 0xF);
-    }
-
-    return res;
-}
-
-/*
- * Convert a Binary Coded Decimal (BCD) ti a dezimal value
- * @param bcd The BCD value to convert
- * @return The dezimal value of the BCD input
+/**
+ * @brief Converts a BCD (Binary Coded Decimal) byte to a decimal byte.
+ * 
+ * @param bcd The BCD encoded value.
+ * @return uint8_t The decimal representation.
  */
 uint8_t bcd_to_dezimal(uint8_t bcd) {
     return ((bcd >> 4) * 10) + (bcd & 0x0F);

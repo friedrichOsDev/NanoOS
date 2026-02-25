@@ -1,6 +1,5 @@
-/*
+/**
  * @file handler.c
- * @brief Interrupt Service Routine (ISR) and Interrupt Request (IRQ) handlers
  * @author friedrichOsDev
  */
 
@@ -8,13 +7,16 @@
 #include <serial.h>
 #include <io.h>
 
+/** @brief Array of registered IRQ handlers. */
 static irq_handler_t irq_handlers[16];
+/** @brief Array of registered ISR handlers. */
 static isr_handler_t isr_handlers[32];
 
-/*
- * Install a custom handler for a specific IRQ
- * @param irq The IRQ number (0 - 15)
- * @param handler The function pointer to the custom handler
+/**
+ * @brief Installs a custom handler for a specific IRQ.
+ * 
+ * @param irq The IRQ number (0-15).
+ * @param handler The function to call when the IRQ occurs.
  */
 void irq_install_handler(int irq, irq_handler_t handler) {
     if (irq >= 0 && irq < 16) {
@@ -24,10 +26,11 @@ void irq_install_handler(int irq, irq_handler_t handler) {
     }
 }
 
-/*
- * Install a custom handler for a specific ISR
- * @param isr The ISR number (0 - 31)
- * @param handler The function pointer to the custom handler
+/**
+ * @brief Installs a custom handler for a specific ISR (exception).
+ * 
+ * @param isr The ISR number (0-31).
+ * @param handler The function to call when the exception occurs.
  */
 void isr_install_handler(int isr, isr_handler_t handler) {
     if (isr >= 0 && isr < 32) {
@@ -37,9 +40,11 @@ void isr_install_handler(int isr, isr_handler_t handler) {
     }
 }
 
-/*
- * Common handler for IRQs
- * @param regs The register state passed by the assembly ISR
+/**
+ * @brief The common IRQ handler called from assembly stubs.
+ * 
+ * Sends EOI to the PICs and dispatches to the registered handler.
+ * @param regs The CPU register state at the time of the interrupt.
  */
 void irq_handler(struct registers *regs) {
     if (regs->int_no >= 40) {
@@ -53,9 +58,11 @@ void irq_handler(struct registers *regs) {
     }
 }
 
-/*
- * Common handler for ISRs
- * @param regs The register state passed by the assembly ISR
+/**
+ * @brief The common ISR handler called from assembly stubs.
+ * 
+ * Dispatches to the registered exception handler or hangs on unhandled exceptions.
+ * @param regs The CPU register state at the time of the exception.
  */
 void isr_handler(struct registers *regs) {
     if (regs->int_no < 32) {

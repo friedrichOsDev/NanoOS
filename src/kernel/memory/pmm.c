@@ -1,6 +1,5 @@
-/*
+/**
  * @file pmm.c
- * @brief Physical Memory Manager (PMM)
  * @author friedrichOsDev
  */
 
@@ -14,8 +13,11 @@
 static pmm_state_t pmm_state;
 extern uint8_t boot_page_directory[];
 
-/*
- * Initialize the Physical Memory Manager
+/**
+ * @brief Initializes the Physical Memory Manager.
+ * 
+ * Parses the multiboot memory map, determines the maximum physical address,
+ * allocates and initializes the bitmap, and locks essential kernel regions.
  */
 void pmm_init(void) {
     serial_printf("PMM: start\n");
@@ -116,17 +118,17 @@ void pmm_init(void) {
     serial_printf("PMM: done\n");
 }
 
-/*
- * Allocate a single physical page
- * @return The physical address of the allocated page, or 0 if none available
+/**
+ * @brief Allocates a single physical page.
+ * @return The physical address of the allocated page, or 0 on failure.
  */
 phys_addr_t pmm_alloc_page() {
     return pmm_alloc_pages(1);
 }
 
-/*
- * Free a single physical page
- * @param addr The physical address of the page to free
+/**
+ * @brief Frees a single physical page.
+ * @param addr The physical address of the page to free.
  */
 void pmm_free_page(phys_addr_t addr) {
     if (!PMM_IS_PAGE_ALIGNED(addr)) {
@@ -137,9 +139,9 @@ void pmm_free_page(phys_addr_t addr) {
     pmm_free_pages(addr, 1);
 }
 
-/*
- * Allocate a single physical page and zero it
- * @return The physical address of the allocated page, or 0 if none available
+/**
+ * @brief Allocates and zeroes a single physical page.
+ * @return The physical address of the allocated page, or 0 on failure.
  */
 phys_addr_t pmm_zalloc_page() {
     phys_addr_t addr = pmm_alloc_page();
@@ -159,9 +161,9 @@ phys_addr_t pmm_zalloc_page() {
     return addr;
 }
 
-/*
- * Free a single physical page and zero it
- * @param addr The physical address of the page to free
+/**
+ * @brief Zeroes and then frees a single physical page.
+ * @param addr The physical address of the page to free.
  */
 void pmm_zfree_page(phys_addr_t addr) {
     if (!addr) {
@@ -180,10 +182,10 @@ void pmm_zfree_page(phys_addr_t addr) {
     pmm_free_page(addr);
 }
 
-/*
- * Allocate a contiguous block of physical pages
- * @param count The number of pages to allocate
- * @return The physical address of the first page, or 0 if not found
+/**
+ * @brief Allocates a contiguous range of physical pages.
+ * @param count The number of pages to allocate.
+ * @return The physical address of the first page, or 0 on failure.
  */
 phys_addr_t pmm_alloc_pages(size_t count) {
     if (count == 0 || count > pmm_state.max_pages) {
@@ -200,7 +202,7 @@ phys_addr_t pmm_alloc_pages(size_t count) {
     for (uint32_t i = 0; i < max_blocks; i++) {
         uint32_t index = (start_index + i) % max_blocks;
         if (bitmap32[index] == 0xFFFFFFFF) {
-            consecutive_found = 0; // all pages in this block are used
+            consecutive_found = 0;
         } else {
             for (size_t bit = 0; bit < 32; bit++) {
                 if (!(bitmap32[index] & (1 << bit))) {
@@ -219,12 +221,11 @@ phys_addr_t pmm_alloc_pages(size_t count) {
         }
     }
 
-    // if max_blocks % 32 != 0
     uint32_t start_page_for_rest = max_blocks * 32;
     consecutive_found = 0;
 
     for (uint32_t page_index = start_page_for_rest; page_index < pmm_state.max_pages; page_index++) {
-        if (pmm_is_page_free(page_index * PMM_PAGE_SIZE)) {
+        if (pmm_is_page_free((phys_addr_t)page_index * PMM_PAGE_SIZE)) {
             consecutive_found++;
             if (consecutive_found == count) {
                 phys_addr_t addr = (page_index - count + 1) * PMM_PAGE_SIZE;
@@ -237,13 +238,13 @@ phys_addr_t pmm_alloc_pages(size_t count) {
         }
     }
 
-    return 0; // no suitable block found
+    return 0;
 }
 
-/*
- * Free a contiguous block of physical pages
- * @param addr The physical address of the first page
- * @param count The number of pages to free
+/**
+ * @brief Frees a contiguous range of physical pages.
+ * @param addr The physical address of the first page.
+ * @param count The number of pages to free.
  */
 void pmm_free_pages(phys_addr_t addr, size_t count) {
     if (!addr) {
@@ -264,10 +265,10 @@ void pmm_free_pages(phys_addr_t addr, size_t count) {
     pmm_unlock_pages(addr, count);
 }
 
-/*
- * Allocate a contiguous block of physical pages and zero them
- * @param count The number of pages to allocate
- * @return The physical address of the first page, or 0 if not found
+/**
+ * @brief Allocates and zeroes a contiguous range of physical pages.
+ * @param count The number of pages to allocate.
+ * @return The physical address of the first page, or 0 on failure.
  */
 phys_addr_t pmm_zalloc_pages(size_t count) {
     if (count == 0 || count > pmm_state.max_pages) {
@@ -296,10 +297,10 @@ phys_addr_t pmm_zalloc_pages(size_t count) {
     return addr;
 }
 
-/*
- * Free a contiguous block of physical pages and zero them
- * @param addr The physical address of the first page
- * @param count The number of pages to free
+/**
+ * @brief Zeroes and then frees a contiguous range of physical pages.
+ * @param addr The physical address of the first page.
+ * @param count The number of pages to free.
  */
 void pmm_zfree_pages(phys_addr_t addr, size_t count) {
     if (count == 0 || count > pmm_state.max_pages) {
@@ -326,10 +327,10 @@ void pmm_zfree_pages(phys_addr_t addr, size_t count) {
     pmm_free_pages(addr, count);
 }
 
-/*
- * Lock a range of physical pages
- * @param addr The physical address of the first page
- * @param count The number of pages to lock
+/**
+ * @brief Marks a range of pages as used in the bitmap.
+ * @param addr The starting physical address.
+ * @param count The number of pages to lock.
  */
 void pmm_lock_pages(phys_addr_t addr, size_t count) {
     if (!PMM_IS_PAGE_ALIGNED(addr)) {
@@ -347,11 +348,11 @@ void pmm_lock_pages(phys_addr_t addr, size_t count) {
     size_t end_page = start_page + count;
 
     for (size_t i = start_page; i < end_page; ) {
-        // check for 32 bit boundary
         if (i % 32 == 0 && (end_page - i) >= 32) {
-            bitmap32[i / 32] |= 0xFFFFFFFF; // lock 32 pages
-            i += 32; // skip 32 pages
+            bitmap32[i / 32] |= 0xFFFFFFFF;
+            i += 32;
         } else {
+            // Use the byte-based bitmap for unaligned or small ranges
             pmm_state.bitmap[i / 8] |= (1 << (i % 8)); // lock 1 page
             i++; // skip 1 page
         }
@@ -360,10 +361,10 @@ void pmm_lock_pages(phys_addr_t addr, size_t count) {
     pmm_state.used_pages += count;
 }
 
-/*
- * Unlock a range of physical pages
- * @param addr The physical address of the first page
- * @param count The number of pages to unlock
+/**
+ * @brief Marks a range of pages as free in the bitmap.
+ * @param addr The starting physical address.
+ * @param count The number of pages to unlock.
  */
 void pmm_unlock_pages(phys_addr_t addr, size_t count) {
     if (!PMM_IS_PAGE_ALIGNED(addr)) {
@@ -381,10 +382,9 @@ void pmm_unlock_pages(phys_addr_t addr, size_t count) {
     size_t end_page = start_page + count;
 
     for (size_t i = start_page; i < end_page; ) {
-        // check for 32 bit boundary
         if (i % 32 == 0 && (end_page - i) >= 32) {
-            bitmap32[i / 32] &= 0x00000000; // unlock 32 pages
-            i += 32; // skip 32 pages
+            bitmap32[i / 32] &= 0x00000000;
+            i += 32;
         } else {
             pmm_state.bitmap[i / 8] &= ~(1 << (i % 8)); // unlock 1 page
             i++; // skip 1 page
@@ -394,10 +394,10 @@ void pmm_unlock_pages(phys_addr_t addr, size_t count) {
     pmm_state.used_pages -= count;
 }
 
-/*
- * Check if a specific physical page is free
- * @param addr The physical address of the page to check
- * @return True if the page is free, false otherwise
+/**
+ * @brief Checks if a specific physical page is free.
+ * @param addr The physical address of the page.
+ * @return true if the page is free, false otherwise.
  */
 bool pmm_is_page_free(phys_addr_t addr) {
     if (!PMM_IS_PAGE_ALIGNED(addr)) {
@@ -413,33 +413,32 @@ bool pmm_is_page_free(phys_addr_t addr) {
     return !(pmm_state.bitmap[PMM_BITMAP_INDEX(addr)] & (1 << PMM_BITMAP_OFFSET(addr)));
 }
 
-/*
- * Get the amount of free physical memory
- * @return The amount of free memory in bytes
+/**
+ * @brief Returns the total amount of free physical memory in bytes.
  */
 uint64_t pmm_get_free_memory(void) {
     return (pmm_state.max_pages - pmm_state.used_pages) * PMM_PAGE_SIZE;
 }
 
-/*
- * Get the amount of used physical memory
- * @return The amount of used memory in bytes
+/**
+ * @brief Returns the total amount of used physical memory in bytes.
  */
 uint64_t pmm_get_used_memory(void) {
     return pmm_state.used_pages * PMM_PAGE_SIZE;
 }
 
-/*
- * Get the total amount of physical memory
- * @return The total amount of memory in bytes
+/**
+ * @brief Returns the total amount of physical memory in bytes.
  */
 uint64_t pmm_get_total_memory(void) {
     return pmm_state.max_pages * PMM_PAGE_SIZE;
 }
 
-/*
- * Get the current state of the Physical Memory Manager
- * @return A pointer to the pmm_state_t structure
+/**
+ * @brief Returns a pointer to the internal PMM state structure.
+ * 
+ * Used by the VMM to locate the bitmap for mapping.
+ * @return Pointer to pmm_state.
  */
 pmm_state_t* pmm_get_state(void) {
     return &pmm_state;

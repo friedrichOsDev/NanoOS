@@ -1,6 +1,5 @@
-/*
+/**
  * @file timer.c
- * @brief Timer driver
  * @author friedrichOsDev
  */
 
@@ -15,13 +14,17 @@ static event_t events[TIMER_MAX_EVENTS];
 static uint32_t event_count = 0;
 static uint32_t next_id = 0;
 
+/**
+ * @brief Small delay for I/O operations to ensure hardware synchronization.
+ */
 static void timer_io_wait(void) {
     outb(0x80, 0);
 }
 
-/*
- * Timer interrupt callback function
- * @param regs Pointer to the registers structure containing the CPU state at the time of the interrupt
+/**
+ * @brief IRQ 0 handler called on every PIT tick.
+ * 
+ * Increments the tick counter and processes registered timer events.
  */
 void timer_callback(struct registers *regs) {
     (void)regs;
@@ -43,9 +46,10 @@ void timer_callback(struct registers *regs) {
     ticks++;
 }
 
-/*
- * Initialize the timer driver
- * @param void
+/**
+ * @brief Initializes the PIT to the frequency defined by TIMER_FREQUENCY.
+ * 
+ * Sets up the hardware registers and installs the IRQ handler.
  */
 void timer_init(void) {
     serial_printf("Timer: start\n");
@@ -62,11 +66,11 @@ void timer_init(void) {
     serial_printf("Timer: done\n");
 }
 
-/*
- * Add a timer event to the event list
- * @note do NOT use this function for adding complex events because that slows down the timer interrupt handler. Instead, use this function to add simple events that set flags or similar and then check those flags in the main loop to execute more complex code.
- * @param event The timer event to add
- * @return The ID of the added timer event, or 0 if the event could not be added
+/**
+ * @brief Registers a new timed event.
+ * 
+ * @param event The event structure containing the handler and timing info.
+ * @return uint32_t The unique event ID, or 0 if the event could not be added.
  */
 uint32_t timer_add_event(event_t event) {
     __asm__ __volatile__("cli");
@@ -93,9 +97,10 @@ uint32_t timer_add_event(event_t event) {
     return 0;
 }
 
-/*
- * Remove a timer event from the event list
- * @param event_id The ID of the timer event to remove
+/**
+ * @brief Deactivates a registered event by its ID.
+ * 
+ * @param event_id The ID returned by timer_add_event.
  */
 void timer_remove_event(uint32_t event_id) {
     __asm__ __volatile__("cli");
@@ -107,18 +112,19 @@ void timer_remove_event(uint32_t event_id) {
     __asm__ __volatile__("sti");
 }
 
-/*
- * Get the current number of timer ticks since the system started
- * @param void
- * @return The current number of timer ticks
+/**
+ * @brief Returns the current number of system ticks since boot.
  */
 uint32_t timer_get_ticks(void) {
     return ticks;
 }
 
-/*
- * Sleep for a specified number of milliseconds
- * @param ms The number of milliseconds to sleep
+/**
+ * @brief Blocks execution for a specified number of milliseconds.
+ * 
+ * Uses the 'hlt' instruction to yield the CPU while waiting for ticks.
+ * 
+ * @param ms Number of milliseconds to sleep.
  */
 void sleep_ms(uint32_t ms) {
     uint32_t seconds = ms / 1000;

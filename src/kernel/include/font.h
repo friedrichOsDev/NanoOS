@@ -1,7 +1,6 @@
-/*
+/**
  * @file font.h
- * @brief Header file for 8x8 monochrome bitmap fonts
- * @author friedrichOsDev
+ * @author Daniel Hepper <daniel@hepper.net>
  */
 
 #pragma once
@@ -11,7 +10,7 @@
 #define FONT_WIDTH 8
 #define FONT_HEIGHT 8
 
-/*
- * Font data for basic ASCII characters (U+0000 to U+007F)
+/**
+ * @brief Basic 8x8 font data for the first 128 ASCII characters.
  */
 extern uint8_t font8x8_basic[128][8];

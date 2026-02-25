@@ -1,7 +1,6 @@
-/*
+/**
  * @file panic.h
- * @brief Header file for kernel panic handling
- * @author friedrichOsDev
+ * @author friedrichOsDev 
  */
 
 #pragma once

@@ -1,7 +1,6 @@
-/*
+/**
  * @file irq.h
- * @brief Header file for Interrupt Request (IRQ)
- * @author friedrichOsDev
+ * @author friedrichOsDev 
  */
 
 #pragma once

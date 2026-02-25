@@ -1,6 +1,5 @@
-/*
+/**
  * @file heap.c
- * @brief Kernel heap
  * @author friedrichOsDev
  */
 
@@ -11,18 +10,18 @@
 static heap_block_t* heap_list = NULL;
 static virt_addr_t current_heap_top;
 
-/*
- * Align a size up to the next multiple of HEAP_ALIGNMENT
- * @param size The size to align
- * @return The aligned size
+/**
+ * @brief Aligns a size to the heap alignment boundary.
+ * @param size The size to align.
+ * @return The aligned size.
  */
 static inline size_t align_size(size_t size) {
     return (size + (HEAP_ALIGNMENT - 1)) & ~(HEAP_ALIGNMENT - 1);
 }
 
-/*
- * Initialize the kernel heap
- * @param void
+/**
+ * @brief Initializes the kernel heap.
+ * Maps initial pages and sets up the first free block.
  */
 void heap_init(void) {
     serial_printf("Heap: start\n");
@@ -42,10 +41,10 @@ void heap_init(void) {
     serial_printf("Heap: done\n");
 }
 
-/*
- * Extend the heap by allocating more pages and adding them to the free list
- * @param size The minimum size to extend the heap by in bytes
- * @return true if the heap was successfully extended, false on failure
+/**
+ * @brief Extends the heap by a given size.
+ * @param size The minimum size to extend by.
+ * @return true if successful, false otherwise.
  */
 bool heap_extend(size_t size) {
     size_t pages_needed = (size + sizeof(heap_block_t) + HEAP_PAGE_SIZE - 1) / HEAP_PAGE_SIZE;
@@ -95,10 +94,10 @@ bool heap_extend(size_t size) {
     return true;
 }
 
-/*
- * Allocate a block of memory from the kernel heap
- * @param size The size of the block to allocate in bytes
- * @return The virtual address of the allocated block, or 0 on failure
+/**
+ * @brief Allocates a block of memory from the heap.
+ * @param size The number of bytes to allocate.
+ * @return The virtual address of the allocated memory, or 0 on failure.
  */
 virt_addr_t kmalloc(size_t size) {
     if (size == 0) {
@@ -148,9 +147,9 @@ virt_addr_t kmalloc(size_t size) {
     return (virt_addr_t)((uintptr_t)best_fit_block + sizeof(heap_block_t));
 }
 
-/*
- * Free a block of memory back to the kernel heap
- * @param ptr The virtual address of the block to free
+/**
+ * @brief Frees a previously allocated block of memory.
+ * @param ptr The virtual address of the memory to free.
  */
 void kfree(virt_addr_t ptr) {
     if (ptr == 0) return;
@@ -181,10 +180,10 @@ void kfree(virt_addr_t ptr) {
     }
 }
 
-/*
- * Allocate a block of memory from the kernel heap and zero it
- * @param size The size of the block to allocate in bytes
- * @return The virtual address of the allocated block, or 0 on failure
+/**
+ * @brief Allocates and zeroes a block of memory from the heap.
+ * @param size The number of bytes to allocate.
+ * @return The virtual address of the allocated memory, or 0 on failure.
  */
 virt_addr_t kzalloc(size_t size) {
     virt_addr_t ptr = kmalloc(size);
@@ -194,9 +193,9 @@ virt_addr_t kzalloc(size_t size) {
     return ptr;
 }
 
-/*
- * Free a block of memory back to the kernel heap and zero it
- * @param ptr The virtual address of the block to free
+/**
+ * @brief Zeroes and then frees a block of memory.
+ * @param ptr The virtual address of the memory to free.
  */
 void kzfree(virt_addr_t ptr) {
     if (ptr == 0) return;
@@ -208,33 +207,21 @@ void kzfree(virt_addr_t ptr) {
     
 }
 
+/**
+ * @brief Prints a debug dump of the current heap state to the serial port.
+ */
 void heap_dump(void) {
+    serial_printf("--- Heap Dump ---\n");
     heap_block_t* current = heap_list;
     uint32_t i = 0;
-    size_t total_free = 0;
-    size_t total_allocated = 0;
-
-    serial_printf("\n--- HEAP DUMP START ---\n");
-    serial_printf("Index | Address    | Status    | Size (Bytes) | Next\n");
-    serial_printf("-------------------------------------------------------\n");
-
     while (current) {
-        char* status = (current->magic == HEAP_MAGIC_ALLOCATED) ? "ALLOCATED" : "FREE     ";
-        
-        serial_printf("%d     | %x | %s | %d         | %x\n", 
-                      i++, (uintptr_t)current, status, current->size, (uintptr_t)current->next);
-
-        if (current->magic == HEAP_MAGIC_ALLOCATED) {
-            total_allocated += current->size;
-        } else {
-            total_free += current->size;
-        }
-
+        serial_printf("Block %d: addr=%x, size=%d, status=%s, next=%x\n", 
+            i++, 
+            (virt_addr_t)current, 
+            current->size, 
+            (current->magic == HEAP_MAGIC_FREE) ? "FREE" : "ALLOCATED", 
+            (virt_addr_t)current->next);
         current = current->next;
     }
-
-    serial_printf("-------------------------------------------------------\n");
-    serial_printf("Summary: Allocated: %d bytes, Free: %d bytes, Top: %x\n", 
-                  total_allocated, total_free, current_heap_top);
-    serial_printf("--- HEAP DUMP END ---\n\n");
+    serial_printf("--- End Heap Dump ---\n");
 }
