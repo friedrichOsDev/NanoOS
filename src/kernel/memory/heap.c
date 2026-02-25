@@ -6,6 +6,7 @@
 #include <heap.h>
 #include <serial.h>
 #include <string.h>
+#include <print.h>
 
 static heap_block_t* heap_list = NULL;
 static virt_addr_t current_heap_top;
@@ -211,17 +212,20 @@ void kzfree(virt_addr_t ptr) {
  * @brief Prints a debug dump of the current heap state to the serial port.
  */
 void heap_dump(void) {
-    serial_printf("--- Heap Dump ---\n");
+    char buf[128];
+    serial_printf("\n--- Heap Dump ---\n");
+    serial_printf("| #   | Address    | Size       | Status    | Next       |\n");
+    serial_printf("|-----|------------|------------|-----------|------------|\n");
+
     heap_block_t* current = heap_list;
     uint32_t i = 0;
     while (current) {
-        serial_printf("Block %d: addr=%x, size=%d, status=%s, next=%x\n", 
-            i++, 
-            (virt_addr_t)current, 
-            current->size, 
-            (current->magic == HEAP_MAGIC_FREE) ? "FREE" : "ALLOCATED", 
-            (virt_addr_t)current->next);
+        const char* status = (current->magic == HEAP_MAGIC_FREE) ? "FREE" : "ALLOCATED";
+        snprintf(buf, sizeof(buf), "| %-3d | %010x | %-10d | %-9s | %010x |", i++, (uint32_t)current, current->size, status, (uint32_t)current->next);
+        serial_printf("%s\n", buf);
         current = current->next;
     }
-    serial_printf("--- End Heap Dump ---\n");
+    
+    serial_printf("|-----|------------|------------|-----------|------------|\n");
+    serial_printf("--- End Heap Dump ---\n\n");
 }

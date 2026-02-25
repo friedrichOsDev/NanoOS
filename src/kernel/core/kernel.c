@@ -104,7 +104,7 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
  * This function is used to verify kernel components during development.
  */
 void kernel_tests(void) {
-    // TODO
+    heap_dump();
 }
 
 /**
