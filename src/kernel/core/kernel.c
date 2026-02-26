@@ -142,6 +142,10 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     serial_printf("Kernel: Welcome to NanoOS!\n");
 
     while (1) {
+        printf("Time: %s", rtc_get_time_format(1));
         fb_update();
+        for (int i = 0; i < 26; i++) {
+            printf("\b");
+        }
     }
 }
