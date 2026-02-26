@@ -18,6 +18,7 @@
 #include <timer.h>
 #include <rtc.h>
 #include <print.h>
+#include <layouts.h>
 
 init_state_t init_state = INIT_START;
 mmap_t kernel_mmap;
@@ -107,6 +108,7 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
  */
 void kernel_tests(void) {
     heap_dump();
+    dump_layout(&de);
 }
 
 /**
@@ -133,18 +135,20 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     timer_init();
     rtc_init();
 
-    console_init(0, 0, fb_get_width(), fb_get_height());
+    console_init(8, 8, fb_get_width() - 16, fb_get_height() - 16);
+    console_set_color((font_color_t){ .bg_color = (color_t){ .a = 255, .r = 0, .g = 10, .b = 0 }, .fg_color = (color_t){ .a = 255, .r = 100, .g = 255, .b = 100 } });
+    console_clear();
     init_state = INIT_DONE;
 
     kernel_tests();
-    printf("Welcome to NanoOS!\n");
+    printf("\n Welcome to NanoOS!\n");
 
     serial_printf("Kernel: Welcome to NanoOS!\n");
 
     while (1) {
-        printf("Time: %s", rtc_get_time_format(1));
+        printf("\n Time: %s", rtc_get_time_format(1));
         fb_update();
-        for (int i = 0; i < 26; i++) {
+        for (int i = 0; i < 28; i++) {
             printf("\b");
         }
     }
