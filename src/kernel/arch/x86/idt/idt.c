@@ -5,6 +5,7 @@
 
 #include <idt.h>
 #include <serial.h>
+#include <kernel.h>
 
 extern void idt_load(uint32_t idt_ptr);
 
@@ -77,6 +78,7 @@ void idt_init(void) {
     idt_load((uint32_t)&idtp);
 
     serial_printf("IDT: done\n");
+    init_state = INIT_IDT;
 }
 
 /**

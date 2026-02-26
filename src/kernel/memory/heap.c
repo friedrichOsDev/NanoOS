@@ -7,6 +7,7 @@
 #include <serial.h>
 #include <string.h>
 #include <print.h>
+#include <kernel.h>
 
 static heap_block_t* heap_list = NULL;
 static virt_addr_t current_heap_top;
@@ -40,6 +41,7 @@ void heap_init(void) {
 
     serial_printf("Heap: initial block at %x with size %d bytes\n", (virt_addr_t)heap_list, heap_list->size);
     serial_printf("Heap: done\n");
+    init_state = INIT_HEAP;
 }
 
 /**

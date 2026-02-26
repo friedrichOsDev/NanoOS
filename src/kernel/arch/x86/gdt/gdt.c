@@ -5,6 +5,7 @@
 
 #include <gdt.h>
 #include <serial.h>
+#include <kernel.h>
 
 extern void gdt_flush(uint32_t gdt_ptr);
 
@@ -36,6 +37,7 @@ void gdt_init(void) {
     gdt_flush((uint32_t)&gdtp);
 
     serial_printf("GDT: done\n");
+    init_state = INIT_GDT;
 }
 
 /**

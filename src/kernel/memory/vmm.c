@@ -136,6 +136,7 @@ void vmm_init(void) {
     kernel_fb_info.fb_addr = (void*)fb_addr_new;
 
     serial_printf("VMM: done\n");
+    init_state = INIT_VMM;
 }
 
 /**

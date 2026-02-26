@@ -9,6 +9,7 @@
 #include <convert.h>
 #include <timer.h>
 #include <print.h>
+#include <kernel.h>
 // #include <acpi.h>
 
 static rtc_time_t rtc_time;
@@ -116,6 +117,8 @@ void rtc_init(void) {
     rtc_update_event_id = timer_add_event(rtc_update_event);
     (void)rtc_update_event_id;
     rtc_update_time();
+
+    init_state = INIT_RTC;
 }
 
 /**

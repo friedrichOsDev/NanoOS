@@ -8,6 +8,7 @@
 #include <handler.h>
 #include <serial.h>
 #include <panic.h>
+#include <kernel.h>
 
 static volatile uint32_t ticks = 0;
 static event_t events[TIMER_MAX_EVENTS];
@@ -64,6 +65,7 @@ void timer_init(void) {
     serial_printf("Timer: install IRQ handler\n");
     irq_install_handler(0, timer_callback);
     serial_printf("Timer: done\n");
+    init_state = INIT_TIMER;
 }
 
 /**

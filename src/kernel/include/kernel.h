@@ -59,6 +59,26 @@ typedef struct {
     mmap_entry_t entries[MMAP_MAX_ENTRIES];
 } mmap_t;
 
+/**
+ * 
+ */
+typedef enum {
+    INIT_START,
+    INIT_SERIAL,
+    INIT_GDT,
+    INIT_IDT,
+    INIT_IRQ,
+    INIT_MULTIBOOT,
+    INIT_PMM,
+    INIT_VMM,
+    INIT_HEAP,
+    INIT_TIMER,
+    INIT_RTC,
+    INIT_CONSOLE,
+    INIT_DONE
+} init_state_t;
+
+extern init_state_t init_state;
 extern mmap_t kernel_mmap;
 extern fb_info_t kernel_fb_info;
 extern multiboot_info_t* kernel_multiboot_info;

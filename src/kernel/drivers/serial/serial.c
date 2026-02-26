@@ -6,7 +6,7 @@
 #include <serial.h>
 #include <io.h>
 #include <print.h>
-#include <convert.h>
+#include <kernel.h>
 
 /**
  * @brief Initializes the COM1 serial port.
@@ -21,6 +21,7 @@ void serial_init(void) {
     outb(SERIAL_PORT_COM1 + 3, 0x03);
     outb(SERIAL_PORT_COM1 + 2, 0xC7);
     outb(SERIAL_PORT_COM1 + 4, 0x0B);
+    init_state = INIT_SERIAL;
 }
 
 /**

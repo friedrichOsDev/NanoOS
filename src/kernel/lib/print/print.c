@@ -7,6 +7,7 @@
 #include <convert.h>
 #include <heap.h>
 #include <console.h>
+#include <kernel.h>
 
 /**
  * @brief Formatted print to the system console.
@@ -14,6 +15,9 @@
  * @return The number of characters printed, or -1 on error.
  */
 int printf(const char* format, ...) {
+    if (init_state < INIT_CONSOLE) {
+        return -1;
+    }
     int res = 0;
 
     va_list args;

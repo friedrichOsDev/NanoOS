@@ -8,6 +8,7 @@
 #include <pic.h>
 #include <idt.h>
 #include <serial.h>
+#include <kernel.h>
 
 extern void irq0(void);
 extern void irq1(void);
@@ -48,4 +49,5 @@ void irq_init(void) {
     }
 
     serial_printf("IRQ: done\n");
+    init_state = INIT_IRQ;
 }

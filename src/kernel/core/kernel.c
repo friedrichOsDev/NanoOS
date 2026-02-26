@@ -19,6 +19,7 @@
 #include <rtc.h>
 #include <print.h>
 
+init_state_t init_state = INIT_START;
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
 multiboot_info_t* kernel_multiboot_info;
@@ -96,6 +97,7 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
         }
         tag = (multiboot_tag_t*)((uint8_t*)tag + ((tag->size + 7) & ~7));
     }
+    init_state = INIT_MULTIBOOT;
 }
 
 /**
@@ -132,6 +134,7 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     rtc_init();
 
     console_init(0, 0, fb_get_width(), fb_get_height());
+    init_state = INIT_DONE;
 
     kernel_tests();
     printf("Welcome to NanoOS!\n");

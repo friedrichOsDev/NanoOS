@@ -6,6 +6,7 @@
 #include <console.h>
 #include <font.h>
 #include <serial.h>
+#include <kernel.h>
 
 static uint32_t console_x = 0;
 static uint32_t console_old_x = 0;
@@ -36,6 +37,8 @@ void console_init(uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
     serial_printf("Console: clear screen\n");
     console_clear();
     serial_printf("Console: done\n");
+
+    init_state = INIT_CONSOLE;
 }
 
 /**
