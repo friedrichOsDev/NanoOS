@@ -7,6 +7,7 @@ NASM = nasm
 
 # Directories
 SRC_DIR = src
+ASSET_DIR = assets
 BUILD_DIR = build
 ISO_DIR = iso
 GRUB_DIR = grub
@@ -23,11 +24,12 @@ rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(su
 
 C_SOURCES   = $(call rwildcard,$(KERNEL_DIR),*.c)
 ASM_SOURCES = $(call rwildcard,$(KERNEL_DIR),*.asm)
+ASSET_SOURCES = $(call rwildcard,$(ASSET_DIR),*.psf)
 
 C_OBJECTS   = $(patsubst $(KERNEL_DIR)/%.c,$(BUILD_DIR)/%.o,$(C_SOURCES))
 ASM_OBJECTS = $(patsubst $(KERNEL_DIR)/%.asm,$(BUILD_DIR)/%.o,$(ASM_SOURCES))
-
-OBJECTS     = $(C_OBJECTS) $(ASM_OBJECTS)
+ASSET_OBJECTS = $(patsubst $(ASSET_DIR)/%.psf,$(BUILD_DIR)/%.o,$(ASSET_SOURCES))
+OBJECTS     = $(C_OBJECTS) $(ASM_OBJECTS) $(ASSET_OBJECTS)
 
 # Flags
 CFLAGS = -ffreestanding -m32 -O1 -Wall -Wextra -Werror -fno-stack-protector -fno-builtin -fno-strict-aliasing -nostdlib -I$(KERNEL_DIR)/include
@@ -52,6 +54,10 @@ $(BUILD_DIR)/%.o: $(KERNEL_DIR)/%.c
 $(BUILD_DIR)/%.o: $(KERNEL_DIR)/%.asm
 	@mkdir -p $(dir $@)
 	$(NASM) -f elf32 $< -o $@
+
+$(BUILD_DIR)/%.o: $(ASSET_DIR)/%.psf
+	@mkdir -p $(dir $@)
+	$(OBJCOPY) -I binary -O elf32-i386 -B i386 $< $@
 
 # --- ISO ---
 iso: $(KERNEL_ELF)
