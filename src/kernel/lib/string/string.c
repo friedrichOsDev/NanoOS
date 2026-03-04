@@ -40,3 +40,25 @@ void* memcpy(void* dest, const void* src, size_t count) {
     );
     return dest;
 }
+
+/**
+ * @brief Compares two blocks of memory.
+ * 
+ * @param ptr1 Pointer to the first memory block.
+ * @param ptr2 Pointer to the second memory block.
+ * @param count Number of bytes to compare.
+ * @return int 0 if blocks are equal, negative if ptr1 < ptr2, positive if ptr1 > ptr2.
+ */
+int memcmp(const void* ptr1, const void* ptr2, size_t count) {
+    const uint8_t* p1 = (const uint8_t*)ptr1;
+    const uint8_t* p2 = (const uint8_t*)ptr2;
+
+    for (size_t i = 0; i < count; i++) {
+        if (p1[i] < p2[i]) {
+            return -1;
+        } else if (p1[i] > p2[i]) {
+            return 1;
+        }
+    }
+    return 0;
+}

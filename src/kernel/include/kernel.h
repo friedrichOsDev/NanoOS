@@ -68,13 +68,16 @@ typedef enum {
     INIT_GDT,
     INIT_IDT,
     INIT_IRQ,
+    INIT_INTERRUPTS,
     INIT_MULTIBOOT,
     INIT_PMM,
     INIT_VMM,
     INIT_HEAP,
     INIT_TIMER,
     INIT_RTC,
+    INIT_I8042,
     INIT_CONSOLE,
+    INIT_KBD,
     INIT_DONE
 } init_state_t;
 

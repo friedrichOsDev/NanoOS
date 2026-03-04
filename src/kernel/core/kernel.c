@@ -19,6 +19,8 @@
 #include <rtc.h>
 #include <print.h>
 #include <layouts.h>
+#include <i8042.h>
+#include <keyboard.h>
 
 init_state_t init_state = INIT_START;
 mmap_t kernel_mmap;
@@ -108,7 +110,7 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
  */
 void kernel_tests(void) {
     heap_dump();
-    dump_layout(&de);
+    dump_layout(&scancode_to_vk_map, &vk_to_unicode_de);
 }
 
 /**
@@ -124,7 +126,9 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     gdt_init();
     idt_init();
     irq_init();
+
     idt_enable();
+    init_state = INIT_INTERRUPTS;
 
     multiboot_parse(multiboot_magic, multiboot_info);
 
@@ -135,9 +139,14 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     timer_init();
     rtc_init();
 
+    i8042_init();
+
     console_init(8, 8, fb_get_width() - 16, fb_get_height() - 16);
     console_set_color((font_color_t){ .bg_color = (color_t){ .a = 255, .r = 0, .g = 10, .b = 0 }, .fg_color = (color_t){ .a = 255, .r = 100, .g = 255, .b = 100 } });
     console_clear();
+
+    keyboard_init(&vk_to_unicode_de);
+    
     init_state = INIT_DONE;
 
     kernel_tests();
@@ -146,10 +155,12 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     serial_printf("Kernel: Welcome to NanoOS!\n");
 
     while (1) {
-        printf("\n Time: %s", rtc_get_time_format(1));
         fb_update();
-        for (int i = 0; i < 28; i++) {
-            printf("\b");
+        uint32_t unicode = keyboard_get_unicode();
+        if (unicode != 0) {
+            printf("%06x\n", unicode);
         }
+        
+        __asm__ __volatile__("hlt");
     }
 }

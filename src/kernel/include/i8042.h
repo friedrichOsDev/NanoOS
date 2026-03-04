@@ -1,0 +1,52 @@
+/**
+ * @file i8042.h
+ * @author friedrichOsDev
+ */
+
+#pragma once
+
+#include <stdint.h>
+#include <stdbool.h>
+
+#define I8042_DATA_PORT 0x60
+#define I8042_STATUS_PORT 0x64
+#define I8042_COMMAND_PORT 0x64
+
+#define I8042_STATUS_OUTPUT_BUFFER_FULL 0x01
+#define I8042_STATUS_INPUT_BUFFER_FULL 0x02
+#define I8042_STATUS_SYSTEM_FLAG 0x04
+#define I8042_STATUS_COMMAND_DATA 0x08
+#define I8042_STATUS_KEYBOARD_LOCK 0x10
+#define I8042_STATUS_AUX_OUTPUT_BUFFER_FULL 0x20
+#define I8042_STATUS_TIMEOUT_ERROR 0x40
+#define I8042_STATUS_PARITY_ERROR 0x80
+
+#define I8042_READ_CONFIG 0x20
+#define I8042_WRITE_CONFIG 0x60
+#define I8042_DISABLE_AUX 0xA7
+#define I8042_ENABLE_AUX 0xA8
+#define I8042_TEST_AUX 0xA9
+#define I8042_SELF_TEST 0xAA
+#define I8042_TEST_KBD 0xAB
+#define I8042_DISABLE_KBD 0xAD
+#define I8042_ENABLE_KBD 0xAE
+
+#define I8042_CONFIG_PORT1_INTERRUPT 0x01
+#define I8042_CONFIG_PORT2_INTERRUPT 0x02
+#define I8042_CONFIG_SYSTEM_FLAG 0x04
+#define I8042_CONFIG_PORT1_CLOCK_DISABLE 0x10
+#define I8042_CONFIG_PORT2_CLOCK_DISABLE 0x20
+#define I8042_CONFIG_PORT1_TRANSLATION 0x40
+
+#define I8042_KBD_LEDS 0xED
+#define I8042_KBD_RESET 0xFF
+#define I8042_KBD_ACK 0xFA
+#define I8042_KBD_RESEND 0xFE
+
+#define I8042_RETRIES 100000
+
+void i8042_init(void);
+uint8_t i8042_read_status(void);
+void i8042_write_command(uint8_t command);
+uint8_t i8042_read_data();
+void i8042_write_data(uint8_t data);

@@ -11,8 +11,10 @@
 
 /**
  * @brief Virtual key codes representing physical keys on a keyboard.
+ * These are independent of the keyboard layout.
  */
 typedef enum {
+    VK_NONE,
     VK_ESCAPE,
     VK_F1,
     VK_F2,
@@ -122,11 +124,16 @@ typedef enum {
     VK_NUM_RETURN,
     VK_NUM_INSERT,
     VK_NUM_DELETE,
+    /**
+     * @brief Total number of virtual keys.
+     * 
+     * This value is used to size arrays and iterate through all virtual keys.
+     */
     VK_COUNT
 } virtual_key_t;
 
 /**
- * @brief Scancode prefixes for extended keys.
+ * @brief Scancode prefixes used by the PS/2 keyboard controller.
  */
 typedef enum {
     SCANCODE_PREFIX_NONE = 0,
@@ -135,7 +142,7 @@ typedef enum {
 } scancode_prefix_t;
 
 /**
- * @brief Represents a sequence of scancodes that identify a key press.
+ * @brief Represents a sequence of bytes that form a physical scancode.
  */
 typedef struct {
     uint8_t length;
@@ -143,33 +150,62 @@ typedef struct {
     uint8_t bytes[5];
 } scancode_sequence_t;
 
-typedef struct {
-    bool is_special;
-    bool is_num_key;
-    char normal[5];
-    char shift[5];
-    char alt_gr[5];
-    char num[5];
-} key_mapping_t;
-
 /**
- * @brief Maps a virtual key to its corresponding scancode sequence.
+ * @brief Mapping entry from a virtual key to its scancode sequence.
  */
 typedef struct {
     virtual_key_t vk;
-    scancode_sequence_t scancode_sequence;
-    key_mapping_t mapping;
-} key_t;
+    scancode_sequence_t sequence;
+} scancode_to_vk_t;
+
+/**
+ * @brief A complete map of all virtual keys to their physical scancodes.
+ */
+typedef struct{
+    scancode_to_vk_t sc_to_vk[VK_COUNT];
+} scancode_to_vk_map_t;
+
+/**
+ * @brief Flags describing the behavior and properties of a virtual key.
+ */
+typedef struct {
+    bool is_special; // means the key doesn't produce a character (e.g., Shift, Ctrl, F1-F12) and we need to handle it differently
+    bool is_num_key;
+    bool is_dead_key;
+} key_flags_t;
+
+/**
+ * @brief Mapping from a virtual key to Unicode characters based on modifier states.
+ */
+typedef struct {
+    virtual_key_t vk;
+    key_flags_t flags;
+    uint32_t normal;
+    uint32_t shift;
+    uint32_t alt_gr;
+    uint32_t ctrl;
+    uint32_t num;
+} vk_to_unicode_t;
 
 /**
  * @brief Represents a complete keyboard layout mapping.
  */
 typedef struct {
     char lang[3]; /**< ISO 639-1 language code (e.g., "en", "de"). */
-    key_t keys[VK_COUNT];
+    vk_to_unicode_t vk_to_unicode[VK_COUNT]; /**< Mapping from virtual keys to Unicode characters. */
 } keyboard_layout_t;
 
-extern keyboard_layout_t de;
+typedef struct {
+    uint32_t dead_char;
+    uint32_t base_char;
+    uint32_t combined;
+} dead_key_entry_t;
 
-void dump_layout(keyboard_layout_t *layout);
+extern const scancode_to_vk_map_t scancode_to_vk_map;
+extern const uint8_t scancode_to_vk_quick[128];
+extern const uint8_t scancode_e0_to_vk_quick[128];
+extern const bool vk_is_alpha_map[VK_COUNT];
+extern const keyboard_layout_t vk_to_unicode_de;
+extern const dead_key_entry_t dead_key_table[];
 
+void dump_layout(const scancode_to_vk_map_t *map, const keyboard_layout_t *layout);
