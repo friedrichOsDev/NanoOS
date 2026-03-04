@@ -101,6 +101,14 @@ void restore_default_map(void) {
     keyboard_map_function_to_vk(VK_F10, action_f10);
     keyboard_map_function_to_vk(VK_F11, action_f11);
     keyboard_map_function_to_vk(VK_F12, action_f12);
+
+    keyboard_map_function_to_vk(VK_SNAPSHOT, action_snapshot);
+    keyboard_map_function_to_vk(VK_SNAPSHOT_CONTROL, action_snapshot_ctrl);
+    keyboard_map_function_to_vk(VK_SNAPSHOT_SHIFT, action_snapshot_shift);
+    keyboard_map_function_to_vk(VK_SNAPSHOT_ALT, action_snapshot_alt);
+    keyboard_map_function_to_vk(VK_SCROLL, action_scroll);
+    keyboard_map_function_to_vk(VK_PAUSE, action_pause);
+    keyboard_map_function_to_vk(VK_PAUSE_CONTROL, action_pause_control);
     
     keyboard_map_function_to_vk(VK_BACK, action_backspace);
     keyboard_map_function_to_vk(VK_TAB, action_tab);
@@ -162,6 +170,13 @@ void restore_default_mapping(virtual_key_t vk) {
         case VK_F10: vk_to_function_map[vk] = action_f10; break;
         case VK_F11: vk_to_function_map[vk] = action_f11; break;
         case VK_F12: vk_to_function_map[vk] = action_f12; break;
+        case VK_SNAPSHOT: vk_to_function_map[vk] = action_snapshot; break;
+        case VK_SNAPSHOT_CONTROL: vk_to_function_map[vk] = action_snapshot_ctrl; break;
+        case VK_SNAPSHOT_SHIFT: vk_to_function_map[vk] = action_snapshot_shift; break;
+        case VK_SNAPSHOT_ALT: vk_to_function_map[vk] = action_snapshot_alt; break;
+        case VK_SCROLL: vk_to_function_map[vk] = action_scroll; break;
+        case VK_PAUSE: vk_to_function_map[vk] = action_pause; break;
+        case VK_PAUSE_CONTROL: vk_to_function_map[vk] = action_pause_control; break;
         case VK_BACK: vk_to_function_map[vk] = action_backspace; break;
         case VK_TAB: vk_to_function_map[vk] = action_tab; break;
         case VK_RETURN: vk_to_function_map[vk] = action_return; break;
