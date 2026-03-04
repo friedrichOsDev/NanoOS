@@ -119,8 +119,11 @@ void restore_default_map(void) {
     keyboard_map_function_to_vk(VK_RSHIFT, action_rshift);
     keyboard_map_function_to_vk(VK_LCONTROL, action_lcontrol);
     keyboard_map_function_to_vk(VK_RCONTROL, action_rcontrol);
+    keyboard_map_function_to_vk(VK_LWIN, action_lwin);
+    keyboard_map_function_to_vk(VK_RWIN, action_rwin);
     keyboard_map_function_to_vk(VK_LMENU, action_lmenu);
     keyboard_map_function_to_vk(VK_RMENU, action_rmenu);
+    keyboard_map_function_to_vk(VK_APPS, action_apps);
     
     keyboard_map_function_to_vk(VK_INSERT, action_insert);
     keyboard_map_function_to_vk(VK_DELETE, action_delete);
@@ -185,8 +188,11 @@ void restore_default_mapping(virtual_key_t vk) {
         case VK_RSHIFT: vk_to_function_map[vk] = action_rshift; break;
         case VK_LCONTROL: vk_to_function_map[vk] = action_lcontrol; break;
         case VK_RCONTROL: vk_to_function_map[vk] = action_rcontrol; break;
+        case VK_LWIN: vk_to_function_map[vk] = action_lwin; break;
+        case VK_RWIN: vk_to_function_map[vk] = action_rwin; break;
         case VK_LMENU: vk_to_function_map[vk] = action_lmenu; break;
         case VK_RMENU: vk_to_function_map[vk] = action_rmenu; break;
+        case VK_APPS: vk_to_function_map[vk] = action_apps; break;
         case VK_INSERT: vk_to_function_map[vk] = action_insert; break;
         case VK_DELETE: vk_to_function_map[vk] = action_delete; break;
         case VK_HOME: vk_to_function_map[vk] = action_home; break;
