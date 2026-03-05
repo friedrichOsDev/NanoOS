@@ -104,7 +104,9 @@ void fb_init(void) {
     }
     bb_info.backbuffer_size = buffer_size;
     bb_info.scroll_offset = scroll_offset;
-    
+
+    font_init();
+
     dirty_x1 = dirty_y1 = 0xFFFFFFFF;
     dirty_x2 = dirty_y2 = 0;
 
@@ -163,7 +165,7 @@ void fb_put_pixel(uint32_t x, uint32_t y, color_t color) {
     uint32_t offset = (y * kernel_fb_info.fb_pitch) + (x * (kernel_fb_info.fb_bpp / 8)) + bb_info.scroll_offset;
     if (offset >= bb_info.backbuffer_size) offset -= bb_info.backbuffer_size; // Wrap around for scrolling
     uint8_t* pixel_addr = bb_info.backbuffer + offset;
-    
+
     if (kernel_fb_info.fb_bpp == 32) {
         pixel_addr[0] = color.b;
         pixel_addr[1] = color.g;
@@ -230,7 +232,7 @@ void fb_draw_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, color
         return;
     }
     if (x >= fb_get_width() || y >= fb_get_height()) return;
-    
+
     if (x + width > fb_get_width()) width = fb_get_width() - x;
     if (y + height > fb_get_height()) height = fb_get_height() - y;
 
@@ -264,31 +266,43 @@ void fb_draw_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, color
 }
 
 /**
- * @brief Draws a character using the built-in 8x8 font.
+ * @brief Draws a Unicode character using the loaded PSF2 font.
+ * @param unicode The Unicode codepoint to draw.
  * @param x X coordinate.
  * @param y Y coordinate.
- * @param c Character to draw.
  * @param fg_color Foreground color.
  * @param bg_color Background color.
  */
-void fb_draw_char(uint32_t x, uint32_t y, char c, color_t fg_color, color_t bg_color) {
+void fb_draw_unicode(uint32_t unicode, uint32_t x, uint32_t y, color_t fg_color, color_t bg_color) {
     if (!bb_info.backbuffer) {
         serial_printf("FB: Error: Backbuffer not initialized\n");
         return;
     }
+
+    uint32_t font_width = font_get_width();
+    uint32_t font_height = font_get_height();
+
     if (x >= fb_get_width() || y >= fb_get_height()) return;
-    uint8_t* font_char = font8x8_basic[(uint8_t)c];
-    if (!font_char) {
-        serial_printf("FB: Error: Invalid character: %c\n", c);
+
+    uint8_t* glyph = (uint8_t*)font_get_glyph(unicode);
+    if (!glyph) {
+        fb_draw_rect(x, y, font_width, font_height, bg_color);
+        fb_put_pixel(x, y, fg_color);
+        fb_put_pixel(x + font_width - 1, y, fg_color);
+        fb_put_pixel(x, y + font_height - 1, fg_color);
+        fb_put_pixel(x + font_width - 1, y + font_height - 1, fg_color);
         return;
     }
 
-    fb_mark_dirty(x, y, FONT_WIDTH, FONT_HEIGHT);
+    fb_mark_dirty(x, y, font_width, font_height);
 
-    for (uint32_t j = 0; j < FONT_HEIGHT; j++) {
-        for (uint32_t i = 0; i < FONT_WIDTH; i++) {
-            color_t color = (font_char[j] & (1 << (0 + i))) ? fg_color : bg_color;
-            fb_put_pixel(x + i, y + j, color);
+    for (uint32_t j = 0; j < font_height; j++) {
+        for (uint32_t i = 0; i < font_width; i++) {
+            if ((glyph[j * ((font_width + 7) / 8) + (i / 8)] >> (7 - (i % 8))) & 1) {
+                fb_put_pixel(x + i, y + j, fg_color);
+            } else {
+                fb_put_pixel(x + i, y + j, bg_color);
+            }
         }
     }
 }
@@ -327,7 +341,7 @@ void fb_scroll(uint32_t lines, color_t color) {
  * @param y Y coordinate of the region.
  * @param width Width of the region.
  * @param height Height of the region.
- * @param lines Number of lines to scroll.
+ * @param lines Number of character lines to scroll.
  * @param color Color to fill the newly exposed area.
  */
 void fb_scroll_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t lines, color_t color) {
@@ -335,16 +349,19 @@ void fb_scroll_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uin
         serial_printf("FB: Error: Backbuffer not initialized\n");
         return;
     }
-    if (lines == 0) return;
-    if (lines >= height) {
+    uint32_t font_height = font_get_height();
+    uint32_t pixel_lines = lines * font_height;
+
+    if (pixel_lines == 0) return;
+    if (pixel_lines >= height) {
         fb_draw_rect(x, y, width, height, color);
         return;
     }
 
     fb_mark_dirty(x, y, width, height);
 
-    for (uint32_t i = 0; i < height - lines; i++) {
-        uint32_t src_offset = ((y + lines + i) * kernel_fb_info.fb_pitch) + (x * (kernel_fb_info.fb_bpp / 8)) + bb_info.scroll_offset;
+    for (uint32_t i = 0; i < height - pixel_lines; i++) {
+        uint32_t src_offset = ((y + pixel_lines + i) * kernel_fb_info.fb_pitch) + (x * (kernel_fb_info.fb_bpp / 8)) + bb_info.scroll_offset;
         if (src_offset >= bb_info.backbuffer_size) src_offset -= bb_info.backbuffer_size;
         uint32_t dest_offset = ((y + i) * kernel_fb_info.fb_pitch) + (x * (kernel_fb_info.fb_bpp / 8)) + bb_info.scroll_offset;
         if (dest_offset >= bb_info.backbuffer_size) dest_offset -= bb_info.backbuffer_size;
@@ -363,7 +380,7 @@ void fb_scroll_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uin
         }
     }
 
-    fb_draw_rect(x, y + height - lines, width, lines, color);
+    fb_draw_rect(x, y + height - pixel_lines, width, pixel_lines, color);
 }
 
 /**
