@@ -150,7 +150,22 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     init_state = INIT_DONE;
 
     kernel_tests();
-    printf("\n Welcome to NanoOS!\n");
+    printf(U"\n Welcome to NanoOS!\n");
+    const uint32_t* welcome_window = 
+    U"\n"
+    U"  ┌──────────────────────────────┐\n"
+    U"  │         Welcome to           │\n"
+    U"  │   _  _                       │\n"
+    U"  │  | \\| |__ _ _ _  ___         │\n"
+    U"  │  | .` / _` | ' \\/ _ \\        │\n"
+    U"  │  |_|\\_\\__,_|_||_\\___/  os    │\n"
+    U"  │                              │\n"
+    U"  │  Unicode: Σ σ β äöü € ∞      │\n"
+    U"  └──────────────────────────────┘\n"
+    U"   ████████████████████░░░░░░░░░░ 66%\n"
+    U"\n";
+
+    console_puts(welcome_window);
 
     serial_printf("Kernel: Welcome to NanoOS!\n");
 
@@ -158,7 +173,7 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
         fb_update();
         uint32_t unicode = keyboard_get_unicode();
         if (unicode != 0) {
-            printf("%06x\n", unicode);
+            printf(U"%06x\n", unicode);
         }
         
         __asm__ __volatile__("hlt");
