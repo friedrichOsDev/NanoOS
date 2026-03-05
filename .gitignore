@@ -1,5 +1,6 @@
 .devcontainer
 .vscode
+assets/*.tar.gz
 build
 iso
 *.log
