@@ -12,7 +12,21 @@
  * @param str The string to reverse.
  * @param length The length of the string.
  */
-static void reverse_str(char* str, int length) {
+static void reverse_str(uint32_t* str, int length) {
+    for (int i = 0; i < length / 2; ++i) {
+        uint32_t temp = str[i];
+        str[i] = str[length - i - 1];
+        str[length - i - 1] = (uint32_t)temp;
+    }
+}
+
+/**
+ * @brief Reverses a string in place (legacy version).
+ * 
+ * @param str The string to reverse.
+ * @param length The length of the string.
+ */
+static void reverse_str_legacy(char* str, int length) {
     for (int i = 0; i < length / 2; ++i) {
         char temp = str[i];
         str[i] = str[length - i - 1];
@@ -28,7 +42,35 @@ static void reverse_str(char* str, int length) {
  * @param base The numerical base (e.g., 10 for decimal, 16 for hex).
  * @return int The length of the resulting string.
  */
-int uint_to_str(uint32_t value, char* buffer, int base) {
+int uint_to_str(uint32_t value, uint32_t* buffer, int base) {
+    int i = 0;
+
+    if (value == 0) {
+        buffer[i++] = U'0';
+        buffer[i] = U'\0';
+        return i;
+    }
+
+    while (value != 0) {
+        uint32_t rem = value % base;
+        buffer[i++] = rem > 9 ? (rem - 10) + U'A' : rem + U'0';
+        value /= base;
+    }
+
+    buffer[i] = U'\0';
+    reverse_str(buffer, i);
+    return i;
+}
+
+/**
+ * @brief Converts an unsigned 32-bit integer to a string (legacy version).
+ * 
+ * @param value The value to convert.
+ * @param buffer The destination buffer.
+ * @param base The numerical base (e.g., 10 for decimal, 16 for hex).
+ * @return int The length of the resulting string.
+ */
+int uint_to_str_legacy(uint32_t value, char* buffer, int base) {
     int i = 0;
 
     if (value == 0) {
@@ -44,7 +86,7 @@ int uint_to_str(uint32_t value, char* buffer, int base) {
     }
 
     buffer[i] = '\0';
-    reverse_str(buffer, i);
+    reverse_str_legacy(buffer, i);
     return i;
 }
 
