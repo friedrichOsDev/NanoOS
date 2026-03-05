@@ -62,3 +62,42 @@ int memcmp(const void* ptr1, const void* ptr2, size_t count) {
     }
     return 0;
 }
+
+/**
+ * @brief Calculates the length of a null-terminated uint32_t string.
+ * @param str The string.
+ * @return The number of characters in the string.
+ */
+size_t u32_strlen(const uint32_t* str) {
+    size_t len = 0;
+    while (str[len]) {
+        len++;
+    }
+    return len;
+}
+
+/**
+ * @brief Copies a null-terminated uint32_t string.
+ * @param dest The destination buffer.
+ * @param src The source string.
+ * @return A pointer to the destination buffer.
+ */
+uint32_t* u32_strcpy(uint32_t* dest, const uint32_t* src) {
+    uint32_t* d = dest;
+    while ((*d++ = *src++));
+    return dest;
+}
+
+/**
+ * @brief Compares two null-terminated uint32_t strings.
+ * @param s1 The first string.
+ * @param s2 The second string.
+ * @return 0 if equal, <0 if s1 < s2, >0 if s1 > s2.
+ */
+int u32_strcmp(const uint32_t* s1, const uint32_t* s2) {
+    while (*s1 && (*s1 == *s2)) {
+        s1++;
+        s2++;
+    }
+    return *(const uint32_t*)s1 - *(const uint32_t*)s2;
+}
