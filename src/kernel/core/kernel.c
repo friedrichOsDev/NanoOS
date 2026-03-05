@@ -141,7 +141,7 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
 
     i8042_init();
 
-    console_init(8, 8, fb_get_width() - 16, fb_get_height() - 16);
+    console_init(8, 16, fb_get_width() - 16, fb_get_height() - 32);
     console_set_color((font_color_t){ .bg_color = (color_t){ .a = 255, .r = 0, .g = 10, .b = 0 }, .fg_color = (color_t){ .a = 255, .r = 100, .g = 255, .b = 100 } });
     console_clear();
 
@@ -173,7 +173,7 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
         fb_update();
         uint32_t unicode = keyboard_get_unicode();
         if (unicode != 0) {
-            printf(U"%06x\n", unicode);
+            printf(U"%c", unicode);
         }
         
         __asm__ __volatile__("hlt");
