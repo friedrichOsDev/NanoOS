@@ -17,7 +17,7 @@
  * @brief Ring buffer for raw scancodes received from the keyboard controller.
  */
 typedef struct {
-    uint8_t buffer[KBD_BUFFER_SIZE]; /**< The scancode data. */
+    uint32_t buffer[KBD_BUFFER_SIZE]; /**< The scancode data. */
     uint16_t head; /**< Index where the next byte will be written. */
     uint16_t tail; /**< Index where the next byte will be read. */
 } kbd_scancode_buffer_t;
@@ -60,7 +60,7 @@ void keyboard_map_function_to_vk(virtual_key_t vk, vk_action_t action);
 void restore_default_map(void);
 void restore_default_mapping(virtual_key_t vk);
 
-void buffer_push(void* buffer, uint16_t* head, uint16_t tail, size_t buffer_size, uint8_t value);
+void buffer_push(void* buffer, uint16_t* head, uint16_t tail, size_t buffer_size, uint32_t value);
 uint32_t buffer_pop(void* buffer, uint16_t* head, uint16_t* tail, size_t buffer_size);
 bool buffer_remove_start(uint16_t count);
 

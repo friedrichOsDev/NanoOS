@@ -61,7 +61,7 @@ void keyboard_callback(struct registers *regs) {
     uint8_t status = i8042_read_status();
     if (status & I8042_STATUS_OUTPUT_BUFFER_FULL) {
         uint8_t scancode = i8042_read_data();
-        buffer_push(scancode_ring.buffer, &scancode_ring.head, scancode_ring.tail, KBD_BUFFER_SIZE, scancode);
+        buffer_push(scancode_ring.buffer, &scancode_ring.head, scancode_ring.tail, KBD_BUFFER_SIZE, (uint32_t)scancode);
     }
 }
 
@@ -229,10 +229,10 @@ void restore_default_mapping(virtual_key_t vk) {
  * @param buffer_size Size of the buffer.
  * @param value The byte to push.
  */
-void buffer_push(void* buffer, uint16_t* head, uint16_t tail, size_t buffer_size, uint8_t value) {
+void buffer_push(void* buffer, uint16_t* head, uint16_t tail, size_t buffer_size, uint32_t value) {
     size_t next = (*head + 1) % buffer_size;
     if (next != tail) {
-        ((uint8_t*)buffer)[*head] = value;
+        ((uint32_t*)buffer)[*head] = value;
         *head = next;
     }
 }
@@ -249,7 +249,7 @@ uint32_t buffer_pop(void* buffer, uint16_t* head, uint16_t* tail, size_t buffer_
     if (*tail == *head) {
         return 0; // Buffer is empty
     }
-    uint32_t value = ((uint8_t*)buffer)[*tail];
+    uint32_t value = ((uint32_t*)buffer)[*tail];
     *tail = (*tail + 1) % buffer_size;
     return value;
 }
@@ -532,7 +532,7 @@ static inline uint16_t kbd_available(void) {
  * @param offset Offset from the tail.
  * @return The byte at the offset.
  */
-static inline uint8_t kbd_peek(uint16_t offset) {
+static inline uint32_t kbd_peek(uint16_t offset) {
     return scancode_ring.buffer[(scancode_ring.tail + offset) % KBD_BUFFER_SIZE];
 }
 
@@ -558,8 +558,8 @@ void handle_e1_sequence(void) {
  * @brief Handles scancodes starting with the E0 prefix.
  */
 void handle_e0_prefix(void) {
-    uint8_t b2 = kbd_peek(1);
-    uint8_t e0_code = b2;
+    uint32_t b2 = kbd_peek(1);
+    uint32_t e0_code = b2;
     bool release = false;
     if (b2 & 0x80) {
         e0_code = b2 & 0x7F;
@@ -584,7 +584,7 @@ void handle_e0_prefix(void) {
     }
 
     if (b2 == 0xB7) {
-        uint8_t b3 = kbd_peek(2);
+        uint32_t b3 = kbd_peek(2);
         if (b3 == 0xE0) {
             keyboard_handle_key(VK_SNAPSHOT, true);
             buffer_remove_start(4);
@@ -609,7 +609,7 @@ void handle_e0_prefix(void) {
  * @brief Handles standard 1-byte scancodes.
  */
 void handle_standard_scancode(void) {
-    uint8_t code = kbd_peek(0);
+    uint32_t code = kbd_peek(0);
     bool release = false;
     if (code & 0x80) {
         code &= 0x7F;
@@ -629,7 +629,7 @@ void handle_standard_scancode(void) {
  */
 void keyboard_update(void) {
     while (kbd_available() > 0) {
-        uint8_t b1 = kbd_peek(0);
+        uint32_t b1 = kbd_peek(0);
         
         if (b1 == SCANCODE_PREFIX_E1) {
             if (kbd_available() < 6) return;
@@ -640,7 +640,7 @@ void keyboard_update(void) {
         
         if (b1 == SCANCODE_PREFIX_E0) {
             if (kbd_available() < 2) return;
-            uint8_t b2 = kbd_peek(1);
+            uint32_t b2 = kbd_peek(1);
             if (b2 == 0x2A || b2 == 0x46) {
                 if (kbd_available() < 4) return;
             }
