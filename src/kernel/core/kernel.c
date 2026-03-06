@@ -141,15 +141,33 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
 
     i8042_init();
 
-    console_init(8, 16, fb_get_width() - 16, fb_get_height() - 32);
-    console_set_color((font_color_t){ .bg_color = (color_t){ .a = 255, .r = 0, .g = 10, .b = 0 }, .fg_color = (color_t){ .a = 255, .r = 100, .g = 255, .b = 100 } });
-    console_clear();
+    console_init(
+        8,
+        16,
+        fb_get_width() - 16,
+        fb_get_height() - 32,
+        (font_color_t){
+            .bg_color = (color_t){
+                .a = 255,
+                .r = 0,
+                .g = 10,
+                .b = 0
+            },
+            .fg_color = (color_t){
+                .a = 255,
+                .r = 100,
+                .g = 255,
+                .b = 100
+            }
+        }
+    );
 
     keyboard_init(&vk_to_unicode_de);
     
     init_state = INIT_DONE;
 
     kernel_tests();
+
     printf(U"\n Welcome to NanoOS!\n");
     const uint32_t* welcome_window = 
     U"\n"
@@ -164,17 +182,18 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     U"  └──────────────────────────────┘\n"
     U"   ████████████████████░░░░░░░░░░ 66%\n"
     U"\n";
-
     console_puts(welcome_window);
 
     serial_printf("Kernel: Welcome to NanoOS!\n");
 
     while (1) {
-        fb_update();
         uint32_t unicode = keyboard_get_unicode();
         if (unicode != 0) {
             printf(U"%c", unicode);
         }
+
+        console_update();
+        fb_update();
         
         __asm__ __volatile__("hlt");
     }
