@@ -336,54 +336,6 @@ void fb_scroll(uint32_t lines, color_t color) {
 }
 
 /**
- * @brief Scrolls a specific rectangular region upwards.
- * @param x X coordinate of the region.
- * @param y Y coordinate of the region.
- * @param width Width of the region.
- * @param height Height of the region.
- * @param lines Number of character lines to scroll.
- * @param color Color to fill the newly exposed area.
- */
-void fb_scroll_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t lines, color_t color) {
-    if (!bb_info.backbuffer) {
-        serial_printf("FB: Error: Backbuffer not initialized\n");
-        return;
-    }
-    uint32_t font_height = font_get_height();
-    uint32_t pixel_lines = lines * font_height;
-
-    if (pixel_lines == 0) return;
-    if (pixel_lines >= height) {
-        fb_draw_rect(x, y, width, height, color);
-        return;
-    }
-
-    fb_mark_dirty(x, y, width, height);
-
-    for (uint32_t i = 0; i < height - pixel_lines; i++) {
-        uint32_t src_offset = ((y + pixel_lines + i) * kernel_fb_info.fb_pitch) + (x * (kernel_fb_info.fb_bpp / 8)) + bb_info.scroll_offset;
-        if (src_offset >= bb_info.backbuffer_size) src_offset -= bb_info.backbuffer_size;
-        uint32_t dest_offset = ((y + i) * kernel_fb_info.fb_pitch) + (x * (kernel_fb_info.fb_bpp / 8)) + bb_info.scroll_offset;
-        if (dest_offset >= bb_info.backbuffer_size) dest_offset -= bb_info.backbuffer_size;
-
-        if (kernel_fb_info.fb_bpp == 32) {
-            uint32_t* src = (uint32_t*)(bb_info.backbuffer + src_offset);
-            uint32_t* dest = (uint32_t*)(bb_info.backbuffer + dest_offset);
-            memcpy32(dest, src, width);
-        } else if (kernel_fb_info.fb_bpp == 24) {
-            uint8_t* src = bb_info.backbuffer + src_offset;
-            uint8_t* dest = bb_info.backbuffer + dest_offset;
-            memcpy(dest, src, width * 3);
-        } else {
-            serial_printf("FB: Error: Unsupported bits per pixel: %d\n", kernel_fb_info.fb_bpp);
-            return;
-        }
-    }
-
-    fb_draw_rect(x, y + height - pixel_lines, width, pixel_lines, color);
-}
-
-/**
  * @brief Clears the entire screen with a specific color.
  */
 void fb_clear(color_t color) {
