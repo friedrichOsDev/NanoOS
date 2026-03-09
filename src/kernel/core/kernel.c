@@ -139,7 +139,8 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     timer_init();
     rtc_init();
 
-    i8042_init();
+    // We have an emulated PS/2 controller so the initialization does not work
+    // i8042_init();
 
     console_init(
         8,

@@ -75,6 +75,7 @@ uint8_t i8042_read_data(void) {
 
 /**
  * @brief Initializes the i8042 PS/2 controller and the keyboard.
+ * @note This is only nessary if we have a real PS/2 controller. If the PS/2 controller is emulated by the BIOS the initalization does not work. (Why: I have no clue)
  */
 void i8042_init(void) {
     serial_printf("i8042: Initializing controller...\n");
