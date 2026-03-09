@@ -9,6 +9,7 @@
 #include <kernel.h>
 #include <heap.h>
 #include <timer.h>
+#include <keyboard.h>
 
 static uint32_t console_x = 0;
 static uint32_t console_y = 0;
@@ -69,6 +70,56 @@ void console_update(void) {
     }
 }
 
+bool console_move_cursor_left(bool release) {
+    if (release) return true;
+
+    if (console_x > 0) {
+        console_x--;
+    } else if (console_y > 0) {
+        console_y--;
+
+        uint32_t buffer_size = console_buffer.width * console_buffer.height;
+        uint32_t line_start_offset = CONSOLE_XY_TO_IDX(0, console_y, console_buffer.width);
+        console_x = 0;
+        uint32_t i = console_buffer.width;
+        while (i > 0) {
+            i--;
+            uint32_t check_idx = (console_buffer.head + line_start_offset + i) % buffer_size;
+            if ((console_buffer.buffer[check_idx] & ~CONSOLE_BUFFER_DIRTY_BIT) != U' ') {
+                console_x = i;
+                break;
+            }
+        }
+    }
+    return true;
+}
+
+bool console_move_cursor_right(bool release) {
+    if (release) return true;
+
+    uint32_t buffer_size = console_buffer.width * console_buffer.height;
+    uint32_t line_start_offset = CONSOLE_XY_TO_IDX(0, console_y, console_buffer.width);
+    uint32_t last_x = 0;
+    uint32_t i = console_buffer.width;
+    while (i > 0) {
+        i--;
+        uint32_t check_idx = (console_buffer.head + line_start_offset + i) % buffer_size;
+        if ((console_buffer.buffer[check_idx] & ~CONSOLE_BUFFER_DIRTY_BIT) != U' ') {
+            last_x = i;
+            break;
+        }
+    }
+
+    if (console_x < last_x) {
+        console_x++;
+    } else if (console_y < console_buffer.height - 1) {
+        console_x = 0;
+        console_y++;
+    }
+    
+    return true;
+}
+
 /**
  * @brief Initializes the console subsystem.
  * 
@@ -108,6 +159,9 @@ void console_init(uint32_t x, uint32_t y, uint32_t w, uint32_t h, font_color_t c
     uint32_t cursor_blink_event_id = timer_add_event(cursor_blink_event);
     (void)update_event_id;
     (void)cursor_blink_event_id;
+
+    keyboard_map_function_to_vk(VK_LEFT, console_move_cursor_left);
+    keyboard_map_function_to_vk(VK_RIGHT, console_move_cursor_right);
 
     serial_printf("Console: done\n");
 

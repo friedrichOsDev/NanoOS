@@ -142,6 +142,8 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     // We have an emulated PS/2 controller so the initialization does not work
     // i8042_init();
 
+    keyboard_init(&vk_to_unicode_de);
+    
     console_init(
         8,
         16,
@@ -163,7 +165,6 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
         }
     );
 
-    keyboard_init(&vk_to_unicode_de);
     
     init_state = INIT_DONE;
 
