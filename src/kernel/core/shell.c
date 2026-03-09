@@ -8,6 +8,7 @@
 #include <string.h>
 #include <serial.h>
 #include <keyboard.h>
+#include <kernel.h>
 
 uint32_t command_buffer[MAX_COMMAND_LENGTH];
 size_t command_buffer_pos = 0;
@@ -84,6 +85,8 @@ void shell_init(void) {
 
     keyboard_map_function_to_vk(VK_LEFT, shell_move_cursor_left);
     keyboard_map_function_to_vk(VK_RIGHT, shell_move_cursor_right);
+
+    init_state = INIT_SHELL;
 }
 
 void shell_handle_command(const uint32_t* command) {

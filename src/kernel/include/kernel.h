@@ -76,8 +76,9 @@ typedef enum {
     INIT_TIMER,
     INIT_RTC,
     INIT_I8042,
-    INIT_CONSOLE,
     INIT_KBD,
+    INIT_CONSOLE,
+    INIT_SHELL,
     INIT_DONE
 } init_state_t;
 
