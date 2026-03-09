@@ -81,15 +81,20 @@ bool console_move_cursor_left(bool release) {
         uint32_t buffer_size = console_buffer.width * console_buffer.height;
         uint32_t line_start_offset = CONSOLE_XY_TO_IDX(0, console_y, console_buffer.width);
         console_x = 0;
+        uint32_t last_x = 0;
         uint32_t i = console_buffer.width;
         while (i > 0) {
             i--;
             uint32_t check_idx = (console_buffer.head + line_start_offset + i) % buffer_size;
             if ((console_buffer.buffer[check_idx] & ~CONSOLE_BUFFER_DIRTY_BIT) != U' ') {
-                console_x = i;
+                last_x = i + 1;
                 break;
             }
         }
+
+        if (last_x >= console_buffer.width) last_x = console_buffer.width - 1;
+
+        console_x = last_x;
     }
     return true;
 }
@@ -105,10 +110,12 @@ bool console_move_cursor_right(bool release) {
         i--;
         uint32_t check_idx = (console_buffer.head + line_start_offset + i) % buffer_size;
         if ((console_buffer.buffer[check_idx] & ~CONSOLE_BUFFER_DIRTY_BIT) != U' ') {
-            last_x = i;
+            last_x = i + 1;
             break;
         }
     }
+
+    if (last_x >= console_buffer.width) last_x = console_buffer.width - 1;
 
     if (console_x < last_x) {
         console_x++;

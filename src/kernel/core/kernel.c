@@ -21,6 +21,7 @@
 #include <layouts.h>
 #include <i8042.h>
 #include <keyboard.h>
+#include <shell.h>
 
 init_state_t init_state = INIT_START;
 mmap_t kernel_mmap;
@@ -146,9 +147,9 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     
     console_init(
         8,
-        16,
+        8,
         fb_get_width() - 16,
-        fb_get_height() - 32,
+        fb_get_height() - 16,
         (font_color_t){
             .bg_color = (color_t){
                 .a = 255,
@@ -170,29 +171,29 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
 
     kernel_tests();
 
-    printf(U"\n Welcome to NanoOS!\n");
-    const uint32_t* welcome_window = 
-    U"\n"
-    U"  ┌──────────────────────────────┐\n"
-    U"  │         Welcome to           │\n"
-    U"  │   _  _                       │\n"
-    U"  │  | \\| |__ _ _ _  ___         │\n"
-    U"  │  | .` / _` | ' \\/ _ \\        │\n"
-    U"  │  |_|\\_\\__,_|_||_\\___/  os    │\n"
-    U"  │                              │\n"
-    U"  │  Unicode: Σ σ β äöü € ∞      │\n"
-    U"  └──────────────────────────────┘\n"
-    U"   ████████████████████░░░░░░░░░░ 66%\n"
-    U"\n";
-    console_puts(welcome_window);
+    // printf(U"\n Welcome to NanoOS!\n");
+    // const uint32_t* welcome_window = 
+    // U"\n"
+    // U"  ┌──────────────────────────────┐\n"
+    // U"  │         Welcome to           │\n"
+    // U"  │   _  _                       │\n"
+    // U"  │  | \\| |__ _ _ _  ___         │\n"
+    // U"  │  | .` / _` | ' \\/ _ \\        │\n"
+    // U"  │  |_|\\_\\__,_|_||_\\___/  os    │\n"
+    // U"  │                              │\n"
+    // U"  │  Unicode: Σ σ β äöü € ∞      │\n"
+    // U"  └──────────────────────────────┘\n"
+    // U"   ████████████████████░░░░░░░░░░ 66%\n"
+    // U"\n";
+    // console_puts(welcome_window);
 
     serial_printf("Kernel: Welcome to NanoOS!\n");
 
+    shell_init();
+
     while (1) {
         uint32_t unicode = keyboard_get_unicode();
-        if (unicode != 0) {
-            printf(U"%c", unicode);
-        }
+        shell_handle_input(unicode);
 
         console_update();
         fb_update();

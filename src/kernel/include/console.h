@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <fb.h>
 #include <font.h>
 
@@ -28,6 +29,8 @@ typedef struct {
 } console_buffer_t;
 
 void console_update(void);
+bool console_move_cursor_left(bool release);
+bool console_move_cursor_right(bool release);
 void console_init(uint32_t x, uint32_t y, uint32_t w, uint32_t h, font_color_t color);
 void console_set_window(uint32_t x, uint32_t y, uint32_t w, uint32_t h);
 void console_putc(uint32_t unicode);
