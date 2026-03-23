@@ -45,6 +45,16 @@ typedef struct {
 } keyboard_state_t;
 
 /**
+ * @brief States for the keyboard scancode state machine.
+ */
+typedef enum {
+    KBD_STATE_NORMAL,
+    KBD_STATE_E0,
+    KBD_STATE_E1,
+    KBD_STATE_E1_COLLECT
+} kbd_parse_state_t;
+
+/**
  * @brief Function pointer type for virtual key actions.
  * 
  * @param release True if the key was released, false if pressed.

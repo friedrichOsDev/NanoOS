@@ -1,7 +1,7 @@
 echo "Available USB sticks:"
 lsblk -o NAME,SIZE,TYPE,MOUNTPOINT | grep "disk"
-read -p "Enter the device name of the USB stick (e.g., sdb): "
-USB_DEVICE="/dev/$REPLY"
+read -p "Enter the device name of the USB stick (e.g., sdb): " DEVICE_NAME
+USB_DEVICE="/dev/$DEVICE_NAME"
 
 if [ -b "$USB_DEVICE" ]; then
     echo "Flashing build/nanoos.iso to $USB_DEVICE..."

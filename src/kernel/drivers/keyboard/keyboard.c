@@ -479,42 +479,6 @@ void keyboard_handle_key(virtual_key_t vk, bool release) {
     buffer_push(data_ring.buffer, &data_ring.head, data_ring.tail, KBD_BUFFER_SIZE, unicode);
 }
 
-
-/**
- * @brief Attempts to match a scancode sequence against known complex sequences.
- * @param seq The sequence to check.
- * @param out_vk Pointer to store the resulting virtual key.
- * @return True if a match was found.
- */
-bool try_parse_sequence(const scancode_sequence_t* seq, virtual_key_t* out_vk) {
-    const scancode_sequence_t pause_target = scancode_to_vk_map.sc_to_vk[VK_PAUSE].sequence;
-    const scancode_sequence_t prtsc_target = scancode_to_vk_map.sc_to_vk[VK_SNAPSHOT].sequence;
-    const scancode_sequence_t pause_ctrl_target = scancode_to_vk_map.sc_to_vk[VK_PAUSE_CONTROL].sequence;
-
-    if (seq->length == pause_target.length && seq->prefix == pause_target.prefix) {
-        if (memcmp(seq->bytes, pause_target.bytes, seq->length) == 0) {
-            *out_vk = VK_PAUSE;
-            return true;
-        }
-    }
-
-    if (seq->length == prtsc_target.length && seq->prefix == prtsc_target.prefix) {
-        if (memcmp(seq->bytes, prtsc_target.bytes, seq->length) == 0) {
-            *out_vk = VK_SNAPSHOT;
-            return true;
-        }
-    }
-
-    if (seq->length == pause_ctrl_target.length && seq->prefix == pause_ctrl_target.prefix) {
-        if (memcmp(seq->bytes, pause_ctrl_target.bytes, seq->length) == 0) {
-            *out_vk = VK_PAUSE_CONTROL;
-            return true;
-        }
-    }
-
-    return false;
-}
-
 /**
  * @brief Calculates the number of bytes available in the scancode ring buffer.
  * @return Number of bytes.
@@ -527,100 +491,35 @@ static inline uint16_t kbd_available(void) {
     }
 }
 
-/**
- * @brief Peeks at a byte in the scancode ring buffer without removing it.
- * @param offset Offset from the tail.
- * @return The byte at the offset.
- */
-static inline uint32_t kbd_peek(uint16_t offset) {
-    return scancode_ring.buffer[(scancode_ring.tail + offset) % KBD_BUFFER_SIZE];
-}
+static kbd_parse_state_t parse_state = KBD_STATE_NORMAL;
+static uint8_t e1_buffer[6];
+static uint8_t e1_index = 0;
 
 /**
- * @brief Handles the complex E1 scancode sequence (Pause key).
+ * @brief Handles the logic for the Print Screen key, considering modifier states.
+ * @param release True if the key was released.
  */
-void handle_e1_sequence(void) {
-    scancode_sequence_t seq = {0};
-    seq.prefix = SCANCODE_PREFIX_E1;
-    seq.length = 5;
-
-    for (size_t i = 0; i < 5; i++) {
-        seq.bytes[i] = kbd_peek(i + 1);
-    }
-
-    virtual_key_t vk = VK_NONE;
-    if (try_parse_sequence(&seq, &vk)) {
-        keyboard_handle_key(vk, false);
+static void handle_pause_logic(void) {
+    if (kbd_state.ctrl) {
+        keyboard_handle_key(VK_PAUSE_CONTROL, false);
+    } else {
+        keyboard_handle_key(VK_PAUSE, false);
     }
 }
 
 /**
- * @brief Handles scancodes starting with the E0 prefix.
+ * @brief Handles the logic for the Print Screen key, considering modifier states.
+ * @param release True if the key was released.
  */
-void handle_e0_prefix(void) {
-    uint32_t b2 = kbd_peek(1);
-    uint32_t e0_code = b2;
-    bool release = false;
-    if (b2 & 0x80) {
-        e0_code = b2 & 0x7F;
-        release = true;
-    }
-
-    if (b2 == 0x2A || b2 == 0x46) {
-        scancode_sequence_t seq = {0};
-        seq.prefix = SCANCODE_PREFIX_E0;
-        seq.length = 3;
-        for (size_t i = 0; i < 3; i++) {
-            seq.bytes[i] = kbd_peek(i + 1);
-        }
-
-        virtual_key_t vk = VK_NONE;
-        if (try_parse_sequence(&seq, &vk)) {
-            keyboard_handle_key(vk, false);
-        }
-
-        buffer_remove_start(4);
-        return;
-    }
-
-    if (b2 == 0xB7) {
-        uint32_t b3 = kbd_peek(2);
-        if (b3 == 0xE0) {
-            keyboard_handle_key(VK_SNAPSHOT, true);
-            buffer_remove_start(4);
-            return;
-        } else {
-            keyboard_handle_key(VK_SNAPSHOT_CONTROL, true);
-            buffer_remove_start(2);
-            return;
-        }
-    }
-
-    if (e0_code < 0x80) {
-        virtual_key_t vk = scancode_e0_to_vk_quick[e0_code];
-        if (vk != VK_NONE) {
-            keyboard_handle_key(vk, release);
-        }
-    }
-    buffer_remove_start(2);
-}
-
-/**
- * @brief Handles standard 1-byte scancodes.
- */
-void handle_standard_scancode(void) {
-    uint32_t code = kbd_peek(0);
-    bool release = false;
-    if (code & 0x80) {
-        code &= 0x7F;
-        release = true;
-    }
-    
-    if (code < 0x80) {
-        virtual_key_t vk = scancode_to_vk_quick[code];
-        if (vk != VK_NONE) {
-            keyboard_handle_key(vk, release);
-        }
+static void handle_prtsc_logic(bool release) {
+    if (kbd_state.ctrl) {
+        keyboard_handle_key(VK_SNAPSHOT_CONTROL, release);
+    } else if (kbd_state.shift) {
+        keyboard_handle_key(VK_SNAPSHOT_SHIFT, release);
+    } else if (kbd_state.alt) {
+        keyboard_handle_key(VK_SNAPSHOT_ALT, release);
+    } else {
+        keyboard_handle_key(VK_SNAPSHOT, release);
     }
 }
 
@@ -629,29 +528,59 @@ void handle_standard_scancode(void) {
  */
 void keyboard_update(void) {
     while (kbd_available() > 0) {
-        uint32_t b1 = kbd_peek(0);
-        
-        if (b1 == SCANCODE_PREFIX_E1) {
-            if (kbd_available() < 6) return;
-            handle_e1_sequence();
-            buffer_remove_start(6);
-            continue;
-        } 
-        
-        if (b1 == SCANCODE_PREFIX_E0) {
-            if (kbd_available() < 2) return;
-            uint32_t b2 = kbd_peek(1);
-            if (b2 == 0x2A || b2 == 0x46) {
-                if (kbd_available() < 4) return;
-            }
-            if (b2 == 0xB7) {
-                if (kbd_available() < 3) return;
-            }
-            handle_e0_prefix();
-            continue;
-        }
+        uint8_t scancode = (uint8_t)buffer_pop(scancode_ring.buffer, &scancode_ring.head, &scancode_ring.tail, KBD_BUFFER_SIZE);
 
-        handle_standard_scancode();
-        buffer_remove_start(1);
+        switch (parse_state) {
+            case KBD_STATE_NORMAL:
+                if (scancode == SCANCODE_PREFIX_E0) {
+                    parse_state = KBD_STATE_E0;
+                } else if (scancode == SCANCODE_PREFIX_E1) {
+                    parse_state = KBD_STATE_E1_COLLECT;
+                    e1_index = 0;
+                    e1_buffer[e1_index++] = scancode;
+                } else {
+                    uint8_t base = scancode & 0x7F;
+                    bool release = (scancode & 0x80) != 0;
+                    keyboard_handle_key(scancode_to_vk_quick[base], release);
+                }
+                break;
+
+            case KBD_STATE_E0:
+                if (scancode == 0x2A || scancode == 0x36 || scancode == 0xAA || scancode == 0xB6 || scancode == SCANCODE_PREFIX_E0) break;
+                if (scancode == 0x37 || scancode == 0xB7) {
+                    handle_prtsc_logic(scancode == 0xB7);
+                    parse_state = KBD_STATE_NORMAL;
+                } else {
+                    uint8_t base = scancode & 0x7F;
+                    bool release = (scancode & 0x80) != 0;
+                    keyboard_handle_key(scancode_e0_to_vk_quick[base], release);
+                    parse_state = KBD_STATE_NORMAL;
+                }
+                break;
+
+            case KBD_STATE_E1_COLLECT:
+                e1_buffer[e1_index++] = scancode;
+                if (e1_index >= 6) {
+                    static const uint8_t pause_sequence[] = {0xE1, 0x1D, 0x45, 0xE1, 0x9D, 0xC5};
+
+                    if (memcmp(e1_buffer, pause_sequence, 6) == 0) {
+                        handle_pause_logic();
+                    } else {
+                        serial_printf("Unknown E1 sequence: %x %x %x %x %x %x\n", e1_buffer[0], e1_buffer[1], e1_buffer[2], e1_buffer[3], e1_buffer[4], e1_buffer[5]);
+                    }
+
+                    e1_index = 0;
+                    parse_state = KBD_STATE_NORMAL;
+                }
+                break;
+
+            case KBD_STATE_E1:
+                parse_state = KBD_STATE_NORMAL;
+                break;
+
+            default:
+                parse_state = KBD_STATE_NORMAL;
+                break;
+        }
     }
 }
