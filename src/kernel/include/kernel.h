@@ -75,6 +75,7 @@ typedef enum {
     INIT_HEAP,
     INIT_TIMER,
     INIT_RTC,
+    INIT_PCI,
     INIT_I8042,
     INIT_KBD,
     INIT_CONSOLE,

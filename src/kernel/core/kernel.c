@@ -22,6 +22,7 @@
 #include <i8042.h>
 #include <keyboard.h>
 #include <shell.h>
+#include <pci.h>
 
 init_state_t init_state = INIT_START;
 mmap_t kernel_mmap;
@@ -140,6 +141,8 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
 
     timer_init();
     rtc_init();
+
+    pci_init();
 
     // We have an emulated PS/2 controller so the initialization does not work
     // i8042_init();
