@@ -23,6 +23,7 @@
 #include <keyboard.h>
 #include <shell.h>
 #include <pci.h>
+#include <acpi.h>
 
 init_state_t init_state = INIT_START;
 mmap_t kernel_mmap;
@@ -98,6 +99,16 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
                 
                 if (fb_tag->framebuffer_type == 2) kernel_panic("Unsupported framebuffer type: EGA text mode is not supported", 0);
                 break;
+            case MULTIBOOT_TAG_TYPE_ACPI_OLD:
+                multiboot_tag_old_acpi_t* old_acpi_tag = (multiboot_tag_old_acpi_t*)tag;
+                rsdp = (rsdp_t*)old_acpi_tag->rsdp;
+                serial_printf("Multiboot: ACPI Old RSDP found at %x\n", (uint32_t)rsdp);
+                break;
+            case MULTIBOOT_TAG_TYPE_ACPI_NEW:
+                multiboot_tag_new_acpi_t* new_acpi_tag = (multiboot_tag_new_acpi_t*)tag;
+                rsdp = (rsdp_t*)new_acpi_tag->rsdp;
+                serial_printf("Multiboot: ACPI New RSDP found at %x\n", (uint32_t)rsdp);
+                break;
             default: break;
         }
         tag = (multiboot_tag_t*)((uint8_t*)tag + ((tag->size + 7) & ~7));
@@ -138,6 +149,8 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     pmm_init();
     vmm_init();
     heap_init();
+
+    acpi_init();
 
     timer_init();
     rtc_init();

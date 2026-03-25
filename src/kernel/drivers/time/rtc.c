@@ -10,11 +10,11 @@
 #include <timer.h>
 #include <print.h>
 #include <kernel.h>
-// #include <acpi.h>
+#include <acpi.h>
 
 static rtc_time_t rtc_time;
 static uint32_t rtc_update_event_id;
-static uint8_t rtc_century = 20; // later fadt_get_century() in rtc_init()
+static uint8_t rtc_century = 20;
 
 /**
  * @brief Checks if the RTC is currently updating.
@@ -96,8 +96,22 @@ void rtc_update_time(void) {
  * Sets up a recurring timer event to update the time every second.
  */
 void rtc_init(void) {
-    // TODO: get century from FADT
-    // rtc_century = fadt_get_century();
+    uint8_t century_reg = 0;
+
+    if (fadt != NULL && fadt->century != 0) {
+        century_reg = fadt->century;
+    } else {
+        serial_printf("RTC: FADT century register not available, trying default 0x32\n");
+        century_reg = 0x32; // De-facto Standard für x86
+    }
+
+    uint8_t century_val = read_rtc_register(century_reg);
+    if (century_val != 0) {
+        rtc_century = bcd_to_dezimal(century_val);
+    } else {
+        serial_printf("RTC: FADT century register is 0, using default 20\n");
+    }
+
     rtc_time.seconds = 0;
     rtc_time.minutes = 0;
     rtc_time.hours = 0;

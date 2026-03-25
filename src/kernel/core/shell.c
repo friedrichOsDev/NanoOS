@@ -9,6 +9,7 @@
 #include <serial.h>
 #include <keyboard.h>
 #include <kernel.h>
+#include <rtc.h>
 
 uint32_t command_buffer[MAX_COMMAND_LENGTH];
 size_t command_buffer_pos = 0;
@@ -36,6 +37,16 @@ void shell_command_welcome(int argc, uint32_t** argv) {
     U"  └──────────────────────────────┘\n"
     U"\n";
     console_puts(welcome_window);
+}
+
+void shell_command_time(int argc, uint32_t** argv) {
+    (void)argc;
+    (void)argv;
+    const char* time_str = rtc_get_time_format(1);
+    while (*time_str) {
+        console_putc((uint32_t)*time_str++);
+    }
+    console_putc(U'\n');
 }
 
 bool shell_move_cursor_left(bool release) {
@@ -82,6 +93,13 @@ void shell_init(void) {
         .description = U"Displays the welcome message"
     };
     shell_register_command(&welcome_command);
+
+    shell_command_t time_command = {
+        .name = U"time",
+        .handler = shell_command_time,
+        .description = U"Displays the current system time"
+    };
+    shell_register_command(&time_command);
 
     keyboard_map_function_to_vk(VK_LEFT, shell_move_cursor_left);
     keyboard_map_function_to_vk(VK_RIGHT, shell_move_cursor_right);

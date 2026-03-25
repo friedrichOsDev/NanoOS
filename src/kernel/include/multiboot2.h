@@ -12,6 +12,8 @@
 #define MULTIBOOT_TAG_TYPE_CMDLINE 1
 #define MULTIBOOT_TAG_TYPE_BOOT_LOADER 2
 #define MULTIBOOT_TAG_TYPE_MMAP 6
+#define MULTIBOOT_TAG_TYPE_ACPI_OLD 14
+#define MULTIBOOT_TAG_TYPE_ACPI_NEW 15
 #define MULTIBOOT_TAG_TYPE_FRAMEBUFFER 8
 
 /**
@@ -114,3 +116,21 @@ typedef struct {
         };
     };
 } __attribute__((packed)) multiboot_tag_framebuffer_t;
+
+/**
+ * @brief Tag containing the ACPI RSDP (Old version, ACPI 1.0).
+ */
+typedef struct {
+    uint32_t type;
+    uint32_t size;
+    uint8_t rsdp[];
+} __attribute__((packed)) multiboot_tag_old_acpi_t;
+
+/**
+ * @brief Tag containing the ACPI RSDP (New version, ACPI 2.0+).
+ */
+typedef struct {
+    uint32_t type;
+    uint32_t size;
+    uint8_t rsdp[];
+} __attribute__((packed)) multiboot_tag_new_acpi_t;
