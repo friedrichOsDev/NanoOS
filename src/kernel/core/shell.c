@@ -187,7 +187,7 @@ void shell_handle_input(uint32_t c) {
                 memmove(&command_buffer[cursor_pos + spaces_to_add], &command_buffer[cursor_pos], 
                         (command_buffer_pos - cursor_pos) * sizeof(uint32_t));
                 
-                for (int i = 0; i < spaces_to_add; i++) command_buffer[cursor_pos + i] = U' ';
+                for (size_t i = 0; i < spaces_to_add; i++) command_buffer[cursor_pos + i] = U' ';
                 
                 command_buffer_pos += spaces_to_add;
                 command_buffer[command_buffer_pos] = U'\0';
