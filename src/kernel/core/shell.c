@@ -153,7 +153,7 @@ void shell_handle_input(uint32_t c) {
                 command_buffer_pos--;
                 cursor_pos--;
                 command_buffer[command_buffer_pos] = U'\0';
-
+                
                 console_move_cursor_left(false);
                 console_puts(&command_buffer[cursor_pos]);
                 console_putc(U' ');
@@ -168,14 +168,37 @@ void shell_handle_input(uint32_t c) {
         if (c == U'\n') {
             console_putc(c);
             command_buffer[command_buffer_pos] = U'\0';
-
-            shell_handle_command(command_buffer);
+            
+            uint32_t temp_buffer[MAX_COMMAND_LENGTH];
+            u32_strcpy(temp_buffer, command_buffer);
+            shell_handle_command(temp_buffer);
 
             command_buffer_pos = 0;
             cursor_pos = 0;
             command_buffer[0] = U'\0';
 
             console_puts(SHELL_PROMPT);
+            return;
+        }
+
+        if (c == U'\t') {
+            size_t spaces_to_add = 4;
+            if (command_buffer_pos + spaces_to_add < MAX_COMMAND_LENGTH) {
+                memmove(&command_buffer[cursor_pos + spaces_to_add], &command_buffer[cursor_pos], 
+                        (command_buffer_pos - cursor_pos) * sizeof(uint32_t));
+                
+                for (int i = 0; i < spaces_to_add; i++) command_buffer[cursor_pos + i] = U' ';
+                
+                command_buffer_pos += spaces_to_add;
+                command_buffer[command_buffer_pos] = U'\0';
+                
+                console_puts(&command_buffer[cursor_pos]);
+                cursor_pos += spaces_to_add;
+
+                for (size_t j = 0; j < (command_buffer_pos - cursor_pos); j++) {
+                    console_move_cursor_left(false);
+                }
+            }
             return;
         }
 

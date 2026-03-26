@@ -6,9 +6,7 @@
 #include <acpi.h>
 #include <string.h>
 #include <serial.h>
-#include <heap.h>
-#include <vmm.h>
-#include <pmm.h>
+#include <memory.h>
 
 rsdp_t* rsdp;
 rsdt_t* rsdt;

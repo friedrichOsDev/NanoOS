@@ -8,7 +8,7 @@
 #include <serial.h>
 #include <font.h>
 #include <string.h>
-#include <heap.h>
+#include <memory.h>
 #include <timer.h>
 
 static backbuffer_info_t bb_info;

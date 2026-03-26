@@ -16,3 +16,7 @@ void* memmove(void* dest, const void* src, size_t count);
 size_t u32_strlen(const uint32_t* str);
 uint32_t* u32_strcpy(uint32_t* dest, const uint32_t* src);
 int u32_strcmp(const uint32_t* s1, const uint32_t* s2);
+int u32_strncmp(const uint32_t* s1, const uint32_t* s2, size_t n);
+uint32_t* u32_strncpy(uint32_t* dest, const uint32_t* src, size_t n);
+uint32_t* u32_strcat(uint32_t* dest, const uint32_t* src);
+uint32_t* u32_strdup(const uint32_t* src);

@@ -9,9 +9,7 @@
 #include <idt.h>
 #include <irq.h>
 #include <panic.h>
-#include <pmm.h>
-#include <vmm.h>
-#include <heap.h>
+#include <memory.h>
 #include <fb.h>
 #include <console.h>
 #include <convert.h>

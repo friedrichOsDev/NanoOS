@@ -7,7 +7,7 @@
 #include <font.h>
 #include <serial.h>
 #include <kernel.h>
-#include <heap.h>
+#include <memory.h>
 #include <timer.h>
 #include <keyboard.h>
 
@@ -77,24 +77,7 @@ bool console_move_cursor_left(bool release) {
         console_x--;
     } else if (console_y > 0) {
         console_y--;
-
-        uint32_t buffer_size = console_buffer.width * console_buffer.height;
-        uint32_t line_start_offset = CONSOLE_XY_TO_IDX(0, console_y, console_buffer.width);
-        console_x = 0;
-        uint32_t last_x = 0;
-        uint32_t i = console_buffer.width;
-        while (i > 0) {
-            i--;
-            uint32_t check_idx = (console_buffer.head + line_start_offset + i) % buffer_size;
-            if ((console_buffer.buffer[check_idx] & ~CONSOLE_BUFFER_DIRTY_BIT) != U' ') {
-                last_x = i + 1;
-                break;
-            }
-        }
-
-        if (last_x >= console_buffer.width) last_x = console_buffer.width - 1;
-
-        console_x = last_x;
+        console_x = console_buffer.width - 1;
     }
     return true;
 }
@@ -102,22 +85,7 @@ bool console_move_cursor_left(bool release) {
 bool console_move_cursor_right(bool release) {
     if (release) return true;
 
-    uint32_t buffer_size = console_buffer.width * console_buffer.height;
-    uint32_t line_start_offset = CONSOLE_XY_TO_IDX(0, console_y, console_buffer.width);
-    uint32_t last_x = 0;
-    uint32_t i = console_buffer.width;
-    while (i > 0) {
-        i--;
-        uint32_t check_idx = (console_buffer.head + line_start_offset + i) % buffer_size;
-        if ((console_buffer.buffer[check_idx] & ~CONSOLE_BUFFER_DIRTY_BIT) != U' ') {
-            last_x = i + 1;
-            break;
-        }
-    }
-
-    if (last_x >= console_buffer.width) last_x = console_buffer.width - 1;
-
-    if (console_x < last_x) {
+    if (console_x < console_buffer.width - 1) {
         console_x++;
     } else if (console_y < console_buffer.height - 1) {
         console_x = 0;
@@ -226,23 +194,7 @@ void console_putc(uint32_t unicode) {
                 console_x--;
             } else if (console_y > 0) {
                 console_y--;
-            
-                uint32_t line_start_offset = CONSOLE_XY_TO_IDX(0, console_y, console_buffer.width);
-                console_x = 0;
-                uint32_t i = console_buffer.width;
-                while (i > 0) {
-                    i--;
-                    uint32_t check_idx = (console_buffer.head + line_start_offset + i) % buffer_size;
-                    if ((console_buffer.buffer[check_idx] & ~CONSOLE_BUFFER_DIRTY_BIT) != U' ') {
-                        console_x = i;
-                        break;
-                    }
-                }
-
-                uint32_t offset = CONSOLE_XY_TO_IDX(console_x, console_y, console_buffer.width);
-                uint32_t idx = (console_buffer.head + offset) % buffer_size;
-                console_buffer.buffer[idx] = U' ' | CONSOLE_BUFFER_DIRTY_BIT;
-                break;
+                console_x = console_buffer.width - 1;
             }
             uint32_t offset = CONSOLE_XY_TO_IDX(console_x, console_y, console_buffer.width);
             uint32_t idx = (console_buffer.head + offset) % buffer_size;

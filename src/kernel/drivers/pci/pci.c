@@ -7,6 +7,7 @@
 #include <io.h>
 #include <serial.h>
 #include <kernel.h>
+#include <rtx3050.h>
 
 uint32_t pci_config_read_dword(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset) {
     uint32_t address;
@@ -30,8 +31,11 @@ void pci_config_write_dword(uint8_t bus, uint8_t device, uint8_t function, uint8
     outl(PCI_CONFIG_DATA, data);
 }
 
-// driver database (for later)
+/**
+ * @brief Database of supported PCI drivers and their initialization functions.
+ */
 pci_driver_t driver_database[] = {
+    {0x10DE, 0x2584, "NVIDIA GeForce RTX 3050", rtx3050_init},
     {0x0000, 0x0000, NULL, NULL}
 };
 

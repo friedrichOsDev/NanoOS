@@ -4,6 +4,7 @@
  */
 
 #include <string.h>
+#include <memory.h>
 
 /**
  * @brief Fills a block of memory with a specific byte value.
@@ -126,4 +127,75 @@ int u32_strcmp(const uint32_t* s1, const uint32_t* s2) {
         s2++;
     }
     return *(const uint32_t*)s1 - *(const uint32_t*)s2;
+}
+
+/**
+ * @brief Compares up to n characters of two null-terminated uint32_t strings.
+ * @param s1 The first string.
+ * @param s2 The second string.
+ * @param n Maximum number of characters to compare.
+ * @return 0 if equal, <0 if s1 < s2, >0 if s1 > s2.
+ */
+int u32_strncmp(const uint32_t* s1, const uint32_t* s2, size_t n) {
+    while (n && *s1 && (*s1 == *s2)) {
+        s1++;
+        s2++;
+        n--;
+    }
+    if (n == 0) {
+        return 0;
+    }
+    return *(const uint32_t*)s1 - *(const uint32_t*)s2;
+}
+
+/**
+ * @brief Copies up to n characters of a null-terminated uint32_t string.
+ * @param dest The destination buffer.
+ * @param src The source string.
+ * @param n Maximum number of characters to copy.
+ * @return A pointer to the destination buffer.
+ */
+uint32_t* u32_strncpy(uint32_t* dest, const uint32_t* src, size_t n) {
+    size_t i;
+    for (i = 0; i < n && src[i] != U'\0'; i++) {
+        dest[i] = src[i];
+    }
+    for (; i < n; i++) {
+        dest[i] = U'\0';
+    }
+    return dest;
+}
+
+/**
+ * @brief Concatenates two null-terminated uint32_t strings.
+ * @param dest The destination buffer.
+ * @param src The source string.
+ * @return A pointer to the destination buffer.
+ */
+uint32_t* u32_strcat(uint32_t* dest, const uint32_t* src) {
+    uint32_t* d = dest;
+    while (*d) {
+        d++;
+    }
+    while ((*d++ = *src++));
+    return dest;
+}
+
+/**
+ * @brief Duplicates a null-terminated uint32_t string using the kernel heap.
+ * @param src The source string.
+ * @return A pointer to the newly allocated string, or NULL if allocation failed.
+ */
+uint32_t* u32_strdup(const uint32_t* src) {
+    if (src == NULL) return NULL;
+    
+    size_t len = u32_strlen(src);
+    uint32_t* dest = (uint32_t*)kmalloc((len + 1) * sizeof(uint32_t));
+    
+    if (dest == NULL) {
+        return NULL;
+    }
+    
+    u32_strcpy(dest, src);
+    return dest;
 }

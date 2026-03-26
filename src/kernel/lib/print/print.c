@@ -5,7 +5,7 @@
  
 #include <print.h>
 #include <convert.h>
-#include <heap.h>
+#include <memory.h>
 #include <console.h>
 #include <kernel.h>
 
