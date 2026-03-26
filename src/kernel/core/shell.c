@@ -10,6 +10,9 @@
 #include <keyboard.h>
 #include <kernel.h>
 #include <rtc.h>
+#include <heap.h>
+#include <print.h>
+#include <convert.h>
 
 uint32_t command_buffer[MAX_COMMAND_LENGTH];
 size_t command_buffer_pos = 0;
@@ -47,6 +50,28 @@ void shell_command_time(int argc, uint32_t** argv) {
         console_putc((uint32_t)*time_str++);
     }
     console_putc(U'\n');
+}
+
+void shell_command_heap(int argc, uint32_t** argv) {
+    (void)argc;
+    (void)argv;
+    
+    heap_block_t* current = heap_get_list();
+    char buf[128];
+
+    console_puts(U"Heap Layout:\n");
+    console_puts(U"Address    | Size (Bytes) | Status\n");
+    console_puts(U"-----------|--------------|-----------\n");
+
+    while (current) {
+        const char* status = (current->magic == HEAP_MAGIC_FREE) ? "FREE" : "USED";
+        snprintf(buf, sizeof(buf), "%08x | %-12d | %s\n", (uint32_t)current, (uint32_t)current->size, status);
+        
+        for (int i = 0; buf[i] != '\0'; i++) {
+            console_putc((uint32_t)buf[i]);
+        }
+        current = current->next;
+    }
 }
 
 bool shell_move_cursor_left(bool release) {
@@ -100,6 +125,13 @@ void shell_init(void) {
         .description = U"Displays the current system time"
     };
     shell_register_command(&time_command);
+
+    shell_command_t heap_command = {
+        .name = U"heap",
+        .handler = shell_command_heap,
+        .description = U"Displays the current heap layout"
+    };
+    shell_register_command(&heap_command);
 
     keyboard_map_function_to_vk(VK_LEFT, shell_move_cursor_left);
     keyboard_map_function_to_vk(VK_RIGHT, shell_move_cursor_right);

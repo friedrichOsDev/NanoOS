@@ -231,3 +231,11 @@ void heap_dump(void) {
     serial_printf("|-----|------------|------------|-----------|------------|\n");
     serial_printf("--- End Heap Dump ---\n\n");
 }
+
+/**
+ * @brief Returns the head of the heap block list.
+ * @return Pointer to the first heap_block_t.
+ */
+heap_block_t* heap_get_list(void) {
+    return heap_list;
+}

@@ -38,3 +38,4 @@ void kfree(virt_addr_t ptr);
 virt_addr_t kzalloc(size_t size);
 void kzfree(virt_addr_t ptr);
 void heap_dump(void);
+heap_block_t* heap_get_list(void);
