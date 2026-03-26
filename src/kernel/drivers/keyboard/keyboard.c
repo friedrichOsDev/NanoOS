@@ -546,9 +546,17 @@ void keyboard_update(void) {
                 break;
 
             case KBD_STATE_E0:
-                if (scancode == 0x2A || scancode == 0x36 || scancode == 0xAA || scancode == 0xB6 || scancode == SCANCODE_PREFIX_E0) break;
+                if (scancode == 0x2A || scancode == 0x36 || scancode == SCANCODE_PREFIX_E0) break;
+                if (scancode == 0xAA || scancode == 0xB6) {
+                    parse_state = KBD_STATE_NORMAL;
+                    break;
+                }
+
                 if (scancode == 0x37 || scancode == 0xB7) {
                     handle_prtsc_logic(scancode == 0xB7);
+                    parse_state = KBD_STATE_NORMAL;
+                } else if (scancode == 0x46 || scancode == 0xC6) {
+                    keyboard_handle_key(VK_PAUSE_CONTROL, scancode == 0xC6);
                     parse_state = KBD_STATE_NORMAL;
                 } else {
                     uint8_t base = scancode & 0x7F;
