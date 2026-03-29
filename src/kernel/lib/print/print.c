@@ -90,10 +90,24 @@ int uvsnprintf(uint32_t* dest, size_t size, const uint32_t* format, va_list args
                 p++;
             }
 
-            int length_mod = 0; // 0=default, 1=l, 3=z, 4=h, 5=hh
+            int precision = -1;
+            if (*p == U'.') {
+                p++;
+                precision = 0;
+                while (*p >= U'0' && *p <= U'9') {
+                    precision = precision * 10 + (*p - U'0');
+                    p++;
+                }
+            }
+
+            int length_mod = 0; // 0=default, 1=l, 2=ll, 3=z, 4=h, 5=hh
             if (*p == U'l') {
                 length_mod = 1;
                 p++;
+                if (*p == U'l') {
+                    length_mod = 2;
+                    p++;
+                }
             } else if (*p == U'z') {
                 length_mod = 3;
                 p++;
@@ -109,21 +123,22 @@ int uvsnprintf(uint32_t* dest, size_t size, const uint32_t* format, va_list args
             switch (*p) {
                 case U'd':
                 case U'i': {
-                    int32_t val_d;
-                    if (length_mod == 1) val_d = va_arg(args, int32_t);
+                    int64_t val_d;
+                    if (length_mod == 2) val_d = va_arg(args, long long);
+                    else if (length_mod == 1) val_d = va_arg(args, int32_t);
                     else if (length_mod == 4) val_d = (int16_t)va_arg(args, int);
                     else if (length_mod == 5) val_d = (int8_t)va_arg(args, int);
                     else val_d = va_arg(args, int);
                     
                     uint32_t buf_d[32];
 
-                    uint32_t absolute_value;
+                    uint64_t absolute_value;
                     if (val_d < 0) {
                         if (dest && i < size - 1) dest[i] = U'-';
                         i++;
-                        absolute_value = (uint32_t)-(val_d + 1) + 1;
+                        absolute_value = (uint64_t)-(val_d + 1) + 1;
                     } else {
-                        absolute_value = (uint32_t)val_d;
+                        absolute_value = (uint64_t)val_d;
                     }
 
                     int len_d = uint_to_str(absolute_value, buf_d, 10);
@@ -170,8 +185,9 @@ int uvsnprintf(uint32_t* dest, size_t size, const uint32_t* format, va_list args
                     break;
                 }
                 case U'u': {
-                    uint32_t val_u;
-                    if (length_mod == 1) val_u = va_arg(args, uint32_t);
+                    uint64_t val_u;
+                    if (length_mod == 2) val_u = va_arg(args, unsigned long long);
+                    else if (length_mod == 1) val_u = va_arg(args, uint32_t);
                     else if (length_mod == 3) val_u = va_arg(args, size_t);
                     else if (length_mod == 4) val_u = (uint16_t)va_arg(args, unsigned int);
                     else if (length_mod == 5) val_u = (uint8_t)va_arg(args, unsigned int);
@@ -215,8 +231,9 @@ int uvsnprintf(uint32_t* dest, size_t size, const uint32_t* format, va_list args
                 }
                 case U'x':
                 case U'X': {
-                    uint32_t val_x;
-                    if (length_mod == 1) val_x = va_arg(args, uint32_t);
+                    uint64_t val_x;
+                    if (length_mod == 2) val_x = va_arg(args, unsigned long long);
+                    else if (length_mod == 1) val_x = va_arg(args, uint32_t);
                     else if (length_mod == 4) val_x = (uint16_t)va_arg(args, unsigned int);
                     else if (length_mod == 5) val_x = (uint8_t)va_arg(args, unsigned int);
                     else val_x = va_arg(args, unsigned int);
@@ -264,8 +281,9 @@ int uvsnprintf(uint32_t* dest, size_t size, const uint32_t* format, va_list args
                     break;
                 }
                 case U'o': {
-                    uint32_t val_o;
-                    if (length_mod == 1) val_o = va_arg(args, uint32_t);
+                    uint64_t val_o;
+                    if (length_mod == 2) val_o = va_arg(args, unsigned long long);
+                    else if (length_mod == 1) val_o = va_arg(args, uint32_t);
                     else if (length_mod == 4) val_o = (uint16_t)va_arg(args, unsigned int);
                     else if (length_mod == 5) val_o = (uint8_t)va_arg(args, unsigned int);
                     else val_o = va_arg(args, unsigned int);
@@ -316,7 +334,7 @@ int uvsnprintf(uint32_t* dest, size_t size, const uint32_t* format, va_list args
                     const uint32_t* val_s = va_arg(args, const uint32_t*);
                     if (!val_s) val_s = U"(null)";
                     int len_s = 0;
-                    while (val_s[len_s] != U'\0') len_s++;
+                    while (val_s[len_s] != U'\0' && (precision < 0 || len_s < precision)) len_s++;
                     int s_pad_len = (width > len_s) ? (width - len_s) : 0;
 
                     // padding left with spaces
@@ -473,10 +491,24 @@ int vsnprintf(char* dest, size_t size, const char* format, va_list args) {
                 p++;
             }
 
-            int length_mod = 0; // 0=default, 1=l, 3=z, 4=h, 5=hh
+            int precision = -1;
+            if (*p == '.') {
+                p++;
+                precision = 0;
+                while (*p >= '0' && *p <= '9') {
+                    precision = precision * 10 + (*p - '0');
+                    p++;
+                }
+            }
+
+            int length_mod = 0; // 0=default, 1=l, 2=ll, 3=z, 4=h, 5=hh
             if (*p == 'l') {
                 length_mod = 1;
                 p++;
+                if (*p == 'l') {
+                    length_mod = 2;
+                    p++;
+                }
             } else if (*p == 'z') {
                 length_mod = 3;
                 p++;
@@ -492,21 +524,22 @@ int vsnprintf(char* dest, size_t size, const char* format, va_list args) {
             switch (*p) {
                 case 'd':
                 case 'i': {
-                    int32_t val_d;
-                    if (length_mod == 1) val_d = va_arg(args, int32_t);
+                    int64_t val_d;
+                    if (length_mod == 2) val_d = va_arg(args, long long);
+                    else if (length_mod == 1) val_d = va_arg(args, int32_t);
                     else if (length_mod == 4) val_d = (int16_t)va_arg(args, int);
                     else if (length_mod == 5) val_d = (int8_t)va_arg(args, int);
                     else val_d = va_arg(args, int);
                     
                     char buf_d[32];
 
-                    uint32_t absolute_value;
+                    uint64_t absolute_value;
                     if (val_d < 0) {
                         if (dest && i < size - 1) dest[i] = '-';
                         i++;
-                        absolute_value = (uint32_t)-(val_d + 1) + 1;
+                        absolute_value = (uint64_t)-(val_d + 1) + 1;
                     } else {
-                        absolute_value = (uint32_t)val_d;
+                        absolute_value = (uint64_t)val_d;
                     }
 
                     int len_d = uint_to_str_legacy(absolute_value, buf_d, 10);
@@ -553,8 +586,9 @@ int vsnprintf(char* dest, size_t size, const char* format, va_list args) {
                     break;
                 }
                 case 'u': {
-                    uint32_t val_u;
-                    if (length_mod == 1) val_u = va_arg(args, uint32_t);
+                    uint64_t val_u;
+                    if (length_mod == 2) val_u = va_arg(args, unsigned long long);
+                    else if (length_mod == 1) val_u = va_arg(args, uint32_t);
                     else if (length_mod == 3) val_u = va_arg(args, size_t);
                     else if (length_mod == 4) val_u = (uint16_t)va_arg(args, unsigned int);
                     else if (length_mod == 5) val_u = (uint8_t)va_arg(args, unsigned int);
@@ -598,8 +632,9 @@ int vsnprintf(char* dest, size_t size, const char* format, va_list args) {
                 }
                 case 'x':
                 case 'X': {
-                    uint32_t val_x;
-                    if (length_mod == 1) val_x = va_arg(args, uint32_t);
+                    uint64_t val_x;
+                    if (length_mod == 2) val_x = va_arg(args, unsigned long long);
+                    else if (length_mod == 1) val_x = va_arg(args, uint32_t);
                     else if (length_mod == 4) val_x = (uint16_t)va_arg(args, unsigned int);
                     else if (length_mod == 5) val_x = (uint8_t)va_arg(args, unsigned int);
                     else val_x = va_arg(args, unsigned int);
@@ -647,8 +682,9 @@ int vsnprintf(char* dest, size_t size, const char* format, va_list args) {
                     break;
                 }
                 case 'o': {
-                    uint32_t val_o;
-                    if (length_mod == 1) val_o = va_arg(args, uint32_t);
+                    uint64_t val_o;
+                    if (length_mod == 2) val_o = va_arg(args, unsigned long long);
+                    else if (length_mod == 1) val_o = va_arg(args, uint32_t);
                     else if (length_mod == 4) val_o = (uint16_t)va_arg(args, unsigned int);
                     else if (length_mod == 5) val_o = (uint8_t)va_arg(args, unsigned int);
                     else val_o = va_arg(args, unsigned int);
@@ -699,7 +735,7 @@ int vsnprintf(char* dest, size_t size, const char* format, va_list args) {
                     const char* val_s = va_arg(args, const char*);
                     if (!val_s) val_s = "(null)";
                     int len_s = 0;
-                    while (val_s[len_s] != '\0') len_s++;
+                    while (val_s[len_s] != '\0' && (precision < 0 || len_s < precision)) len_s++;
                     int s_pad_len = (width > len_s) ? (width - len_s) : 0;
 
                     // padding left with spaces

@@ -35,6 +35,28 @@ static void reverse_str_legacy(char* str, int length) {
 }
 
 /**
+ * @brief Teilt eine 64-Bit Zahl durch eine 32-Bit Zahl und gibt den Rest zurück.
+ * Dies verhindert, dass der Compiler nach __udivdi3 sucht.
+ * @param dividend Pointer auf die 64-Bit Zahl (wird mit dem Quotienten aktualisiert).
+ * @param divisor Die 32-Bit Basis (Divisor).
+ * @return uint32_t Der Rest der Division.
+ */
+static uint32_t div64_32(uint64_t* dividend, uint32_t divisor) {
+    uint32_t high = (uint32_t)(*dividend >> 32);
+    uint32_t low = (uint32_t)(*dividend & 0xFFFFFFFF);
+    uint32_t rem;
+    uint32_t high_q, low_q;
+
+    // Erster Schritt: High-Teil dividieren
+    __asm__ __volatile__ ("divl %4" : "=a"(high_q), "=d"(rem) : "a"(high), "d"(0), "r"(divisor));
+    // Zweiter Schritt: Low-Teil mit dem Rest aus dem ersten Schritt dividieren
+    __asm__ __volatile__ ("divl %4" : "=a"(low_q), "=d"(rem) : "a"(low), "d"(rem), "r"(divisor));
+
+    *dividend = ((uint64_t)high_q << 32) | low_q;
+    return rem;
+}
+
+/**
  * @brief Converts an unsigned 32-bit integer to a string.
  * 
  * @param value The value to convert.
@@ -42,7 +64,7 @@ static void reverse_str_legacy(char* str, int length) {
  * @param base The numerical base (e.g., 10 for decimal, 16 for hex).
  * @return int The length of the resulting string.
  */
-int uint_to_str(uint32_t value, uint32_t* buffer, int base) {
+int uint_to_str(uint64_t value, uint32_t* buffer, int base) {
     int i = 0;
 
     if (value == 0) {
@@ -52,9 +74,8 @@ int uint_to_str(uint32_t value, uint32_t* buffer, int base) {
     }
 
     while (value != 0) {
-        uint32_t rem = value % base;
+        uint32_t rem = div64_32(&value, (uint32_t)base);
         buffer[i++] = rem > 9 ? (rem - 10) + U'A' : rem + U'0';
-        value /= base;
     }
 
     buffer[i] = U'\0';
@@ -70,7 +91,7 @@ int uint_to_str(uint32_t value, uint32_t* buffer, int base) {
  * @param base The numerical base (e.g., 10 for decimal, 16 for hex).
  * @return int The length of the resulting string.
  */
-int uint_to_str_legacy(uint32_t value, char* buffer, int base) {
+int uint_to_str_legacy(uint64_t value, char* buffer, int base) {
     int i = 0;
 
     if (value == 0) {
@@ -80,9 +101,8 @@ int uint_to_str_legacy(uint32_t value, char* buffer, int base) {
     }
 
     while (value != 0) {
-        uint32_t rem = value % base;
+        uint32_t rem = div64_32(&value, (uint32_t)base);
         buffer[i++] = rem > 9 ? (rem - 10) + 'A' : rem + '0';
-        value /= base;
     }
 
     buffer[i] = '\0';
