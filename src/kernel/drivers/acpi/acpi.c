@@ -7,9 +7,12 @@
 #include <string.h>
 #include <serial.h>
 #include <memory.h>
+#include <print.h>
+#include <console.h>
 
 rsdp_t* rsdp;
 rsdt_t* rsdt;
+xsdt_t* xsdt;
 fadt_t* fadt;
 madt_t* madt;
 madt_parsed_t madt_parsed;
@@ -60,7 +63,7 @@ static bool acpi_verify_rsdp_checksum(rsdp_t* rsdp) {
 
     if (sum != 0) return false;
 
-    if (rsdp->revision > 0) {
+    if (rsdp->revision >= 2) {
         sum = 0;
         for (size_t i = 0; i < sizeof(rsdp_t); i++) {
             sum += bytes[i];
@@ -91,11 +94,26 @@ static bool acpi_verify_sdt_checksum(acpi_sdt_header_t* header) {
  * @return Pointer to the table header if found and verified, NULL otherwise.
  */
 static acpi_sdt_header_t* acpi_find_table(const char* signature) {
-    if (!rsdt) return NULL;
+    if (!rsdt && !xsdt) {
+        serial_printf("ACPI: Cannot find table %s, no root table (RSDT/XSDT) mapped!\n", signature);
+        return NULL;
+    }
 
-    size_t entries = (rsdt->header.length - sizeof(acpi_sdt_header_t)) / 4;
+    size_t entries = xsdt ? (xsdt->header.length - sizeof(acpi_sdt_header_t)) / 8 
+                          : (rsdt->header.length - sizeof(acpi_sdt_header_t)) / 4;
+
     for (size_t i = 0; i < entries; i++) {
-        phys_addr_t table_phys = rsdt->pointer_to_other_sdt[i];
+        phys_addr_t table_phys;
+        if (xsdt) {
+            uint64_t full_phys = xsdt->pointer_to_other_sdt[i];
+            if (full_phys > 0xFFFFFFFF) {
+                serial_printf("ACPI: Table %s is above 4GB (%llx), cannot access in 32-bit mode!\n", signature, full_phys);
+                continue;
+            }
+            table_phys = (phys_addr_t)full_phys;
+        } else {
+            table_phys = (phys_addr_t)rsdt->pointer_to_other_sdt[i];
+        }
 
         vmm_prepare_zero_window(PMM_ALIGN_DOWN(table_phys), 0);
         acpi_sdt_header_t* header = (acpi_sdt_header_t*)(VMM_ZERO_WINDOW + (table_phys & (VMM_PAGE_SIZE - 1)));
@@ -115,24 +133,42 @@ static acpi_sdt_header_t* acpi_find_table(const char* signature) {
 }
 
 /**
- * @brief Locates, maps, and verifies the Root System Description Table (RSDT).
- * Uses the address provided in the RSDP.
+ * @brief Locates, maps, and verifies the Root System Description Table (RSDT) or XSDT.
  */
-static void acpi_find_rsdt() {
-    phys_addr_t rsdt_phys = rsdp->rsdt_address;
-    
-    vmm_prepare_zero_window(PMM_ALIGN_DOWN(rsdt_phys), 0);
-    acpi_sdt_header_t* rsdt_header = (acpi_sdt_header_t*)(VMM_ZERO_WINDOW + (rsdt_phys & (VMM_PAGE_SIZE - 1)));
-    uint32_t rsdt_length = rsdt_header->length;
+static void acpi_find_root_sdt() {
+    phys_addr_t root_phys = 0;
+    bool is_xsdt = false;
 
-    rsdt = acpi_map_permanent(rsdt_phys, rsdt_length);
-    
-    if (rsdt) {
-        serial_printf("ACPI: RSDT found at phys %x, mapped to %x\n", rsdt_phys, (uint32_t)rsdt);
-        if (!acpi_verify_sdt_checksum(&rsdt->header)) {
+    if (rsdp->revision >= 2 && rsdp->xsdt_address != 0) {
+        root_phys = (phys_addr_t)rsdp->xsdt_address;
+        is_xsdt = true;
+    } else if (rsdp->rsdt_address != 0) {
+        root_phys = (phys_addr_t)rsdp->rsdt_address;
+    }
+
+    if (!root_phys) {
+        serial_printf("ACPI: No valid RSDT/XSDT address in RSDP!\n");
+        return;
+    }
+
+    vmm_prepare_zero_window(PMM_ALIGN_DOWN(root_phys), 0);
+    acpi_sdt_header_t* header = (acpi_sdt_header_t*)(VMM_ZERO_WINDOW + (root_phys & (VMM_PAGE_SIZE - 1)));
+    uint32_t length = header->length;
+
+    if (is_xsdt) {
+        xsdt = acpi_map_permanent(root_phys, length);
+        if (xsdt && !acpi_verify_sdt_checksum(&xsdt->header)) {
+            serial_printf("ACPI: XSDT checksum verification failed!\n");
+            xsdt = NULL;
+        }
+        if (xsdt) serial_printf("ACPI: XSDT found at phys %llx, mapped to %x\n", rsdp->xsdt_address, (uint32_t)xsdt);
+    } else {
+        rsdt = acpi_map_permanent(root_phys, length);
+        if (rsdt && !acpi_verify_sdt_checksum(&rsdt->header)) {
             serial_printf("ACPI: RSDT checksum verification failed!\n");
             rsdt = NULL;
         }
+        if (rsdt) serial_printf("ACPI: RSDT found at phys %x, mapped to %x\n", (uint32_t)root_phys, (uint32_t)rsdt);
     }
 }
 
@@ -264,7 +300,7 @@ static void acpi_parse_madt() {
 /**
  * @brief Initializes the ACPI subsystem.
  */
-void acpi_init(void) {
+void acpi_init() {
     serial_printf("ACPI: start\n");
     if (!rsdp) {
         serial_printf("ACPI: RSDP not found in multiboot tags!\n");
@@ -286,9 +322,112 @@ void acpi_init(void) {
     serial_printf("ACPI: RSDP verified\n");
 
     serial_printf("ACPI: Finding tables...\n");
-    acpi_find_rsdt();
+    acpi_find_root_sdt();
     acpi_find_fadt();
     acpi_find_madt();
     acpi_parse_madt();
     serial_printf("ACPI: done\n");
+}
+
+/**
+ * @brief Dumps basic ACPI information to the console.
+ */
+void acpi_dump_info() {
+    if (!rsdp) {
+        console_puts(U"ACPI not initialized or RSDP not found.\n");
+        return;
+    }
+
+    char buf[128];
+    snprintf(buf, sizeof(buf), "RSDP: Rev %d, OEM ID: %.6s, RSDT: %x, XSDT: %llx\n", rsdp->revision, rsdp->oem_id, rsdp->rsdt_address, rsdp->xsdt_address);
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+
+    acpi_sdt_header_t* root_header = xsdt ? &xsdt->header : (rsdt ? &rsdt->header : NULL);
+    if (root_header) {
+        snprintf(buf, sizeof(buf), "%s: Length %d, Revision %d\n", xsdt ? "XSDT" : "RSDT", root_header->length, root_header->revision);
+        for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+
+        size_t entries = xsdt ? (xsdt->header.length - sizeof(acpi_sdt_header_t)) / 8 
+                              : (rsdt->header.length - sizeof(acpi_sdt_header_t)) / 4;
+        console_puts(xsdt ? U"Tables found in XSDT:\n" : U"Tables found in RSDT:\n");
+
+        for (size_t i = 0; i < entries; i++) {
+            phys_addr_t table_phys = xsdt ? (phys_addr_t)xsdt->pointer_to_other_sdt[i] : rsdt->pointer_to_other_sdt[i];
+            vmm_prepare_zero_window(PMM_ALIGN_DOWN(table_phys), 0);
+            acpi_sdt_header_t* header = (acpi_sdt_header_t*)(VMM_ZERO_WINDOW + (table_phys & (VMM_PAGE_SIZE - 1)));
+            snprintf(buf, sizeof(buf), "  - %.4s at %x\n", header->signature, table_phys);
+            for (int j = 0; buf[j]; j++) console_putc((uint32_t)buf[j]);
+        }
+    }
+}
+
+/**
+ * @brief Dumps FADT details to the console.
+ */
+void acpi_dump_fadt() {
+    if (!fadt) {
+        console_puts(U"FADT not found.\n");
+        return;
+    }
+
+    char buf[128];
+    console_puts(U"FADT Details:\n");
+    snprintf(buf, sizeof(buf), "  SMI Command Port: %x\n", fadt->SMI_command_port);
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+    snprintf(buf, sizeof(buf), "  ACPI Enable: %x, Disable: %x\n", fadt->acpi_enable, fadt->acpi_disable);
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+    snprintf(buf, sizeof(buf), "  PM1a Control: %x, PM1b Control: %x\n", fadt->PM1a_control_block, fadt->PM1b_control_block);
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+    snprintf(buf, sizeof(buf), "  Boot Arch Flags: %x\n", fadt->boot_architecture_flags);
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+}
+
+/**
+ * @brief Dumps MADT details and parsed entries to the console.
+ */
+void acpi_dump_madt() {
+    if (!madt) {
+        console_puts(U"MADT not found.\n");
+        return;
+    }
+
+    char buf[128];
+    console_puts(U"MADT Details:\n");
+    snprintf(buf, sizeof(buf), "  Local APIC Address: %x\n", madt->local_apic_address);
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+
+    snprintf(buf, sizeof(buf), "  LAPICs: %d\n", (int)madt_parsed.lapic_count);
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+    for (size_t i = 0; i < madt_parsed.lapic_count; i++) {
+        snprintf(buf, sizeof(buf), "    ID: %d, APIC ID: %d, Flags: %x\n", madt_parsed.lapics[i].processor_id, madt_parsed.lapics[i].apic_id, madt_parsed.lapics[i].flags);
+        for (int j = 0; buf[j]; j++) console_putc((uint32_t)buf[j]);
+    }
+
+    snprintf(buf, sizeof(buf), "  I/O APICs: %d\n", (int)madt_parsed.ioapic_count);
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+    for (size_t i = 0; i < madt_parsed.ioapic_count; i++) {
+        snprintf(buf, sizeof(buf), "    ID: %d, Address: %x, GSI Base: %d\n", madt_parsed.ioapics[i].io_apic_id, madt_parsed.ioapics[i].io_apic_address, madt_parsed.ioapics[i].global_system_interrupt_base);
+        for (int j = 0; buf[j]; j++) console_putc((uint32_t)buf[j]);
+    }
+
+    snprintf(buf, sizeof(buf), "  ISOs: %d\n", (int)madt_parsed.iso_count);
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+    for (size_t i = 0; i < madt_parsed.iso_count; i++) {
+        snprintf(buf, sizeof(buf), "    Bus: %d, IRQ: %d, GSI: %d, Flags: %x\n", madt_parsed.isos[i].bus_source, madt_parsed.isos[i].irq_source, madt_parsed.isos[i].global_system_interrupt, madt_parsed.isos[i].flags);
+        for (int j = 0; buf[j]; j++) console_putc((uint32_t)buf[j]);
+    }
+
+    if (madt_parsed.lapic_nmi_count > 0) {
+        snprintf(buf, sizeof(buf), "  LAPIC NMIs: %d\n", (int)madt_parsed.lapic_nmi_count);
+        for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+    }
+
+    if (madt_parsed.lapic_address_override_count > 0) {
+        snprintf(buf, sizeof(buf), "  LAPIC Address Overrides: %d\n", (int)madt_parsed.lapic_address_override_count);
+        for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+        for (size_t i = 0; i < madt_parsed.lapic_address_override_count; i++) {
+            snprintf(buf, sizeof(buf), "    Address: %llx\n", madt_parsed.lapic_address_overrides[i].local_apic_address);
+            for (int j = 0; buf[j]; j++) console_putc((uint32_t)buf[j]);
+        }
+    }
 }

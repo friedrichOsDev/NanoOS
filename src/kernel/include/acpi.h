@@ -247,8 +247,12 @@ typedef struct {
 
 extern rsdp_t* rsdp;
 extern rsdt_t* rsdt;
+extern xsdt_t* xsdt;
 extern fadt_t* fadt;
 extern madt_t* madt;
 extern madt_parsed_t madt_parsed;
 
-void acpi_init(void);
+void acpi_init();
+void acpi_dump_info();
+void acpi_dump_fadt();
+void acpi_dump_madt();

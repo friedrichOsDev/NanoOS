@@ -13,6 +13,7 @@
 #include <heap.h>
 #include <print.h>
 #include <convert.h>
+#include <acpi.h>
 
 uint32_t command_buffer[MAX_COMMAND_LENGTH];
 size_t command_buffer_pos = 0;
@@ -74,6 +75,24 @@ void shell_command_heap(int argc, uint32_t** argv) {
     }
 }
 
+void shell_command_acpiinfo(int argc, uint32_t** argv) {
+    (void)argc;
+    (void)argv;
+    acpi_dump_info();
+}
+
+void shell_command_fadtinfo(int argc, uint32_t** argv) {
+    (void)argc;
+    (void)argv;
+    acpi_dump_fadt();
+}
+
+void shell_command_madtinfo(int argc, uint32_t** argv) {
+    (void)argc;
+    (void)argv;
+    acpi_dump_madt();
+}
+
 bool shell_move_cursor_left(bool release) {
     if (release) return true;
     if (cursor_pos > 0) {
@@ -132,6 +151,27 @@ void shell_init(void) {
         .description = U"Displays the current heap layout"
     };
     shell_register_command(&heap_command);
+
+    shell_command_t acpi_command = {
+        .name = U"acpiinfo",
+        .handler = shell_command_acpiinfo,
+        .description = U"Displays ACPI system information"
+    };
+    shell_register_command(&acpi_command);
+
+    shell_command_t fadt_command = {
+        .name = U"fadtinfo",
+        .handler = shell_command_fadtinfo,
+        .description = U"Displays FADT table details"
+    };
+    shell_register_command(&fadt_command);
+
+    shell_command_t madt_command = {
+        .name = U"madtinfo",
+        .handler = shell_command_madtinfo,
+        .description = U"Displays MADT table details"
+    };
+    shell_register_command(&madt_command);
 
     keyboard_map_function_to_vk(VK_LEFT, shell_move_cursor_left);
     keyboard_map_function_to_vk(VK_RIGHT, shell_move_cursor_right);
