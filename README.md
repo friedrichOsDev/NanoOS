@@ -1,6 +1,6 @@
 # NanoOS
 
-NanoOS is a simple kernel development project that I develop in my free time.
+NanoOS is a simple kernel development project that I am developing in my free time.
 
 ## Features
 - GRUB as bootloader
