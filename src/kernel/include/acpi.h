@@ -252,7 +252,7 @@ extern fadt_t* fadt;
 extern madt_t* madt;
 extern madt_parsed_t madt_parsed;
 
-void acpi_init();
+void acpi_init(rsdp_t * rsdp_ptr);
 void acpi_dump_info();
 void acpi_dump_fadt();
 void acpi_dump_madt();

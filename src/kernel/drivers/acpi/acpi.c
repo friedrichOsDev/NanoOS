@@ -55,20 +55,30 @@ static void* acpi_map_permanent(phys_addr_t phys_addr, uint32_t length) {
  * @return true if the checksum is valid, false otherwise.
  */
 static bool acpi_verify_rsdp_checksum(rsdp_t* rsdp) {
+    if (!rsdp || memcmp(rsdp->signature, RSDP_SIGNATURE, 8) != 0) {
+        return false;
+    }
+
     uint8_t* bytes = (uint8_t*)rsdp;
     uint8_t sum = 0;
     for (size_t i = 0; i < 20; i++) {
         sum += bytes[i];
     }
 
-    if (sum != 0) return false;
+    if (sum != 0) {
+        serial_printf("ACPI: RSDP base checksum failed\n");
+        return false;
+    }
 
     if (rsdp->revision >= 2) {
         sum = 0;
-        for (size_t i = 0; i < sizeof(rsdp_t); i++) {
+        for (size_t i = 0; i < rsdp->length; i++) {
             sum += bytes[i];
         }
-        return sum == 0;
+        if (sum != 0) {
+            serial_printf("ACPI: RSDP extended checksum failed\n");
+            return false;
+        }
     }
 
     return true;
@@ -300,19 +310,14 @@ static void acpi_parse_madt() {
 /**
  * @brief Initializes the ACPI subsystem.
  */
-void acpi_init() {
+void acpi_init(rsdp_t * rsdp_ptr) {
     serial_printf("ACPI: start\n");
-    if (!rsdp) {
+    if (!rsdp_ptr) {
         serial_printf("ACPI: RSDP not found in multiboot tags!\n");
         return;
     }
 
-    rsdp_t* rsdp_new = (rsdp_t*)acpi_map_permanent((phys_addr_t)rsdp, sizeof(rsdp_t));
-    if (!rsdp_new) {
-        serial_printf("ACPI: Failed to map RSDP into ACPI virtual space!\n");
-        return;
-    }
-    rsdp = rsdp_new;
+    rsdp = rsdp_ptr;
 
     if (!acpi_verify_rsdp_checksum(rsdp)) {
         serial_printf("ACPI: RSDP checksum verification failed!\n");

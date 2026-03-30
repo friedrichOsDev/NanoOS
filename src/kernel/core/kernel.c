@@ -22,6 +22,7 @@
 #include <shell.h>
 #include <pci.h>
 #include <acpi.h>
+#include <string.h>
 
 init_state_t init_state = INIT_START;
 mmap_t kernel_mmap;
@@ -29,6 +30,7 @@ fb_info_t kernel_fb_info;
 multiboot_info_t* kernel_multiboot_info;
 char kernel_cmdline[256];
 char kernel_bootloader_name[64];
+static rsdp_t rsdp_stable_copy;
 
 /**
  * @brief Parses the Multiboot2 information structure.
@@ -99,12 +101,14 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
                 break;
             case MULTIBOOT_TAG_TYPE_ACPI_OLD:
                 multiboot_tag_old_acpi_t* old_acpi_tag = (multiboot_tag_old_acpi_t*)tag;
-                rsdp = (rsdp_t*)old_acpi_tag->rsdp;
+                memcpy(&rsdp_stable_copy, old_acpi_tag->rsdp, 20);
+                rsdp = &rsdp_stable_copy;
                 serial_printf("Multiboot: ACPI Old RSDP found at %x\n", (uint32_t)rsdp);
                 break;
             case MULTIBOOT_TAG_TYPE_ACPI_NEW:
                 multiboot_tag_new_acpi_t* new_acpi_tag = (multiboot_tag_new_acpi_t*)tag;
-                rsdp = (rsdp_t*)new_acpi_tag->rsdp;
+                memcpy(&rsdp_stable_copy, new_acpi_tag->rsdp, sizeof(rsdp_t));
+                rsdp = &rsdp_stable_copy;
                 serial_printf("Multiboot: ACPI New RSDP found at %x\n", (uint32_t)rsdp);
                 break;
             default: break;
@@ -148,7 +152,7 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     vmm_init();
     heap_init();
 
-    acpi_init();
+    acpi_init(&rsdp_stable_copy);
 
     timer_init();
     rtc_init();
