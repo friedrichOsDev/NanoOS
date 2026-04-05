@@ -12,4 +12,5 @@
  */
 void rtx3050_init(pci_device_t * dev) {
     serial_printf("RTX 3050 initialized at PCI %02x:%02x.%x\n", dev->bus, dev->device, dev->function);
+    // too complex for me, just print the info
 }
