@@ -8,6 +8,8 @@
 #include <gdt.h>
 #include <idt.h>
 #include <irq.h>
+#include <interrupts.h>
+#include <cpu.h>
 #include <panic.h>
 #include <memory.h>
 #include <fb.h>
@@ -45,8 +47,6 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
     if (multiboot_magic != MULTIBOOT2_BOOTLOADER_MAGIC) kernel_panic("Invalid multiboot magic number!", 0);
 
     kernel_multiboot_info = (multiboot_info_t*)multiboot_info;
-    serial_printf("Multiboot: Info at %x with size %d\n", multiboot_info, kernel_multiboot_info->total_size);
-
     multiboot_tag_t* tag = (multiboot_tag_t*)(multiboot_info + sizeof(multiboot_info_t));
 
     while (tag->type != MULTIBOOT_TAG_TYPE_END) {
@@ -124,8 +124,6 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
  * This function is used to verify kernel components during development.
  */
 void kernel_tests(void) {
-    heap_dump();
-    dump_layout(&scancode_to_vk_map, &vk_to_unicode_de);
     init_state = INIT_DONE;
 }
 
@@ -163,7 +161,7 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     // i8042_init();
 
     keyboard_init(&vk_to_unicode_de);
-    console_init(8, 8, fb_get_width() - 16, fb_get_height() - 16, (font_color_t){ .bg_color = (color_t){ .a = 255, .r = 0, .g = 10, .b = 0 }, .fg_color = (color_t){ .a = 255, .r = 100, .g = 255, .b = 100 }});
+    console_init(0, 0, fb_get_width(), fb_get_height(), (font_color_t){ .bg_color = (color_t){ .a = 255, .r = 0, .g = 10, .b = 0 }, .fg_color = (color_t){ .a = 255, .r = 100, .g = 255, .b = 100 }});
     shell_init();
 
     kernel_tests();
@@ -171,10 +169,8 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     while (1) {
         uint32_t unicode = keyboard_get_unicode();
         shell_handle_input(unicode);
-
         console_update();
         fb_update();
-        
-        __asm__ __volatile__("hlt");
+        cpu_hlt();
     }
 }

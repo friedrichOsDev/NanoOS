@@ -40,10 +40,8 @@ pci_driver_t driver_database[] = {
 };
 
 void pci_init() {
-    serial_printf("PCI: start\n");
     pci_enumerate_devices();
     init_state = INIT_PCI;
-    serial_printf("PCI: done\n");
 }
 
 static void pci_check_dev(uint8_t bus, uint8_t device) {

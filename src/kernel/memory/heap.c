@@ -26,8 +26,6 @@ static inline size_t align_size(size_t size) {
  * Maps initial pages and sets up the first free block.
  */
 void heap_init(void) {
-    serial_printf("Heap: start\n");
-
     size_t initial_map_size = (HEAP_INITIAL_PAGES + 1) * HEAP_PAGE_SIZE;
 
     // map initial heap pages (1 page buffer)
@@ -40,7 +38,6 @@ void heap_init(void) {
     heap_list->next = NULL;
 
     serial_printf("Heap: initial block at %x with size %d bytes\n", (virt_addr_t)heap_list, heap_list->size);
-    serial_printf("Heap: done\n");
     init_state = INIT_HEAP;
 }
 

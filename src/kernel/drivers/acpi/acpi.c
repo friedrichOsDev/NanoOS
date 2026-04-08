@@ -263,7 +263,6 @@ static void acpi_parse_madt() {
         ptr += entry->length;
     }
 
-    serial_printf("ACPI: Debug: Allocating memory for MADT entries\n");
     if (madt_parsed.lapic_count > 0) madt_parsed.lapics = (madt_lapic_entry_t*)kzalloc(madt_parsed.lapic_count * sizeof(madt_lapic_entry_t));
     if (madt_parsed.ioapic_count > 0) madt_parsed.ioapics = (madt_ioapic_entry_t*)kzalloc(madt_parsed.ioapic_count * sizeof(madt_ioapic_entry_t));
     if (madt_parsed.iso_count > 0) madt_parsed.isos = (madt_iso_entry_t*)kzalloc(madt_parsed.iso_count * sizeof(madt_iso_entry_t));
@@ -271,8 +270,7 @@ static void acpi_parse_madt() {
     if (madt_parsed.lapic_nmi_count > 0) madt_parsed.lapic_nmis = (madt_lapic_nmi_entry_t*)kzalloc(madt_parsed.lapic_nmi_count * sizeof(madt_lapic_nmi_entry_t));
     if (madt_parsed.lapic_address_override_count > 0) madt_parsed.lapic_address_overrides = (madt_lapic_address_override_entry_t*)kzalloc(madt_parsed.lapic_address_override_count * sizeof(madt_lapic_address_override_entry_t));
     if (madt_parsed.lx2apic_count > 0) madt_parsed.lx2apics = (madt_lx2apic_entry_t*)kzalloc(madt_parsed.lx2apic_count * sizeof(madt_lx2apic_entry_t));
-    serial_printf("ACPI: Debug: Memory allocated for MADT entries\n");
-
+    
     size_t lapic_idx = 0, ioapic_idx = 0, iso_idx = 0, ioapic_nmi_idx = 0, lapic_nmi_idx = 0, lapic_address_override_idx = 0, lx2apic_idx = 0;
 
     ptr = (uint8_t*)(madt) + sizeof(madt_t);
@@ -311,7 +309,6 @@ static void acpi_parse_madt() {
  * @brief Initializes the ACPI subsystem.
  */
 void acpi_init(rsdp_t * rsdp_ptr) {
-    serial_printf("ACPI: start\n");
     if (!rsdp_ptr) {
         serial_printf("ACPI: RSDP not found in multiboot tags!\n");
         return;
@@ -331,7 +328,6 @@ void acpi_init(rsdp_t * rsdp_ptr) {
     acpi_find_fadt();
     acpi_find_madt();
     acpi_parse_madt();
-    serial_printf("ACPI: done\n");
 }
 
 /**

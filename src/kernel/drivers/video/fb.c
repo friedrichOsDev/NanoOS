@@ -10,6 +10,7 @@
 #include <string.h>
 #include <memory.h>
 #include <timer.h>
+#include <interrupts.h>
 
 static backbuffer_info_t bb_info;
 static uint32_t dirty_x1;
@@ -22,36 +23,6 @@ color_t white = {255, 255, 255, 255};
 color_t red = {255, 255, 0, 0};
 color_t green = {255, 0, 255, 0};
 color_t blue = {255, 0, 0, 255};
-
-/**
- * @brief Fast 32-bit memory set using x86 assembly.
- * @param dest Destination address.
- * @param value 32-bit value to set.
- * @param count Number of 32-bit words to set.
- */
-static inline void memset32(void* dest, uint32_t value, size_t count) {
-    __asm__ __volatile__(
-        "rep stosl"
-        : "+D" (dest), "+c" (count)
-        : "a" (value)
-        : "memory"
-    );
-}
-
-/**
- * @brief Fast 32-bit memory copy using x86 assembly.
- * @param dest Destination address.
- * @param src Source address.
- * @param count Number of 32-bit words to copy.
- */
-static inline void memcpy32(void* dest, const void* src, size_t count) {
-    __asm__ __volatile__(
-        "rep movsl"
-        : "+D" (dest), "+S" (src), "+c" (count)
-        :
-        : "memory"
-    );
-}
 
 /**
  * @brief Expands the current dirty region to include the specified rectangle.
@@ -92,7 +63,6 @@ void fb_update(void) {
  * Allocates the backbuffer and sets up the periodic update timer.
  */
 void fb_init(void) {
-    serial_printf("FB: start\n");
     size_t buffer_size = kernel_fb_info.fb_height * kernel_fb_info.fb_pitch;
     uint32_t scroll_offset = 0;
     serial_printf("FB: Initializing framebuffer: %dx%d, %d bpp, pitch: %d, buffer size: %d bytes\n", kernel_fb_info.fb_width, kernel_fb_info.fb_height, kernel_fb_info.fb_bpp, kernel_fb_info.fb_pitch, buffer_size);
@@ -110,7 +80,6 @@ void fb_init(void) {
     dirty_x1 = dirty_y1 = 0xFFFFFFFF;
     dirty_x2 = dirty_y2 = 0;
 
-    serial_printf("FB: clear screen\n");
     fb_clear(black);
     event_t update_event = {
         .event_id = 0,
@@ -123,8 +92,6 @@ void fb_init(void) {
 
     uint32_t update_event_id = timer_add_event(update_event);
     (void)update_event_id;
-
-    serial_printf("FB: done\n");
 }
 
 /**
@@ -353,10 +320,10 @@ void fb_swap_buffers(void) {
         return;
     }
 
-    __asm__ __volatile__("cli");
+    idt_disable();
 
     if (dirty_x1 >= dirty_x2 || dirty_y1 >= dirty_y2) {
-        __asm__ __volatile__("sti");
+        idt_enable();
         return; // No dirty region
     }
 
@@ -368,7 +335,7 @@ void fb_swap_buffers(void) {
     dirty_x1 = dirty_y1 = 0xFFFFFFFF;
     dirty_x2 = dirty_y2 = 0;
 
-    __asm__ __volatile__("sti");
+    idt_enable();
 
     uint8_t* vram_base = (uint8_t*)kernel_fb_info.fb_addr;
 

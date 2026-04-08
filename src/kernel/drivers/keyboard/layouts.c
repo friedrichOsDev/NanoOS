@@ -432,21 +432,3 @@ const dead_key_entry_t dead_key_table[] = {
     // Terminator
     {0, 0, 0}
 };
-
-/**
- * @brief Dumps the keyboard layout to the serial console.
- * @param map The scancode to virtual key map.
- * @param layout The keyboard layout to dump.
- */
-void dump_layout(const scancode_to_vk_map_t *map, const keyboard_layout_t *layout) {
-    serial_printf("Dumping layout: %s\n", layout->lang);
-    for (int i = 0; i < VK_COUNT; i++) {
-        scancode_to_vk_t sc_vk = map->sc_to_vk[i];
-        vk_to_unicode_t vk_uni = layout->vk_to_unicode[i];
-        serial_printf("VK: %d, Scancode: ", sc_vk.vk);
-        for (int j = 0; j < sc_vk.sequence.length; j++) {
-            serial_printf("%x ", sc_vk.sequence.bytes[j]);
-        }
-        serial_printf(", Unicode: %x\n", vk_uni.normal);
-    }
-}

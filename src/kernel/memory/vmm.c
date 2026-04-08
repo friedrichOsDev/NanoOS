@@ -49,7 +49,6 @@ void vmm_prepare_zero_window(phys_addr_t phys, uint32_t window) {
  * Sets up the kernel page directory, maps the kernel, bitmap, and framebuffer.
  */
 void vmm_init(void) {
-    serial_printf("VMM: start\n");
     phys_addr_t page_dir_phys = pmm_alloc_page();
     phys_addr_t zero_table_phys = pmm_alloc_page();
     
@@ -113,7 +112,6 @@ void vmm_init(void) {
     virt_addr_t fb_addr_new = fb_start_virt + (fb_phys - fb_start_phys);
     kernel_fb_info.fb_addr = (void*)fb_addr_new;
 
-    serial_printf("VMM: done\n");
     init_state = INIT_VMM;
 }
 

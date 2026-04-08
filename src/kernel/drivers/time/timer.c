@@ -9,6 +9,8 @@
 #include <serial.h>
 #include <panic.h>
 #include <kernel.h>
+#include <interrupts.h>
+#include <cpu.h>
 
 static volatile uint32_t ticks = 0;
 static event_t events[TIMER_MAX_EVENTS];
@@ -53,7 +55,6 @@ void timer_callback(struct registers *regs) {
  * Sets up the hardware registers and installs the IRQ handler.
  */
 void timer_init(void) {
-    serial_printf("Timer: start\n");
     serial_printf("Timer: set PIT frequency\n");
     uint32_t divisor = 1193180 / TIMER_FREQUENCY;
     outb(0x43, 0x36); // command byte: channel
@@ -64,7 +65,6 @@ void timer_init(void) {
 
     serial_printf("Timer: install IRQ handler\n");
     irq_install_handler(0, timer_callback);
-    serial_printf("Timer: done\n");
     init_state = INIT_TIMER;
 }
 
@@ -75,27 +75,27 @@ void timer_init(void) {
  * @return uint32_t The unique event ID, or 0 if the event could not be added.
  */
 uint32_t timer_add_event(event_t event) {
-    __asm__ __volatile__("cli");
+    idt_disable();
     uint32_t id = ++next_id;
     event.event_id = id;
     event.active = true;
     for (uint32_t i = 0; i < event_count; i++) {
         if (!events[i].active) {
             events[i] = event;
-            __asm__ __volatile__("sti");
+            idt_enable();
             return id;
         }
     }
 
     if (event_count < TIMER_MAX_EVENTS) {
         events[event_count++] = event;
-        __asm__ __volatile__("sti");
+        idt_enable();
         return id;
     } 
         
     
     serial_printf("Timer: Error: Maximum number of timer events reached\n");
-    __asm__ __volatile__("sti");
+    idt_enable();
     return 0;
 }
 
@@ -105,13 +105,13 @@ uint32_t timer_add_event(event_t event) {
  * @param event_id The ID returned by timer_add_event.
  */
 void timer_remove_event(uint32_t event_id) {
-    __asm__ __volatile__("cli");
+    idt_disable();
     for (uint32_t i = 0; i < event_count; i++) {
         if (events[i].event_id == event_id) {
             events[i].active = false;
         }
     }
-    __asm__ __volatile__("sti");
+    idt_enable();
 }
 
 /**
@@ -136,5 +136,5 @@ void sleep_ms(uint32_t ms) {
     uint32_t target_ticks;
     if (overflow_check > UINT32_MAX) target_ticks = UINT32_MAX;
     else target_ticks = (uint32_t)overflow_check;
-    while (ticks < target_ticks) __asm__ __volatile__("hlt");
+    while (ticks < target_ticks) cpu_hlt();
 }
