@@ -6,7 +6,7 @@ NanoOS is a simple kernel development project that I am developing in my free ti
 - GRUB as bootloader
 - IDT and IRQ management
 - Physical and virtual memory manager
-- Dynamic memory allocator
+- Dynamic memory allocator (Heap)
 - Simple framebuffer driver with psf2 font support
 - A printf libary implementation
 - Other hardware-specific drivers
