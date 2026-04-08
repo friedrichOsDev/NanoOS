@@ -22,28 +22,6 @@ static inline void vmm_switch_directory(phys_addr_t phys_dir) {
 }
 
 /**
- * @brief Reloads the CR3 register to flush the TLB.
- */
-static inline void vmm_reload_directory(void) {
-    uint32_t cr3_val;
-    __asm__ __volatile__(
-        "mov %%cr3, %0\n\t"
-        "mov %0, %%cr3"
-        : "=r"(cr3_val)
-        :
-        : "memory"
-    );
-}
-
-/**
- * @brief Flushes a single TLB entry.
- * @param addr The virtual address to flush.
- */
-static inline void vmm_flush_tlb(virt_addr_t addr) {
-    __asm__ __volatile__("invlpg (%0)" : : "r" (addr) : "memory");
-}
-
-/**
  * @brief Maps a physical address into the temporary zero window.
  * Used for accessing memory before the full VMM is initialized or for paging structures.
  * @param phys The physical address to map.
@@ -63,7 +41,7 @@ void vmm_prepare_zero_window(phys_addr_t phys, uint32_t window) {
         zero_pt->entries[window] = (phys & VMM_PAGE_MASK) | VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE;
     }
 
-    vmm_flush_tlb(VMM_ZERO_WINDOW + (window * VMM_PAGE_SIZE));
+    flush_tlb(VMM_ZERO_WINDOW + (window * VMM_PAGE_SIZE));
 }
 
 /**
@@ -81,8 +59,8 @@ void vmm_init(void) {
     // zero the page dir
     boot_page_table_zero_window[0] = (page_dir_phys & VMM_PAGE_MASK) | VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE;
     boot_page_table_zero_window[1] = (zero_table_phys & VMM_PAGE_MASK) | VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE;
-    vmm_flush_tlb(VMM_ZERO_WINDOW);
-    vmm_flush_tlb(VMM_ZERO_WINDOW + VMM_PAGE_SIZE);
+    flush_tlb(VMM_ZERO_WINDOW);
+    flush_tlb(VMM_ZERO_WINDOW + VMM_PAGE_SIZE);
 
     page_directory_t* working_dir = (page_directory_t*)(VMM_ZERO_WINDOW);
     page_table_t* zero_page_table = (page_table_t*)(VMM_ZERO_WINDOW + VMM_PAGE_SIZE);
@@ -121,8 +99,8 @@ void vmm_init(void) {
     // clear boot zero window
     boot_page_table_zero_window[0] = 0;
     boot_page_table_zero_window[1] = 0;
-    vmm_flush_tlb(VMM_ZERO_WINDOW);
-    vmm_flush_tlb(VMM_ZERO_WINDOW + VMM_PAGE_SIZE);
+    flush_tlb(VMM_ZERO_WINDOW);
+    flush_tlb(VMM_ZERO_WINDOW + VMM_PAGE_SIZE);
 
     serial_printf("VMM: switching to new page directory at %x\n", page_dir_phys);
     vmm_switch_directory(page_dir_phys);
@@ -244,7 +222,7 @@ void vmm_map_pages(page_directory_t* dir, virt_addr_t virtual_start_address, phy
         } else {
             phys_addr_t pt_phys = pmm_zalloc_page();
             dir->entries[cur_dir_index] = pt_phys | VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE;
-            vmm_flush_tlb(cur_v);
+            flush_tlb(cur_v);
         if (current_directory == NULL) {
             vmm_prepare_zero_window(pt_phys, 3);
             table = (page_table_t*)(VMM_ZERO_WINDOW + (3 * VMM_PAGE_SIZE));
@@ -254,10 +232,10 @@ void vmm_map_pages(page_directory_t* dir, virt_addr_t virtual_start_address, phy
         }
         
         table->entries[cur_table_index] = (cur_p & VMM_PAGE_MASK) | flags | VMM_PAGE_PRESENT;
-        if (!reload_dir) vmm_flush_tlb(cur_v);
+        if (!reload_dir) flush_tlb(cur_v);
     }
 
-    if (reload_dir) vmm_reload_directory();
+    if (reload_dir) reload_page_directory();
 }
 
 /**
@@ -303,7 +281,7 @@ void vmm_unmap_pages(page_directory_t* dir, virt_addr_t virtual_start_address, u
             continue;
         }
         table->entries[cur_table_index] = 0;
-        if (!reload_dir) vmm_flush_tlb(cur_v);
+        if (!reload_dir) flush_tlb(cur_v);
 
         // test if the table is now empty
         bool empty = true;
@@ -321,7 +299,7 @@ void vmm_unmap_pages(page_directory_t* dir, virt_addr_t virtual_start_address, u
         }
     }
 
-    if (reload_dir) vmm_reload_directory();
+    if (reload_dir) reload_page_directory();
 }
 
 /**

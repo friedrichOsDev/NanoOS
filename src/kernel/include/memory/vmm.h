@@ -69,6 +69,8 @@ typedef struct {
 #define VMM_GET_TABLE_ADDR(virt) ((page_table_t*)(VMM_TABLES_BASE + (VMM_GET_DIR_INDEX(virt) * VMM_PAGE_SIZE)))
 
 extern void load_page_directory(phys_addr_t phys);
+extern void reload_page_directory(void);
+extern void flush_tlb(virt_addr_t addr);
 extern void enable_paging(void);
 extern void disable_paging(void);
 
