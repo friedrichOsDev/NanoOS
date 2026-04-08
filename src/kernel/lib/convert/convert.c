@@ -47,9 +47,7 @@ static uint32_t div64_32(uint64_t* dividend, uint32_t divisor) {
     uint32_t rem;
     uint32_t high_q, low_q;
 
-    // Erster Schritt: High-Teil dividieren
     __asm__ __volatile__ ("divl %4" : "=a"(high_q), "=d"(rem) : "a"(high), "d"(0), "r"(divisor));
-    // Zweiter Schritt: Low-Teil mit dem Rest aus dem ersten Schritt dividieren
     __asm__ __volatile__ ("divl %4" : "=a"(low_q), "=d"(rem) : "a"(low), "d"(rem), "r"(divisor));
 
     *dividend = ((uint64_t)high_q << 32) | low_q;
@@ -118,4 +116,20 @@ int uint_to_str_legacy(uint64_t value, char* buffer, int base) {
  */
 uint8_t bcd_to_dezimal(uint8_t bcd) {
     return ((bcd >> 4) * 10) + (bcd & 0x0F);
+}
+
+/**
+ * @brief Converts a null-terminated uint32_t string to a char string.
+ * @param ustr The source uint32_t string.
+ * @param buffer The destination char buffer.
+ * @param buffer_size The size of the destination buffer.
+ * @return A pointer to the destination buffer.
+ */
+char * ustr_to_str(const uint32_t* ustr, char* buffer, size_t buffer_size) {
+    size_t i;
+    for (i = 0; i < buffer_size - 1 && ustr[i] != U'\0'; i++) {
+        buffer[i] = (char)ustr[i];
+    }
+    buffer[i] = '\0';
+    return buffer;
 }

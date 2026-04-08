@@ -10,7 +10,7 @@
 #include <keyboard.h>
 #include <kernel.h>
 #include <rtc.h>
-#include <heap.h>
+#include <memory.h>
 #include <print.h>
 #include <convert.h>
 #include <acpi.h>
@@ -298,7 +298,10 @@ void shell_handle_input(uint32_t c) {
 void shell_register_command(const shell_command_t *command) {
     if (!command) return;
 
-    serial_printf("Shell: Registering command: %s\n", command->name);
+    size_t buffer_size = (u32_strlen(command->name) + 1);
+    char * buffer = (char*)kmalloc(buffer_size);
+    serial_printf("Shell: Registering command: %s\n", ustr_to_str(command->name, buffer, buffer_size));
+    kfree((virt_addr_t)buffer);
     
     if (commands.command_count >= MAX_COMMANDS) {
         serial_printf("Shell: Too many commands registered!\n");
