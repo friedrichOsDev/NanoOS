@@ -7,8 +7,6 @@
 #include <serial.h>
 #include <kernel.h>
 
-extern void gdt_flush(uint32_t gdt_ptr);
-
 struct gdt_entry gdt[3];
 struct gdt_ptr gdtp;
 
@@ -18,8 +16,6 @@ struct gdt_ptr gdtp;
  * Sets up the null, code, and data segments for the kernel and flushes the GDT.
  */
 void gdt_init(void) {
-    serial_printf("GDT: start\n");
-
     gdtp.limit = (sizeof(struct gdt_entry) * 3) - 1;
     gdtp.base = (uint32_t)&gdt;
 
@@ -33,10 +29,7 @@ void gdt_init(void) {
     gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF);
     serial_printf("GDT: data segment set\n");
 
-    serial_printf("GDT: flushing GDT\n");
     gdt_flush((uint32_t)&gdtp);
-
-    serial_printf("GDT: done\n");
     init_state = INIT_GDT;
 }
 

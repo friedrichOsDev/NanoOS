@@ -207,5 +207,3 @@ extern const uint8_t scancode_e0_to_vk_quick[128];
 extern const bool vk_is_alpha_map[VK_COUNT];
 extern const keyboard_layout_t vk_to_unicode_de;
 extern const dead_key_entry_t dead_key_table[];
-
-void dump_layout(const scancode_to_vk_map_t *map, const keyboard_layout_t *layout);

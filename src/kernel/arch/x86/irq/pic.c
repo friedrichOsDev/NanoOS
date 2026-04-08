@@ -14,7 +14,7 @@
  * to avoid conflicts with CPU exceptions.
  */
 void pic_remap(void) {
-    serial_printf("PIC: remapping\n");
+    serial_printf("PIC: remap PIC\n");
     
     // ICW1: Start initialization
     outb(PIC1_COMMAND, ICW1_INIT);
@@ -35,6 +35,4 @@ void pic_remap(void) {
     // Mask: Enable all interrupts
     outb(PIC1_DATA, 0x00);
     outb(PIC2_DATA, 0x00);
-
-    serial_printf("PIC: remapped\n");
 }

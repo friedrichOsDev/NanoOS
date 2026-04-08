@@ -7,6 +7,8 @@ extern irq_handler
 
 ; Export global symbols
 global idt_load
+global idt_enable
+global idt_disable
 
 %macro EXPORT_ISR 1
     global isr%1
@@ -137,4 +139,12 @@ common_irq_stub:
 idt_load:
     mov eax, [esp + 4]
     lidt [eax]
+    ret
+
+idt_enable:
+    sti
+    ret
+
+idt_disable:
+    cli
     ret

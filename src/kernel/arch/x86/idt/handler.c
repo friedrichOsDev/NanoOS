@@ -6,10 +6,9 @@
 #include <handler.h>
 #include <serial.h>
 #include <io.h>
+#include <panic.h>
 
-/** @brief Array of registered IRQ handlers. */
 static irq_handler_t irq_handlers[16];
-/** @brief Array of registered ISR handlers. */
 static isr_handler_t isr_handlers[32];
 
 /**
@@ -47,15 +46,11 @@ void isr_install_handler(int isr, isr_handler_t handler) {
  * @param regs The CPU register state at the time of the interrupt.
  */
 void irq_handler(struct registers *regs) {
-    if (regs->int_no >= 40) {
-        outb(0xA0, 0x20);
-    }
+    if (regs->int_no >= 40) outb(0xA0, 0x20);
     outb(0x20, 0x20);
 
     irq_handler_t handler = irq_handlers[regs->int_no - 32];
-    if (handler) {
-        handler(regs);
-    }
+    if (handler) handler(regs);
 }
 
 /**
@@ -65,13 +60,12 @@ void irq_handler(struct registers *regs) {
  * @param regs The CPU register state at the time of the exception.
  */
 void isr_handler(struct registers *regs) {
-    if (regs->int_no < 32) {
-        serial_printf("Exception: %d, Error Code: %d\n", regs->int_no, regs->err_code);
-    }
+    if (regs->int_no < 32) serial_printf("Exception: %d, Error Code: %d\n", regs->int_no, regs->err_code);
+
     isr_handler_t handler = isr_handlers[regs->int_no];
     if (handler) {
         handler(regs);
     } else {
-        while (1);
+        kernel_panic("Unhandled exception", regs->int_no);
     }
 }

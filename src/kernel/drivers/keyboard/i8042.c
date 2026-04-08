@@ -7,6 +7,7 @@
 #include <kernel.h>
 #include <serial.h>
 #include <io.h>
+#include <cpu.h>
 
 static bool dual_channel = false;
 
@@ -17,7 +18,7 @@ static bool dual_channel = false;
 bool i8042_wait_read(void) {
     for (uint32_t i = 0; i < I8042_RETRIES; i++) {
         if (i8042_read_status() & I8042_STATUS_OUTPUT_BUFFER_FULL) return true;
-        __asm__ __volatile__("pause");
+        cpu_pause();
     }
     return false;
 }
@@ -29,7 +30,7 @@ bool i8042_wait_read(void) {
 bool i8042_wait_write(void) {
     for (uint32_t i = 0; i < I8042_RETRIES; i++) {
         if (!(i8042_read_status() & I8042_STATUS_INPUT_BUFFER_FULL)) return true;
-        __asm__ __volatile__("pause");
+        cpu_pause();
     }
     return false;
 }
@@ -78,7 +79,6 @@ uint8_t i8042_read_data(void) {
  * @note This is only nessary if we have a real PS/2 controller. If the PS/2 controller is emulated by the BIOS the initalization does not work. (Why: I have no clue)
  */
 void i8042_init(void) {
-    serial_printf("i8042: Initializing controller...\n");
     i8042_write_command(I8042_DISABLE_KBD);
     i8042_write_command(I8042_DISABLE_AUX);
 
@@ -127,5 +127,4 @@ void i8042_init(void) {
     }
 
     init_state = INIT_I8042;
-    serial_printf("i8042: Initialization complete.\n");
 }

@@ -23,5 +23,7 @@ struct gdt_ptr {
     uint32_t base;
 } __attribute__((packed));
 
+extern void gdt_flush(uint32_t gdt_ptr);
+
 void gdt_init(void);
 void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);

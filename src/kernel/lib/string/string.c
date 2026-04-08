@@ -43,6 +43,38 @@ void* memcpy(void* dest, const void* src, size_t count) {
 }
 
 /**
+ * @brief Fills a block of memory with a specific 32-bit value.
+ * 
+ * @param dest Pointer to the memory block to fill.
+ * @param value The 32-bit value to set.
+ * @param count Number of 32-bit words to fill.
+ */
+void memset32(void* dest, uint32_t value, size_t count) {
+    __asm__ __volatile__(
+        "rep stosl"
+        : "+D" (dest), "+c" (count)
+        : "a" (value)
+        : "memory"
+    );
+}
+
+/**
+ * @brief Copies a block of memory using 32-bit word transfers.
+ * 
+ * @param dest Pointer to the destination memory block.
+ * @param src Pointer to the source memory block.
+ * @param count Number of 32-bit words to copy.
+ */
+void memcpy32(void* dest, const void* src, size_t count) {
+    __asm__ __volatile__(
+        "rep movsl"
+        : "+D" (dest), "+S" (src), "+c" (count)
+        :
+        : "memory"
+    );
+}
+
+/**
  * @brief Compares two blocks of memory.
  * 
  * @param ptr1 Pointer to the first memory block.

@@ -22,6 +22,9 @@ LINKER      = $(KERNEL_DIR)/linker.ld
 # recursive wildcard
 rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
+INCLUDE_DIRS = $(shell find $(KERNEL_DIR)/include -type d)
+INCLUDE_FLAGS = $(foreach dir,$(INCLUDE_DIRS),-I$(dir))
+
 C_SOURCES   = $(call rwildcard,$(KERNEL_DIR),*.c)
 ASM_SOURCES = $(call rwildcard,$(KERNEL_DIR),*.asm)
 ASSET_SOURCES = $(call rwildcard,$(ASSET_DIR),*.psf)
@@ -32,7 +35,9 @@ ASSET_OBJECTS = $(patsubst $(ASSET_DIR)/%.psf,$(BUILD_DIR)/%.o,$(ASSET_SOURCES))
 OBJECTS     = $(C_OBJECTS) $(ASM_OBJECTS) $(ASSET_OBJECTS)
 
 # Flags
-CFLAGS = -ffreestanding -m32 -O1 -Wall -Wextra -Werror -fno-stack-protector -fno-builtin -fno-strict-aliasing -nostdlib -I$(KERNEL_DIR)/include
+CFLAGS = -ffreestanding -m32 -O1 -Wall -Wextra -Werror \
+         -fno-stack-protector -fno-builtin -fno-strict-aliasing -nostdlib \
+         $(INCLUDE_FLAGS)
 LDFLAGS = -m elf_i386 -T $(LINKER)
 
 # Targets

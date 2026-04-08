@@ -10,7 +10,7 @@
 #include <keyboard.h>
 #include <kernel.h>
 #include <rtc.h>
-#include <heap.h>
+#include <memory.h>
 #include <print.h>
 #include <convert.h>
 #include <acpi.h>
@@ -97,8 +97,6 @@ bool shell_move_cursor_left(bool release) {
     if (release) return true;
     if (cursor_pos > 0) {
         console_move_cursor_left(false);
-        serial_printf("Shell: Cursor moved left, pos: %d\n", cursor_pos);
-        serial_printf("Shell: Command buffer pos: %d\n", command_buffer_pos);
         cursor_pos--;
     }
     return true;
@@ -108,8 +106,6 @@ bool shell_move_cursor_right(bool release) {
     if (release) return true;
     if (cursor_pos < command_buffer_pos) {
         console_move_cursor_right(false);
-        serial_printf("Shell: Cursor moved right, pos: %d\n", cursor_pos);
-        serial_printf("Shell: Command buffer pos: %d\n", command_buffer_pos);
         cursor_pos++;
     }
     return true;
@@ -298,8 +294,6 @@ void shell_handle_input(uint32_t c) {
 void shell_register_command(const shell_command_t *command) {
     if (!command) return;
 
-    serial_printf("Shell: Registering command: %s\n", command->name);
-    
     if (commands.command_count >= MAX_COMMANDS) {
         serial_printf("Shell: Too many commands registered!\n");
         return;

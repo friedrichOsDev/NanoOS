@@ -106,7 +106,6 @@ bool console_move_cursor_right(bool release) {
  * @param color The default font color for the console.
  */
 void console_init(uint32_t x, uint32_t y, uint32_t w, uint32_t h, font_color_t color) {
-    serial_printf("Console: start\n");
     fb_init();
     default_color = color;
     console_set_color(color);
@@ -137,8 +136,6 @@ void console_init(uint32_t x, uint32_t y, uint32_t w, uint32_t h, font_color_t c
 
     keyboard_map_function_to_vk(VK_LEFT, console_move_cursor_left);
     keyboard_map_function_to_vk(VK_RIGHT, console_move_cursor_right);
-
-    serial_printf("Console: done\n");
 
     init_state = INIT_CONSOLE;
 }

@@ -6,41 +6,7 @@
 #include <idt.h>
 #include <serial.h>
 #include <kernel.h>
-
-extern void idt_load(uint32_t idt_ptr);
-
-extern void isr0();
-extern void isr1();
-extern void isr2();
-extern void isr3();
-extern void isr4();
-extern void isr5();
-extern void isr6();
-extern void isr7();
-extern void isr8();
-extern void isr9();
-extern void isr10();
-extern void isr11();
-extern void isr12();
-extern void isr13();
-extern void isr14();
-extern void isr15();
-extern void isr16();
-extern void isr17();
-extern void isr18();
-extern void isr19();
-extern void isr20();
-extern void isr21();
-extern void isr22();
-extern void isr23();
-extern void isr24();
-extern void isr25();
-extern void isr26();
-extern void isr27();
-extern void isr28();
-extern void isr29();
-extern void isr30();
-extern void isr31();
+#include <interrupts.h>
 
 struct idt_entry idt[IDT_ENTRIES];
 struct idt_ptr idtp;
@@ -52,8 +18,6 @@ struct idt_ptr idtp;
  * and loads the IDT into the CPU.
  */
 void idt_init(void) {
-    serial_printf("IDT: start\n");
-
     idtp.limit = (sizeof(struct idt_entry) * IDT_ENTRIES) - 1;
     idtp.base = (uint32_t)&idt;
 
@@ -74,10 +38,7 @@ void idt_init(void) {
         }
     }
 
-    serial_printf("IDT: loading IDT\n");
     idt_load((uint32_t)&idtp);
-
-    serial_printf("IDT: done\n");
     init_state = INIT_IDT;
 }
 
@@ -96,13 +57,4 @@ void idt_set_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags) {
     idt[num].selector = sel;
     idt[num].zero = 0;
     idt[num].flags = flags;
-}
-
-/**
- * @brief Enables interrupts on the CPU.
- * 
- * Executes the 'sti' instruction.
- */
-void idt_enable(void) {
-    __asm__ __volatile__ ("sti");
 }

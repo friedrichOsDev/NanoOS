@@ -20,7 +20,6 @@ extern uint8_t boot_page_directory[];
  * allocates and initializes the bitmap, and locks essential kernel regions.
  */
 void pmm_init(void) {
-    serial_printf("PMM: start\n");
     phys_addr_t max_addr = 0;
 
     // get the highest physical address from the memory map
@@ -115,7 +114,6 @@ void pmm_init(void) {
 
     serial_printf("PMM: Initialized with max address %x, total pages: %d\n", max_addr, pmm_state.max_pages);
     serial_printf("PMM: Free memory: %d KB, Used memory: %d KB\n", (uint32_t)(pmm_get_free_memory() / 1024), (uint32_t)(pmm_get_used_memory() / 1024));
-    serial_printf("PMM: done\n");
     init_state = INIT_PMM;
 }
 

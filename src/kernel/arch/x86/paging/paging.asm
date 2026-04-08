@@ -2,12 +2,24 @@
 
 section .text
 global load_page_directory
+global reload_page_directory
+global flush_tlb
 global enable_paging
 global disable_paging
 
 load_page_directory:
     mov eax, [esp + 4]  ; get the address from the stack
     mov cr3, eax
+    ret
+
+reload_page_directory:
+    mov eax, cr3
+    mov cr3, eax
+    ret
+
+flush_tlb:
+    mov eax, [esp + 4]  ; get the address from the stack
+    invlpg [eax]
     ret
 
 enable_paging:
