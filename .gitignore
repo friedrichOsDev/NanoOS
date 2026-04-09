@@ -6,3 +6,4 @@ iso
 *.log
 *.drawio
 structure_*.*
+*.DS_Store
