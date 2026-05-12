@@ -208,6 +208,38 @@ void kzfree(virt_addr_t ptr) {
 }
 
 /**
+ * @brief Reallocates a block of memory to a new size.
+ * @param ptr The current virtual address of the memory.
+ * @param new_size The new size in bytes.
+ * @return The new virtual address, or 0 on failure.
+ */
+virt_addr_t krealloc(virt_addr_t ptr, size_t new_size) {
+    if (ptr == 0) return kmalloc(new_size);
+    if (new_size == 0) {
+        kfree(ptr);
+        return 0;
+    }
+
+    heap_block_t* block = (heap_block_t*)(ptr - sizeof(heap_block_t));
+    if (block->magic != HEAP_MAGIC_ALLOCATED) {
+        serial_printf("Heap: Error: Attempt to realloc invalid or free block at %x\n", ptr);
+        return 0;
+    }
+
+    if (block->size >= new_size) {
+        // Current block is already large enough
+        return ptr;
+    }
+
+    virt_addr_t new_ptr = kmalloc(new_size);
+    if (!new_ptr) return 0;
+
+    memcpy((void*)new_ptr, (void*)ptr, block->size);
+    kfree(ptr);
+    return new_ptr;
+}
+
+/**
  * @brief Prints a debug dump of the current heap state to the serial port.
  */
 void heap_dump(void) {

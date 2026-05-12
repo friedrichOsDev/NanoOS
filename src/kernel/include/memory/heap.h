@@ -37,5 +37,6 @@ virt_addr_t kmalloc(size_t size);
 void kfree(virt_addr_t ptr);
 virt_addr_t kzalloc(size_t size);
 void kzfree(virt_addr_t ptr);
+virt_addr_t krealloc(virt_addr_t ptr, size_t new_size);
 void heap_dump(void);
 heap_block_t* heap_get_list(void);
