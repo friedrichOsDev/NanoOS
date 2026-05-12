@@ -77,7 +77,8 @@ uint32_t pci_config_read_dword(uint8_t bus, uint8_t device, uint8_t function, ui
 void pci_config_write_dword(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, uint32_t data);
 
 void pci_init();
-void pci_enumerate_devices();
+void pci_register_driver(pci_driver_t * driver);
+void pci_check_dev(uint8_t bus, uint8_t device, pci_driver_t * driver);
 pci_device_t pci_get_device(uint16_t vendor_id, uint16_t device_id);
 pci_bar_t pci_get_bar(uint8_t bus, uint8_t device, uint8_t function, uint8_t bar_index);
 void pci_print_device_info(pci_device_t * dev);

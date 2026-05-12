@@ -7,6 +7,7 @@
 #include <io.h>
 #include <serial.h>
 #include <kernel.h>
+#include <heap.h>
 #include <rtx3050.h>
 
 uint32_t pci_config_read_dword(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset) {
@@ -34,17 +35,50 @@ void pci_config_write_dword(uint8_t bus, uint8_t device, uint8_t function, uint8
 /**
  * @brief Database of supported PCI drivers and their initialization functions.
  */
-pci_driver_t driver_database[] = {
-    {0x10DE, 0x2584, "NVIDIA GeForce RTX 3050", rtx3050_init},
-    {0x0000, 0x0000, NULL, NULL}
+size_t driver_database_size = 0;
+pci_driver_t * driver_database = NULL;
+
+pci_driver_t rtx3050 = {
+    .vendor_id = 0x10DE,
+    .device_id = 0x2584,
+    .name = "NVIDIA GeForce RTX 3050",
+    .init = rtx3050_init
+};
+
+pci_driver_t test = {
+    .vendor_id = 0x1234,
+    .device_id = 0x5678,
+    .name = "Test Device",
+    .init = NULL
 };
 
 void pci_init() {
-    pci_enumerate_devices();
+    pci_register_driver(&rtx3050);
+    pci_register_driver(&test);
     init_state = INIT_PCI;
 }
 
-static void pci_check_dev(uint8_t bus, uint8_t device) {
+void pci_register_driver(pci_driver_t * driver) {
+    if (driver_database_size == 0) {
+        driver_database = (pci_driver_t *)kmalloc(sizeof(pci_driver_t) * 2);
+        driver_database[0] = *driver;
+        driver_database[1] = (pci_driver_t){0, 0, NULL, NULL};
+        driver_database_size = 2;
+    } else {
+        driver_database_size++;
+        driver_database = (pci_driver_t *)krealloc((virt_addr_t)driver_database, sizeof(pci_driver_t) * driver_database_size);
+        driver_database[driver_database_size - 2] = *driver;
+        driver_database[driver_database_size - 1] = (pci_driver_t){0, 0, NULL, NULL};
+    }
+    for (uint16_t bus = 0; bus < 256; bus++) {
+        for (uint8_t device = 0; device < 32; device++) {
+            pci_check_dev((uint8_t)bus, device, driver);
+        }
+    }
+    
+}
+
+void pci_check_dev(uint8_t bus, uint8_t device, pci_driver_t * driver) {
     uint8_t function = 0;
 
     // read vendor
@@ -80,13 +114,12 @@ static void pci_check_dev(uint8_t bus, uint8_t device) {
             .prog_if = (uint8_t)((class_res >> 8) & 0xFF)
         };
 
-        for (int i = 0; driver_database[i].vendor_id != 0; i++) {
-            if (driver_database[i].vendor_id == dev.vendor_id && driver_database[i].device_id == dev.device_id) {
-                serial_printf("PCI: Found driver for %s\n", driver_database[i].name);
-                if (driver_database[i].init) {
-                    driver_database[i].init(&dev);
-                }
+        if (driver->vendor_id == func_vendor_id && driver->device_id == device_id) {
+            if (driver->init) {
+                driver->init(&dev);
             }
+        } else {
+            return;
         }
 
         pci_print_device_info(&dev);
@@ -99,14 +132,6 @@ static void pci_check_dev(uint8_t bus, uint8_t device) {
         }
         uint32_t intr = pci_config_read_dword(bus, device, function, PCI_INTERRUPT_LINE);
         serial_printf("  Interrupt Line: %d\n", (uint8_t)(intr & 0xFF));
-    }
-}
-
-void pci_enumerate_devices() {
-    for (uint16_t bus = 0; bus < 256; bus++) {
-        for (uint8_t device = 0; device < 32; device++) {
-            pci_check_dev((uint8_t)bus, device);
-        }
     }
 }
 
