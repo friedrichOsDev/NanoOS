@@ -25,6 +25,7 @@
 #include <pci.h>
 #include <acpi.h>
 #include <string.h>
+#include <storage.h>
 
 init_state_t init_state = INIT_START;
 mmap_t kernel_mmap;
@@ -156,6 +157,7 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     rtc_init();
 
     pci_init();
+    storage_init();
 
     // We have an emulated PS/2 controller so the initialization does not work
     // i8042_init();

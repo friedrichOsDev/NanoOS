@@ -76,6 +76,7 @@ typedef enum {
     INIT_TIMER,
     INIT_RTC,
     INIT_PCI,
+    INIT_STORAGE,
     INIT_I8042,
     INIT_KBD,
     INIT_CONSOLE,
