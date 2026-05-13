@@ -123,6 +123,105 @@ void* memmove(void* dest, const void* src, size_t count) {
 }
 
 /**
+ * @brief Calculates the length of a null-terminated string.
+ * @param str The string.
+ * @return The number of characters in the string.
+ */
+size_t strlen(const char* str) {
+    size_t len = 0;
+    while (str[len]) {
+        len++;
+    }
+    return len;
+}
+
+/**
+ * @brief Copies a null-terminated string.
+ * @param dest The destination buffer.
+ * @param src The source string.
+ * @return A pointer to the destination buffer.
+ */
+char* strcpy(char* dest, const char* src) {
+    char* d = dest;
+    while ((*d++ = *src++));
+    return dest;
+}
+
+/**
+ * @brief Compares two null-terminated strings.
+ * @param s1 The first string.
+ * @param s2 The second string.
+ * @return 0 if equal, <0 if s1 < s2, >0 if s1 > s2.
+ */
+int strcmp(const char* s1, const char* s2) {
+    while (*s1 && (*s1 == *s2)) {
+        s1++;
+        s2++;
+    }
+    return *(const unsigned char*)s1 - *(const unsigned char*)s2;
+}
+
+/**
+ * @brief Compares up to n characters of two null-terminated strings.
+ * @param s1 The first string.
+ * @param s2 The second string.
+ * @param n Maximum number of characters to compare.
+ * @return 0 if equal, <0 if s1 < s2, >0 if s1 > s2.
+ */
+int strncmp(const char* s1, const char* s2, size_t n) {
+    while (n && *s1 && (*s1 == *s2)) {
+        s1++;
+        s2++;
+        n--;
+    }
+    if (n == 0) return 0;
+    return *(const unsigned char*)s1 - *(const unsigned char*)s2;
+}
+
+/**
+ * @brief Copies up to n characters of a null-terminated string.
+ * @param dest The destination buffer.
+ * @param src The source string.
+ * @param n Maximum number of characters to copy.
+ * @return A pointer to the destination buffer.
+ */
+char* strncpy(char* dest, const char* src, size_t n) {
+    size_t i;
+    for (i = 0; i < n && src[i] != '\0'; i++) {
+        dest[i] = src[i];
+    }
+    for (; i < n; i++) {
+        dest[i] = '\0';
+    }
+    return dest;
+}
+
+/**
+ * @brief Concatenates two null-terminated strings.
+ * @param dest The destination buffer.
+ * @param src The source string.
+ * @return A pointer to the destination buffer.
+ */
+char* strcat(char* dest, const char* src) {
+    char* d = dest;
+    while (*d) d++;
+    while ((*d++ = *src++));
+    return dest;
+}
+
+/**
+ * @brief Duplicates a null-terminated string using the kernel heap.
+ * @param src The source string.
+ * @return A pointer to the newly allocated string, or NULL if allocation failed.
+ */
+char* strdup(const char* src) {
+    if (src == NULL) return NULL;
+    char* dest = (char*)kmalloc(strlen(src) + 1);
+    if (dest) strcpy(dest, src);
+    return dest;
+}
+
+/**
  * @brief Calculates the length of a null-terminated uint32_t string.
  * @param str The string.
  * @return The number of characters in the string.
