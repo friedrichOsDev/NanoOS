@@ -26,6 +26,7 @@
 #include <acpi.h>
 #include <string.h>
 #include <storage.h>
+#include <ata.h>
 
 init_state_t init_state = INIT_START;
 mmap_t kernel_mmap;
@@ -125,6 +126,37 @@ void multiboot_parse(uint32_t multiboot_magic, uint32_t multiboot_info) {
  * This function is used to verify kernel components during development.
  */
 void kernel_tests(void) {
+    serial_printf("Kernel Tests: Starting storage tests...\n");
+    if (storage_get_disk_count() > 0) {
+        disk_t* disk = storage_get_disk(0);
+        storage_dump_info(disk);
+        
+        char* buffer = (char*)kmalloc(512);
+        uint8_t* read_buffer = (uint8_t*)kmalloc(512);
+
+        if (!buffer || !read_buffer) {
+            serial_printf("Kernel Tests: Out of memory for test buffers!\n");
+            return;
+        }
+
+        memset(buffer, 0, 512);
+        strncpy(buffer, "Hello, World!", 512);
+        uint8_t res = storage_write(disk, 0, 1, buffer);
+        if (res == 0) {
+            serial_printf("Kernel Tests: Successfully wrote to disk.\n");
+            if (storage_read(disk, 0, 1, read_buffer) == 0) {
+                serial_printf("Kernel Tests: Successfully read from disk: %s\n", (char*)read_buffer);
+            } else {
+                serial_printf("Kernel Tests: Failed to read from disk.\n");
+            }
+        } else {
+            serial_printf("Kernel Tests: Failed to write to disk, res = %d\n", res);
+        }
+        
+        kfree((virt_addr_t)buffer);
+        kfree((virt_addr_t)read_buffer);
+    }
+    
     init_state = INIT_DONE;
 }
 
@@ -156,8 +188,9 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     timer_init();
     rtc_init();
 
-    pci_init();
     storage_init();
+    pci_init();
+    ata_init();
 
     // We have an emulated PS/2 controller so the initialization does not work
     // i8042_init();

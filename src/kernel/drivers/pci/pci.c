@@ -45,16 +45,8 @@ pci_driver_t rtx3050 = {
     .init = rtx3050_init
 };
 
-pci_driver_t test = {
-    .vendor_id = 0x1234,
-    .device_id = 0x5678,
-    .name = "Test Device",
-    .init = NULL
-};
-
 void pci_init() {
     pci_register_driver(&rtx3050);
-    pci_register_driver(&test);
     init_state = INIT_PCI;
 }
 

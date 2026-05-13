@@ -47,7 +47,10 @@ uint8_t storage_read(disk_t* disk, uint64_t lba, uint32_t count, void* buffer) {
 }
 
 uint8_t storage_write(disk_t* disk, uint64_t lba, uint32_t count, const void* buffer) {
-    if (!disk || !disk->write) return 1;
+    if (!disk || !disk->write) {
+        serial_printf("Storage: Error: No disk or write function provided.\n");
+        return 1;
+    } 
     
     if (lba + count > disk->total_sectors) {
         serial_printf("Storage: Error: Out of bounds write at LBA %llu\n", lba);

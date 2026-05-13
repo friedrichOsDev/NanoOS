@@ -16,7 +16,7 @@ KERNEL_DIR  = $(SRC_DIR)/kernel
 # Files
 KERNEL_ELF  = $(BUILD_DIR)/kernel.elf
 ISO_IMAGE   = $(BUILD_DIR)/nanoos.iso
-
+DISK_IMAGE  = $(BUILD_DIR)/disk.img
 LINKER      = $(KERNEL_DIR)/linker.ld
 
 # recursive wildcard
@@ -71,9 +71,14 @@ iso: $(KERNEL_ELF)
 	cp $(GRUB_DIR)/grub.cfg $(ISO_DIR)/boot/grub/
 	grub-mkrescue -o $(ISO_IMAGE) $(ISO_DIR)
 
+# --- Disk ---
+disk:
+	@mkdir -p $(BUILD_DIR)
+	qemu-img create -f raw $(DISK_IMAGE) 64M
+
 # --- Run ---
-run: iso
-	qemu-system-i386 -m 4G -cdrom $(ISO_IMAGE) -no-reboot -d int,cpu_reset -D q.log -serial file:serial.log
+run: iso disk
+	qemu-system-i386 -m 4G -cdrom $(ISO_IMAGE) -drive file=$(DISK_IMAGE),format=raw,if=ide -no-reboot -d int,cpu_reset -D q.log -serial file:serial.log
 
 # --- Clean ---
 clean:
