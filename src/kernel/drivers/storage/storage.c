@@ -7,6 +7,8 @@
 #include <storage.h>
 #include <serial.h>
 #include <kernel.h>
+#include <console.h>
+#include <print.h>
 
 static disk_t* disks[MAX_DISKS];
 uint8_t disk_count = 0;
@@ -60,17 +62,37 @@ uint8_t storage_write(disk_t* disk, uint64_t lba, uint32_t count, const void* bu
     return disk->write(disk, lba, count, buffer);
 }
 
-void storage_dump_info(disk_t* disk) {
+void storage_dump_disk(disk_t* disk) {
     if (!disk) {
-        serial_printf("Storage: No disk provided.\n");
+        console_puts(U"Storage: No disk provided.\n");
         return;
     }
 
-    serial_printf("Storage: Disk Name: %s\n", disk->name);
-    serial_printf("Storage: Total Sectors: %llu\n", disk->total_sectors);
-    serial_printf("Storage: Sector Size: %u bytes\n", disk->sector_size);
-    serial_printf("Storage: Disk Type: %d\n", disk->type);
-    serial_printf("Storage: Total Capacity: %llu MB\n", (disk->total_sectors * disk->sector_size) / (1024 * 1024));
-    serial_printf("Storage: Read Support: %s\n", disk->read ? "Yes" : "No");
-    serial_printf("Storage: Write Support: %s\n", disk->write ? "Yes" : "No");
+    char buf[128];
+    snprintf(buf, sizeof(buf), "  Name:           %s\n", disk->name);
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+    snprintf(buf, sizeof(buf), "  Type:           %s\n", disk->type == TYPE_ATA ? "ATA" : (disk->type == TYPE_AHCI ? "AHCI" : "Unknown"));
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+    snprintf(buf, sizeof(buf), "  Total Sectors:  %llu\n", disk->total_sectors);
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+    snprintf(buf, sizeof(buf), "  Sector Size:    %u bytes\n", disk->sector_size);
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+    snprintf(buf, sizeof(buf), "  Capacity:       %llu MB\n", (disk->total_sectors * disk->sector_size) / (1024 * 1024));
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+    snprintf(buf, sizeof(buf), "  Capabilities:   %s%s\n", disk->read ? "READ " : "", disk->write ? "WRITE" : "");
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+}
+
+void storage_dump_info() {
+    char buf[64];
+    console_puts(U"Storage Devices:\n");
+    snprintf(buf, sizeof(buf), "Total Disks: %u\n\n", disk_count);
+    for (int i = 0; buf[i]; i++) console_putc((uint32_t)buf[i]);
+
+    for (uint8_t i = 0; i < disk_count; i++) {
+        snprintf(buf, sizeof(buf), "[Disk %u]\n", i);
+        for (int j = 0; buf[j]; j++) console_putc((uint32_t)buf[j]);
+        storage_dump_disk(disks[i]);
+        console_putc(U'\n');
+    }
 }

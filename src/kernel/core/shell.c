@@ -14,6 +14,7 @@
 #include <print.h>
 #include <convert.h>
 #include <acpi.h>
+#include <storage.h>
 
 uint32_t command_buffer[MAX_COMMAND_LENGTH];
 size_t command_buffer_pos = 0;
@@ -73,6 +74,12 @@ void shell_command_heap(int argc, uint32_t** argv) {
         }
         current = current->next;
     }
+}
+
+void shell_command_storage(int argc, uint32_t** argv) {
+    (void)argc;
+    (void)argv;
+    storage_dump_info();
 }
 
 void shell_command_acpiinfo(int argc, uint32_t** argv) {
@@ -147,6 +154,13 @@ void shell_init(void) {
         .description = U"Displays the current heap layout"
     };
     shell_register_command(&heap_command);
+
+    shell_command_t storage_command = {
+        .name = U"storage",
+        .handler = shell_command_storage,
+        .description = U"Displays information about storage devices"
+    };
+    shell_register_command(&storage_command);
 
     shell_command_t acpi_command = {
         .name = U"acpiinfo",

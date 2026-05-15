@@ -33,4 +33,5 @@ void storage_register_disk(disk_t* disk);
 uint8_t storage_get_disk_count();
 uint8_t storage_read(disk_t* disk, uint64_t lba, uint32_t count, void* buffer);
 uint8_t storage_write(disk_t* disk, uint64_t lba, uint32_t count, const void* buffer);
-void storage_dump_info(disk_t* disk);
+void storage_dump_disk(disk_t* disk);
+void storage_dump_info();
