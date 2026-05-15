@@ -109,16 +109,6 @@ int uint_to_str_legacy(uint64_t value, char* buffer, int base) {
 }
 
 /**
- * @brief Converts a BCD (Binary Coded Decimal) byte to a decimal byte.
- * 
- * @param bcd The BCD encoded value.
- * @return uint8_t The decimal representation.
- */
-uint8_t bcd_to_dezimal(uint8_t bcd) {
-    return ((bcd >> 4) * 10) + (bcd & 0x0F);
-}
-
-/**
  * @brief Converts a null-terminated uint32_t string to a char string.
  * @param ustr The source uint32_t string.
  * @param buffer The destination char buffer.
@@ -132,4 +122,76 @@ char * ustr_to_str(const uint32_t* ustr, char* buffer, size_t buffer_size) {
     }
     buffer[i] = '\0';
     return buffer;
+}
+
+/**
+ * @brief Converts a uint32_t string to a 64-bit unsigned integer.
+ * Supports decimal and hexadecimal (0x prefix).
+ * @param str The source uint32_t string.
+ * @return The converted uint64_t value.
+ */
+uint64_t str_to_u64(const uint32_t* str) {
+    uint64_t res = 0;
+    if (!str) return 0;
+    
+    // Skip hex prefix if present
+    if (str[0] == U'0' && (str[1] == U'x' || str[1] == U'X')) {
+        str += 2;
+        while ((*str >= U'0' && *str <= U'9') || (*str >= U'a' && *str <= U'f') || (*str >= U'A' && *str <= U'F')) {
+            uint8_t val;
+            if (*str >= U'a' && *str <= U'f') val = *str - U'a' + 10;
+            else if (*str >= U'A' && *str <= U'F') val = *str - U'A' + 10;
+            else val = *str - U'0';
+            res = res * 16 + val;
+            str++;
+        }
+        return res;
+    }
+
+    while (*str >= U'0' && *str <= U'9') {
+        res = res * 10 + (*str - U'0');
+        str++;
+    }
+    return res;
+}
+
+/**
+ * @brief Converts a char string to a 64-bit unsigned integer (legacy version).
+ * Supports decimal and hexadecimal (0x prefix).
+ * @param str The source char string.
+ * @return The converted uint64_t value.
+ */
+uint64_t str_to_u64_legacy(const char* str) {
+    uint64_t res = 0;
+    if (!str) return 0;
+
+    // Skip hex prefix if present
+    if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X')) {
+        str += 2;
+        while ((*str >= '0' && *str <= '9') || (*str >= 'a' && *str <= 'f') || (*str >= 'A' && *str <= 'F')) {
+            uint8_t val;
+            if (*str >= 'a' && *str <= 'f') val = *str - 'a' + 10;
+            else if (*str >= 'A' && *str <= 'F') val = *str - 'A' + 10;
+            else val = *str - '0';
+            res = res * 16 + val;
+            str++;
+        }
+        return res;
+    }
+
+    while (*str >= '0' && *str <= '9') {
+        res = res * 10 + (*str - '0');
+        str++;
+    }
+    return res;
+}
+
+/**
+ * @brief Converts a BCD (Binary Coded Decimal) byte to a decimal byte.
+ * 
+ * @param bcd The BCD encoded value.
+ * @return uint8_t The decimal representation.
+ */
+uint8_t bcd_to_dezimal(uint8_t bcd) {
+    return ((bcd >> 4) * 10) + (bcd & 0x0F);
 }
