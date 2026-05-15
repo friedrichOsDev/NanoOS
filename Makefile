@@ -14,10 +14,11 @@ GRUB_DIR = grub
 KERNEL_DIR  = $(SRC_DIR)/kernel
 
 # Files
-KERNEL_ELF  = $(BUILD_DIR)/kernel.elf
-ISO_IMAGE   = $(BUILD_DIR)/nanoos.iso
-DISK_IMAGE  = $(BUILD_DIR)/disk.img
-LINKER      = $(KERNEL_DIR)/linker.ld
+KERNEL_ELF   = $(BUILD_DIR)/kernel.elf
+ISO_IMAGE    = $(BUILD_DIR)/nanoos.iso
+DISK_IMAGE_1 = $(BUILD_DIR)/disk1.img
+DISK_IMAGE_2 = $(BUILD_DIR)/disk2.img
+LINKER       = $(KERNEL_DIR)/linker.ld
 
 # recursive wildcard
 rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
@@ -71,14 +72,15 @@ iso: $(KERNEL_ELF)
 	cp $(GRUB_DIR)/grub.cfg $(ISO_DIR)/boot/grub/
 	grub-mkrescue -o $(ISO_IMAGE) $(ISO_DIR)
 
-# --- Disk ---
-disk:
+# --- Disks ---
+disks:
 	@mkdir -p $(BUILD_DIR)
-	qemu-img create -f raw $(DISK_IMAGE) 64M
+	qemu-img create -f raw $(DISK_IMAGE_1) 64M
+	qemu-img create -f raw $(DISK_IMAGE_2) 1G
 
 # --- Run ---
-run: iso disk
-	qemu-system-i386 -m 4G -cdrom $(ISO_IMAGE) -drive file=$(DISK_IMAGE),format=raw,if=ide -no-reboot -d int,cpu_reset -D q.log -serial file:serial.log
+run: iso disks
+	qemu-system-i386 -m 4G -cdrom $(ISO_IMAGE) -drive file=$(DISK_IMAGE_1),format=raw,if=ide -drive file=$(DISK_IMAGE_2),format=raw,if=ide -no-reboot -d int,cpu_reset -D q.log -serial file:serial.log
 
 # --- Clean ---
 clean:
