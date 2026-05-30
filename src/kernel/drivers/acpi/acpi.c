@@ -17,38 +17,6 @@ fadt_t* fadt;
 madt_t* madt;
 madt_parsed_t madt_parsed;
 
-static virt_addr_t next_acpi_vaddr = VMM_ACPI_BASE;
-
-/**
- * @brief Maps a physical memory region into the virtual ACPI memory space.
- * This is a simple linear allocator and does not handle freeing space.
- * @param phys_addr The starting physical address of the region to map.
- * @param length The length of the region.
- * @return The new virtual address of the mapped region, or NULL on failure.
- */
-static void* acpi_map_permanent(phys_addr_t phys_addr, uint32_t length) {
-    if (!phys_addr) {
-        return NULL;
-    }
-
-    uint32_t offset = phys_addr & (VMM_PAGE_SIZE - 1);
-    phys_addr_t phys_start = phys_addr - offset;
-    uint32_t num_pages = (offset + length + VMM_PAGE_SIZE - 1) / VMM_PAGE_SIZE;
-
-    if (next_acpi_vaddr + (num_pages * VMM_PAGE_SIZE) > VMM_ACPI_END) {
-        serial_printf("ACPI: Out of virtual memory for mapping tables!\n");
-        return NULL;
-    }
-
-    virt_addr_t virt_start = next_acpi_vaddr;
-    
-    vmm_map_pages(vmm_get_page_directory(), virt_start, phys_start, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE, num_pages);
-
-    next_acpi_vaddr += num_pages * VMM_PAGE_SIZE;
-
-    return (void*)(virt_start + offset);
-}
-
 /**
  * @brief Verifies the checksum of the Root System Description Pointer (RSDP).
  * @param rsdp Pointer to the RSDP structure to verify.
@@ -130,7 +98,7 @@ static acpi_sdt_header_t* acpi_find_table(const char* signature) {
 
         if (memcmp(header->signature, signature, 4) == 0) {
             uint32_t length = header->length;
-            acpi_sdt_header_t* full_table = acpi_map_permanent(table_phys, length);
+            acpi_sdt_header_t* full_table = io_map_permanent(table_phys, length);
 
             if (full_table && acpi_verify_sdt_checksum(full_table)) {
                 return full_table;
@@ -166,14 +134,14 @@ static void acpi_find_root_sdt() {
     uint32_t length = header->length;
 
     if (is_xsdt) {
-        xsdt = acpi_map_permanent(root_phys, length);
+        xsdt = io_map_permanent(root_phys, length);
         if (xsdt && !acpi_verify_sdt_checksum(&xsdt->header)) {
             serial_printf("ACPI: XSDT checksum verification failed!\n");
             xsdt = NULL;
         }
         if (xsdt) serial_printf("ACPI: XSDT found at phys %llx, mapped to %x\n", rsdp->xsdt_address, (uint32_t)xsdt);
     } else {
-        rsdt = acpi_map_permanent(root_phys, length);
+        rsdt = io_map_permanent(root_phys, length);
         if (rsdt && !acpi_verify_sdt_checksum(&rsdt->header)) {
             serial_printf("ACPI: RSDT checksum verification failed!\n");
             rsdt = NULL;

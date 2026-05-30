@@ -11,6 +11,7 @@
 
 extern uint32_t boot_page_table_zero_window[1024];
 static page_directory_t* current_directory = NULL;
+static virt_addr_t next_mmio_vaddr = VMM_MMIO_BASE;
 
 /**
  * @brief Switches the active page directory.
@@ -383,4 +384,41 @@ phys_addr_t vmm_virtual_to_physical(page_directory_t* dir, virt_addr_t virtual_a
  */
 page_directory_t* vmm_get_page_directory(void) {
     return current_directory;
+}
+
+/**
+ * @brief Maps a physical memory region into the virtual MMIO memory space.
+ * This is a simple linear allocator and does not handle freeing space.
+ * @param phys_addr The starting physical address of the region to map.
+ * @param length The length of the region in bytes.
+ * @return The virtual address of the mapped region, or NULL on failure.
+ */
+void* io_map_permanent(phys_addr_t phys_addr, uint32_t length) {
+    if (!phys_addr || length == 0) {
+        return NULL;
+    }
+
+    // Calculate offset within the page
+    uint32_t offset = phys_addr & (VMM_PAGE_SIZE - 1);
+    phys_addr_t phys_start = phys_addr - offset;
+    
+    // Calculate number of pages needed
+    uint32_t num_pages = (offset + length + VMM_PAGE_SIZE - 1) / VMM_PAGE_SIZE;
+
+    // Check if the MMIO space in the virtual layout is sufficient
+    if (next_mmio_vaddr + (num_pages * VMM_PAGE_SIZE) > VMM_MMIO_END) {
+        serial_printf("MMIO: Error: Out of virtual memory space for mapping!\n");
+        return NULL;
+    }
+
+    virt_addr_t virt_start = next_mmio_vaddr;
+
+    // Map pages with cache disabled for MMIO
+    vmm_map_pages(vmm_get_page_directory(), virt_start, phys_start, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE | VMM_PAGE_CACHE_DISABLED, num_pages);
+
+    // Advance virtual pointer for the next call
+    next_mmio_vaddr += num_pages * VMM_PAGE_SIZE;
+
+    // Return pointer including the original offset
+    return (void*)(virt_start + offset);
 }

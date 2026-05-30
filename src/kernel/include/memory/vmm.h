@@ -40,9 +40,9 @@
 #define VMM_HEAP_END             0xDFFFFFFF
 #define VMM_FRAMEBUFFER_BASE     0xE0000000
 #define VMM_FRAMEBUFFER_END      0xEFFFFFFF
-#define VMM_ACPI_BASE            0xF0000000
-#define VMM_ACPI_END             0xF01FFFFF
-#define VMM_RESERVED_BASE        (VMM_ACPI_END + 1)
+#define VMM_MMIO_BASE            0xF0000000
+#define VMM_MMIO_END             (VMM_MMIO_BASE + 0x01FFFFFF) // 32MB for MMIO (including ACPI)
+#define VMM_RESERVED_BASE        (VMM_MMIO_END + 1)
 #define VMM_RESERVED_END         VMM_ZERO_WINDOW - 1
 #define VMM_ZERO_WINDOW_BASE     VMM_ZERO_WINDOW
 #define VMM_RECURSIVE_BASE       VMM_TABLES_BASE
@@ -83,3 +83,4 @@ void vmm_unmap_pages(page_directory_t* dir, virt_addr_t virtual_start_address, u
 bool vmm_is_region_free(page_directory_t* dir, virt_addr_t start, uint32_t count);
 phys_addr_t vmm_virtual_to_physical(page_directory_t* dir, virt_addr_t virtual_address);
 page_directory_t* vmm_get_page_directory(void);
+void* io_map_permanent(phys_addr_t phys_addr, uint32_t length);

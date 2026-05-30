@@ -65,10 +65,16 @@ typedef struct {
 
 /**
  * @brief Structure representing a PCI driver.
+ * @note class_code, subclass and prog_if are only used if vendor_id is 0
  */
 typedef struct {
-    uint16_t vendor_id;
+    uint16_t vendor_id; 
     uint16_t device_id;
+    
+    uint8_t class_code;
+    uint8_t subclass;
+    uint8_t prog_if;
+    
     const char * name;
     void (* init)(pci_device_t * dev);
 } pci_driver_t;

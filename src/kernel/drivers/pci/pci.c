@@ -8,6 +8,7 @@
 #include <serial.h>
 #include <kernel.h>
 #include <heap.h>
+#include <ahci.h>
 #include <rtx3050.h>
 
 uint32_t pci_config_read_dword(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset) {
@@ -38,14 +39,24 @@ void pci_config_write_dword(uint8_t bus, uint8_t device, uint8_t function, uint8
 size_t driver_database_size = 0;
 pci_driver_t * driver_database = NULL;
 
+pci_driver_t ahci_driver = {
+    .vendor_id = 0,
+    .class_code = 0x01, // Mass Storage
+    .subclass = 0x06, // SATA Controller
+    .prog_if = 0x01, // AHCI HBA
+    .name = "AHCI SATA Controller",
+    .init = ahci_init_device
+};
+
 pci_driver_t rtx3050 = {
     .vendor_id = 0x10DE,
     .device_id = 0x2584,
     .name = "NVIDIA GeForce RTX 3050",
-    .init = rtx3050_init
+    .init = rtx3050_init_device
 };
 
 void pci_init() {
+    pci_register_driver(&ahci_driver);
     pci_register_driver(&rtx3050);
     init_state = INIT_PCI;
 }
@@ -54,20 +65,19 @@ void pci_register_driver(pci_driver_t * driver) {
     if (driver_database_size == 0) {
         driver_database = (pci_driver_t *)kmalloc(sizeof(pci_driver_t) * 2);
         driver_database[0] = *driver;
-        driver_database[1] = (pci_driver_t){0, 0, NULL, NULL};
+        driver_database[1] = (pci_driver_t){0, 0, 0, 0, 0, NULL, NULL};
         driver_database_size = 2;
     } else {
         driver_database_size++;
         driver_database = (pci_driver_t *)krealloc((virt_addr_t)driver_database, sizeof(pci_driver_t) * driver_database_size);
         driver_database[driver_database_size - 2] = *driver;
-        driver_database[driver_database_size - 1] = (pci_driver_t){0, 0, NULL, NULL};
+        driver_database[driver_database_size - 1] = (pci_driver_t){0, 0, 0, 0, 0, NULL, NULL};
     }
     for (uint16_t bus = 0; bus < 256; bus++) {
         for (uint8_t device = 0; device < 32; device++) {
             pci_check_dev((uint8_t)bus, device, driver);
         }
     }
-    
 }
 
 void pci_check_dev(uint8_t bus, uint8_t device, pci_driver_t * driver) {
@@ -94,6 +104,25 @@ void pci_check_dev(uint8_t bus, uint8_t device, pci_driver_t * driver) {
         uint32_t class_res = pci_config_read_dword(bus, device, function, PCI_REVISION_ID);
         uint8_t class_code = (uint8_t)((class_res >> 24) & 0xFF);
         uint8_t subclass = (uint8_t)((class_res >> 16) & 0xFF);
+        uint8_t prog_if = (uint8_t)((class_res >> 8) & 0xFF);
+        
+        uint8_t is_match = 0;
+
+        if (driver->vendor_id != 0) {
+            // Try match via exact vendor/device ID
+            if (driver->vendor_id == func_vendor_id && driver->device_id == device_id) {
+                is_match = 1;
+            }
+        } else {
+            // Try match via class/subclass/prog_if
+            if (driver->class_code == class_code && 
+                driver->subclass == subclass && 
+                driver->prog_if == prog_if) {
+                is_match = 1;
+            }
+        }
+
+        if (!is_match) continue;
 
         pci_device_t dev = {
             .bus = bus,
@@ -103,15 +132,11 @@ void pci_check_dev(uint8_t bus, uint8_t device, pci_driver_t * driver) {
             .device_id = device_id,
             .class_code = class_code,
             .subclass = subclass,
-            .prog_if = (uint8_t)((class_res >> 8) & 0xFF)
+            .prog_if = prog_if
         };
 
-        if (driver->vendor_id == func_vendor_id && driver->device_id == device_id) {
-            if (driver->init) {
-                driver->init(&dev);
-            }
-        } else {
-            return;
+        if (driver->init) {
+            driver->init(&dev);
         }
 
         pci_print_device_info(&dev);

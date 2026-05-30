@@ -10,4 +10,4 @@
 #include <stddef.h>
 #include <pci.h>
 
-void rtx3050_init(pci_device_t * dev);
+void rtx3050_init_device(pci_device_t * dev);
