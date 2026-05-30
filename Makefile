@@ -76,7 +76,10 @@ iso: $(KERNEL_ELF)
 disks:
 	@mkdir -p $(BUILD_DIR)
 	qemu-img create -f raw $(DISK_IMAGE_1) 64M
+	dd if=/dev/urandom of=$(DISK_IMAGE_1) bs=1M count=64 conv=notrunc
 	qemu-img create -f raw $(DISK_IMAGE_2) 1G
+	dd if=/dev/urandom of=$(DISK_IMAGE_2) bs=1M count=1024 conv=notrunc
+	
 
 # --- Run ---
 run: iso disks

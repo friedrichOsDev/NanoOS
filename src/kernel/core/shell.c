@@ -82,6 +82,94 @@ void shell_command_storage(int argc, uint32_t** argv) {
     storage_dump_info();
 }
 
+void shell_command_storage_read(int argc, uint32_t** argv) {
+    if (argc < 3) {
+        console_puts(U"Usage: storage_read <disk_index> <sector>\n");
+        return;
+    }
+
+    uint8_t disk_idx = (uint8_t)str_to_u64(argv[1]);
+    uint64_t lba = (uint64_t)str_to_u64(argv[2]);
+
+    disk_t* disk = storage_get_disk(disk_idx);
+    if (!disk) {
+        console_puts(U"Error: Disk not found.\n");
+        return;
+    }
+
+    uint8_t* buffer = (uint8_t*)kmalloc(disk->sector_size);
+    if (!buffer) {
+        console_puts(U"Error: Memory allocation failed.\n");
+        return;
+    }
+
+    if (storage_read(disk, lba, 1, buffer) == 0) {
+        char out[16];
+        for (uint32_t i = 0; i < disk->sector_size; i++) {
+            snprintf(out, sizeof(out), "%02x ", buffer[i]);
+            for (int j = 0; out[j]; j++) console_putc((uint32_t)out[j]);
+            if ((i + 1) % 16 == 0) console_putc(U'\n');
+        }
+        console_putc(U'\n');
+    } else {
+        console_puts(U"Error: Failed to read from disk.\n");
+    }
+
+    kfree((virt_addr_t)buffer);
+}
+
+void shell_command_storage_write(int argc, uint32_t** argv) {
+    (void)argv;
+    if (argc < 4) {
+        console_puts(U"Usage: storage_read <disk_index> <sector> <data> (data format: DEADBEEF -> plain bytes)\n");
+        return;
+    }
+
+    uint8_t disk_idx = (uint8_t)str_to_u64(argv[1]);
+    uint64_t lba = (uint64_t)str_to_u64(argv[2]);
+    uint32_t* hex_data = argv[3];
+
+    disk_t* disk = storage_get_disk(disk_idx);
+    if (!disk) {
+        console_puts(U"Error: Disk not found.\n");
+        return;
+    }
+
+    uint8_t* buffer = (uint8_t*)kmalloc(disk->sector_size);
+    if (!buffer) {
+        console_puts(U"Error: Memory allocation failed.\n");
+        return;
+    }
+
+    memset(buffer, 0, disk->sector_size);
+
+    size_t hex_len = 0;
+    while (hex_data[hex_len]) hex_len++;
+
+    for (size_t i = 0; i < hex_len / 2 && i < disk->sector_size; i++) {
+        uint32_t hex_byte_u32[3] = { hex_data[i * 2], hex_data[i * 2 + 1], U'\0' };
+        
+        uint8_t byte_val = 0;
+        for (int j = 0; j < 2; j++) {
+            uint32_t c = hex_byte_u32[j];
+            uint8_t val = (c >= U'0' && c <= U'9') ? (c - U'0') :
+                          (c >= U'A' && c <= U'F') ? (c - U'A' + 10) :
+                          (c >= U'a' && c <= U'f') ? (c - U'a' + 10) : 0;
+            byte_val = (byte_val << 4) | (val & 0xF);
+        }
+        buffer[i] = byte_val;
+        serial_printf("Parsed byte %zu: %02x\n", i, byte_val);
+    }
+
+    if (storage_write(disk, lba, 1, buffer) == 0) {
+        console_puts(U"Write successful.\n");
+    } else {
+        console_puts(U"Error: Failed to write to disk.\n");
+    }
+
+    kfree((virt_addr_t)buffer);
+}
+
 void shell_command_acpiinfo(int argc, uint32_t** argv) {
     (void)argc;
     (void)argv;
@@ -161,6 +249,20 @@ void shell_init(void) {
         .description = U"Displays information about storage devices"
     };
     shell_register_command(&storage_command);
+
+    shell_command_t storage_read_command = {
+        .name = U"storage_read",
+        .handler = shell_command_storage_read,
+        .description = U"Reads a sector from a storage device (usage: storage_read <disk_index> <sector>)"
+    };
+    shell_register_command(&storage_read_command);
+
+    shell_command_t storage_write_command = {
+        .name = U"storage_write",
+        .handler = shell_command_storage_write,
+        .description = U"Writes a sector to a storage device (usage: storage_write <disk_index> <sector> <data>)"
+    };
+    shell_register_command(&storage_write_command);
 
     shell_command_t acpi_command = {
         .name = U"acpiinfo",
