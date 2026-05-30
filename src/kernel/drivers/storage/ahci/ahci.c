@@ -17,8 +17,27 @@ static HBA_cmd_tbl_t    cmd_tables[32][32]  __attribute__((aligned(128)));
 
 void ahci_interrupt_handler(struct registers* regs) {
     (void)regs;
-    serial_printf("AHCI: Interrupt received\n");
-    // TODO: Real Handling (based on OsDev Wiki)
+    if (!ahci_abar) return;
+
+    uint32_t is = ahci_abar->is;
+    if (is == 0) return;
+
+    ahci_abar->is = is;
+
+    for (int i = 0; i < 32; i++) {
+        if (is & (1 << i)) {
+            HBA_port_t* port = &ahci_abar->ports[i];
+
+            uint32_t pis = port->is;
+            port->is = pis;
+
+            if (pis == 0) continue;
+
+            if (pis & HBA_PxIS_TFES) {
+                serial_printf("AHCI: Fatal error on port %d! PxIS: %x, PxTFD: %x\n", i, pis, port->tfd);
+            }
+        }
+    }
 }
 
 void ahci_init_device(pci_device_t* dev) {
