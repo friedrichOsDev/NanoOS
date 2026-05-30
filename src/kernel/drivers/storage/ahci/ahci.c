@@ -18,6 +18,7 @@ static HBA_cmd_tbl_t    cmd_tables[32][32]  __attribute__((aligned(128)));
 void ahci_interrupt_handler(struct registers* regs) {
     (void)regs;
     serial_printf("AHCI: Interrupt received\n");
+    // TODO: Real Handling (based on OsDev Wiki)
 }
 
 void ahci_init_device(pci_device_t* dev) {
