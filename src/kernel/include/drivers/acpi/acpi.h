@@ -133,6 +133,9 @@ typedef struct {
     gas_t X_PM_timer_block;
     gas_t X_GPE0_block;
     gas_t X_GPE1_block;
+    gas_t sleep_control_register;
+    gas_t sleep_status_register;
+    uint64_t hypervisor_vendor_identity;
 } __attribute__((packed)) fadt_t;
 
 /**
@@ -249,6 +252,7 @@ extern rsdp_t* rsdp;
 extern rsdt_t* rsdt;
 extern xsdt_t* xsdt;
 extern fadt_t* fadt;
+extern acpi_sdt_header_t* dsdt;
 extern madt_t* madt;
 extern madt_parsed_t madt_parsed;
 
@@ -256,3 +260,4 @@ void acpi_init(rsdp_t * rsdp_ptr);
 void acpi_dump_info();
 void acpi_dump_fadt();
 void acpi_dump_madt();
+void acpi_power_off();

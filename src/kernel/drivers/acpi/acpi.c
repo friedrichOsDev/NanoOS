@@ -9,11 +9,14 @@
 #include <memory.h>
 #include <print.h>
 #include <console.h>
+#include <io.h>
+#include <cpu.h>
 
 rsdp_t* rsdp;
 rsdt_t* rsdt;
 xsdt_t* xsdt;
 fadt_t* fadt;
+acpi_sdt_header_t* dsdt = NULL;
 madt_t* madt;
 madt_parsed_t madt_parsed;
 
@@ -164,6 +167,34 @@ static void acpi_find_fadt() {
 }
 
 /**
+ * @brief Locates the Differentiated System Description Table (DSDT) using the FADT.
+ * If found, sets the global dsdt pointer.
+ */
+static void acpi_find_dsdt() {
+    if (!fadt) {
+        serial_printf("ACPI: Cannot find DSDT, FADT not found!\n");
+        return;
+    }
+
+    phys_addr_t dsdt_phys = fadt->dsdt;
+    if (dsdt_phys == 0) {
+        serial_printf("ACPI: FADT does not contain a DSDT address!\n");
+        return;
+    }
+
+    vmm_prepare_zero_window(PMM_ALIGN_DOWN(dsdt_phys), 0);
+    acpi_sdt_header_t* header = (acpi_sdt_header_t*)(VMM_ZERO_WINDOW + (dsdt_phys & (VMM_PAGE_SIZE - 1)));
+    uint32_t length = header->length;
+
+    dsdt = io_map_permanent(dsdt_phys, length);
+    if (dsdt && !acpi_verify_sdt_checksum(dsdt)) {
+        serial_printf("ACPI: DSDT checksum verification failed!\n");
+        dsdt = NULL;
+    }
+    if (dsdt) serial_printf("ACPI: DSDT found at phys %x, mapped to %x\n", (uint32_t)dsdt_phys, (uint32_t)dsdt);
+}
+
+/**
  * @brief Locates the Multiple APIC Description Table (MADT) in the RSDT.
  * If found, sets the global madt pointer.
  */
@@ -294,6 +325,7 @@ void acpi_init(rsdp_t * rsdp_ptr) {
     serial_printf("ACPI: Finding tables...\n");
     acpi_find_root_sdt();
     acpi_find_fadt();
+    acpi_find_dsdt();
     acpi_find_madt();
     acpi_parse_madt();
 }
@@ -399,4 +431,59 @@ void acpi_dump_madt() {
             for (int j = 0; buf[j]; j++) console_putc((uint32_t)buf[j]);
         }
     }
+}
+
+/**
+ * @brief Attempts to power off the system using ACPI.
+ */
+void acpi_power_off() {
+    if (!fadt || !dsdt) {
+        serial_printf("ACPI: Cannot power off, FADT or DSDT not mapped!\n");
+        return;
+    }
+
+    uint8_t* ptr = (uint8_t*)dsdt + sizeof(acpi_sdt_header_t);
+    uint8_t* end = (uint8_t*)dsdt + dsdt->length;
+
+    uint16_t SLP_TYPa = 0;
+    uint16_t SLP_TYPb = 0;
+    bool found = false;
+
+    while (ptr < end - 8) {
+        if (memcmp(ptr, "_S5_", 4) == 0) {
+            ptr += 4;
+            if (*ptr == 0x12) {
+                ptr++;
+                uint8_t b = *ptr++;
+                uint8_t pkg_len_bytes = (b >> 6);
+                ptr += pkg_len_bytes;
+                
+                ptr++;
+                
+                if (*ptr == 0x0A) ptr++;
+                SLP_TYPa = *ptr++;
+                
+                if (*ptr == 0x0A) ptr++;
+                SLP_TYPb = *ptr++;
+                
+                found = true;
+                break;
+            }
+        }
+        ptr++;
+    }
+
+    if (found) {
+        serial_printf("ACPI: Found _S5 package, SLP_TYPa: %x, SLP_TYPb: %x\n", SLP_TYPa, SLP_TYPb);
+        
+        outw(fadt->PM1a_control_block, (uint16_t)((SLP_TYPa << 10) | (1 << 13)));
+        if (fadt->PM1b_control_block) {
+            outw(fadt->PM1b_control_block, (uint16_t)((SLP_TYPb << 10) | (1 << 13)));
+        }
+    } else {
+        serial_printf("ACPI: _S5 package not found in DSDT! Trying QEMU fallback...\n");
+        outw(fadt->PM1a_control_block, (uint16_t)((0 << 10) | (1 << 13)));
+    }
+    
+    while(1) cpu_hlt();
 }

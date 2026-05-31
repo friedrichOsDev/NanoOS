@@ -188,6 +188,13 @@ void shell_command_madtinfo(int argc, uint32_t** argv) {
     acpi_dump_madt();
 }
 
+void shell_command_shutdown(int argc, uint32_t** argv) {
+    (void)argc;
+    (void)argv;
+    console_puts(U"Shutting down...\n");
+    acpi_power_off();
+}
+
 bool shell_move_cursor_left(bool release) {
     if (release) return true;
     if (cursor_pos > 0) {
@@ -284,6 +291,13 @@ void shell_init(void) {
         .description = U"Displays MADT table details"
     };
     shell_register_command(&madt_command);
+
+    shell_command_t shutdown_command = {
+        .name = U"shutdown",
+        .handler = shell_command_shutdown,
+        .description = U"Powers off the system"
+    };
+    shell_register_command(&shutdown_command);
 
     keyboard_map_function_to_vk(VK_LEFT, shell_move_cursor_left);
     keyboard_map_function_to_vk(VK_RIGHT, shell_move_cursor_right);
