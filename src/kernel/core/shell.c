@@ -15,6 +15,7 @@
 #include <convert.h>
 #include <acpi.h>
 #include <storage.h>
+#include <partman.h>
 
 uint32_t command_buffer[MAX_COMMAND_LENGTH];
 size_t command_buffer_pos = 0;
@@ -170,6 +171,12 @@ void shell_command_storage_write(int argc, uint32_t** argv) {
     kfree((virt_addr_t)buffer);
 }
 
+void shell_command_partman(int argc, uint32_t** argv) {
+    (void)argc;
+    (void)argv;
+    partman_dump_info();
+}
+
 void shell_command_acpiinfo(int argc, uint32_t** argv) {
     (void)argc;
     (void)argv;
@@ -270,6 +277,13 @@ void shell_init(void) {
         .description = U"Writes a sector to a storage device (usage: storage_write <disk_index> <sector> <data>)"
     };
     shell_register_command(&storage_write_command);
+
+    shell_command_t partman_command = {
+        .name = U"partman",
+        .handler = shell_command_partman,
+        .description = U"Displays the partition table information"
+    };
+    shell_register_command(&partman_command);
 
     shell_command_t acpi_command = {
         .name = U"acpiinfo",

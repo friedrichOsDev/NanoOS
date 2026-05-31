@@ -27,6 +27,7 @@
 #include <string.h>
 #include <storage.h>
 #include <ata.h>
+#include <partman.h>
 
 init_state_t init_state = INIT_START;
 mmap_t kernel_mmap;
@@ -160,6 +161,8 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     storage_init();
     pci_init();
     ata_init();
+
+    partman_init();
 
     // We have an emulated PS/2 controller so the initialization does not work
     // i8042_init();
