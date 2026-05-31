@@ -30,6 +30,7 @@ RUN apt-get update && apt-get install -y \
     gdb \
     git \
     ca-certificates \
+    parted \
     && rm -rf /var/lib/apt/lists/*
 
 # Cross Compiler config

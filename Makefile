@@ -76,14 +76,15 @@ iso: $(KERNEL_ELF)
 disks:
 	@mkdir -p $(BUILD_DIR)
 	qemu-img create -f raw $(DISK_IMAGE_1) 64M
-	dd if=/dev/urandom of=$(DISK_IMAGE_1) bs=1M count=64 conv=notrunc
+	parted --script $(DISK_IMAGE_1) mklabel msdos
+	parted --script $(DISK_IMAGE_1) mkpart primary fat32 1MiB 100%
 	qemu-img create -f raw $(DISK_IMAGE_2) 1G
-	dd if=/dev/urandom of=$(DISK_IMAGE_2) bs=1M count=1024 conv=notrunc
-	
+	parted --script $(DISK_IMAGE_2) mklabel gpt
+	parted --script $(DISK_IMAGE_2) mkpart root fat32 1052672s 100%
 
 # --- Run ---
 run: iso disks
-	qemu-system-i386 -m 4G -cdrom $(ISO_IMAGE) -drive file=$(DISK_IMAGE_1),format=raw,if=ide -drive file=$(DISK_IMAGE_2),format=raw,if=ide -no-reboot -d int,cpu_reset -D q.log -serial file:serial.log
+	qemu-system-i386 -m 4G -cdrom $(ISO_IMAGE) -boot d -drive file=$(DISK_IMAGE_1),format=raw,if=ide -drive file=$(DISK_IMAGE_2),format=raw,if=ide -no-reboot -d int,cpu_reset -D q.log -serial file:serial.log
 
 # --- Clean ---
 clean:
