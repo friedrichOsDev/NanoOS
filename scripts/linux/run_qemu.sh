@@ -1,1 +1,1 @@
-qemu-system-i386 -m 4G -cdrom build/nanoos.iso -no-reboot -d int,cpu_reset -D q.log -serial file:serial.log
+qemu-system-i386 -m 4G -vga std -cdrom build/nanoos.iso -boot d -drive file=build/disk1.img,format=raw,if=ide -drive file=build/disk2.img,format=raw,if=ide -no-reboot -d int,cpu_reset -D q.log -serial file:serial.log

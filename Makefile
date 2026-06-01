@@ -84,7 +84,7 @@ disks:
 
 # --- Run ---
 run: iso disks
-	qemu-system-i386 -m 4G -cdrom $(ISO_IMAGE) -boot d -drive file=$(DISK_IMAGE_1),format=raw,if=ide -drive file=$(DISK_IMAGE_2),format=raw,if=ide -no-reboot -d int,cpu_reset -D q.log -serial file:serial.log
+	qemu-system-i386 -m 4G -vga std -cdrom $(ISO_IMAGE) -boot d -drive file=$(DISK_IMAGE_1),format=raw,if=ide -drive file=$(DISK_IMAGE_2),format=raw,if=ide -no-reboot -d int,cpu_reset -D q.log -serial file:serial.log
 
 # --- Clean ---
 clean:
