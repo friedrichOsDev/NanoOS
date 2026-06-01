@@ -2,14 +2,30 @@
 
 NanoOS is a simple kernel development project that I am developing in my free time.
 
-## Features
-- GRUB as bootloader
-- IDT and IRQ management
-- Physical and virtual memory manager
-- Dynamic memory allocator (Heap)
-- Simple framebuffer driver with psf2 font support
-- A printf libary implementation
-- Other hardware-specific drivers
+## Built-in Shell Commands
+
+Here are all the currently implemented commands:
+
+### General Commands
+*   **`clear`**: Clears the console screen text buffer.
+*   **`welcome`**: Displays the ASCII art welcome banner.
+*   **`help`**: Prints the list of available commands and their basic usage.
+*   **`time`**: Retrieves and prints the current formatted time from the Real-Time Clock (RTC).
+*   **`shutdown`**: Powers off the system safely via ACPI.
+
+### System & Memory Diagnostics
+*   **`heap`**: Dumps the layout of the kernel heap, displaying block addresses, sizes (in bytes), and their current status (`FREE` or `USED`).
+*   **`acpiinfo`**: Dumps general information regarding the detected ACPI tables.
+*   **`fadtinfo`**: Inspects and displays Fixed ACPI Description Table (FADT) details.
+*   **`madtinfo`**: Inspects and displays Multiple APIC Description Table (MADT) details, useful for interrupt controller configuration.
+
+### Storage & Partition Management
+*   **`storage`**: Dumps structural information about all initialized storage drives.
+*   **`partman`**: Displays detected partition tables and layout information via the Partition Manager.
+*   **`storage_read <disk_index> <sector>`**
+    *   Reads a single sector from the specified disk index and prints its content as a raw hex dump to the console.
+*   **`storage_write <disk_index> <sector> <data>`**
+    *   Writes data to a specific sector. The `<data>` parameter expects plain hex strings (e.g., `DEADBEEF`), which are parsed into raw bytes and written to disk.
 
 ## Building
 1. Build the docker image using the [Build Docker](scripts/linux/build_docker.sh) script

@@ -45,6 +45,25 @@ void shell_command_welcome(int argc, uint32_t** argv) {
     console_puts(welcome_window);
 }
 
+void shell_command_help(int argc, uint32_t** argv) {
+    (void)argc;
+    (void)argv;
+    console_puts(U"NanoOS Commands:\n");
+    console_puts(U"clear           - Clears the console screen\n");
+    console_puts(U"welcome         - Displays the NanoOS welcome banner\n");
+    console_puts(U"help            - Shows this list of available commands\n");
+    console_puts(U"time            - Prints the current RTC time\n");
+    console_puts(U"heap            - Dumps the current kernel heap block layout\n");
+    console_puts(U"storage         - Displays information about connected storage devices\n");
+    console_puts(U"storage_read    - Usage: storage_read <disk_index> <sector>\n");
+    console_puts(U"storage_write   - Usage: storage_write <disk_index> <sector> <hex_data>\n");
+    console_puts(U"partman         - Dumps partition table information\n");
+    console_puts(U"acpiinfo        - Dumps general ACPI table information\n");
+    console_puts(U"fadtinfo        - Dumps FADT (Fixed ACPI Description Table) details\n");
+    console_puts(U"madtinfo        - Dumps MADT (Multiple APIC Description Table) details\n");
+    console_puts(U"shutdown        - Powers off the machine via ACPI\n");
+}
+
 void shell_command_time(int argc, uint32_t** argv) {
     (void)argc;
     (void)argv;
@@ -235,6 +254,13 @@ void shell_init(void) {
         .description = U"Clears the console screen"
     };
     shell_register_command(&clear_command);
+
+    shell_command_t help_command = {
+        .name = U"help",
+        .handler = shell_command_help,
+        .description = U"Displays all available commands"
+    };
+    shell_register_command(&help_command);
 
     shell_command_t welcome_command = {
         .name = U"welcome",
