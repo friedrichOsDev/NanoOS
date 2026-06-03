@@ -14,6 +14,7 @@
 #define HEAP_INITIAL_PAGES 2
 #define HEAP_INITIAL_SIZE (HEAP_INITIAL_PAGES * HEAP_PAGE_SIZE)
 #define HEAP_MAX_SIZE (VMM_HEAP_END - VMM_HEAP_START)
+#define HEAP_CANARY 0xDEADC0DE
 
 /**
  * @brief Magic numbers to identify the status of a heap block.
@@ -27,9 +28,9 @@ typedef enum {
  * @brief Header for each memory block in the heap.
  */
 typedef struct heap_block {
+    uint32_t canary;           /**< Canary value to detect header corruption. */
     size_t size;               /**< Size of the data area in bytes. */
     heap_magic_t magic;        /**< Magic number indicating block status. */
-    uint32_t reserved;         /**< Reserved for alignment. */
     struct heap_block* next;   /**< Pointer to the next block in the list. */
 } __attribute__((packed)) heap_block_t;
 

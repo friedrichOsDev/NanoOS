@@ -7,6 +7,7 @@
 #include <serial.h>
 #include <string.h>
 #include <print.h>
+#include <panic.h>
 #include <kernel.h>
 
 static heap_block_t* heap_list = NULL;
@@ -22,6 +23,17 @@ static inline size_t align_size(size_t size) {
 }
 
 /**
+ * @brief Verifies the canary of a heap block and panics if corrupted.
+ * @param block The block to verify.
+ */
+static void heap_verify_block(heap_block_t* block) {
+    if (block->canary != HEAP_CANARY) {
+        serial_printf("Heap: Corruption at block %x (Canary: %x, Expected: %x)\n", (virt_addr_t)block, block->canary, HEAP_CANARY);
+        kernel_panic("Heap corruption detected: Invalid canary", (uint32_t)block);
+    }
+}
+
+/**
  * @brief Initializes the kernel heap.
  * Maps initial pages and sets up the first free block.
  */
@@ -33,6 +45,7 @@ void heap_init(void) {
     current_heap_top = HEAP_START + initial_map_size;
 
     heap_list = (heap_block_t*)HEAP_START;
+    heap_list->canary = HEAP_CANARY;
     heap_list->size = initial_map_size - sizeof(heap_block_t);
     heap_list->magic = HEAP_MAGIC_FREE;
     heap_list->next = NULL;
@@ -65,6 +78,7 @@ bool heap_extend(size_t size) {
 
     heap_block_t* last = heap_list;
     while (last && last->next) {
+        heap_verify_block(last);
         last = last->next;
     }
 
@@ -78,6 +92,7 @@ bool heap_extend(size_t size) {
     }
 
     heap_block_t* new_block = (heap_block_t*)extend_base;
+    new_block->canary = HEAP_CANARY;
     new_block->size = (pages_needed * HEAP_PAGE_SIZE) - sizeof(heap_block_t);
     new_block->magic = HEAP_MAGIC_FREE;
     new_block->next = NULL;
@@ -111,6 +126,8 @@ virt_addr_t kmalloc(size_t size) {
 
     // search for best fit free block
     while (current_block) {
+        heap_verify_block(current_block);
+
         if (current_block->magic == HEAP_MAGIC_FREE && current_block->size >= size_aligned) {
             if (!best_fit_block || current_block->size < best_fit_block->size) {
                 best_fit_block = current_block;
@@ -134,6 +151,7 @@ virt_addr_t kmalloc(size_t size) {
     // split block if there is enough space for a new block header and at least one alignment unit
     if (best_fit_block->size >= size_aligned + sizeof(heap_block_t) + HEAP_ALIGNMENT) {
         heap_block_t* new_block = (heap_block_t*)((uintptr_t)best_fit_block + sizeof(heap_block_t) + size_aligned);
+        new_block->canary = HEAP_CANARY;
         new_block->size = best_fit_block->size - size_aligned - sizeof(heap_block_t);
         new_block->magic = HEAP_MAGIC_FREE;
         new_block->next = best_fit_block->next;
@@ -154,6 +172,8 @@ void kfree(virt_addr_t ptr) {
     if (!ptr) return;
 
     heap_block_t* block = (heap_block_t*)((uintptr_t)ptr - sizeof(heap_block_t));
+    heap_verify_block(block);
+
     if (block->magic != HEAP_MAGIC_ALLOCATED) {
         serial_printf("Heap: Error: Double free or invalid free at %x\n", ptr);
         return;
@@ -164,7 +184,11 @@ void kfree(virt_addr_t ptr) {
     // Coalescing
     heap_block_t* curr = heap_list;
     while (curr != NULL) {
+        heap_verify_block(curr);
+
         if (curr->magic == HEAP_MAGIC_FREE && curr->next != NULL && curr->next->magic == HEAP_MAGIC_FREE) {
+            heap_verify_block(curr->next);
+
             uintptr_t curr_end = (uintptr_t)curr + sizeof(heap_block_t) + curr->size;
             if (curr_end == (uintptr_t)curr->next) {
                 curr->size += sizeof(heap_block_t) + curr->next->size;
@@ -197,6 +221,8 @@ virt_addr_t kzalloc(size_t size) {
 void kzfree(virt_addr_t ptr) {
     if (ptr == 0) return;
     heap_block_t* block = (heap_block_t*)(ptr - sizeof(heap_block_t));
+    heap_verify_block(block);
+
     if (block->magic == HEAP_MAGIC_ALLOCATED) {
         memset((void*)ptr, 0, block->size);
     }
@@ -218,6 +244,8 @@ virt_addr_t krealloc(virt_addr_t ptr, size_t new_size) {
     }
 
     heap_block_t* block = (heap_block_t*)(ptr - sizeof(heap_block_t));
+    heap_verify_block(block);
+
     if (block->magic != HEAP_MAGIC_ALLOCATED) {
         serial_printf("Heap: Error: Attempt to realloc invalid or free block at %x\n", ptr);
         return 0;
@@ -248,6 +276,7 @@ void heap_dump(void) {
     heap_block_t* current = heap_list;
     uint32_t i = 0;
     while (current) {
+        heap_verify_block(current);
         const char* status = (current->magic == HEAP_MAGIC_FREE) ? "FREE" : "ALLOCATED";
         snprintf(buf, sizeof(buf), "| %-3d | %010x | %-10d | %-9s | %010x |", i++, (uint32_t)current, current->size, status, (uint32_t)current->next);
         serial_printf("%s\n", buf);
