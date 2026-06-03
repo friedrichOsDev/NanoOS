@@ -23,6 +23,18 @@ void partman_init() {
     }   
 }
 
+partition_t* partman_get_partition(uint32_t partition_id) {
+    if (partition_id >= MAX_PARTITIONS || !global_partitions[partition_id].used) {
+        serial_printf("Partman: Error: Invalid partition ID %u\n", partition_id);
+        return NULL;
+    }
+    return &global_partitions[partition_id];
+}
+
+uint32_t partman_get_partition_count() {
+    return partition_count;
+}
+
 int32_t partman_register_partition(uint8_t disk_index, uint32_t start_lba, uint32_t sector_count, uint8_t type, const char* name) {
     if (partition_count >= MAX_PARTITIONS) {
         serial_printf("Partman: Error: Maximum partition count reached\n");
