@@ -29,6 +29,7 @@ typedef enum {
 typedef struct heap_block {
     size_t size;               /**< Size of the data area in bytes. */
     heap_magic_t magic;        /**< Magic number indicating block status. */
+    uint32_t reserved;         /**< Reserved for alignment. */
     struct heap_block* next;   /**< Pointer to the next block in the list. */
 } __attribute__((packed)) heap_block_t;
 

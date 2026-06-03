@@ -63,33 +63,32 @@ bool heap_extend(size_t size) {
         vmm_map_page(vmm_get_page_directory(), extend_base + (i * HEAP_PAGE_SIZE), phys, VMM_PAGE_PRESENT | VMM_PAGE_READ_WRITE);
     }
 
+    heap_block_t* last = heap_list;
+    while (last && last->next) {
+        last = last->next;
+    }
+
+    uintptr_t last_block_end = (uintptr_t)last + sizeof(heap_block_t) + last->size;
+
+    if (last && last->magic == HEAP_MAGIC_FREE && last_block_end == extend_base) {
+        last->size += (pages_needed * HEAP_PAGE_SIZE);
+        current_heap_top += (pages_needed * HEAP_PAGE_SIZE);
+        
+        return true;
+    }
+
     heap_block_t* new_block = (heap_block_t*)extend_base;
     new_block->size = (pages_needed * HEAP_PAGE_SIZE) - sizeof(heap_block_t);
     new_block->magic = HEAP_MAGIC_FREE;
     new_block->next = NULL;
 
-    heap_block_t* last = heap_list;
-    while (last->next) last = last->next;
-    last->next = new_block;
+    if (last) {
+        last->next = new_block;
+    } else {
+        heap_list = new_block;
+    }
 
     current_heap_top += (pages_needed * HEAP_PAGE_SIZE);
-
-    // coalesce free blocks
-    heap_block_t* current = heap_list;
-    while (current && current->next) {
-        if (current->magic == HEAP_MAGIC_FREE && current->next->magic == HEAP_MAGIC_FREE) {
-            uintptr_t current_end = (uintptr_t)current + sizeof(heap_block_t) + current->size;
-
-            if (current_end == (uintptr_t)current->next) {
-                // blocks are adjacent, coalesce
-                current->size += sizeof(heap_block_t) + current->next->size;
-                current->next = current->next->next;
-                // Continue checking from the same block to see if the next one is also adjacent
-                continue;
-            }
-        }
-        current = current->next;
-    }
 
     return true;
 }
@@ -152,31 +151,29 @@ virt_addr_t kmalloc(size_t size) {
  * @param ptr The virtual address of the memory to free.
  */
 void kfree(virt_addr_t ptr) {
-    if (ptr == 0) return;
+    if (!ptr) return;
 
-    heap_block_t* block = (heap_block_t*)(ptr - sizeof(heap_block_t));
+    heap_block_t* block = (heap_block_t*)((uintptr_t)ptr - sizeof(heap_block_t));
     if (block->magic != HEAP_MAGIC_ALLOCATED) {
-        serial_printf("Heap: Error: Attempt to free invalid or already free block at %x\n", ptr);
+        serial_printf("Heap: Error: Double free or invalid free at %x\n", ptr);
         return;
     }
 
     block->magic = HEAP_MAGIC_FREE;
 
-    // coalesce free blocks
-    heap_block_t* current = heap_list;
-    while (current && current->next) {
-        if (current->magic == HEAP_MAGIC_FREE && current->next->magic == HEAP_MAGIC_FREE) {
-            uintptr_t current_end = (uintptr_t)current + sizeof(heap_block_t) + current->size;
-
-            if (current_end == (uintptr_t)current->next) {
-                // blocks are adjacent, coalesce
-                current->size += sizeof(heap_block_t) + current->next->size;
-                current->next = current->next->next;
-                // Continue checking from the same block to see if the next one is also adjacent
+    // Coalescing
+    heap_block_t* curr = heap_list;
+    while (curr != NULL) {
+        if (curr->magic == HEAP_MAGIC_FREE && curr->next != NULL && curr->next->magic == HEAP_MAGIC_FREE) {
+            uintptr_t curr_end = (uintptr_t)curr + sizeof(heap_block_t) + curr->size;
+            if (curr_end == (uintptr_t)curr->next) {
+                curr->size += sizeof(heap_block_t) + curr->next->size;
+                curr->next = curr->next->next;
                 continue;
             }
         }
-        current = current->next;
+        
+        curr = curr->next;
     }
 }
 
