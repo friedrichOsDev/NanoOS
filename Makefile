@@ -75,12 +75,44 @@ iso: $(KERNEL_ELF)
 # --- Disks ---
 disks:
 	@mkdir -p $(BUILD_DIR)
+
 	qemu-img create -f raw $(DISK_IMAGE_1) 64M
 	parted --script $(DISK_IMAGE_1) mklabel msdos
 	parted --script $(DISK_IMAGE_1) mkpart primary fat32 1MiB 100%
+	mkfs.vfat --offset=2048 -F 32 $(DISK_IMAGE_1)
+	mmd -i $(DISK_IMAGE_1)@@1M ::/test_dir
+	echo "Hello from Disk 1" > $(BUILD_DIR)/test1.txt
+	mcopy -i $(DISK_IMAGE_1)@@1M $(BUILD_DIR)/test1.txt ::/test_dir/test.txt
+	echo "Root file 1" > $(BUILD_DIR)/root1_1.txt
+	mcopy -i $(DISK_IMAGE_1)@@1M $(BUILD_DIR)/root1_1.txt ::/root1_1.txt
+	echo "Root file 2" > $(BUILD_DIR)/root1_2.txt
+	mcopy -i $(DISK_IMAGE_1)@@1M $(BUILD_DIR)/root1_2.txt ::/root1_2.txt
+	mmd -i $(DISK_IMAGE_1)@@1M ::/extra_dir
+	echo "Extra 1" > $(BUILD_DIR)/extra1_1.txt
+	echo "Extra 2" > $(BUILD_DIR)/extra1_2.txt
+	echo "Extra 3" > $(BUILD_DIR)/extra1_3.txt
+	mcopy -i $(DISK_IMAGE_1)@@1M $(BUILD_DIR)/extra1_1.txt ::/extra_dir/file1.txt
+	mcopy -i $(DISK_IMAGE_1)@@1M $(BUILD_DIR)/extra1_2.txt ::/extra_dir/file2.txt
+	mcopy -i $(DISK_IMAGE_1)@@1M $(BUILD_DIR)/extra1_3.txt ::/extra_dir/file3.txt
+	
 	qemu-img create -f raw $(DISK_IMAGE_2) 1G
 	parted --script $(DISK_IMAGE_2) mklabel gpt
-	parted --script $(DISK_IMAGE_2) mkpart root fat32 1052672s 100%
+	parted --script $(DISK_IMAGE_2) mkpart root fat32 1MiB 100%
+	mkfs.vfat --offset=2048 -F 32 $(DISK_IMAGE_2)
+	mmd -i $(DISK_IMAGE_2)@@1M ::/data
+	echo "Hello from Disk 2" > $(BUILD_DIR)/test3.txt
+	mcopy -i $(DISK_IMAGE_2)@@1M $(BUILD_DIR)/test3.txt ::/data/readme.txt
+	echo "Root file A" > $(BUILD_DIR)/root2_a.txt
+	mcopy -i $(DISK_IMAGE_2)@@1M $(BUILD_DIR)/root2_a.txt ::/root2_a.txt
+	echo "Root file B" > $(BUILD_DIR)/root2_b.txt
+	mcopy -i $(DISK_IMAGE_2)@@1M $(BUILD_DIR)/root2_b.txt ::/root2_b.txt
+	mmd -i $(DISK_IMAGE_2)@@1M ::/more_data
+	echo "Data 1" > $(BUILD_DIR)/extra2_1.txt
+	echo "Data 2" > $(BUILD_DIR)/extra2_2.txt
+	echo "Data 3" > $(BUILD_DIR)/extra2_3.txt
+	mcopy -i $(DISK_IMAGE_2)@@1M $(BUILD_DIR)/extra2_1.txt ::/more_data/data1.bin
+	mcopy -i $(DISK_IMAGE_2)@@1M $(BUILD_DIR)/extra2_2.txt ::/more_data/data2.bin
+	mcopy -i $(DISK_IMAGE_2)@@1M $(BUILD_DIR)/extra2_3.txt ::/more_data/data3.bin
 
 # --- Run ---
 run: iso disks
