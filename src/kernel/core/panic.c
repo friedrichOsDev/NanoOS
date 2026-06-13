@@ -6,6 +6,7 @@
 #include <panic.h>
 #include <serial.h>
 #include <interrupts.h>
+#include <cpu.h)
 
 /**
  * @brief Halts the kernel and output a critical error message.
@@ -18,5 +19,5 @@
 void kernel_panic(const char* error_msg, uint32_t error_code) {
     idt_disable();
     serial_printf("KERNEL PANIC: %s (Error code: %x)\n", error_msg, error_code);
-    while (1);
+    while (1) cpu_hlt();
 }
