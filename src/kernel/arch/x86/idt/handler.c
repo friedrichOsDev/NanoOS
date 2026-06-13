@@ -66,6 +66,12 @@ void isr_handler(struct registers *regs) {
     if (handler) {
         handler(regs);
     } else {
+        serial_printf("DS: %x, EDI: %x, ESI: %x, EBP: %x, ESP: %x, EBX: %x, EDX: %x, ECX: %x, EAX: %x\n",
+                      regs->ds, regs->edi, regs->esi, regs->ebp, regs->esp,
+                      regs->ebx, regs->edx, regs->ecx, regs->eax);
+        serial_printf("INT_NO: %x, ERR_CODE: %x, EIP: %x, CS: %x, EFLAGS: %x, USERESP: %x, SS: %x\n",
+                      regs->int_no, regs->err_code, regs->eip, regs->cs,
+                      regs->eflags, regs->useresp, regs->ss);
         kernel_panic("Unhandled exception", regs->int_no);
     }
 }
