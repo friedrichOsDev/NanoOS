@@ -32,7 +32,9 @@ typedef struct heap_block {
     size_t size;               /**< Size of the data area in bytes. */
     heap_magic_t magic;        /**< Magic number indicating block status. */
     struct heap_block* next;   /**< Pointer to the next block in the list. */
-} __attribute__((packed)) heap_block_t;
+} heap_block_t;
+
+_Static_assert(sizeof(heap_block_t) % HEAP_ALIGNMENT == 0, "heap_block_t size must be aligned");
 
 void heap_init(void);
 virt_addr_t kmalloc(size_t size);
