@@ -28,6 +28,7 @@
 #include <storage.h>
 #include <ata.h>
 #include <partman.h>
+#include <fat32.h>
 
 init_state_t init_state = INIT_START;
 mmap_t kernel_mmap;
@@ -163,6 +164,15 @@ void kernel_main(uint32_t multiboot_magic, uint32_t multiboot_info) {
     ata_init();
 
     partman_init();
+
+    // Try to mount FAT32 for each detected partition
+    for (uint32_t i = 0; i < partman_get_partition_count(); i++) {
+        partition_t* part = partman_get_partition(i);
+        if (part) {
+            serial_printf("Kernel: Attempting to mount FAT32 on partition %d...\n", i);
+            fat32_mount(storage_get_disk(part->disk_index), part->start_lba);
+        }
+    }
 
     // We have an emulated PS/2 controller so the initialization does not work
     // i8042_init();
