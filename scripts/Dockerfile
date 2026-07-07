@@ -25,12 +25,11 @@ RUN apt-get update && apt-get install -y \
     grub-efi-ia32-bin \
     mtools \
     dosfstools \
-    qemu-system-x86 \
-    qemu-utils \
     gdb \
     git \
     ca-certificates \
     parted \
+    cmake \
     && rm -rf /var/lib/apt/lists/*
 
 # Cross Compiler config
