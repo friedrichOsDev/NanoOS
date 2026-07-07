@@ -15,6 +15,9 @@ kernel:
 
 # --- ISO ---
 iso:
+	$(CC) -v
+	$(LD) -v
+	$(NASM) -v
 
 # --- Run ---
 run:
