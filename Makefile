@@ -13,14 +13,14 @@ GRUB_DIR = grub
 KERNEL_DIR = $(SRC_DIR)/kernel
 
 # Recursive Wildcard
-rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
 # Files
 KERNEL_ELF = $(BUILD_DIR)/kernel.elf
 ISO_IMAGE = $(BUILD_DIR)/nanoos.iso
 LINKER = $(KERNEL_DIR)/arch/x86_64/linker.ld
 
-INCLUDE_DIRS = $(shell find $(KERNEL_DIR)/include -type d)
+INCLUDE_DIRS = $(shell find $(KERNEL_DIR)/include -type d 2>/dev/null)
 INCLUDE_FLAGS = $(foreach dir,$(INCLUDE_DIRS),-I$(dir))
 
 C_SOURCES   = $(call rwildcard,$(KERNEL_DIR),*.c)
@@ -32,7 +32,7 @@ OBJECTS     = $(C_OBJECTS) $(ASM_OBJECTS)
 
 CFLAGS = -ffreestanding -m64 -O1 -Wall -Wextra -Werror \
          -fno-stack-protector -fno-builtin -fno-strict-aliasing \
-         -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -nostdlib \
+         -mcmodel=kernel -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -nostdlib \
          $(INCLUDE_FLAGS)
 
 LDFLAGS = -m elf_x86_64 -T $(LINKER)
@@ -40,7 +40,7 @@ LDFLAGS = -m elf_x86_64 -T $(LINKER)
 # Targets
 .PHONY: all clean iso kernel
 
-all: clean iso
+all: iso
 
 # --- Kernel ---
 kernel: $(KERNEL_ELF)
@@ -67,3 +67,4 @@ iso: $(KERNEL_ELF)
 # --- Clean ---
 clean:
 	rm -rf $(BUILD_DIR) $(ISO_DIR)
+	rm -rf qemu.log serial.log

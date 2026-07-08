@@ -1,1 +1,1 @@
-qemu-system-x86_64
+qemu-system-x86_64 -m 8G -cdrom build/nanoos.iso -no-reboot -d int,cpu_reset -D qemu.log -serial file:serial.log
