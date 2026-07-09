@@ -5,8 +5,14 @@
  */
 
 #include <core/init.h>
+#include <arch/x86_64/drivers/serial.h>
 
 void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     (void)magic;
     (void)info_ptr;
+
+    serial_init(COM1);
+    serial_printf(COM1, "Hello From 64-Bit Kernel!\n");
+
+    while (1) __asm__("hlt");
 }
