@@ -20,8 +20,8 @@ KERNEL_ELF = $(BUILD_DIR)/kernel.elf
 ISO_IMAGE = $(BUILD_DIR)/nanoos.iso
 LINKER = $(KERNEL_DIR)/arch/x86_64/linker.ld
 
-INCLUDE_DIRS = $(shell find $(KERNEL_DIR)/include -type d 2>/dev/null)
-INCLUDE_FLAGS = $(foreach dir,$(INCLUDE_DIRS),-I$(dir))
+ALL_INCLUDE_DIRS = $(sort $(dir $(call rwildcard,$(KERNEL_DIR)/include,*/)))
+INCLUDE_FLAGS = -Isrc/kernel/include $(foreach dir,$(ALL_INCLUDE_DIRS),-I$(dir))
 
 C_SOURCES   = $(call rwildcard,$(KERNEL_DIR),*.c)
 ASM_SOURCES = $(call rwildcard,$(KERNEL_DIR),*.asm)
