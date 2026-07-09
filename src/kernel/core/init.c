@@ -4,7 +4,7 @@
  * @author friedrichOsDev
  */
 
-#include <init.h>
+#include <core/init.h>
 
 void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     (void)magic;
