@@ -10,7 +10,9 @@
 void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     serial_init(COM1);
     serial_printf(COM1, "Hello From 64-Bit Kernel!\n");
-    serial_printf(COM1, "Multiboot2: Info Ptr: %p\n            Magic: %x\n", info_ptr, magic);
+    serial_printf(COM1, "Multiboot2: Info Ptr: %x\n            Magic: %x\n", info_ptr, magic);
 
-    while (1) __asm__("hlt");
+    while (1) {
+        __asm__("hlt");
+    }
 }

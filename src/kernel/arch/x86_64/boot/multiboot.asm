@@ -17,14 +17,26 @@ multiboot_header_start:
     ; Optional: Other Tags (Framebuffer, ...)
 
     ; Framebuffer Tag
+    align 8
     dw 5
     dw 0
-    dw 20
+    dd 20
     dd 0
     dd 0
     dd 0
 
+    ; Relocatable Header Tag
+    align 8
+    dw 10
+    dw 0
+    dd 24
+    dd 0x00100000
+    dd 0xFFFFFFFF
+    dd 4096
+    dd 0
+
     ; End Tag
+    align 8
     dw 0 ; type = 0
     dw 0 ; flags = 0
     dd 8 ; size = 8
