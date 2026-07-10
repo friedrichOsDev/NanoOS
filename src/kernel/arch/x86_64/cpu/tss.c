@@ -10,7 +10,6 @@
 struct tss_entry tss;
 
 extern uint8_t stack_top[];
-
 static uint8_t double_fault_stack[4096];
 
 void tss_init() {

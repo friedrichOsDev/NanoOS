@@ -1,0 +1,31 @@
+/**
+ * @file idt.h
+ * @brief 64-bit Interrupt Descriptor Table Setup (Header)
+ * @author friedrichOsDev
+ */
+
+#pragma once
+
+#include <stdint.h>
+
+#define IDT_ENTRIES 256
+
+struct idt_entry {
+    uint16_t base_low;
+    uint16_t selector;
+    uint8_t ist;
+    uint8_t flags;
+    uint16_t base_mid;
+    uint32_t base_high;
+    uint32_t reserved;
+} __attribute__((packed));
+
+struct idt_ptr {
+    uint16_t limit;
+    uint64_t base;
+} __attribute__((packed));
+
+extern void idt_load(uint64_t idt_ptr);
+
+void idt_init();
+void idt_set_gate(uint8_t num, uint64_t base, uint16_t selector, uint8_t ist, uint8_t flags);

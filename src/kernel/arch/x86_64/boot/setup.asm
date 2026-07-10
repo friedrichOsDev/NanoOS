@@ -123,8 +123,11 @@ init_long_mode:
     mov rax, _entry
     jmp rax
 
+.hang:
     ; 9. if kernel returns
+    cli
     hlt
+    jmp .hang
 
 ; 64-bit gdt
 align 8
