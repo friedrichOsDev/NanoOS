@@ -1,6 +1,7 @@
 [BITS 64]
 section .text.entry
 global _entry
+global stack_top
 extern kernel_init
 extern multiboot_magic
 extern multiboot_info_ptr

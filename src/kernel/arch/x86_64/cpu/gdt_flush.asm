@@ -21,3 +21,8 @@ gdt_flush:
     mov gs, ax
 
     ret
+
+global tss_load
+tss_load:
+    ltr di
+    ret

@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-#define GDT_ENTRIES 5 // TODO: actually 6 because tss segment
+#define GDT_ENTRIES 7
 
 struct gdt_entry {
     uint16_t limit_low;
@@ -25,6 +25,8 @@ struct gdt_ptr {
 } __attribute__((packed));
 
 extern void gdt_flush(uint64_t gdt_ptr);
+extern void tss_load(uint16_t selector);
 
 void gdt_init();
 void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);
+void gdt_set_tss_gate(int num, uint64_t base, uint32_t limit);
