@@ -3,9 +3,9 @@ ENTRY(_setup)
 SECTIONS
 {
     . = 0x00100000;
-    _kernel_start_phys = .;
+    kernel_start_phys = .;
 
-    _kernel_virt_base = 0xFFFFFFFF80000000;
+    kernel_virt_base = 0xFFFFFFFF80000000;
 
     /* Identity Mapped */
     .multiboot ALIGN(4K) :
@@ -18,27 +18,27 @@ SECTIONS
         *(.setup)
     }
 
-    _kernel_setup_end_phys = .;
+    kernel_setup_end_phys = .;
 
     /* VMA (Virtual Memory Address) is at 0xFFFF80000... */
-    .text (_kernel_setup_end_phys + _kernel_virt_base) : AT(_kernel_setup_end_phys)
+    .text (kernel_setup_end_phys + kernel_virt_base) : AT(kernel_setup_end_phys)
     {
-        _kernel_start = .;
+        kernel_start = .;
         *(.text.entry)
         *(.text*)
     }
 
-    .rodata ALIGN(4K) : AT(ADDR(.rodata) - _kernel_virt_base)
+    .rodata ALIGN(4K) : AT(ADDR(.rodata) - kernel_virt_base)
     {
         *(.rodata*)
     }
 
-    .data ALIGN(4K) : AT(ADDR(.data) - _kernel_virt_base)
+    .data ALIGN(4K) : AT(ADDR(.data) - kernel_virt_base)
     {
         *(.data*)
     }
 
-    .bss ALIGN(4K) : AT(ADDR(.bss) - _kernel_virt_base)
+    .bss ALIGN(4K) : AT(ADDR(.bss) - kernel_virt_base)
     {
         sbss = .;
         *(COMMON)
@@ -46,6 +46,6 @@ SECTIONS
         ebss = .;
     }
 
-    _kernel_end = .;
-    _kernel_end_phys = _kernel_end - _kernel_virt_base;
+    kernel_end = .;
+    kernel_end_phys = kernel_end - kernel_virt_base;
 }
