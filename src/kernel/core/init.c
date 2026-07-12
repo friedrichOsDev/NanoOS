@@ -5,12 +5,13 @@
  */
 
 #include <core/init.h>
+#include <core/panic.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/idt.h>
 #include <arch/x86_64/cpu/irq.h>
 #include <arch/x86_64/cpu/interrupts.h>
-#include <core/panic.h>
+#include <arch/x86_64/mm/pmm.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
@@ -123,6 +124,8 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     serial_printf(COM1, "MULTIBOOT2: info_ptr=%x\n", info_ptr);
 
     multiboot_parse(magic, info_ptr);
+
+    pmm_init();
 
     serial_printf(COM1, "INIT: done\n");
 
