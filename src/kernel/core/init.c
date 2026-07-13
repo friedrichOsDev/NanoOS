@@ -12,6 +12,7 @@
 #include <arch/x86_64/cpu/irq.h>
 #include <arch/x86_64/cpu/interrupts.h>
 #include <arch/x86_64/mm/pmm.h>
+#include <arch/x86_64/mm/vmm.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
@@ -126,6 +127,7 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     multiboot_parse(magic, info_ptr);
 
     pmm_init();
+    vmm_init();
 
     serial_printf(COM1, "INIT: done\n");
 

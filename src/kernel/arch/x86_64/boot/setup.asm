@@ -23,22 +23,75 @@ _setup:
     cmp eax, 1
     jne .no_long_mode
 
-    ; 1. init page tables
-    ; 1.1 pml4
+    ; 1. setup page tables
     mov eax, boot_pdpt
     or eax, 0x3
+
     mov [boot_pml4], eax
+    mov dword [boot_pml4 + 4], 0
+
     mov [boot_pml4 + PML4_INDEX * 8], eax
+    mov dword [boot_pml4 + PML4_INDEX * 8 + 4], 0
 
-    ; 1.2 pdpt
-    mov eax, boot_pd
+    mov eax, boot_pdpt_direct
     or eax, 0x3
-    mov [boot_pdpt], eax
-    mov [boot_pdpt + PDPT_INDEX * 8], eax
 
-    ; 1.3 pd
-    mov eax, 0x0 | 0x83
-    mov [boot_pd], eax
+    mov [boot_pml4 + 256 * 8], eax
+    mov dword [boot_pml4 + 256 * 8 + 4], 0
+
+    mov eax, boot_pd_low
+    or eax, 0x3
+
+    mov [boot_pdpt], eax
+    mov dword [boot_pdpt + 4], 0
+
+    mov [boot_pdpt + PDPT_INDEX * 8], eax
+    mov dword [boot_pdpt + PDPT_INDEX * 8 + 4], 0
+
+    mov edi, boot_pdpt_direct
+    mov ecx, 4
+    mov eax, boot_pd_high
+    or eax, 0x3
+
+.link_direct_pds:
+    mov [edi], eax
+    mov dword [edi + 4], 0
+
+    add edi, 8
+    add eax, 4096
+    loop .link_direct_pds
+
+    ; --- ALT (nur 2 MiB) ---
+    ; mov eax, 0x0 | 0x83
+    ; mov [boot_pd_low], eax
+    ; dword [boot_pd_low + 4], 0
+
+    ; --- NEU (mapt 16 MiB in 2-MiB-Schritten) ---
+    mov edi, boot_pd_low
+    mov ecx, 8                  ; 8 Einträge * 2 MiB = 16 MiB Speicherplatz
+    mov eax, 0x83               ; Present + Writable + Page Size (2MB Hugepage)
+.fill_kernel_low_pages:
+    mov [edi], eax
+    mov dword [edi + 4], 0
+    add edi, 8
+    add eax, 0x200000           ; Nächste 2 MiB Region
+    loop .fill_kernel_low_pages
+
+    mov edi, boot_pd_high
+    mov ecx, 2048
+    mov eax, 0x83
+    mov edx, 0
+
+.fill_direct_mapping:
+    mov [edi], eax
+    mov [edi + 4], edx
+
+    add edi, 8
+
+    add eax, 0x200000
+    adc edx, 0
+
+    loop .fill_direct_mapping
 
     ; 2. activate PAE
     mov eax, cr4
@@ -104,14 +157,12 @@ check_long_mode_support:
     mov eax, 1
     ret
 .not_supported:
-    mov eax, 0
+    mov eax, 1
     ret
 
 [BITS 64]
 init_long_mode:
-    ; 64-bit mode
-
-    ; 8. reset datasegments
+    ; 8. switch data segments to 64-bit GDT selectors
     mov ax, 0x10
     mov ds, ax
     mov es, ax
@@ -119,12 +170,11 @@ init_long_mode:
     mov gs, ax
     mov ss, ax
 
-    ; 8. jump to the higher half
+    ; 9. jump to the higher half
     mov rax, _entry
     jmp rax
 
 .hang:
-    ; 9. if kernel returns
     cli
     hlt
     jmp .hang
@@ -137,7 +187,7 @@ gdt64:
     .Data: dq 0x0000920000000000 ; data: Present + Writable
 gdt64_pointer:
     dw $ - gdt64 - 1
-    dq gdt64
+    dq dword gdt64
 
 ; multiboot2 info
 align 8
@@ -146,6 +196,8 @@ multiboot_magic: dq 0
 
 ; page tables
 align 4096
-boot_pml4: times 4096 db 0
-boot_pdpt: times 4096 db 0
-boot_pd:   times 4096 db 0
+boot_pml4:        times 4096 db 0
+boot_pdpt:        times 4096 db 0
+boot_pdpt_direct: times 4096 db 0
+boot_pd_low:      times 4096 db 0
+boot_pd_high:     times 4096 * 4 db 0

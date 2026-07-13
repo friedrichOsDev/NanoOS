@@ -9,10 +9,6 @@
 #include <arch/x86_64/mm/memdef.h>
 #include <stdint.h>
 
-#define ALIGN_UP(addr) (((addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
-#define ALIGN_DOWN(addr) ((addr) & ~(PAGE_SIZE - 1))
-#define IS_PAGE_ALIGNED(addr) (((addr) & (PAGE_SIZE - 1)) == 0)
-
 typedef struct {
     uint8_t* bitmap;
     uint64_t bitmap_size;
@@ -20,6 +16,8 @@ typedef struct {
     uint64_t used_pages;
     uint64_t free_pages;
 } pmm_state_t;
+
+extern pmm_state_t pmm_state;
 
 void pmm_init();
 phys_addr_t pmm_page_alloc();
