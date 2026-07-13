@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <arch/x86_64/mm/mm.h>
+#include <arch/x86_64/mm/memdef.h>
 #include <stdint.h>
 
 #define ALIGN_UP(addr) (((addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
