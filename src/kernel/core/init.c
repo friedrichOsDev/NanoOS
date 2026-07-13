@@ -13,6 +13,7 @@
 #include <arch/x86_64/cpu/interrupts.h>
 #include <arch/x86_64/mm/pmm.h>
 #include <arch/x86_64/mm/vmm.h>
+#include <arch/x86_64/mm/heap.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
@@ -128,6 +129,16 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
 
     pmm_init();
     vmm_init();
+    heap_init();
+
+    virt_addr_t ptr1 = kmalloc(1024);
+    heap_dump();
+    virt_addr_t ptr2 = kmalloc(1000000);
+    heap_dump();
+    kfree(ptr1);
+    heap_dump();
+    kfree(ptr2);
+    heap_dump();
 
     serial_printf(COM1, "INIT: done\n");
 

@@ -14,6 +14,7 @@
 #include <core/init.h>
 
 phys_addr_t kernel_pml4_phys = 0;
+virt_addr_t kernel_pml4 = 0;
 static virt_addr_t next_free_mmio_vaddr = MMIO_REGION_START;
 
 static page_table_t* vmm_get_next_table(page_table_t* current_table, size_t index, uint64_t flags) {
@@ -86,6 +87,7 @@ void vmm_init() {
         kernel_fb_info.fb_addr = fb_vaddr;
     }
 
+    kernel_pml4 = P2V(kernel_pml4_phys);
     serial_printf(COM1, "VMM: init done, final pml4 tables active\n");
 }
 

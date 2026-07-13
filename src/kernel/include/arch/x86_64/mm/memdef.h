@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 
 /* GENERAL PAGE DEFINITIONS */
@@ -38,6 +39,21 @@ typedef uint64_t virt_addr_t;
 
 #define P2V(phys) ((virt_addr_t)(phys) + DIRECT_MAPPING_START)
 #define V2P(virt) ((phys_addr_t)(virt) - DIRECT_MAPPING_START)
+
+/* HEAP DEFINITIONS */
+
+#define HEAP_MAGIC_FREE 0xDEADBEEF
+#define HEAP_MAGIC_USED 0xCAFEBABE
+#define HEAP_HEADER_SIZE sizeof(heap_list_t)
+#define HEAP_MIN_PAYLOAD_SIZE 16
+
+typedef struct heap_list {
+    uint32_t magic; // MAGIC_FREE or MAGIC_USED
+    size_t size; // Header + Payload
+    size_t payload_size;
+    struct heap_list* prev;
+    struct heap_list* next;
+} heap_list_t;
 
 /* PAGING FLAGS AND STRUCTURES */
 
