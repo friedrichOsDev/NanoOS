@@ -12,6 +12,11 @@
 
 pmm_state_t pmm_state;
 
+/**
+ * Locks a physical Page in the pmm bitmap
+ * @param start The start Page to lock
+ * @param count The count of Pages to lock
+ */
 static void lock_pages(phys_addr_t start, uint64_t count) {
     if (start > pmm_state.total_pages * PAGE_SIZE || !IS_PAGE_ALIGNED(start)) {
         panic("pmm bad start", start);
@@ -38,6 +43,11 @@ static void lock_pages(phys_addr_t start, uint64_t count) {
     }
 }
 
+/**
+ * Unlocks a physical Page in the pmm bitmap
+ * @param start The start Page to unlock
+ * @param count The count of Pages to unlock
+ */
 static void unlock_pages(phys_addr_t start, uint64_t count) {
     if (start > pmm_state.total_pages * PAGE_SIZE || !IS_PAGE_ALIGNED(start)) {
         panic("pmm unlock bad start", start);
@@ -64,6 +74,9 @@ static void unlock_pages(phys_addr_t start, uint64_t count) {
     }
 }
 
+/**
+ * Parses the Memory Map to get Infos for the pmm_state structure
+ */
 static void mmap_parse() {
     uint64_t max_usable_addr = 0;
 
@@ -102,6 +115,9 @@ static void mmap_parse() {
     }
 }
 
+/**
+ * Initializes the PMM
+ */
 void pmm_init() {
     mmap_parse();
 
@@ -122,6 +138,10 @@ void pmm_init() {
     serial_printf(COM1, "PMM: used_pages=%llx, free_pages=%llx\n", pmm_state.used_pages, pmm_state.free_pages);
 }
 
+/**
+ * Allocates a physical Page and locks it
+ * @return Returns the physical address of the allocated Page or 0 on error
+ */
 phys_addr_t pmm_page_alloc() {
     if (pmm_state.free_pages == 0) {
         panic("pmm out of memory", 0);
@@ -152,6 +172,10 @@ phys_addr_t pmm_page_alloc() {
     return 0;
 }
 
+/**
+ * Frees a physical Page and unlocks it
+ * @param addr The address of the physical Page to free
+ */
 void pmm_page_free(phys_addr_t addr) {
     if (!IS_PAGE_ALIGNED(addr)) {
         panic("pmm free unaligned page", addr);

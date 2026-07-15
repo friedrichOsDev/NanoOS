@@ -12,6 +12,9 @@ struct tss_entry tss;
 extern uint8_t stack_top[];
 static uint8_t double_fault_stack[4096];
 
+/**
+ * Initializes the TSS
+ */
 void tss_init() {
     serial_printf(COM1, "TSS: initializing\n");
 

@@ -1,6 +1,6 @@
 /**
  * @file convert.c
- * @brief convertion functions
+ * @brief Convertion Functions
  * @author friedrichOsDev
  */
 
@@ -8,12 +8,12 @@
 #include <stdbool.h>
 
 /**
- * Converts an unsigned 64-bit integer to a string (Internal).
- * @param buffer The destination buffer.
- * @param value The value to convert.
- * @param base The numerical base (e.g., 10 for decimal, 16 for hex).
+ * Converts an unsigned 64-bit integer to a string (Internal)
+ * @param buffer The destination buffer
+ * @param value The value to convert
+ * @param base The numerical base (e.g., 10 for decimal, 16 for hex)
  * @param is_wide If true: Unicode Else: Char
- * @return The length of the resulting string.
+ * @return The length of the resulting string
  */
 static int uint_to_str_internal(void* buffer, uint64_t value, int base, bool is_wide) {
     char temp_buf[66];
@@ -56,22 +56,22 @@ static int uint_to_str_internal(void* buffer, uint64_t value, int base, bool is_
 }
 
 /**
- * Converts an unsigned 64-bit integer to a string.
- * @param value The value to convert.
- * @param buffer The destination buffer.
- * @param base The numerical base (e.g., 10 for decimal, 16 for hex).
- * @return The length of the resulting string.
+ * Converts an unsigned 64-bit integer to a string
+ * @param value The value to convert
+ * @param buffer The destination buffer
+ * @param base The numerical base (e.g., 10 for decimal, 16 for hex)
+ * @return The length of the resulting string
  */
 int uint_to_str(uint64_t value, uint32_t* buffer, int base) {
     return uint_to_str_internal(buffer, value, base, true);
 }
 
 /**
- * Converts an unsigned 64-bit integer to a string (legacy).
- * @param value The value to convert.
- * @param buffer The destination buffer.
- * @param base The numerical base (e.g., 10 for decimal, 16 for hex).
- * @return The length of the resulting string.
+ * Converts an unsigned 64-bit integer to a string (legacy)
+ * @param value The value to convert
+ * @param buffer The destination buffer
+ * @param base The numerical base (e.g., 10 for decimal, 16 for hex)
+ * @return The length of the resulting string
  */
 int uint_to_str_legacy(uint64_t value, char* buffer, int base) {
     return uint_to_str_internal(buffer, value, base, false);

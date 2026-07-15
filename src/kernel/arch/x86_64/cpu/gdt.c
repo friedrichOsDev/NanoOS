@@ -1,6 +1,6 @@
 /**
  * @file gdt.c
- * @brief 64-bit global descriptor table setup
+ * @brief 64-bit Global Descriptor Table Setup
  * @author friedrichOsDev
  */
 
@@ -11,6 +11,9 @@
 struct gdt_entry gdt[GDT_ENTRIES];
 struct gdt_ptr gdtp;
 
+/**
+ * Initializes the GDT
+ */
 void gdt_init() {
     gdtp.limit = (sizeof(struct gdt_entry) * GDT_ENTRIES) - 1;
     gdtp.base = (uint64_t)&gdt;
@@ -44,11 +47,11 @@ void gdt_init() {
 
 /**
  * Sets a GDT gate.
- * @param num The index of the GDT entry.
- * @param base The base address of the segment.
- * @param limit The limit of the segment.
- * @param access The access flags.
- * @param gran The granularity flags.
+ * @param num The index of the GDT entry
+ * @param base The base address of the segment
+ * @param limit The limit of the segment
+ * @param access The access flags
+ * @param gran The granularity flags
  */
 void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran) {
     gdt[num].base_low = base & 0xFFFF;

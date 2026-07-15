@@ -17,7 +17,18 @@ phys_addr_t kernel_pml4_phys = 0;
 virt_addr_t kernel_pml4 = 0;
 static virt_addr_t next_free_mmio_vaddr = MMIO_REGION_START;
 
+/**
+ * Gets the next table in a table based on the given index and flags
+ * @param current_table The table (lv4, lv3 or lv2) to get the next table (lv3, lv2 or lv1) from
+ * @param index The index in the table
+ * @param flags The flags for the table
+ * @return Returns the page_table_t structure of the table at the given index
+ */
 static page_table_t* vmm_get_next_table(page_table_t* current_table, size_t index, uint64_t flags) {
+    if (index >= PT_MAX_ENTRIES) {
+        panic("vmm bad next table index", index);
+    }
+
     page_table_entry_t entry = current_table->entries[index];
 
     if (entry & PTE_PRESENT) {
@@ -26,7 +37,7 @@ static page_table_t* vmm_get_next_table(page_table_t* current_table, size_t inde
 
     phys_addr_t new_table_phys = pmm_page_alloc();
     if (!new_table_phys) {
-        panic("vnn out of physical memory creating page table", 0);
+        panic("vmm out of physical memory creating page table", 0);
     }
 
     page_table_t* new_table_virt = (page_table_t*)P2V(new_table_phys);
@@ -37,6 +48,11 @@ static page_table_t* vmm_get_next_table(page_table_t* current_table, size_t inde
     return new_table_virt;
 }
 
+/**
+ * Checks if a table is empty
+ * @param table The table to check
+ * @return Returns 1 if empty, 0 if not empty
+ */
 static int vmm_is_table_empty(page_table_t* table) {
     for (size_t i = 0; i < 512; i++) {
         if (table->entries[i] & PTE_PRESENT) {
@@ -46,6 +62,9 @@ static int vmm_is_table_empty(page_table_t* table) {
     return 1;
 }
 
+/**
+ * Initializes the VMM
+ */
 void vmm_init() {
     kernel_pml4_phys = pmm_page_alloc();
     if (!kernel_pml4_phys) {
@@ -91,6 +110,13 @@ void vmm_init() {
     serial_printf(COM1, "VMM: init done, final pml4 tables active\n");
 }
 
+/**
+ * Maps a memory region to the MMIO_REGION
+ * @param pml4 The pml4 table to make the changes to
+ * @param paddr The physical start address of the MMIO region
+ * @param size The size of the region
+ * @return Returns the mapped virtual address
+ */
 virt_addr_t vmm_map_mmio(page_table_t *pml4, phys_addr_t paddr, size_t size) {
     if (size == 0) return 0;
 
@@ -115,6 +141,13 @@ virt_addr_t vmm_map_mmio(page_table_t *pml4, phys_addr_t paddr, size_t size) {
     return assigned_vaddr + offset;
 }
 
+/**
+ * Maps a physical page to a virtual page
+ * @param pml4 The pml4 table to make the changes to
+ * @param vaddr The address of the virtual page
+ * @param paddr The address of the physical page
+ * @param flags The flags for the mapping
+ */
 void vmm_map_page(page_table_t *pml4, virt_addr_t vaddr, phys_addr_t paddr, uint64_t flags) {
     if (!IS_PAGE_ALIGNED(vaddr)) panic("vmm map unaligned vaddr", vaddr);
     if (!IS_PAGE_ALIGNED(paddr)) panic("vmm map unaligned paddr", paddr);
@@ -135,11 +168,20 @@ void vmm_map_page(page_table_t *pml4, virt_addr_t vaddr, phys_addr_t paddr, uint
     page_table_t* pt   = vmm_get_next_table(pd, pd_idx, table_flags);
     if (!pt) panic("vmm map failed at PT allocation", vaddr);
 
+    if (pt->entries[pt_idx] & PTE_PRESENT) {
+        panic("vmm page already mapped", vaddr);
+    }
+
     pt->entries[pt_idx] = (paddr & PAGE_MASK) | PTE_PRESENT | flags;
 
     __asm__ __volatile__("invlpg (%0)" ::"r"(vaddr) : "memory");
 }
 
+/**
+ * Unmaps a virtual page
+ * @param pml4 The pml4 table to make the changes to
+ * @param vaddr The address of the virtual page
+ */
 void vmm_unmap_page(page_table_t *pml4, virt_addr_t vaddr) {
     if (!IS_PAGE_ALIGNED(vaddr)) panic("vmm unmap unaligned vaddr", vaddr);
 

@@ -4,15 +4,16 @@
  * @author friedrichOsDev
  */
 
+#include <stdint.h>
 #include <arch/x86_64/cpu/irq.h>
 #include <arch/x86_64/cpu/pic.h>
 #include <arch/x86_64/cpu/interrupts.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/cpu/idt.h>
-#include <stdint.h>
 
-
-
+/**
+ * Initializes the IRQ
+ */
 void irq_init() {
     pic_remap();
 

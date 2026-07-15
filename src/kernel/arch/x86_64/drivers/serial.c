@@ -1,6 +1,6 @@
 /**
  * @file serial.c
- * @brief x86_64 serial driver for debugging
+ * @brief x86_64 Serial Driver for debugging
  * @author friedrichOsDev
  */
 
@@ -12,6 +12,19 @@
 
 #define SERIAL_LSR_THR_EMPTY 0x20
 
+/**
+ * Checks if the serial transmit is empty
+ * @param port The COM Port
+ * @return True if Empty, False if not
+ */
+static bool serial_is_transmit_empty(uint16_t port) {
+    return inb(port + 5) & SERIAL_LSR_THR_EMPTY;
+}
+
+/**
+ * Initializes the Serial Driver for a specific COM Port
+ * @param port The COM Port for the debugging
+ */
 void serial_init(uint16_t port) {
     outb(port + 1, 0x00);
     outb(port + 3, 0x80);
@@ -22,15 +35,21 @@ void serial_init(uint16_t port) {
     outb(port + 4, 0x0B);
 }
 
-static bool serial_is_transmit_empty(uint16_t port) {
-    return inb(port + 5) & SERIAL_LSR_THR_EMPTY;
-}
-
+/**
+ * Puts a char to the debugging Port
+ * @param port The COM Port
+ * @param c The Character
+ */
 void serial_putc(uint16_t port, char c) {
     while (serial_is_transmit_empty(port) == 0);
     outb(port, c);
 }
 
+/**
+ * Puts a string to the debugging Port
+ * @param port The COM Port
+ * @param str The String
+ */
 void serial_puts(uint16_t port, const char* str) {
     while (*str) {
         if (*str == '\n') {

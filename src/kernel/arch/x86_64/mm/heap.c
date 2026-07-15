@@ -14,52 +14,9 @@
 static heap_list_t* heap_list_head = NULL;
 static virt_addr_t heap_end_addr = 0;
 
-void heap_dump() {
-    serial_printf(COM1, "\n=== HEAP DUMP START (End Address: %llx) ===\n", heap_end_addr);
-    serial_printf(COM1, "%-18s | %-6s | %-10s | %-10s | %-18s | %-18s\n",
-                  "Header Address", "Status", "Block Size", "Payload Sz", "Prev Block", "Next Block");
-    serial_printf(COM1, "-------------------------------------------------------------------------------------------------------\n");
-
-    heap_list_t* current = heap_list_head;
-    size_t block_count = 0;
-    size_t total_free = 0;
-    size_t total_used = 0;
-
-    while (current != NULL) {
-        const char* status = "UNKNOWN";
-        if (current->magic == HEAP_MAGIC_FREE) {
-            status = "FREE";
-            total_free += current->size;
-        } else if (current->magic == HEAP_MAGIC_USED) {
-            status = "USED";
-            total_used += current->size;
-        } else {
-            status = "CORRUPT";
-        }
-
-        serial_printf(COM1, "%018llx | %-6s | %010llx | %010llx | %018llx | %018llx\n",
-                      (uintptr_t)current,
-                      status,
-                      current->size,
-                      current->payload_size,
-                      (uintptr_t)current->prev,
-                      (uintptr_t)current->next);
-
-        if (current->next == current) {
-            serial_printf(COM1, "HEAP ERROR: Circular link detected (next points to self)!\n");
-            break;
-        }
-
-        current = current->next;
-        block_count++;
-    }
-
-    serial_printf(COM1, "-------------------------------------------------------------------------------------------------------\n");
-    serial_printf(COM1, "Summary: %d Blocks | Free: %d Bytes | Used: %d Bytes | Total Managed: %d Bytes\n",
-                  block_count, total_free, total_used, total_free + total_used);
-    serial_printf(COM1, "=== HEAP DUMP END ===\n\n");
-}
-
+/**
+ * Initializes the HEAP allocator
+ */
 void heap_init() {
     phys_addr_t page1 = pmm_page_alloc();
     phys_addr_t page2 = pmm_page_alloc();
@@ -88,14 +45,13 @@ void heap_init() {
     heap_end_addr = KERNEL_HEAP_START + initial_size;
 
     serial_printf(COM1, "HEAP: initial_block at %llx with size %llx\n", initial_block, initial_size);
-
-    heap_dump();
+    serial_printf(COM1, "HEAP: done\n");
 }
 
 /**
- * Extends the heap by allocating and mapping virtual pages.
- * @param size The minimum raw size (in bytes) needed to fulfill the allocation.
- * @return Pointer to the newly created free block, or NULL on failure.
+ * Extends the HEAP if kmalloc cannot find a suitable block for size
+ * @param size Required size for the extension
+ * @return Returns the new free block
  */
 heap_list_t* heap_extend(size_t size) {
     size_t needed_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE;
@@ -141,6 +97,11 @@ heap_list_t* heap_extend(size_t size) {
     return new_block;
 }
 
+/**
+ * Allocates memory from kernel HEAP
+ * @param size Size to allocate
+ * @return The virtual address of the allocated memory
+ */
 virt_addr_t kmalloc(size_t size) {
     if (size == 0) return 0;
 
@@ -187,6 +148,11 @@ virt_addr_t kmalloc(size_t size) {
     return (uintptr_t)best_fit + HEAP_HEADER_SIZE;
 }
 
+/**
+ * Allocates memory from kernel HEAP and zeros it
+ * @param size Size to allocate
+ * @return The virtual address of the allocated and zeroed memory
+ */
 virt_addr_t kzalloc(size_t size) {
     virt_addr_t addr = kmalloc(size);
     if (addr) {
@@ -195,6 +161,10 @@ virt_addr_t kzalloc(size_t size) {
     return addr;
 }
 
+/**
+ * Frees allocated memory
+ * @param addr The virtual address of allocated memory
+ */
 void kfree(virt_addr_t addr) {
     if (!addr) return;
 
@@ -231,3 +201,43 @@ void kfree(virt_addr_t addr) {
     }
 }
 
+/**
+ * Dumps the current HEAP doubly-linked list and HEAP status
+ */
+void heap_dump() {
+    serial_printf(COM1, "\n=== HEAP DUMP START (End Address: %llx) ===\n", heap_end_addr);
+    serial_printf(COM1, "%-18s | %-6s | %-10s | %-10s | %-18s | %-18s\n", "Header Address", "Status", "Block Size", "Payload Sz", "Prev Block", "Next Block");
+    serial_printf(COM1, "-------------------------------------------------------------------------------------------------------\n");
+
+    heap_list_t* current = heap_list_head;
+    size_t block_count = 0;
+    size_t total_free = 0;
+    size_t total_used = 0;
+
+    while (current != NULL) {
+        const char* status = "UNKNOWN";
+        if (current->magic == HEAP_MAGIC_FREE) {
+            status = "FREE";
+            total_free += current->size;
+        } else if (current->magic == HEAP_MAGIC_USED) {
+            status = "USED";
+            total_used += current->size;
+        } else {
+            status = "CORRUPT";
+        }
+
+        serial_printf(COM1, "%018llx | %-6s | %010llx | %010llx | %018llx | %018llx\n", (uintptr_t)current, status, current->size, current->payload_size, (uintptr_t)current->prev, (uintptr_t)current->next);
+
+        if (current->next == current) {
+            serial_printf(COM1, "HEAP: Circular link detected (next points to self)!\n");
+            break;
+        }
+
+        current = current->next;
+        block_count++;
+    }
+
+    serial_printf(COM1, "-------------------------------------------------------------------------------------------------------\n");
+    serial_printf(COM1, "Summary: %d Blocks | Free: %d Bytes | Used: %d Bytes | Total Managed: %d Bytes\n", block_count, total_free, total_used, total_free + total_used);
+    serial_printf(COM1, "=== HEAP DUMP END ===\n\n");
+}

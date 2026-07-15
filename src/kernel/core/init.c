@@ -21,6 +21,11 @@ multiboot_info_t* kernel_multiboot_info;
 char kernel_cmdline[256];
 char kernel_bootloader_name[64];
 
+/**
+ * Parses the MULTIBOOT2 info
+ * @param magic The MULTIBOOT2 magic number
+ * @param info_ptr The MULTIBOOT2 info address
+ */
 static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
     if (magic != MULTIBOOT2_MAGIC) {
         panic("bad multiboot2 magic", magic);
@@ -112,6 +117,11 @@ static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
     }
 }
 
+/**
+ * Initializes the Kernel
+ * @param magic The MULTIBOOT2 magic number given by GRUB
+ * @param info_ptr The MULTIBOOT2 info address given by GRUB
+ */
 void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     serial_init(COM1);
     serial_printf(COM1, "INIT: start\n");
@@ -130,15 +140,6 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     pmm_init();
     vmm_init();
     heap_init();
-
-    virt_addr_t ptr1 = kmalloc(1024);
-    heap_dump();
-    virt_addr_t ptr2 = kmalloc(1000000);
-    heap_dump();
-    kfree(ptr1);
-    heap_dump();
-    kfree(ptr2);
-    heap_dump();
 
     serial_printf(COM1, "INIT: done\n");
 

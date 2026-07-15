@@ -1,6 +1,6 @@
 /**
  * @file handler.h
- * @brief interrupt handler for ISRs and IRQs (Header)
+ * @brief Interrupt Handler for ISRs and IRQs (Header)
  * @author friedrichOsDev
  */
 

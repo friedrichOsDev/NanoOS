@@ -8,6 +8,9 @@
 #include <arch/x86_64/drivers/serial.h>
 #include <lib/io.h>
 
+/**
+ * Remaps the PIC to prevent IRQs to interfere with IDTs
+ */
 void pic_remap() {
     serial_printf(COM1, "PIC: remap\n");
 
@@ -25,5 +28,4 @@ void pic_remap() {
 
     outb(PIC1_DATA, 0x00);
     outb(PIC2_DATA, 0x00);
-
 }

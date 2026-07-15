@@ -76,11 +76,13 @@ typedef struct heap_list {
 #define VMM_PD_INDEX(virt)   (((virt) >> 21) & 0x1FF)
 #define VMM_PT_INDEX(virt)   (((virt) >> 12) & 0x1FF)
 
+#define PT_MAX_ENTRIES 512
+
 typedef uint64_t page_table_entry_t;
 
 /**
  * Generic Page Table structure for every level
  */
 typedef struct {
-    page_table_entry_t entries[512];
+    page_table_entry_t entries[PT_MAX_ENTRIES];
 } __attribute__((aligned(PAGE_SIZE))) page_table_t;

@@ -1,6 +1,6 @@
 /**
  * @file io.h
- * @brief io implementation (Header)
+ * @brief 64-Bit Port I/O implementation (Header)
  * @author friedrichOsDev
  */
 

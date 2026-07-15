@@ -6,6 +6,13 @@
 
 #include <lib/string.h>
 
+/**
+ * Fills a block of memory with a specific 8-bit value
+ * @param dest Pointer to the block of memory to fill
+ * @param value The value to be set
+ * @param count Number of bytes to fill
+ * @return A pointer to the destination memory area (dest)
+ */
 void* memset(void* dest, uint8_t value, size_t count) {
     uint64_t val64 = value;
     val64 |= (val64 << 8);
@@ -35,6 +42,13 @@ void* memset(void* dest, uint8_t value, size_t count) {
     return dest;
 }
 
+/**
+ * Copies count bytes from source to destination memory area
+ * @param dest Pointer to the destination array
+ * @param src Pointer to the source of data to be copied
+ * @param count Number of bytes to copy
+ * @return A pointer to the destination memory area (dest)
+ */
 void* memcpy(void* dest, const void* src, size_t count) {
     uint8_t* d = dest;
     const uint8_t* s = src;
@@ -60,6 +74,12 @@ void* memcpy(void* dest, const void* src, size_t count) {
     return dest;
 }
 
+/**
+ * Fills a block of memory with a specific 32-bit value
+ * @param dest Pointer to the block of memory to fill
+ * @param value The 32-bit value to be set
+ * @param count Number of 32-bit dwords to fill
+ */
 void memset32(void* dest, uint32_t value, size_t count) {
     __asm__ __volatile__(
         "cld; rep stosl"
@@ -69,6 +89,12 @@ void memset32(void* dest, uint32_t value, size_t count) {
     );
 }
 
+/**
+ * Copies count 32-bit dwords from source to destination memory area
+ * @param dest Pointer to the destination array
+ * @param src Pointer to the source of data to be copied
+ * @param count Number of 32-bit dwords to copy
+ */
 void memcpy32(void* dest, const void* src, size_t count) {
     __asm__ __volatile__(
         "cld; rep movsl"
@@ -78,6 +104,12 @@ void memcpy32(void* dest, const void* src, size_t count) {
     );
 }
 
+/**
+ * Fills a block of memory with a specific 64-bit value
+ * @param dest Pointer to the block of memory to fill
+ * @param value The 64-bit value to be set
+ * @param count Number of 64-bit qwords to fill
+ */
 void memset64(void* dest, uint64_t value, size_t count) {
     __asm__ __volatile__(
         "cld; rep stosq"
@@ -87,6 +119,12 @@ void memset64(void* dest, uint64_t value, size_t count) {
     );
 }
 
+/**
+ * Copies count 64-bit qwords from source to destination memory area
+ * @param dest Pointer to the destination array
+ * @param src Pointer to the source of data to be copied
+ * @param count Number of 64-bit qwords to copy
+ */
 void memcpy64(void* dest, const void* src, size_t count) {
     __asm__ __volatile__(
         "cld; rep movsq"
@@ -96,6 +134,13 @@ void memcpy64(void* dest, const void* src, size_t count) {
     );
 }
 
+/**
+ * Compares two blocks of memory
+ * @param ptr1 Pointer to the first block of memory
+ * @param ptr2 Pointer to the second block of memory
+ * @param count Number of bytes to compare
+ * @return 0 if matches, < 0 if ptr1 is less than ptr2, > 0 if ptr1 is greater
+ */
 int memcmp(const void* ptr1, const void* ptr2, size_t count) {
     const uint64_t* p1_64 = ptr1;
     const uint64_t* p2_64 = ptr2;
@@ -121,6 +166,13 @@ int memcmp(const void* ptr1, const void* ptr2, size_t count) {
     return 0;
 }
 
+/**
+ * Copies a block of memory, handling overlapping regions safely
+ * @param dest Pointer to the destination array
+ * @param src Pointer to the source of data to be copied
+ * @param count Number of bytes to copy
+ * @return A pointer to the destination memory area (dest)
+ */
 void* memmove(void* dest, const void* src, size_t count) {
     uint8_t* d = dest;
     const uint8_t* s = src;
@@ -160,6 +212,11 @@ void* memmove(void* dest, const void* src, size_t count) {
     return dest;
 }
 
+/**
+ * Computes the length of a null-terminated string using optimized word-access
+ * @param str Pointer to the null-terminated string
+ * @return The number of characters in the string before the terminating null byte
+ */
 size_t strlen(const char* str) {
     const char* char_ptr = str;
     const uint64_t* longword_ptr;
@@ -189,12 +246,24 @@ size_t strlen(const char* str) {
     }
 }
 
+/**
+ * Copies the null-terminated string from source to destination
+ * @param dest Pointer to the destination array
+ * @param src Pointer to the null-terminated string to copy
+ * @return A pointer to the destination string (dest)
+ */
 char* strcpy(char* dest, const char* src) {
     char* d = dest;
     while ((*d++ = *src++));
     return dest;
 }
 
+/**
+ * Compares two null-terminated strings lexicographically
+ * @param s1 Pointer to the first string
+ * @param s2 Pointer to the second string
+ * @return An integer <, ==, or > 0 if s1 is found to be less, matching, or greater than s2
+ */
 int strcmp(const char* s1, const char* s2) {
     while (((uintptr_t)s1 & 7) != 0 || ((uintptr_t)s2 & 7) != 0) {
         if (*s1 != *s2) return *(const unsigned char*)s1 - *(const unsigned char*)s2;
@@ -220,6 +289,13 @@ int strcmp(const char* s1, const char* s2) {
     return *(const unsigned char*)s1 - *(const unsigned char*)s2;
 }
 
+/**
+ * Compares up to n characters of two null-terminated strings
+ * @param s1 Pointer to the first string
+ * @param s2 Pointer to the second string
+ * @param n Maximum number of characters to compare
+ * @return An integer <, ==, or > 0 if s1 is found to be less, matching, or greater than s2
+ */
 int strncmp(const char* s1, const char* s2, size_t n) {
     while (n && *s1 && (*s1 == *s2)) {
         s1++; s2++; n--;
@@ -228,6 +304,13 @@ int strncmp(const char* s1, const char* s2, size_t n) {
     return *(const unsigned char*)s1 - *(const unsigned char*)s2;
 }
 
+/**
+ * Copies up to n characters from source to destination, padding with null bytes if needed
+ * @param dest Pointer to the destination array
+ * @param src Pointer to the null-terminated string to copy
+ * @param n Maximum number of characters to copy
+ * @return A pointer to the destination string (dest)
+ */
 char* strncpy(char* dest, const char* src, size_t n) {
     size_t i;
     for (i = 0; i < n && src[i] != '\0'; i++) dest[i] = src[i];
@@ -235,11 +318,22 @@ char* strncpy(char* dest, const char* src, size_t n) {
     return dest;
 }
 
+/**
+ * Appends the source string to the destination string
+ * @param dest Pointer to the destination string (must contain null-terminated string and have enough space)
+ * @param src Pointer to the null-terminated string to append
+ * @return A pointer to the destination string (dest)
+ */
 char* strcat(char* dest, const char* src) {
     strcpy(dest + strlen(dest), src);
     return dest;
 }
 
+/**
+ * Computes the length of a null-terminated 32-bit wide character string
+ * @param str Pointer to the null-terminated 32-bit wide string
+ * @return The number of 32-bit characters in the string before the terminating null
+ */
 size_t u32_strlen(const uint32_t* str) {
     const uint32_t* s = str;
     while (((uintptr_t)s & 7) != 0) {
@@ -255,12 +349,24 @@ size_t u32_strlen(const uint32_t* str) {
     }
 }
 
+/**
+ * Copies the null-terminated 32-bit wide string from source to destination
+ * @param dest Pointer to the destination 32-bit array
+ * @param src Pointer to the null-terminated 32-bit wide string to copy
+ * @return A pointer to the destination string (dest)
+ */
 uint32_t* u32_strcpy(uint32_t* dest, const uint32_t* src) {
     uint32_t* d = dest;
     while ((*d++ = *src++));
     return dest;
 }
 
+/**
+ * Compares two null-terminated 32-bit wide strings lexicographically
+ * @param s1 Pointer to the first 32-bit string
+ * @param s2 Pointer to the second 32-bit string
+ * @return -1 if s1 < s2, 1 if s1 > s2, or 0 if they match
+ */
 int u32_strcmp(const uint32_t* s1, const uint32_t* s2) {
     while (*s1 && (*s1 == *s2)) {
         s1++; s2++;
@@ -268,6 +374,13 @@ int u32_strcmp(const uint32_t* s1, const uint32_t* s2) {
     return (*s1 < *s2) ? -1 : (*s1 > *s2);
 }
 
+/**
+ * Compares up to n characters of two null-terminated 32-bit wide strings
+ * @param s1 Pointer to the first 32-bit string
+ * @param s2 Pointer to the second 32-bit string
+ * @param n Maximum number of characters to compare
+ * @return -1 if s1 < s2, 1 if s1 > s2, or 0 if they match
+ */
 int u32_strncmp(const uint32_t* s1, const uint32_t* s2, size_t n) {
     while (n && *s1 && (*s1 == *s2)) {
         s1++; s2++; n--;
@@ -276,6 +389,13 @@ int u32_strncmp(const uint32_t* s1, const uint32_t* s2, size_t n) {
     return (*s1 < *s2) ? -1 : (*s1 > *s2);
 }
 
+/**
+ * Copies up to n characters from source to destination 32-bit array, padding with zeros if needed
+ * @param dest Pointer to the destination 32-bit array
+ * @param src Pointer to the null-terminated 32-bit wide string to copy
+ * @param n Maximum number of 32-bit characters to copy
+ * @return A pointer to the destination string (dest)
+ */
 uint32_t* u32_strncpy(uint32_t* dest, const uint32_t* src, size_t n) {
     size_t i;
     for (i = 0; i < n && src[i] != U'\0'; i++) dest[i] = src[i];
@@ -283,6 +403,12 @@ uint32_t* u32_strncpy(uint32_t* dest, const uint32_t* src, size_t n) {
     return dest;
 }
 
+/**
+ * Appends the source 32-bit wide string to the destination 32-bit wide string
+ * @param dest Pointer to the destination 32-bit array (must contain null-terminated string and have enough space)
+ * @param src Pointer to the null-terminated 32-bit wide string to append
+ * @return A pointer to the destination string (dest)
+ */
 uint32_t* u32_strcat(uint32_t* dest, const uint32_t* src) {
     u32_strcpy(dest + u32_strlen(dest), src);
     return dest;

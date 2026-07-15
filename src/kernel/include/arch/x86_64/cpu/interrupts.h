@@ -1,6 +1,6 @@
 /**
  * @file interrupts.h
- * @brief Global isr and irq definitions (Header)
+ * @brief Global ISR and IQr definitions (Header)
  * @author friedrichOsDev
  */
 

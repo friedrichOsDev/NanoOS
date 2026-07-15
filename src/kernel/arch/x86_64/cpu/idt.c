@@ -11,6 +11,9 @@
 struct idt_entry idt[IDT_ENTRIES];
 struct idt_ptr idtp;
 
+/**
+ * Initializes the IDT
+ */
 void idt_init() {
     idtp.limit = (sizeof(struct idt_entry) * IDT_ENTRIES) - 1;
     idtp.base = (uint64_t)&idt;
@@ -40,6 +43,14 @@ void idt_init() {
     idt_load((uint64_t)&idtp);
 }
 
+/**
+ * Sets a GDT gate.
+ * @param num The index of the IDT entry
+ * @param base The base address
+ * @param selector The selector for the IDT entry
+ * @param ist The Interrupt Stack Table (IST) index for the IDT entry
+ * @param flags The flags for the IDT entry
+ */
 void idt_set_gate(uint8_t num, uint64_t base, uint16_t selector, uint8_t ist, uint8_t flags) {
     idt[num].base_low = base & 0xFFFF;
     idt[num].base_mid = (base >> 16) & 0xFFFF;

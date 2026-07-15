@@ -1,6 +1,6 @@
 /**
  * @file handler.c
- * @brief interrupt handler for ISRs and IRQs (Header)
+ * @brief Interrupt Handler for ISRs and IRQs
  * @author friedrichOsDev
  */
 
@@ -12,6 +12,11 @@
 static isr_handler_t isr_handlers[32];
 static irq_handler_t irq_handlers[16];
 
+/**
+ * Installs a handler for a given ISR
+ * @param isr The number of the ISR
+ * @param handler The handler function for the ISR
+ */
 void isr_install_handler(int isr, isr_handler_t handler) {
     if (isr < 0 || isr >= 32) {
         serial_printf(COM1, "HANDLER: Invalid ISR number %d\n", isr);
@@ -20,6 +25,11 @@ void isr_install_handler(int isr, isr_handler_t handler) {
     }
 }
 
+/**
+ * Installs a handler for a given IRQ
+ * @param irq The number of the IRQ
+ * @param handler The handler function for the IRQ
+ */
 void irq_install_handler(int irq, irq_handler_t handler) {
     if (irq < 0 || irq >= 16) {
         serial_printf(COM1, "HANDLER: Invalid IRQ number %d\n", irq);
@@ -28,6 +38,10 @@ void irq_install_handler(int irq, irq_handler_t handler) {
     }
 }
 
+/**
+ * Standard ISR handler
+ * @param regs CPU registers
+ */
 void isr_handler(struct registers *regs) {
     if (regs->int_no < 32) {
         serial_printf(COM1, "Exception: %lld, Error Code: %lld\n", regs->int_no, regs->err_code);
@@ -47,6 +61,10 @@ void isr_handler(struct registers *regs) {
     }
 }
 
+/**
+ * Standard IRQ handler
+ * @param regs CPU registers
+ */
 void irq_handler(struct registers *regs) {
     if (regs->int_no >= 40 && regs->int_no < 48) {
         outb(0xA0, 0x20);
