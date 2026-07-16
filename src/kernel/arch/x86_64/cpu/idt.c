@@ -39,6 +39,9 @@ void idt_init() {
         serial_printf(COM1, "IDT: set %d entry (ist=%d)\n", i, ist_index);
     }
 
+    idt_set_gate(0xFF, (uint64_t)spurious_handler_stub, 0x08, 0, 0x8E);
+    serial_printf(COM1, "IDT: set spurious vector (0xFF) entry\n");
+
     serial_printf(COM1, "IDT: load IDT\n");
     idt_load((uint64_t)&idtp);
 }

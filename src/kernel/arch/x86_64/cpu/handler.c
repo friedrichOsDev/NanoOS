@@ -5,12 +5,13 @@
  */
 
 #include <arch/x86_64/cpu/handler.h>
+#include <arch/x86_64/cpu/apic.h>
+#include <arch/x86_64/cpu/hpet.h>
 #include <arch/x86_64/drivers/serial.h>
-#include <lib/io.h>
 #include <core/panic.h>
 
 static isr_handler_t isr_handlers[32];
-static irq_handler_t irq_handlers[16];
+static irq_handler_t irq_handlers[48];
 
 /**
  * Installs a handler for a given ISR
@@ -31,7 +32,7 @@ void isr_install_handler(int isr, isr_handler_t handler) {
  * @param handler The handler function for the IRQ
  */
 void irq_install_handler(int irq, irq_handler_t handler) {
-    if (irq < 0 || irq >= 16) {
+    if (irq < 0 || irq >= 48) {
         serial_printf(COM1, "HANDLER: Invalid IRQ number %d\n", irq);
     } else {
         irq_handlers[irq] = handler;
@@ -66,13 +67,16 @@ void isr_handler(struct registers *regs) {
  * @param regs CPU registers
  */
 void irq_handler(struct registers *regs) {
-    if (regs->int_no >= 40 && regs->int_no < 48) {
-        outb(0xA0, 0x20);
-    }
-    outb(0x20, 0x20);
+    uint64_t irq = regs->int_no - 32;
 
-    irq_handler_t handler = irq_handlers[regs->int_no - 32];
-    if (handler) {
-        handler(regs);
+    if (irq >= 48) {
+        serial_printf(COM1, "HANDLER: Invalid IRQ number %lld\n", irq);
+    } else {
+        irq_handler_t handler = irq_handlers[irq];
+        if (handler) {
+            handler(regs);
+        }
     }
+
+    lapic_eoi();
 }

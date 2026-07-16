@@ -13,4 +13,4 @@
 #define ICW1_INIT 0x11
 #define ICW4_8086 0x01
 
-void pic_remap();
+void pic_disable();

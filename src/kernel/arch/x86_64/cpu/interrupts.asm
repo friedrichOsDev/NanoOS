@@ -7,6 +7,7 @@ extern irq_handler
 global idt_load
 global idt_enable
 global idt_disable
+global spurious_handler_stub
 
 ; Macro for exporting ISR symbols
 %macro EXPORT_ISR 1
@@ -183,3 +184,6 @@ idt_enable:
 idt_disable:
     cli
     ret
+
+spurious_handler_stub:
+    iretq

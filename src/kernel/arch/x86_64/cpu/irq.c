@@ -15,8 +15,7 @@
  * Initializes the IRQ
  */
 void irq_init() {
-    pic_remap();
-
+    pic_disable();
     uint64_t irq_table[] = {
         (uint64_t)irq0, (uint64_t)irq1, (uint64_t)irq2, (uint64_t)irq3, (uint64_t)irq4,
         (uint64_t)irq5, (uint64_t)irq6, (uint64_t)irq7, (uint64_t)irq8, (uint64_t)irq9,

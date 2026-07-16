@@ -6,6 +6,7 @@
 
 #include <core/init.h>
 #include <core/panic.h>
+#include <lib/string.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/idt.h>
@@ -14,12 +15,24 @@
 #include <arch/x86_64/mm/pmm.h>
 #include <arch/x86_64/mm/vmm.h>
 #include <arch/x86_64/mm/heap.h>
+#include <arch/x86_64/cpu/acpi.h>
+#include <arch/x86_64/cpu/apic.h>
+#include <arch/x86_64/cpu/hpet.h>
+#include <arch/x86_64/cpu/handler.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
 multiboot_info_t* kernel_multiboot_info;
 char kernel_cmdline[256];
 char kernel_bootloader_name[64];
+phys_addr_t rsdp_phys_addr = 0;
+static rsdp_t rsdp_stable_copy;
+
+static uint64_t ticks = 0;
+static void timer_callback(struct registers* regs) {
+    (void)regs;
+    ticks++;
+}
 
 /**
  * Parses the MULTIBOOT2 info
@@ -98,14 +111,19 @@ static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
             }
             case MULTIBOOT_TAG_TYPE_ACPI_OLD: {
                 multiboot_tag_old_acpi_t* old = (multiboot_tag_old_acpi_t*)tag;
-                (void)old;
-                serial_printf(COM1, "MULTIBOOT2: old acpi isn't implemented yet\n");
+                rsdp_phys_addr = (phys_addr_t)old->rsdp;
+                memcpy(&rsdp_stable_copy, (void*)P2V(rsdp_phys_addr), 20);
+                serial_printf(COM1, "MULTIBOOT2: ACPI Old (v1.0) RSDP physical found at %llx\n", rsdp_phys_addr);
                 break;
             }
             case MULTIBOOT_TAG_TYPE_ACPI_NEW: {
                 multiboot_tag_new_acpi_t* new = (multiboot_tag_new_acpi_t*)tag;
-                (void)new;
-                serial_printf(COM1, "MULTIBOOT2: new acpi isn't implemented yet\n");
+                rsdp_phys_addr = (phys_addr_t)new->rsdp;
+                rsdp_t* temp_rsdp = (rsdp_t*)P2V(rsdp_phys_addr);
+                size_t rsdp_size = (temp_rsdp->revision >= 2) ? temp_rsdp->length : 20;
+                if (rsdp_size > sizeof(rsdp_t)) rsdp_size = sizeof(rsdp_t);
+                memcpy(&rsdp_stable_copy, temp_rsdp, rsdp_size);
+                serial_printf(COM1, "MULTIBOOT2: ACPI New (v2.0+) RSDP physical found at %llx\n", rsdp_phys_addr);
                 break;
             }
             default: {
@@ -141,7 +159,24 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     vmm_init();
     heap_init();
 
+    if (rsdp_phys_addr != 0) {
+        acpi_init(rsdp_phys_addr);
+    } else {
+        serial_printf(COM1, "ACPI: no RSDP address found in the MULTIBOOT2 info structure\n");
+    }
+
+    apic_init();
+    hpet_init();
+
+    irq_install_handler(0, timer_callback);
+    ioapic_route_irq(0, 32, 0); // Route IRQ 0 to vector 32 on BSP (APIC ID 0)
+
+
     serial_printf(COM1, "INIT: done\n");
 
-    while (1) __asm__("hlt");
+    while (1) {
+        serial_printf(COM1, "wait 1s\n");
+        hpet_mdelay(1000);
+        serial_printf(COM1, "ticks (printed in kernel while loop): %d\n", ticks);
+    }
 }
