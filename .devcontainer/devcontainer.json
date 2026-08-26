@@ -1,0 +1,22 @@
+{
+    "name": "NanoOS Cross",
+    "image": "nano-cross",
+    "runArgs": [
+        "-e", "DISPLAY=${env:DISPLAY}",
+        "-v", "/tmp/.X11-unix:/tmp/.X11-unix:rw"
+    ],
+    "containerEnv": {
+        "DISPLAY": "${env:DISPLAY}"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "llvm-vs-code-extensions.vscode-clangd"
+            ]
+        }
+    },
+    "mounts": [
+        "source=${localWorkspaceFolder},target=/workspace,type=bind"
+    ],
+    "workspaceFolder": "/workspace"
+}

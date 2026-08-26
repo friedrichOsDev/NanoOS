@@ -1,0 +1,54 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Kernel",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "clean",
+                "iso"
+            ],
+            "presentation": {
+                "echo": false,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": false,
+                "close": true
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run QEMU",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "run"
+            ],
+            "presentation": {
+                "echo": false,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": false,
+                "close": true
+            },
+            "group": "test"
+        },
+        {
+            "label": "Build & Run",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build Kernel",
+                "Run QEMU"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

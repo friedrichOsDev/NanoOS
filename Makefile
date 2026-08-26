@@ -64,6 +64,10 @@ iso: $(KERNEL_ELF)
 	cp $(GRUB_DIR)/grub.cfg $(ISO_DIR)/boot/grub/
 	grub-mkrescue -o $(ISO_IMAGE) $(ISO_DIR)
 
+# --- Run ---
+run:
+	qemu-system-x86_64 -bios ./uefi/OVMF.fd -m 8G -vga std -display gtk,gl=off -cdrom build/nanoos.iso -no-reboot -d int,cpu_reset -D qemu.log -serial file:serial.log
+
 # --- Clean ---
 clean:
 	rm -rf $(BUILD_DIR) $(ISO_DIR)

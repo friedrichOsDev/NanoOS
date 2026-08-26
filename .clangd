@@ -1,0 +1,14 @@
+CompileFlags:
+  Compiler: /opt/cross/bin/x86_64-elf-gcc
+  Add:
+    - "-ffreestanding"
+    - "-m64"
+    - "-O1"
+    - "-Wall"
+    - "-Wextra"
+    - "-Werror"
+    - "-fno-builtin"
+    - "-fno-stack-protector"
+    - "-fno-strict-aliasing"
+    - "-nostdlib"
+    - "-I/workspace/src/kernel/include"

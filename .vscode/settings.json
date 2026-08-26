@@ -1,0 +1,11 @@
+{
+    "editor.fontFamily": "Fira Code",
+    "editor.fontLigatures": true,
+    "editor.quickSuggestions": {
+        "other": "on",
+        "comments": "off",
+        "strings": "off"
+    },
+    "editor.quickSuggestionsDelay": 0,
+    "editor.inlayHints.enabled": "on"
+}

@@ -17,12 +17,14 @@ RUN apt-get update && apt-get install -y \
     wget \
     g++ \
     gcc \
+    clangd \
     make \
     nasm \
     xorriso \
     grub-pc-bin \
     grub-efi-amd64-bin \
     grub-efi-ia32-bin \
+    qemu-system \
     mtools \
     dosfstools \
     gdb \
