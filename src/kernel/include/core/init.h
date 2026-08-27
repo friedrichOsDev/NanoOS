@@ -6,20 +6,20 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <arch/x86_64/boot/multiboot2.h>
+#include <stdint.h>
 
 extern uint8_t kernel_start[];
 extern uint8_t kernel_end[];
 extern uint8_t kernel_start_phys[];
 extern uint8_t kernel_end_phys[];
 
-#define KERNEL_START (uintptr_t)kernel_start
-#define KERNEL_END (uintptr_t)kernel_end
-#define KERNEL_START_PHYS (uintptr_t)kernel_start_phys
-#define KERNEL_END_PHYS (uintptr_t)kernel_end_phys
+#define KERNEL_START (uintptr_t) kernel_start
+#define KERNEL_END (uintptr_t) kernel_end
+#define KERNEL_START_PHYS (uintptr_t) kernel_start_phys
+#define KERNEL_END_PHYS (uintptr_t) kernel_end_phys
 
-#define  MMAP_MAX_ENTRIES 1024
+#define MMAP_MAX_ENTRIES 1024
 
 typedef struct {
     uint64_t fb_addr;
@@ -50,7 +50,7 @@ typedef struct {
 
 extern mmap_t kernel_mmap;
 extern fb_info_t kernel_fb_info;
-extern multiboot_info_t* kernel_multiboot_info;
+extern multiboot_info_t *kernel_multiboot_info;
 extern char kernel_cmdline[256];
 extern char kernel_bootloader_name[64];
 

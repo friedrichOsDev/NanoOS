@@ -3,15 +3,19 @@
     "image": "nano-cross",
     "runArgs": [
         "-e", "DISPLAY=${env:DISPLAY}",
-        "-v", "/tmp/.X11-unix:/tmp/.X11-unix:rw"
+        "-v", "/tmp/.X11-unix:/tmp/.X11-unix:rw",
+        "--ipc=host"
     ],
     "containerEnv": {
         "DISPLAY": "${env:DISPLAY}"
     },
+    "remoteUser": "vscode",
+    "updateRemoteUserUID": true,
     "customizations": {
         "vscode": {
             "extensions": [
-                "llvm-vs-code-extensions.vscode-clangd"
+                "llvm-vs-code-extensions.vscode-clangd",
+                "13xforever.language-x86-64-assembly"
             ]
         }
     },

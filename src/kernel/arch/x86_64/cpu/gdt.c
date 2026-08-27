@@ -53,7 +53,8 @@ void gdt_init() {
  * @param access The access flags
  * @param gran The granularity flags
  */
-void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran) {
+void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access,
+                  uint8_t gran) {
     gdt[num].base_low = base & 0xFFFF;
     gdt[num].base_middle = (base >> 16) & 0xFF;
     gdt[num].base_high = (base >> 24) & 0xFF;

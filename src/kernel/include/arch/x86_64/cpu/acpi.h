@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <arch/x86_64/mm/memdef.h>
+#include <stdint.h>
 
 #define RSDP_SIGNATURE "RSD PTR "
 #define FADT_SIGNATURE "FACP"
@@ -207,19 +207,19 @@ typedef struct {
  * Helper structure containing pointers to parsed MADT entries
  */
 typedef struct {
-    madt_lapic_entry_t* lapics;
+    madt_lapic_entry_t *lapics;
     size_t lapic_count;
-    madt_ioapic_entry_t* ioapics;
+    madt_ioapic_entry_t *ioapics;
     size_t ioapic_count;
-    madt_iso_entry_t* isos;
+    madt_iso_entry_t *isos;
     size_t iso_count;
-    madt_ioapic_nmi_entry_t* ioapic_nmis;
+    madt_ioapic_nmi_entry_t *ioapic_nmis;
     size_t ioapic_nmi_count;
-    madt_lapic_nmi_entry_t* lapic_nmis;
+    madt_lapic_nmi_entry_t *lapic_nmis;
     size_t lapic_nmi_count;
-    madt_lapic_address_override_entry_t* lapic_overrides;
+    madt_lapic_address_override_entry_t *lapic_overrides;
     size_t lapic_override_count;
-    madt_lx2apic_entry_t* lx2apics;
+    madt_lx2apic_entry_t *lx2apics;
     size_t lx2apic_count;
 } madt_parsed_t;
 
@@ -235,14 +235,14 @@ typedef struct {
     uint8_t page_protection_oem;
 } __attribute__((packed)) hpet_t;
 
-extern rsdp_t* rsdp;
-extern rsdt_t* rsdt;
-extern xsdt_t* xsdt;
-extern fadt_t* fadt;
-extern acpi_sdt_header_t* dsdt;
-extern madt_t* madt;
+extern rsdp_t *rsdp;
+extern rsdt_t *rsdt;
+extern xsdt_t *xsdt;
+extern fadt_t *fadt;
+extern acpi_sdt_header_t *dsdt;
+extern madt_t *madt;
 extern madt_parsed_t madt_parsed;
-extern hpet_t* hpet;
+extern hpet_t *hpet;
 
 void acpi_init(phys_addr_t rsdp_phys);
 void acpi_power_off();

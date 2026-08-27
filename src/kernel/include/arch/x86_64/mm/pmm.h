@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 typedef struct {
-    uint8_t* bitmap;
+    uint8_t *bitmap;
     uint64_t bitmap_size;
     uint64_t total_pages;
     uint64_t used_pages;

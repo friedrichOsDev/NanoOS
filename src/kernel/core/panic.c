@@ -4,9 +4,9 @@
  * @author friedrichOsDev
  */
 
-#include <core/panic.h>
-#include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/cpu/interrupts.h>
+#include <arch/x86_64/drivers/serial.h>
+#include <core/panic.h>
 
 /**
  * This is a Kernel Panic
@@ -15,6 +15,8 @@
  */
 void panic(const char *message, uint64_t error_code) {
     idt_disable();
-    serial_printf(COM1, "KERNEL PANIC: %s (Error code %llx)\n", message, error_code);
-    while (1) __asm__("hlt");
+    serial_printf(COM1, "KERNEL PANIC: %s (Error code %llx)\n", message,
+                  error_code);
+    while (1)
+        __asm__ __volatile__("hlt");
 }

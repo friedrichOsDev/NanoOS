@@ -29,4 +29,5 @@ extern void idt_load(uint64_t idt_ptr);
 extern void spurious_handler_stub();
 
 void idt_init();
-void idt_set_gate(uint8_t num, uint64_t base, uint16_t selector, uint8_t ist, uint8_t flags);
+void idt_set_gate(uint8_t num, uint64_t base, uint16_t selector, uint8_t ist,
+                  uint8_t flags);

@@ -5,10 +5,10 @@
  */
 
 #include <arch/x86_64/drivers/serial.h>
-#include <lib/print.h>
 #include <lib/io.h>
-#include <stdbool.h>
+#include <lib/print.h>
 #include <stdarg.h>
+#include <stdbool.h>
 
 #define SERIAL_LSR_THR_EMPTY 0x20
 
@@ -41,7 +41,8 @@ void serial_init(uint16_t port) {
  * @param c The Character
  */
 void serial_putc(uint16_t port, char c) {
-    while (serial_is_transmit_empty(port) == 0);
+    while (serial_is_transmit_empty(port) == 0)
+        ;
     outb(port, c);
 }
 
@@ -50,7 +51,7 @@ void serial_putc(uint16_t port, char c) {
  * @param port The COM Port
  * @param str The String
  */
-void serial_puts(uint16_t port, const char* str) {
+void serial_puts(uint16_t port, const char *str) {
     while (*str) {
         if (*str == '\n') {
             serial_putc(port, '\r');

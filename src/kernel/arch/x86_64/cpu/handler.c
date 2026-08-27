@@ -4,8 +4,8 @@
  * @author friedrichOsDev
  */
 
-#include <arch/x86_64/cpu/handler.h>
 #include <arch/x86_64/cpu/apic.h>
+#include <arch/x86_64/cpu/handler.h>
 #include <arch/x86_64/cpu/hpet.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <core/panic.h>
@@ -45,18 +45,28 @@ void irq_install_handler(int irq, irq_handler_t handler) {
  */
 void isr_handler(struct registers *regs) {
     if (regs->int_no < 32) {
-        serial_printf(COM1, "Exception: %lld, Error Code: %lld\n", regs->int_no, regs->err_code);
+        serial_printf(COM1, "Exception: %lld, Error Code: %lld\n", regs->int_no,
+                      regs->err_code);
     }
 
     isr_handler_t handler = isr_handlers[regs->int_no];
     if (handler) {
         handler(regs);
     } else {
-        serial_printf(COM1, "RAX: %016llx RBX: %016llx RCX: %016llx RDX: %016llx\n", regs->rax, regs->rbx, regs->rcx, regs->rdx);
-        serial_printf(COM1, "RSI: %016llx RDI: %016llx RBP: %016llx RSP: %016llx\n", regs->rsi, regs->rdi, regs->rbp, regs->rsp);
-        serial_printf(COM1, "R8 : %016llx R9 : %016llx R10: %016llx R11: %016llx\n", regs->r8,  regs->r9,  regs->r10, regs->r11);
-        serial_printf(COM1, "R12: %016llx R13: %016llx R14: %016llx R15: %016llx\n", regs->r12, regs->r13, regs->r14, regs->r15);
-        serial_printf(COM1, "RIP: %016llx CS : %016llx RFLAGS: %016llx\n", regs->rip, regs->cs, regs->rflags);
+        serial_printf(COM1,
+                      "RAX: %016llx RBX: %016llx RCX: %016llx RDX: %016llx\n",
+                      regs->rax, regs->rbx, regs->rcx, regs->rdx);
+        serial_printf(COM1,
+                      "RSI: %016llx RDI: %016llx RBP: %016llx RSP: %016llx\n",
+                      regs->rsi, regs->rdi, regs->rbp, regs->rsp);
+        serial_printf(COM1,
+                      "R8 : %016llx R9 : %016llx R10: %016llx R11: %016llx\n",
+                      regs->r8, regs->r9, regs->r10, regs->r11);
+        serial_printf(COM1,
+                      "R12: %016llx R13: %016llx R14: %016llx R15: %016llx\n",
+                      regs->r12, regs->r13, regs->r14, regs->r15);
+        serial_printf(COM1, "RIP: %016llx CS : %016llx RFLAGS: %016llx\n",
+                      regs->rip, regs->cs, regs->rflags);
 
         panic("Unhandled exception", regs->int_no);
     }

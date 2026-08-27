@@ -1,10 +1,12 @@
-FROM ubuntu:24.04
+# ==========================================
+# STAGE 1: Toolchain Builder (Cross Compiler)
+# ==========================================
+FROM ubuntu:24.04 AS toolchain-builder
 
 SHELL ["/bin/bash", "-c"]
-
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Dependencies
+# Minimal Packages
 RUN apt-get update && apt-get install -y \
     build-essential \
     bison \
@@ -17,24 +19,9 @@ RUN apt-get update && apt-get install -y \
     wget \
     g++ \
     gcc \
-    clangd \
     make \
-    nasm \
-    xorriso \
-    grub-pc-bin \
-    grub-efi-amd64-bin \
-    grub-efi-ia32-bin \
-    qemu-system \
-    mtools \
-    dosfstools \
-    gdb \
-    git \
-    ca-certificates \
-    parted \
-    cmake \
     && rm -rf /var/lib/apt/lists/*
 
-# Cross Compiler config
 ENV PREFIX="/opt/cross"
 ENV TARGET="x86_64-elf"
 ENV PATH="$PREFIX/bin:$PATH"
@@ -76,11 +63,70 @@ RUN wget https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.gz \
     && cd .. \
     && rm -rf build-gcc gcc-14.2.0 gcc-14.2.0.tar.gz
 
+# ==========================================
+# STAGE 2: ASMFMT Builder
+# ==========================================
+FROM golang:1.22-alpine AS builder
+
+RUN apk add --no-cache git
+RUN go install github.com/klauspost/asmfmt/cmd/asmfmt@latest
+
+# ==========================================
+# STAGE 3: Final Devcontainer
+# ==========================================
+FROM ubuntu:24.04
+
+SHELL ["/bin/bash", "-c"]
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Copy Toolchain from Toolchain Builder
+COPY --from=toolchain-builder /opt/cross /opt/cross
+COPY --from=builder /go/bin/asmfmt /usr/local/bin/asmfmt
+
+ENV PREFIX="/opt/cross"
+ENV TARGET="x86_64-elf"
+ENV PATH="$PREFIX/bin:$PATH"
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    clangd \
+    clang-format \
+    make \
+    nasm \
+    xorriso \
+    grub-pc-bin \
+    grub-efi-amd64-bin \
+    grub-efi-ia32-bin \
+    qemu-system \
+    mtools \
+    dosfstools \
+    gdb \
+    git \
+    ca-certificates \
+    parted \
+    cmake \
+    sudo \
+    btop \
+    wget \
+    curl \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
 # Verify Toolchain
 RUN $TARGET-gcc --version && \
     $TARGET-ld --version
 
-# Working directory
+# Create User
+RUN usermod -l vscode ubuntu \
+    && groupmod -n vscode ubuntu \
+    && usermod -d /home/vscode -m vscode \
+    && echo vscode ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/vscode \
+    && chmod 0440 /etc/sudoers.d/vscode
+
+# Create Working directory and Fix Owner
+RUN mkdir -p /workspace && chown -R vscode:vscode /workspace
 WORKDIR /workspace
+
+USER vscode
 
 CMD ["/bin/bash"]

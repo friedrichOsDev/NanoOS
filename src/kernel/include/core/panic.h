@@ -8,4 +8,4 @@
 
 #include <stdint.h>
 
-void panic(const char* message, uint64_t error_code);
+void panic(const char *message, uint64_t error_code);
