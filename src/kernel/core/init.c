@@ -18,6 +18,8 @@
 #include <arch/x86_64/mm/vmm.h>
 #include <core/init.h>
 #include <core/panic.h>
+#include <core/scheduler.h>
+#include <core/thread.h>
 #include <lib/string.h>
 
 mmap_t kernel_mmap;
@@ -161,6 +163,33 @@ static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
     }
 }
 
+void worker_a(void *arg) {
+    (void)arg;
+    for (int i = 0; i < 20; i++) {
+        serial_printf(COM1, "Thread A running (%d)...\n", i);
+        thread_yield();
+    }
+    serial_printf(COM1, "Thread A finished!\n");
+}
+
+void worker_b(void *arg) {
+    (void)arg;
+    for (int i = 0; i < 5; i++) {
+        serial_printf(COM1, "Thread B running (%d)...\n", i);
+        thread_yield();
+    }
+    serial_printf(COM1, "Thread B finished!\n");
+}
+
+void worker_c(void *arg) {
+    (void)arg;
+    for (int i = 0; i < 10; i++) {
+        serial_printf(COM1, "Thread C running (%d)...\n", i);
+        thread_yield();
+    }
+    serial_printf(COM1, "Thread C finished!\n");
+}
+
 /**
  * Initializes the Kernel
  * @param magic The MULTIBOOT2 magic number given by GRUB
@@ -201,9 +230,15 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     // irq_install_handler(0, timer_callback); <- timer_callback would trigger
     // every ms
 
-    serial_printf(COM1, "INIT: done\n");
+    scheduler_init();
+
+    thread_create(NULL, worker_a, NULL, "worker_a");
+    thread_create(NULL, worker_b, NULL, "worker_b");
+    thread_create(NULL, worker_c, NULL, "worker_c");
+
+    serial_printf(COM1, "INIT: Starting multitasking test...\n");
 
     while (1) {
-        __asm__ __volatile__("hlt");
+        thread_yield();
     }
 }
