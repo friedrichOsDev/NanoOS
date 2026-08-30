@@ -28,6 +28,7 @@ typedef struct process {
 } process_t;
 
 extern process_t *kernel_process;
+extern process_t *proc_list;
 
 void process_init(void);
 process_t *process_create(const char *name, page_table_t *pml4);

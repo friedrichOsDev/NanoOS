@@ -29,7 +29,7 @@ extern struct gdt_ptr gdtp;
 extern struct idt_ptr idtp;
 
 cpu_local_t cpus[MAX_CPUS];
-size_t smp_cpu_count = 0;
+size_t smp_cpu_count = 1;
 
 static volatile bool ap_boot_flag = false;
 
@@ -121,7 +121,6 @@ void smp_init(void) {
     cpus[0].cpu_id = 0;
     cpus[0].lapic_id = bsp_lapic_id;
     cpus[0].online = true;
-    smp_cpu_count = 1;
 
     // search MADT for all cores
     uint8_t *ptr = madt->entries;

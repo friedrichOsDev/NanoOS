@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 void scheduler_init(void);
+void scheduler_enable();
 void scheduler_add_thread(thread_t *thread);
 void scheduler_schedule(void);
 void thread_yield(void);

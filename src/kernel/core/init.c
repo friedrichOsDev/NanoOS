@@ -19,7 +19,9 @@
 #include <arch/x86_64/mm/vmm.h>
 #include <core/init.h>
 #include <core/panic.h>
+#include <core/process.h>
 #include <core/scheduler.h>
+#include <core/taskmgr.h>
 #include <core/thread.h>
 #include <lib/string.h>
 
@@ -192,6 +194,42 @@ void core_worker(void *arg) {
     }
 }
 
+void ps_dump_thread(void *arg) {
+    (void)arg;
+    while (1) {
+        thread_sleep_ms(1000);
+        ps_dump(proc_list);
+    }
+}
+
+/**
+ * Initializes the Kernel after first kernel_init function dies because the
+ * scheduler was activated
+ * @param arg Arguments given by the thread creator
+ */
+void kernel_init_thread(void *arg) {
+    (void)arg;
+
+    serial_printf(COM1, "Hello from Kernel INIT Thread!\n");
+
+    thread_create(NULL, ps_dump_thread, NULL, "ps_dump_thread");
+
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_0", "worker_c0", 0);
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_1", "worker_c1", 1);
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_2", "worker_c2", 2);
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_3", "worker_c3", 3);
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_4", "worker_c4", 4);
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_5", "worker_c5", 5);
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_6", "worker_c6", 6);
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_7", "worker_c7", 7);
+    thread_create(NULL, core_worker, "FLOATING_TASK_0", "floating_0");
+    thread_create(NULL, core_worker, "FLOATING_TASK_1", "floating_1");
+
+    while (1) {
+        thread_sleep_ms(5000);
+    }
+}
+
 /**
  * Initializes the Kernel
  * @param magic The MULTIBOOT2 magic number given by GRUB
@@ -237,20 +275,18 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
 
     irq_install_handler(0, timer_callback);
 
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_0", "worker_c0", 0);
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_1", "worker_c1", 1);
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_2", "worker_c2", 2);
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_3", "worker_c3", 3);
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_4", "worker_c4", 4);
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_5", "worker_c5", 5);
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_6", "worker_c6", 6);
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_7", "worker_c7", 7);
-    thread_create(NULL, core_worker, "FLOATING_TASK_0", "floating_0");
-    thread_create(NULL, core_worker, "FLOATING_TASK_1", "floating_1");
+    thread_create_on_cpu(kernel_process, kernel_init_thread, NULL,
+                         "kernel_init", -1);
 
     serial_printf(COM1, "INIT: Multi-Core Scheduling running!\n");
 
     idt_enable(); // just to be sure it's enabled
+
+    scheduler_enable();
+
+    scheduler_thread_exit();
+
+    // unreachable
 
     while (1) {
         __asm__ __volatile__("hlt");

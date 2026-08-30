@@ -77,6 +77,12 @@ thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
     thread->rsp = (uint64_t)sp;
     thread->state = THREAD_READY;
 
+    uint64_t proc_flags = spinlock_acquire_irqsave(&thread->process->lock);
+    thread->proc_next = thread->process->threads;
+    thread->process->threads = thread;
+    thread->process->thread_count++;
+    spinlock_release_irqrestore(&thread->process->lock, proc_flags);
+
     scheduler_add_thread(thread);
 
     serial_printf(COM1,

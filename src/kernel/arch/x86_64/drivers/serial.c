@@ -77,14 +77,16 @@ void serial_puts(uint16_t port, const char *str) {
 void serial_printf(uint16_t port, const char *format, ...) {
     char buffer[SERIAL_BUFFER_MAX_SIZE];
 
+    uint64_t flags = spinlock_acquire_irqsave(&serial_lock);
+
     va_list args;
     va_start(args, format);
     int res = vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
     if (res > 0) {
-        uint64_t flags = spinlock_acquire_irqsave(&serial_lock);
         serial_puts(port, buffer);
-        spinlock_release_irqrestore(&serial_lock, flags);
     }
+
+    spinlock_release_irqrestore(&serial_lock, flags);
 }

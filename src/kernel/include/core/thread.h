@@ -45,6 +45,8 @@ typedef struct thread {
 
     struct thread *next;
     struct thread *prev;
+
+    struct thread *proc_next;
 } thread_t;
 
 thread_t *thread_create(process_t *proc, thread_entry_t entry, void *arg,

@@ -4,7 +4,6 @@
  * @author friedrichOsDev
  */
 
-#include "core/thread.h"
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/context.h>
 #include <arch/x86_64/cpu/smp.h>
@@ -14,10 +13,9 @@
 #include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
 #include <core/scheduler.h>
+#include <core/thread.h>
 #include <lib/string.h>
 #include <stdbool.h>
-
-process_t *kernel_process = NULL;
 
 static thread_t *ready_queue_head = NULL;
 static thread_t *ready_queue_tail = NULL;
@@ -109,10 +107,29 @@ static void cleanup_dead_threads(void) {
 
     while (curr) {
         thread_t *next = curr->next;
+
+        if (curr->process) {
+            uint64_t pflags = spinlock_acquire_irqsave(&curr->process->lock);
+            thread_t **pp = &curr->process->threads;
+            while (*pp) {
+                if (*pp == curr) {
+                    *pp = curr->proc_next;
+                    curr->process->thread_count--;
+                    break;
+                }
+                pp = &(*pp)->proc_next;
+            }
+            spinlock_release_irqrestore(&curr->process->lock, pflags);
+        }
+
         if (curr->kernel_stack) {
             kfree((virt_addr_t)curr->kernel_stack);
         }
-        kfree((virt_addr_t)curr);
+
+        if (strcmp(curr->name, "kmain") != 0) {
+            kfree((virt_addr_t)curr);
+        }
+
         curr = next;
     }
 }
@@ -120,35 +137,40 @@ static void cleanup_dead_threads(void) {
 void scheduler_init(void) {
     serial_printf(COM1, "SCHED: initializing scheduler...\n");
 
-    // create kernel process
-    kernel_process = (process_t *)kzalloc(sizeof(process_t));
-    kernel_process->pid = 0;
-    strncpy(kernel_process->name, "kernel", sizeof(kernel_process->name));
-    kernel_process->pml4 = (page_table_t *)kernel_pml4;
-    kernel_process->cr3 = V2P(kernel_pml4);
+    process_init();
 
-    // add current kernel_init_thread to kernel process
+    // create kernel thread
     thread_t *main_thread = (thread_t *)kzalloc(sizeof(thread_t));
+    if (!main_thread) {
+        panic("SCHED: Failed to allocate main thread structure", 0);
+    }
+
     main_thread->tid = 0;
-    strncpy(main_thread->name, "kmain", sizeof(main_thread->name));
+    strncpy(main_thread->name, "kmain", sizeof(main_thread->name) - 1);
     main_thread->state = THREAD_RUNNING;
     main_thread->process = kernel_process;
     main_thread->time_slice = DEFAULT_TIME_SLICE;
-    main_thread->cpu_affinity = 0; // kmain is running at core 0
+    main_thread->cpu_affinity = 0; // kmain läuft auf Core 0
 
     uint64_t current_rsp;
     __asm__ __volatile__("mov %%rsp, %0" : "=r"(current_rsp));
     main_thread->kernel_stack_top = current_rsp;
 
+    uint64_t pflags = spinlock_acquire_irqsave(&kernel_process->lock);
+    main_thread->proc_next = kernel_process->threads;
+    kernel_process->threads = main_thread;
+    kernel_process->thread_count++;
+    spinlock_release_irqrestore(&kernel_process->lock, pflags);
+
     cpus[0].current_thread = main_thread;
     cpus[0].idle_thread =
-        thread_create(kernel_process, idle_task, NULL, "idle_0");
-    cpus[0].idle_thread->cpu_affinity = 0;
+        thread_create_on_cpu(kernel_process, idle_task, NULL, "idle_0", 0);
     pop_next_ready_thread_for_cpu(0); // remove idle task from queue
 
-    scheduler_enabled = true;
     serial_printf(COM1, "SCHED: scheduler initialized for BSP.\n");
 }
+
+void scheduler_enable() { scheduler_enabled = true; }
 
 void scheduler_schedule(void) {
     if (!scheduler_enabled)
@@ -172,8 +194,6 @@ void scheduler_schedule(void) {
     }
 
     if (prev && prev->state == THREAD_RUNNING) {
-        // WICHTIG: Idle-Threads (und kmain) NIEMALS wieder in die Ready-Queue
-        // hängen!
         if (strncmp(prev->name, "idle", 4) != 0 &&
             strcmp(prev->name, "kmain") != 0) {
             prev->state = THREAD_READY;
