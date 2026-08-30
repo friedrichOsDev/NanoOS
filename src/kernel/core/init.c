@@ -175,25 +175,6 @@ static void timer_callback(struct registers *regs) {
     }
 }
 
-void core_worker(void *arg) {
-    const char *task_name = (const char *)arg;
-    cpu_local_t *cpu = smp_get_current_cpu();
-    thread_t *curr = scheduler_get_current_thread();
-
-    uint64_t counter = 0;
-    while (1) {
-        counter++;
-        if (counter % 100000000 == 0) {
-            cpu = smp_get_current_cpu();
-            curr = scheduler_get_current_thread();
-            serial_printf(
-                COM1, "[CPU %d | TID %llu] Task '%s' calculating (cnt=%llu)\n",
-                cpu ? cpu->cpu_id : 0, curr ? curr->tid : 0, task_name,
-                counter);
-        }
-    }
-}
-
 void ps_dump_thread(void *arg) {
     (void)arg;
     while (1) {
@@ -210,20 +191,7 @@ void ps_dump_thread(void *arg) {
 void kernel_init_thread(void *arg) {
     (void)arg;
 
-    serial_printf(COM1, "Hello from Kernel INIT Thread!\n");
-
     thread_create(NULL, ps_dump_thread, NULL, "ps_dump_thread");
-
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_0", "worker_c0", 0);
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_1", "worker_c1", 1);
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_2", "worker_c2", 2);
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_3", "worker_c3", 3);
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_4", "worker_c4", 4);
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_5", "worker_c5", 5);
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_6", "worker_c6", 6);
-    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_7", "worker_c7", 7);
-    thread_create(NULL, core_worker, "FLOATING_TASK_0", "floating_0");
-    thread_create(NULL, core_worker, "FLOATING_TASK_1", "floating_1");
 
     while (1) {
         thread_sleep_ms(5000);
