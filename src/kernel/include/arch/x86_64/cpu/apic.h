@@ -32,8 +32,16 @@
 #define IOAPIC_REG_RED_TABLE(idx)                                              \
     (0x10 + (idx) * 2) // Redirection Entry for IRQ idx (64-bit)
 
+#define IPI_RESCHEDULE_VECTOR 0xFD
+#define IPI_TICK_VECTOR 0xFC
+
 void apic_init();
 void lapic_write(uint32_t reg, uint32_t val);
 uint32_t lapic_read(uint32_t reg);
 void lapic_eoi();
 void ioapic_route_irq(uint8_t irq, uint8_t vector, uint8_t cpu_id);
+void lapic_send_init(uint32_t lapic_id);
+void lapic_send_sipi(uint32_t lapic_id, uint8_t vector);
+uint32_t lapic_get_id(void);
+void lapic_send_broadcast_reschedule_ipi(void);
+void lapic_send_broadcast_tick_ipi(void);

@@ -182,3 +182,63 @@ void ioapic_route_irq(uint8_t irq, uint8_t vector, uint8_t cpu_id) {
     ioapic_write(IOAPIC_REG_RED_TABLE(gsi), low);
     ioapic_write(IOAPIC_REG_RED_TABLE(gsi) + 1, high);
 }
+
+/**
+ * Returns the hardware APIC ID of the current core
+ */
+uint32_t lapic_get_id(void) {
+    if (!lapic_base)
+        return 0;
+    return (lapic_read(LAPIC_REG_ID) >> 24) & 0xFF;
+}
+
+/**
+ * Sends INIT IPI to a target core
+ * @param lapic_id the ID of the core to send the init to
+ */
+void lapic_send_init(uint32_t lapic_id) {
+    lapic_write(LAPIC_REG_ICR_HIGH, ((uint32_t)lapic_id) << 24);
+    // Delivery Mode = 5 (INIT), Assert (1 << 14), Edge Triggered
+    lapic_write(LAPIC_REG_ICR_LOW, 0x00004500);
+}
+
+/**
+ * Sends startup IPI (SIPI) to a target core
+ * @param lapic_id the ID of the core to send the sipi to
+ * @param vector page number in 1M region (e.g. 0x08 for phys 0x8000)
+ */
+void lapic_send_sipi(uint32_t lapic_id, uint8_t vector) {
+    lapic_write(LAPIC_REG_ICR_HIGH, ((uint32_t)lapic_id) << 24);
+    // Delivery Mode = 6 (Startup), Assert (1 << 14), Vektor
+    lapic_write(LAPIC_REG_ICR_LOW, 0x00004600 | vector);
+}
+
+/**
+ * Sends reschedule IPI to all cores
+ */
+void lapic_send_broadcast_reschedule_ipi(void) {
+    if (!lapic_base)
+        return;
+    while (lapic_read(LAPIC_REG_ICR_LOW) & (1 << 12)) {
+        __asm__ __volatile__("pause");
+    }
+    // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vector =
+    // 0xFD
+    lapic_write(LAPIC_REG_ICR_HIGH, 0);
+    lapic_write(LAPIC_REG_ICR_LOW, (3 << 18) | IPI_RESCHEDULE_VECTOR);
+}
+
+/**
+ * Sends tick IPI to all cores except the bsp
+ */
+void lapic_send_broadcast_tick_ipi(void) {
+    if (!lapic_base)
+        return;
+    while (lapic_read(LAPIC_REG_ICR_LOW) & (1 << 12)) {
+        __asm__ __volatile__("pause");
+    }
+    // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vector =
+    // 0xFC
+    lapic_write(LAPIC_REG_ICR_HIGH, 0);
+    lapic_write(LAPIC_REG_ICR_LOW, (3 << 18) | IPI_TICK_VECTOR);
+}

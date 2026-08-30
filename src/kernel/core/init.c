@@ -12,6 +12,7 @@
 #include <arch/x86_64/cpu/idt.h>
 #include <arch/x86_64/cpu/interrupts.h>
 #include <arch/x86_64/cpu/irq.h>
+#include <arch/x86_64/cpu/smp.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/heap.h>
 #include <arch/x86_64/mm/pmm.h>
@@ -166,39 +167,28 @@ static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
 static void timer_callback(struct registers *regs) {
     (void)regs;
     scheduler_tick();
-}
 
-// Thread 1: Macht reine CPU-Arbeit in einer Endlosschleife OHNE thread_yield()!
-void compute_task_1(void *arg) {
-    (void)arg;
-    uint64_t counter = 0;
-    while (1) {
-        counter++;
-        if (counter % 50000000 == 0) {
-            serial_printf(COM1, "[PREEMPT] Task 1 running (counter=%llu, tick=%llu)\n", counter, scheduler_get_ticks());
-        }
+    if (smp_cpu_count > 1) {
+        lapic_send_broadcast_tick_ipi();
     }
 }
 
-// Thread 2: Macht ebenfalls schwere Arbeit OHNE thread_yield()!
-void compute_task_2(void *arg) {
-    (void)arg;
+void core_worker(void *arg) {
+    const char *task_name = (const char *)arg;
+    cpu_local_t *cpu = smp_get_current_cpu();
+    thread_t *curr = scheduler_get_current_thread();
+
     uint64_t counter = 0;
     while (1) {
         counter++;
-        if (counter % 50000000 == 0) {
-            serial_printf(COM1, "[PREEMPT] Task 2 running (counter=%llu, tick=%llu)\n", counter, scheduler_get_ticks());
+        if (counter % 100000000 == 0) {
+            cpu = smp_get_current_cpu();
+            curr = scheduler_get_current_thread();
+            serial_printf(
+                COM1, "[CPU %d | TID %llu] Task '%s' calculating (cnt=%llu)\n",
+                cpu ? cpu->cpu_id : 0, curr ? curr->tid : 0, task_name,
+                counter);
         }
-    }
-}
-
-// Thread 3: Testet thread_sleep_ms
-void sleeping_task(void *arg) {
-    (void)arg;
-    while (1) {
-        serial_printf(COM1, "[SLEEP] Task sleeping for 1000ms at tick=%llu...\n", scheduler_get_ticks());
-        thread_sleep_ms(1000);
-        serial_printf(COM1, "[SLEEP] Task woke up at tick=%llu!\n", scheduler_get_ticks());
     }
 }
 
@@ -243,14 +233,24 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     // every ms
 
     scheduler_init();
+    smp_init();
 
     irq_install_handler(0, timer_callback);
 
-    thread_create(NULL, compute_task_1, NULL, "compute_1");
-    thread_create(NULL, compute_task_2, NULL, "compute_2");
-    thread_create(NULL, sleeping_task, NULL, "sleeper");
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_0", "worker_c0", 0);
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_1", "worker_c1", 1);
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_2", "worker_c2", 2);
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_3", "worker_c3", 3);
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_4", "worker_c4", 4);
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_5", "worker_c5", 5);
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_6", "worker_c6", 6);
+    thread_create_on_cpu(NULL, core_worker, "PINNED_TO_CORE_7", "worker_c7", 7);
+    thread_create(NULL, core_worker, "FLOATING_TASK_0", "floating_0");
+    thread_create(NULL, core_worker, "FLOATING_TASK_1", "floating_1");
 
-    serial_printf(COM1, "INIT: Preemptive Multitasking started!\n");
+    serial_printf(COM1, "INIT: Multi-Core Scheduling running!\n");
+
+    idt_enable(); // just to be sure it's enabled
 
     while (1) {
         __asm__ __volatile__("hlt");

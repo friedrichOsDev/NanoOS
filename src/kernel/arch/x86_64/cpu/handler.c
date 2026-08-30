@@ -7,8 +7,10 @@
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/handler.h>
 #include <arch/x86_64/cpu/hpet.h>
+#include <arch/x86_64/cpu/smp.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <core/panic.h>
+#include <core/scheduler.h>
 
 static isr_handler_t isr_handlers[32];
 static irq_handler_t irq_handlers[48];
@@ -90,4 +92,24 @@ void irq_handler(struct registers *regs) {
     }
 
     serial_printf(COM1, "HANDLER: Invalid IRQ number %lld\n", irq);
+}
+
+/**
+ * IPI reschedule handler
+ * @param regs CPU registers
+ */
+void reschedule_ipi_handler(struct registers *regs) {
+    (void)regs;
+    lapic_eoi();
+    scheduler_schedule();
+}
+
+/**
+ * IPI tick handler
+ * @param regs CPU registers
+ */
+void tick_ipi_handler(struct registers *regs) {
+    (void)regs;
+    lapic_eoi();
+    scheduler_tick();
 }

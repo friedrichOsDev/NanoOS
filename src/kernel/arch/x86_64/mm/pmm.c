@@ -8,8 +8,8 @@
 #include <arch/x86_64/mm/pmm.h>
 #include <core/init.h>
 #include <core/panic.h>
-#include <lib/string.h>
 #include <core/sync.h>
+#include <lib/string.h>
 
 pmm_state_t pmm_state;
 

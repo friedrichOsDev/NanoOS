@@ -1,1 +1,1 @@
-qemu-system-x86_64 -bios ./uefi/OVMF.fd -m 8G -vga std -cdrom build/nanoos.iso -no-reboot -d int,cpu_reset -D qemu.log -serial file:serial.log
+qemu-system-x86_64 -smp 4 -bios ./uefi/OVMF.fd -m 8G -vga std -cdrom build/nanoos.iso -no-reboot -d int,cpu_reset -D qemu.log -serial file:serial.log

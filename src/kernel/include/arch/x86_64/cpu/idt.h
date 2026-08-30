@@ -27,6 +27,8 @@ struct idt_ptr {
 
 extern void idt_load(uint64_t idt_ptr);
 extern void spurious_handler_stub();
+extern void ipi_reschedule_stub();
+extern void ipi_tick_stub(void);
 
 void idt_init();
 void idt_set_gate(uint8_t num, uint64_t base, uint16_t selector, uint8_t ist,

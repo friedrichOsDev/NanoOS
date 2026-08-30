@@ -45,7 +45,12 @@ void serial_init(uint16_t port) {
  * @param c The Character
  */
 void serial_putc(uint16_t port, char c) {
-    while (serial_is_transmit_empty(port) == 0);
+    uint32_t timeout = 100000;
+    while (serial_is_transmit_empty(port) == 0) {
+        if (--timeout == 0) {
+            return;
+        }
+    }
     outb(port, c);
 }
 

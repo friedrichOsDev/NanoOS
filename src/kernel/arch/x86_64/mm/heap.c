@@ -9,8 +9,8 @@
 #include <arch/x86_64/mm/pmm.h>
 #include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
-#include <lib/string.h>
 #include <core/sync.h>
+#include <lib/string.h>
 
 static heap_list_t *heap_list_head = NULL;
 static virt_addr_t heap_end_addr = 0;

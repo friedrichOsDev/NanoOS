@@ -4,6 +4,7 @@
  * @author friedrichOsDev
  */
 
+#include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/idt.h>
 #include <arch/x86_64/cpu/interrupts.h>
 #include <arch/x86_64/drivers/serial.h>
@@ -41,6 +42,13 @@ void idt_init() {
 
     idt_set_gate(0xFF, (uint64_t)spurious_handler_stub, 0x08, 0, 0x8E);
     serial_printf(COM1, "IDT: set spurious vector (0xFF) entry\n");
+
+    idt_set_gate(IPI_RESCHEDULE_VECTOR, (uint64_t)ipi_reschedule_stub, 0x08, 0,
+                 0x8E);
+    serial_printf(COM1, "IDT: set IPI reschedule vector (0xFD) entry\n");
+
+    idt_set_gate(IPI_TICK_VECTOR, (uint64_t)ipi_tick_stub, 0x08, 0, 0x8E);
+    serial_printf(COM1, "IDT: set IPI tick vector (0xFC) entry\n");
 
     serial_printf(COM1, "IDT: load IDT\n");
     idt_load((uint64_t)&idtp);
