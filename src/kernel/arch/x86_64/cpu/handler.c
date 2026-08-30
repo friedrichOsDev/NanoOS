@@ -79,14 +79,15 @@ void isr_handler(struct registers *regs) {
 void irq_handler(struct registers *regs) {
     uint64_t irq = regs->int_no - 32;
 
-    if (irq >= 48) {
-        serial_printf(COM1, "HANDLER: Invalid IRQ number %lld\n", irq);
-    } else {
+    lapic_eoi();
+
+    if (irq < 48) {
         irq_handler_t handler = irq_handlers[irq];
         if (handler) {
             handler(regs);
         }
+        return;
     }
 
-    lapic_eoi();
+    serial_printf(COM1, "HANDLER: Invalid IRQ number %lld\n", irq);
 }

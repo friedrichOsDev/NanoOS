@@ -9,8 +9,11 @@
 #include <core/init.h>
 #include <core/panic.h>
 #include <lib/string.h>
+#include <core/sync.h>
 
 pmm_state_t pmm_state;
+
+static spinlock_t pmm_lock = SPINLOCK_INIT;
 
 /**
  * Locks a physical Page in the pmm bitmap
@@ -152,6 +155,7 @@ void pmm_init() {
  * @return Returns the physical address of the allocated Page or 0 on error
  */
 phys_addr_t pmm_page_alloc() {
+    uint64_t flags = spinlock_acquire_irqsave(&pmm_lock);
     if (pmm_state.free_pages == 0) {
         panic("pmm out of memory", 0);
     }
@@ -167,6 +171,7 @@ phys_addr_t pmm_page_alloc() {
             uint64_t page_idx = (i * 64) + bit_idx;
 
             if (page_idx >= pmm_state.total_pages) {
+                spinlock_release_irqrestore(&pmm_lock, flags);
                 return 0;
             }
 
@@ -174,10 +179,12 @@ phys_addr_t pmm_page_alloc() {
 
             lock_pages(alloc_addr, 1);
 
+            spinlock_release_irqrestore(&pmm_lock, flags);
             return alloc_addr;
         }
     }
 
+    spinlock_release_irqrestore(&pmm_lock, flags);
     return 0;
 }
 
@@ -190,5 +197,7 @@ void pmm_page_free(phys_addr_t addr) {
         panic("pmm free unaligned page", addr);
     }
 
+    uint64_t flags = spinlock_acquire_irqsave(&pmm_lock);
     unlock_pages(addr, 1);
+    spinlock_release_irqrestore(&pmm_lock, flags);
 }

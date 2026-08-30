@@ -5,12 +5,16 @@
  */
 
 #include <arch/x86_64/drivers/serial.h>
+#include <core/sync.h>
 #include <lib/io.h>
 #include <lib/print.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #define SERIAL_LSR_THR_EMPTY 0x20
+
+static spinlock_t serial_lock = SPINLOCK_INIT;
 
 /**
  * Checks if the serial transmit is empty
@@ -41,8 +45,7 @@ void serial_init(uint16_t port) {
  * @param c The Character
  */
 void serial_putc(uint16_t port, char c) {
-    while (serial_is_transmit_empty(port) == 0)
-        ;
+    while (serial_is_transmit_empty(port) == 0);
     outb(port, c);
 }
 
@@ -75,6 +78,8 @@ void serial_printf(uint16_t port, const char *format, ...) {
     va_end(args);
 
     if (res > 0) {
+        uint64_t flags = spinlock_acquire_irqsave(&serial_lock);
         serial_puts(port, buffer);
+        spinlock_release_irqrestore(&serial_lock, flags);
     }
 }

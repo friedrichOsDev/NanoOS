@@ -34,6 +34,8 @@ switch_context:
 	; R13 = Argument (void *arg)
 
 thread_entry_stub:
+	sti ; activate interrupts for the new thread
+
 	;    System V ABI: First Argument in RDI
 	mov  rdi, r13
 	call r12

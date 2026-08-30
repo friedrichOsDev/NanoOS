@@ -10,9 +10,11 @@
 #include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
 #include <lib/string.h>
+#include <core/sync.h>
 
 static heap_list_t *heap_list_head = NULL;
 static virt_addr_t heap_end_addr = 0;
+static spinlock_t heap_lock = SPINLOCK_INIT;
 
 /**
  * Initializes the HEAP allocator
@@ -113,6 +115,8 @@ virt_addr_t kmalloc(size_t size) {
     if (size == 0)
         return 0;
 
+    uint64_t flags = spinlock_acquire_irqsave(&heap_lock);
+
     size = (size + 7) & ~7;
     size_t total_required_size = size + HEAP_HEADER_SIZE;
 
@@ -156,6 +160,8 @@ virt_addr_t kmalloc(size_t size) {
     best_fit->magic = HEAP_MAGIC_USED;
     best_fit->payload_size = size;
 
+    spinlock_release_irqrestore(&heap_lock, flags);
+
     return (uintptr_t)best_fit + HEAP_HEADER_SIZE;
 }
 
@@ -179,6 +185,8 @@ virt_addr_t kzalloc(size_t size) {
 void kfree(virt_addr_t addr) {
     if (!addr)
         return;
+
+    uint64_t flags = spinlock_acquire_irqsave(&heap_lock);
 
     heap_list_t *block = (heap_list_t *)(addr - HEAP_HEADER_SIZE);
 
@@ -214,6 +222,8 @@ void kfree(virt_addr_t addr) {
             block->next->prev = block->prev;
         }
     }
+
+    spinlock_release_irqrestore(&heap_lock, flags);
 }
 
 /**

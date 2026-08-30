@@ -163,31 +163,43 @@ static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
     }
 }
 
-void worker_a(void *arg) {
-    (void)arg;
-    for (int i = 0; i < 20; i++) {
-        serial_printf(COM1, "Thread A running (%d)...\n", i);
-        thread_yield();
-    }
-    serial_printf(COM1, "Thread A finished!\n");
+static void timer_callback(struct registers *regs) {
+    (void)regs;
+    scheduler_tick();
 }
 
-void worker_b(void *arg) {
+// Thread 1: Macht reine CPU-Arbeit in einer Endlosschleife OHNE thread_yield()!
+void compute_task_1(void *arg) {
     (void)arg;
-    for (int i = 0; i < 5; i++) {
-        serial_printf(COM1, "Thread B running (%d)...\n", i);
-        thread_yield();
+    uint64_t counter = 0;
+    while (1) {
+        counter++;
+        if (counter % 50000000 == 0) {
+            serial_printf(COM1, "[PREEMPT] Task 1 running (counter=%llu, tick=%llu)\n", counter, scheduler_get_ticks());
+        }
     }
-    serial_printf(COM1, "Thread B finished!\n");
 }
 
-void worker_c(void *arg) {
+// Thread 2: Macht ebenfalls schwere Arbeit OHNE thread_yield()!
+void compute_task_2(void *arg) {
     (void)arg;
-    for (int i = 0; i < 10; i++) {
-        serial_printf(COM1, "Thread C running (%d)...\n", i);
-        thread_yield();
+    uint64_t counter = 0;
+    while (1) {
+        counter++;
+        if (counter % 50000000 == 0) {
+            serial_printf(COM1, "[PREEMPT] Task 2 running (counter=%llu, tick=%llu)\n", counter, scheduler_get_ticks());
+        }
     }
-    serial_printf(COM1, "Thread C finished!\n");
+}
+
+// Thread 3: Testet thread_sleep_ms
+void sleeping_task(void *arg) {
+    (void)arg;
+    while (1) {
+        serial_printf(COM1, "[SLEEP] Task sleeping for 1000ms at tick=%llu...\n", scheduler_get_ticks());
+        thread_sleep_ms(1000);
+        serial_printf(COM1, "[SLEEP] Task woke up at tick=%llu!\n", scheduler_get_ticks());
+    }
 }
 
 /**
@@ -232,13 +244,15 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
 
     scheduler_init();
 
-    thread_create(NULL, worker_a, NULL, "worker_a");
-    thread_create(NULL, worker_b, NULL, "worker_b");
-    thread_create(NULL, worker_c, NULL, "worker_c");
+    irq_install_handler(0, timer_callback);
 
-    serial_printf(COM1, "INIT: Starting multitasking test...\n");
+    thread_create(NULL, compute_task_1, NULL, "compute_1");
+    thread_create(NULL, compute_task_2, NULL, "compute_2");
+    thread_create(NULL, sleeping_task, NULL, "sleeper");
+
+    serial_printf(COM1, "INIT: Preemptive Multitasking started!\n");
 
     while (1) {
-        thread_yield();
+        __asm__ __volatile__("hlt");
     }
 }
