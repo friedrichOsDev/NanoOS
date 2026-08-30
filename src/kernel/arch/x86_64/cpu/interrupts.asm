@@ -12,8 +12,8 @@
 	global ipi_reschedule_stub
 	extern reschedule_ipi_handler
 
-	global ipi_tick_stub
-	extern tick_ipi_handler
+	global lapic_timer_stub
+	extern lapic_timer_handler
 
 	;       Macro for exporting ISR symbols
 	%macro  EXPORT_ISR 1
@@ -242,9 +242,9 @@ ipi_reschedule_stub:
 	add rsp, 16
 	iretq
 
-ipi_tick_stub:
+lapic_timer_stub:
 	push 0; Dummy Error Code
-	push 0xFC; Interrupt Nummer 252 (0xFC)
+	push 0xFE; Interrupt Nummer 254 (0xFE)
 	push rax
 	push rbx
 	push rcx
@@ -265,7 +265,7 @@ ipi_tick_stub:
 	mov rbp, rsp
 	and rsp, ~0xF
 
-	call tick_ipi_handler
+	call lapic_timer_handler
 
 	mov rsp, rbp
 	pop r15

@@ -31,7 +31,11 @@ typedef struct {
 extern volatile hpet_registers_t *hpet_regs;
 extern uint64_t hpet_ticks_per_us;
 extern uint64_t hpet_ticks_per_ms;
+extern uint64_t hpet_frequency_hz;
 
 void hpet_init();
+uint64_t hpet_read_counter(void);
 void hpet_udelay(uint64_t microseconds);
 void hpet_mdelay(uint64_t milliseconds);
+uint64_t hpet_uptime_ms(void);
+uint64_t hpet_uptime_us(void);

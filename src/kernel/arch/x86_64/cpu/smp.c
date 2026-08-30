@@ -68,6 +68,8 @@ void smp_ap_main(void) {
     // initialize Local APIC of the AP
     smp_enable_lapic();
 
+    lapic_timer_start_ap();
+
     uint32_t lapic_id = lapic_get_id();
     cpu_local_t *local_cpu = NULL;
     for (size_t i = 0; i < smp_cpu_count; i++) {

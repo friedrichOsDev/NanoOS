@@ -24,6 +24,7 @@
 #include <core/taskmgr.h>
 #include <core/thread.h>
 #include <lib/string.h>
+#include <arch/x86_64/cpu/rtc.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
@@ -166,15 +167,6 @@ static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
     }
 }
 
-static void timer_callback(struct registers *regs) {
-    (void)regs;
-    scheduler_tick();
-
-    if (smp_cpu_count > 1) {
-        lapic_send_broadcast_tick_ipi();
-    }
-}
-
 void ps_dump_thread(void *arg) {
     (void)arg;
     while (1) {
@@ -233,15 +225,12 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
 
     apic_init();
     hpet_init();
+    rtc_init();
 
-    ioapic_route_irq(0, 32, 0); // Route IRQ 0 to vector 32 on BSP (APIC ID 0)
-    // irq_install_handler(0, timer_callback); <- timer_callback would trigger
-    // every ms
+    lapic_timer_calibrate_and_start(1000);
 
     scheduler_init();
     smp_init();
-
-    irq_install_handler(0, timer_callback);
 
     thread_create_on_cpu(kernel_process, kernel_init_thread, NULL,
                          "kernel_init", -1);

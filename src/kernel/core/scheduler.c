@@ -298,8 +298,7 @@ void scheduler_tick(void) {
     }
 
     bool need_reschedule = false;
-    if (my_cpu && my_cpu->current_thread &&
-        my_cpu->current_thread->state == THREAD_RUNNING) {
+    if (my_cpu && my_cpu->current_thread && my_cpu->current_thread->state == THREAD_RUNNING) {
         if (my_cpu->current_thread->time_slice > 0) {
             my_cpu->current_thread->time_slice--;
         }

@@ -105,10 +105,10 @@ void reschedule_ipi_handler(struct registers *regs) {
 }
 
 /**
- * IPI tick handler
- * @param regs CPU registers
+ * LAPIC timer interrupt handler
+ * @note fires independently on each core
  */
-void tick_ipi_handler(struct registers *regs) {
+void lapic_timer_handler(struct registers *regs) {
     (void)regs;
     lapic_eoi();
     scheduler_tick();

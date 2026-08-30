@@ -10,9 +10,16 @@
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
+#include <arch/x86_64/cpu/hpet.h>
+#include <core/sync.h>
 
 static volatile uint8_t *lapic_base = NULL;
 static volatile uint8_t *ioapic_base = NULL;
+static spinlock_t ioapic_lock = SPINLOCK_INIT;
+static spinlock_t icr_lock = SPINLOCK_INIT;
+
+uint32_t lapic_timer_calibrated_initcnt = 0;
+uint32_t lapic_timer_target_hz = 0;
 
 /**
  * Writes a Value to a register of the I/O-APIC
@@ -20,6 +27,8 @@ static volatile uint8_t *ioapic_base = NULL;
  * @param val The value
  */
 static void ioapic_write(uint32_t reg, uint32_t val) {
+    uint64_t flags = spinlock_acquire_irqsave(&ioapic_lock);
+
     volatile uint32_t *index_reg =
         (volatile uint32_t *)(ioapic_base + IOAPIC_REG_INDEX);
     volatile uint32_t *data_reg =
@@ -27,6 +36,8 @@ static void ioapic_write(uint32_t reg, uint32_t val) {
 
     *index_reg = reg;
     *data_reg = val;
+
+    spinlock_release_irqrestore(&ioapic_lock, flags);
 }
 
 /**
@@ -35,13 +46,18 @@ static void ioapic_write(uint32_t reg, uint32_t val) {
  * @return Returns the read value
  */
 static uint32_t ioapic_read(uint32_t reg) {
+    uint64_t flags = spinlock_acquire_irqsave(&ioapic_lock);
+
     volatile uint32_t *index_reg =
         (volatile uint32_t *)(ioapic_base + IOAPIC_REG_INDEX);
     volatile uint32_t *data_reg =
         (volatile uint32_t *)(ioapic_base + IOAPIC_REG_DATA);
 
     *index_reg = reg;
-    return *data_reg;
+    uint32_t ret = *data_reg;
+
+    spinlock_release_irqrestore(&ioapic_lock, flags);
+    return ret;
 }
 
 /**
@@ -219,6 +235,9 @@ void lapic_send_sipi(uint32_t lapic_id, uint8_t vector) {
 void lapic_send_broadcast_reschedule_ipi(void) {
     if (!lapic_base)
         return;
+
+    uint64_t flags = spinlock_acquire_irqsave(&icr_lock);
+
     while (lapic_read(LAPIC_REG_ICR_LOW) & (1 << 12)) {
         __asm__ __volatile__("pause");
     }
@@ -226,19 +245,60 @@ void lapic_send_broadcast_reschedule_ipi(void) {
     // 0xFD
     lapic_write(LAPIC_REG_ICR_HIGH, 0);
     lapic_write(LAPIC_REG_ICR_LOW, (3 << 18) | IPI_RESCHEDULE_VECTOR);
+
+    spinlock_release_irqrestore(&icr_lock, flags);
 }
 
 /**
- * Sends tick IPI to all cores except the bsp
+ * Calibrates the LAPIC timer frequency using the HPET as reference,
+ * then starts the timer in periodic mode.
+ * @note Must be called on the BSP first.
+ * @param target_hz Desired interrupt frequency (e.g. 1000 for 1 kHz / 1ms ticks)
  */
-void lapic_send_broadcast_tick_ipi(void) {
-    if (!lapic_base)
+void lapic_timer_calibrate_and_start(uint32_t target_hz) {
+    lapic_timer_target_hz = target_hz;
+
+    // 1. Set divider to 16
+    lapic_write(LAPIC_REG_TIMER_DIV, LAPIC_TIMER_DIV_16);
+
+    // 2. Set initial count to max for measurement
+    lapic_write(LAPIC_REG_TIMER_LVT, LAPIC_TIMER_MASKED); // Mask during calibration
+    lapic_write(LAPIC_REG_TIMER_INITCNT, 0xFFFFFFFF);
+
+    // 3. Wait exactly 10ms using HPET
+    hpet_mdelay(10);
+
+    // 4. Read how many ticks elapsed in 10ms
+    uint32_t elapsed = 0xFFFFFFFF - lapic_read(LAPIC_REG_TIMER_CURRCNT);
+
+    // 5. Calculate ticks per second, then ticks per interval
+    uint64_t ticks_per_second = (uint64_t)elapsed * 100; // 10ms * 100 = 1s
+    uint32_t init_count = (uint32_t)(ticks_per_second / target_hz);
+
+    lapic_timer_calibrated_initcnt = init_count;
+
+    serial_printf(COM1, "LAPIC TIMER: calibrated on CPU %d: %llu ticks/s, init_count=%u for %u Hz\n", lapic_get_id(), ticks_per_second, init_count, target_hz);
+
+    // 6. Start periodic timer with calibrated value
+    lapic_write(LAPIC_REG_TIMER_DIV, LAPIC_TIMER_DIV_16);
+    lapic_write(LAPIC_REG_TIMER_LVT, LAPIC_TIMER_PERIODIC | LAPIC_TIMER_VECTOR);
+    lapic_write(LAPIC_REG_TIMER_INITCNT, init_count);
+}
+
+/**
+ * Starts the LAPIC timer on an AP using pre-calibrated values from the BSP.
+ * Assumes all cores run at the same frequency (true for modern CPUs).
+ */
+void lapic_timer_start_ap(void) {
+    if (lapic_timer_calibrated_initcnt == 0) {
+        serial_printf(COM1, "LAPIC TIMER: error - not calibrated yet!\n");
         return;
-    while (lapic_read(LAPIC_REG_ICR_LOW) & (1 << 12)) {
-        __asm__ __volatile__("pause");
     }
-    // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vector =
-    // 0xFC
-    lapic_write(LAPIC_REG_ICR_HIGH, 0);
-    lapic_write(LAPIC_REG_ICR_LOW, (3 << 18) | IPI_TICK_VECTOR);
+
+    lapic_write(LAPIC_REG_TIMER_DIV, LAPIC_TIMER_DIV_16);
+    lapic_write(LAPIC_REG_TIMER_LVT, LAPIC_TIMER_PERIODIC | LAPIC_TIMER_VECTOR);
+    lapic_write(LAPIC_REG_TIMER_INITCNT, lapic_timer_calibrated_initcnt);
+
+    serial_printf(COM1, "LAPIC TIMER: started on CPU %d (init_count=%u, %u Hz)\n",
+                    lapic_get_id(), lapic_timer_calibrated_initcnt, lapic_timer_target_hz);
 }
