@@ -32,6 +32,8 @@ static const char *thread_state_to_string(thread_state_t state) {
 }
 
 void ps_dump(process_t *proc_list) {
+    uint64_t list_flags = spinlock_acquire_irqsave(&proc_list_lock);
+
     serial_printf(COM1, "\n========================= TASK MANAGER "
                         "==========================\n");
     serial_printf(COM1, "%-6s %-16s %-6s %-16s %-10s %-6s\n", "PID", "PROCESS",
@@ -40,7 +42,6 @@ void ps_dump(process_t *proc_list) {
         COM1,
         "-----------------------------------------------------------------\n");
 
-    uint64_t list_flags = spinlock_acquire_irqsave(&proc_list_lock);
     for (process_t *p = proc_list; p != NULL; p = p->next) {
         uint64_t pflags = spinlock_acquire_irqsave(&p->lock);
 
@@ -60,8 +61,9 @@ void ps_dump(process_t *proc_list) {
 
         spinlock_release_irqrestore(&p->lock, pflags);
     }
-    spinlock_release_irqrestore(&proc_list_lock, list_flags);
 
     serial_printf(COM1, "======================================================"
                         "===========\n\n");
+
+    spinlock_release_irqrestore(&proc_list_lock, list_flags);
 }

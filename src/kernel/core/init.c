@@ -175,6 +175,17 @@ void ps_dump_thread(void *arg) {
     }
 }
 
+void time_dump_thread(void *arg) {
+    (void)arg;
+    thread_sleep_ms(500);
+    rtc_time_t time;
+    while (1) {
+        time = time_get_now();
+        serial_printf(COM1, "TIME: %04d-%02d-%02d %02d:%02d:%02d UTC\n", time.year, time.month, time.day, time.hour, time.minute, time.second);
+        thread_sleep_ms(1000);
+    }
+}
+
 /**
  * Initializes the Kernel after first kernel_init function dies because the
  * scheduler was activated
@@ -184,6 +195,7 @@ void kernel_init_thread(void *arg) {
     (void)arg;
 
     thread_create(NULL, ps_dump_thread, NULL, "ps_dump_thread");
+    thread_create(NULL, time_dump_thread, NULL, "time_dump_thread");
 
     while (1) {
         thread_sleep_ms(5000);
