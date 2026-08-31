@@ -14,10 +14,15 @@
 #define MULTIBOOT_TAG_TYPE_CMDLINE 1
 #define MULTIBOOT_TAG_TYPE_BOOT_LOADER 2
 #define MULTIBOOT_TAG_TYPE_MODULE 3
+#define MULTIBOOT_TAG_TYPE_BASIC_MEMINFO 4
 #define MULTIBOOT_TAG_TYPE_MMAP 6
+#define MULTIBOOT_TAG_TYPE_FRAMEBUFFER 8
+#define MULTIBOOT_TAG_TYPE_ELF_SECTIONS 9
+#define MULTIBOOT_TAG_TYPE_EFI_BS 12
 #define MULTIBOOT_TAG_TYPE_ACPI_OLD 14
 #define MULTIBOOT_TAG_TYPE_ACPI_NEW 15
-#define MULTIBOOT_TAG_TYPE_FRAMEBUFFER 8
+#define MULTIBOOT_TAG_TYPE_EFI_64 17
+#define MULTIBOOT_TAG_TYPE_LOAD_BASE_ADDR 21
 
 typedef struct {
     uint32_t total_size;
@@ -121,3 +126,16 @@ typedef struct {
     uint32_t size;
     uint8_t rsdp[];
 } __attribute__((packed)) multiboot_tag_new_acpi_t;
+
+typedef struct {
+    uint32_t type;
+    uint32_t size;
+    uint32_t mem_lower;
+    uint32_t mem_upper;
+} __attribute__((packed)) multiboot_tag_basic_meminfo_t;
+
+typedef struct {
+    uint32_t type;
+    uint32_t size;
+    uint32_t load_base_addr;
+} __attribute__((packed)) multiboot_tag_load_base_addr_t;

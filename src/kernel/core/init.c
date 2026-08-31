@@ -31,6 +31,7 @@ fb_info_t kernel_fb_info;
 multiboot_info_t *kernel_multiboot_info;
 char kernel_cmdline[256];
 char kernel_bootloader_name[64];
+boot_modules_t kernel_modules;
 phys_addr_t rsdp_phys_addr = 0;
 static rsdp_t rsdp_stable_copy;
 
@@ -47,49 +48,45 @@ static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
     }
 
     kernel_multiboot_info = (multiboot_info_t *)info_ptr;
-    multiboot_tag_t *tag =
-        (multiboot_tag_t *)(info_ptr + sizeof(multiboot_info_t));
 
-    while (tag->type != MULTIBOOT_TAG_TYPE_END) {
-        serial_printf(COM1, "MULTIBOOT2: type=%x, size=%x\n", tag->type,
-                      tag->size);
+    uint32_t total_size = kernel_multiboot_info->total_size;
+    uint8_t *end_addr = (uint8_t *)info_ptr + total_size;
+
+    multiboot_tag_t *tag = (multiboot_tag_t *)(info_ptr + sizeof(multiboot_info_t));
+
+    while ((uint8_t *)tag < end_addr && tag->type != MULTIBOOT_TAG_TYPE_END) {
+        if (tag->size == 0) {
+            serial_printf(COM1, "MULTIBOOT2: Corrupt tag with size 0\n");
+            break;
+        }
+
         switch (tag->type) {
         case MULTIBOOT_TAG_TYPE_CMDLINE: {
             multiboot_tag_cmdline_t *cmdline = (multiboot_tag_cmdline_t *)tag;
-            if (cmdline->size > 8 && cmdline->string[0] != '\0') {
-                uint32_t len = cmdline->size - 8;
-                if (len > sizeof(kernel_cmdline) - 1)
-                    len = sizeof(kernel_cmdline) - 1;
-                for (uint32_t i = 0; i < len; i++)
-                    kernel_cmdline[i] = cmdline->string[i];
-                kernel_cmdline[len] = '\0';
-                serial_printf(COM1, "MULTIBOOT2: cmdline=%s\n", kernel_cmdline);
-            } else {
-                serial_printf(COM1, "MULTIBOOT2: cmdline=NULL\n");
-            }
+            strncpy(kernel_cmdline, cmdline->string, sizeof(kernel_cmdline) - 1);
+            kernel_cmdline[sizeof(kernel_cmdline) - 1] = '\0';
+            serial_printf(COM1, "MULTIBOOT2: cmdline=%s\n", kernel_cmdline);
             break;
         }
         case MULTIBOOT_TAG_TYPE_BOOT_LOADER: {
-            multiboot_tag_boot_loader_t *boot_loader =
-                (multiboot_tag_boot_loader_t *)tag;
-            if (boot_loader->size > 8 && boot_loader->string[0] != '\0') {
-                uint32_t len = boot_loader->size - 8;
-                if (len > sizeof(kernel_bootloader_name) - 1)
-                    len = sizeof(kernel_bootloader_name) - 1;
-                for (uint32_t i = 0; i < len; i++)
-                    kernel_bootloader_name[i] = boot_loader->string[i];
-                kernel_bootloader_name[len] = '\0';
-                serial_printf(COM1, "MULTIBOOT2: bootloader=%s\n",
-                              kernel_bootloader_name);
-            } else {
-                serial_printf(COM1, "MULTIBOOT2: bootloader=NULL\n");
-            }
+            multiboot_tag_boot_loader_t *boot_loader = (multiboot_tag_boot_loader_t *)tag;
+            strncpy(kernel_bootloader_name, boot_loader->string, sizeof(kernel_bootloader_name) - 1);
+            kernel_bootloader_name[sizeof(kernel_bootloader_name) - 1] = '\0';
+            serial_printf(COM1, "MULTIBOOT2: bootloader=%s\n", kernel_bootloader_name);
             break;
         }
         case MULTIBOOT_TAG_TYPE_MODULE: {
             multiboot_tag_module_t *module = (multiboot_tag_module_t *)tag;
-            (void)module;
-            serial_printf(COM1, "MULTIBOOT2: module isn't implemented yet\n");
+            if (kernel_modules.count < MAX_MODULES) {
+                boot_module_t *entry = &kernel_modules.entries[kernel_modules.count++];
+                entry->mod_start = module->mod_start;
+                entry->mod_end   = module->mod_end;
+                strncpy(entry->cmdline, module->cmdline, sizeof(entry->cmdline) - 1);
+                entry->cmdline[sizeof(entry->cmdline) - 1] = '\0';
+                serial_printf(COM1, "MULTIBOOT2: module at [%x - %x] cmd=%s\n", entry->mod_start, entry->mod_end, entry->cmdline);
+            } else {
+                serial_printf(COM1, "MULTIBOOT2: warning, max modules reached\n");
+            }
             break;
         }
         case MULTIBOOT_TAG_TYPE_MMAP: {
@@ -97,40 +94,30 @@ static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
             kernel_mmap.entry_count = 0;
             for (multiboot_tag_mmap_entry_t *entry = mmap->entries;
                  (uint8_t *)entry < (uint8_t *)tag + tag->size;
-                 entry = (multiboot_tag_mmap_entry_t *)((uintptr_t)entry +
-                                                        mmap->entry_size)) {
+                 entry = (multiboot_tag_mmap_entry_t *)((uintptr_t)entry + mmap->entry_size)) {
                 if (kernel_mmap.entry_count < MMAP_MAX_ENTRIES) {
-                    kernel_mmap.entries[kernel_mmap.entry_count].base_addr =
-                        entry->base_addr;
-                    kernel_mmap.entries[kernel_mmap.entry_count].length =
-                        entry->length;
-                    kernel_mmap.entries[kernel_mmap.entry_count].type =
-                        (mmap_type_t)entry->type;
+                    kernel_mmap.entries[kernel_mmap.entry_count].base_addr = entry->base_addr;
+                    kernel_mmap.entries[kernel_mmap.entry_count].length = entry->length;
+                    kernel_mmap.entries[kernel_mmap.entry_count].type = (mmap_type_t)entry->type;
                     kernel_mmap.entry_count++;
                 }
-                serial_printf(
-                    COM1, "MULTIBOOT2: mregion: base=%llx, len=%llx, type=%d\n",
-                    entry->base_addr, entry->length, entry->type);
+                serial_printf(COM1, "MULTIBOOT2: mregion: base=%llx, len=%llx, type=%d\n", entry->base_addr, entry->length, entry->type);
             }
             break;
         }
         case MULTIBOOT_TAG_TYPE_FRAMEBUFFER: {
-            multiboot_tag_framebuffer_t *framebuffer =
-                (multiboot_tag_framebuffer_t *)tag;
+            multiboot_tag_framebuffer_t *framebuffer = (multiboot_tag_framebuffer_t *)tag;
+
             kernel_fb_info.fb_addr = framebuffer->framebuffer_addr;
             kernel_fb_info.fb_width = framebuffer->framebuffer_width;
             kernel_fb_info.fb_height = framebuffer->framebuffer_height;
             kernel_fb_info.fb_pitch = framebuffer->framebuffer_pitch;
             kernel_fb_info.fb_bpp = framebuffer->framebuffer_bpp;
-            serial_printf(
-                COM1, "MULTIBOOT2: framebuffer: %dx%dx%d at %llx, type=%d\n",
-                framebuffer->framebuffer_width, framebuffer->framebuffer_height,
-                framebuffer->framebuffer_bpp, framebuffer->framebuffer_addr,
-                framebuffer->framebuffer_type);
-            if (framebuffer->framebuffer_type == 2)
-                panic("Unsupported framebuffer type: EGA text mode is not "
-                      "supported",
-                      framebuffer->framebuffer_type);
+
+            serial_printf(COM1, "MULTIBOOT2: framebuffer: %dx%dx%d at %llx, type=%d\n", framebuffer->framebuffer_width, framebuffer->framebuffer_height, framebuffer->framebuffer_bpp, framebuffer->framebuffer_addr, framebuffer->framebuffer_type);
+
+            if (framebuffer->framebuffer_type == 2) panic("Unsupported framebuffer type: EGA text mode is not supported", framebuffer->framebuffer_type);
+
             break;
         }
         case MULTIBOOT_TAG_TYPE_ACPI_OLD: {
@@ -158,6 +145,36 @@ static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
                 rsdp_phys_addr);
             break;
         }
+
+        case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO: {
+            multiboot_tag_basic_meminfo_t *meminfo = (multiboot_tag_basic_meminfo_t *)tag;
+
+            serial_printf(COM1, "MULTIBOOT2: mem_lower=%u KB, mem_upper=%u KB (%u MB)\n",
+                        meminfo->mem_lower, meminfo->mem_upper, 
+                        meminfo->mem_upper / 1024);
+            break;
+        }
+
+        case MULTIBOOT_TAG_TYPE_LOAD_BASE_ADDR: {
+            multiboot_tag_load_base_addr_t *load_base = (multiboot_tag_load_base_addr_t *)tag;
+            uintptr_t actual_phys_addr = (uintptr_t)load_base->load_base_addr;
+            uintptr_t expected_phys_addr = KERNEL_START_PHYS;
+
+            serial_printf(COM1, "MULTIBOOT2: load_base_addr=%lx (linked at %lx)\n", actual_phys_addr, expected_phys_addr);
+
+            if (actual_phys_addr != expected_phys_addr) {
+                intptr_t offset = (intptr_t)actual_phys_addr - (intptr_t)expected_phys_addr;
+                serial_printf(COM1, "MULTIBOOT2: ERROR: Kernel was relocated! Offset: %lx\n", offset);
+                panic("Kernel relocation mismatch", (uint64_t)offset);
+            }
+            break;
+        }
+
+        case MULTIBOOT_TAG_TYPE_ELF_SECTIONS:
+        case MULTIBOOT_TAG_TYPE_EFI_BS:
+        case MULTIBOOT_TAG_TYPE_EFI_64:
+            break;
+
         default: {
             serial_printf(COM1, "MULTIBOOT2: unknown type %d\n", tag->type);
             break;
@@ -167,11 +184,14 @@ static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
     }
 }
 
+static bool ps_dump_enable = false;
 void ps_dump_thread(void *arg) {
     (void)arg;
     while (1) {
+        if (ps_dump_enable) {
+            ps_dump(proc_list);
+        }
         thread_sleep_ms(1000);
-        ps_dump(proc_list);
     }
 }
 

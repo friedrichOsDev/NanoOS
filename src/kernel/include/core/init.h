@@ -20,6 +20,7 @@ extern uint8_t kernel_end_phys[];
 #define KERNEL_END_PHYS (uintptr_t) kernel_end_phys
 
 #define MMAP_MAX_ENTRIES 1024
+#define MAX_MODULES 16
 
 typedef struct {
     uint64_t fb_addr;
@@ -48,10 +49,22 @@ typedef struct {
     mmap_entry_t entries[MMAP_MAX_ENTRIES];
 } mmap_t;
 
+typedef struct {
+    uint32_t mod_start;
+    uint32_t mod_end;
+    char cmdline[3];
+} boot_module_t;
+
+typedef struct {
+    uint32_t count;
+    boot_module_t entries[MAX_MODULES];
+} boot_modules_t;
+
 extern mmap_t kernel_mmap;
 extern fb_info_t kernel_fb_info;
 extern multiboot_info_t *kernel_multiboot_info;
 extern char kernel_cmdline[256];
 extern char kernel_bootloader_name[64];
+extern boot_modules_t kernel_modules;
 
 void kernel_init(uint64_t magic, uint64_t info_ptr);
