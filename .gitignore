@@ -6,3 +6,4 @@ serial.log
 screen.log
 *.log
 *.DS_Store
+repomix-output.xml

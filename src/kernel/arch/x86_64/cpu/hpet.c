@@ -8,6 +8,7 @@
 #include <arch/x86_64/cpu/hpet.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/vmm.h>
+#include <core/panic.h>
 
 volatile hpet_registers_t *hpet_regs = NULL;
 uint64_t hpet_ticks_per_us = 0;
@@ -16,8 +17,7 @@ uint64_t hpet_frequency_hz = 0;
 
 void hpet_init() {
     if (!hpet) {
-        serial_printf(COM1, "HPET: error HPET table is not initialized\n");
-        return;
+        panic("FATAL: System requires HPET, but none was found in ACPI tables.", 0);
     }
 
     uint64_t hpet_phys_addr = hpet->base_address.address;
@@ -31,15 +31,13 @@ void hpet_init() {
                   (virt_addr_t)hpet_regs);
 
     if (!hpet_regs) {
-        serial_printf(COM1, "HPET: error failed to map HPET registers\n");
-        return;
+        panic("FATAL: Error failed to map HPET registers.", 0);
     }
 
     // 1. Calculate frequency from tick period (in femtoseconds)
     uint32_t tick_period_fs = hpet_regs->general_capabilities >> 32;
     if (tick_period_fs == 0) {
-        serial_printf(COM1, "HPET: tick period is 0!\n");
-        return;
+        panic("FATAL: tick period is 0!", 0);
     }
 
     hpet_ticks_per_us = 1000000000ULL / tick_period_fs;
@@ -67,12 +65,12 @@ void hpet_init() {
  * Returns the value of the main counter
  */
 uint64_t hpet_read_counter(void) {
-    if (!hpet_regs) return 0;
+    if (!hpet_regs) panic("FATAL: Error failed to map HPET registers.", 0);
     return hpet_regs->main_counter_value;
 }
 
 void hpet_udelay(uint64_t microseconds) {
-    if (!hpet_regs) return;
+    if (!hpet_regs) panic("FATAL: Error failed to map HPET registers.", 0);
     uint64_t target = hpet_regs->main_counter_value + (microseconds * hpet_ticks_per_us);
     while (hpet_regs->main_counter_value < target) {
         __asm__ __volatile__("pause");
@@ -80,7 +78,7 @@ void hpet_udelay(uint64_t microseconds) {
 }
 
 void hpet_mdelay(uint64_t milliseconds) {
-    if (!hpet_regs) return;
+    if (!hpet_regs) panic("FATAL: Error failed to map HPET registers.", 0);
     uint64_t target = hpet_regs->main_counter_value + (milliseconds * hpet_ticks_per_ms);
     while (hpet_regs->main_counter_value < target) {
         __asm__ __volatile__("pause");

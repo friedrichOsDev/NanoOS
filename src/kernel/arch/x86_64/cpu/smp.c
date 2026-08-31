@@ -4,6 +4,7 @@
  * @author friedrichOsDev
  */
 
+#include "arch/x86_64/mm/memdef.h"
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/gdt.h>
@@ -161,6 +162,7 @@ void smp_init(void) {
 
         // allocate stack for the core
         void *ap_stack = (void *)kmalloc(STACK_SIZE);
+        if (!ap_stack) return;
         uint64_t ap_stack_top = (uint64_t)ap_stack + STACK_SIZE;
 
         // write the parameter (for each core different)
@@ -202,6 +204,7 @@ void smp_init(void) {
         } else {
             serial_printf(
                 COM1, "SMP: warning Core %d failed to boot (timeout)!\n", i);
+            kfree((virt_addr_t)ap_stack);
         }
     }
 

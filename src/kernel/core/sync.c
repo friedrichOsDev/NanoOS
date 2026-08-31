@@ -26,7 +26,8 @@ static inline void restore_rflags(uint64_t rflags) {
 }
 
 void spinlock_acquire(spinlock_t *lock) {
-    while (__atomic_test_and_set(&(lock->lock), __ATOMIC_ACQUIRE)) {
+    uint32_t expected = 1;
+    while (__atomic_exchange_n(&(lock->lock), expected, __ATOMIC_ACQUIRE)) {
         while (__atomic_load_n(&(lock->lock), __ATOMIC_RELAXED)) {
             __asm__ __volatile__("pause");
         }

@@ -16,7 +16,8 @@ static spinlock_t cmos_lock = SPINLOCK_INIT;
 
 static uint8_t cmos_read(uint8_t reg) {
     uint64_t flags = spinlock_acquire_irqsave(&cmos_lock);
-    outb(CMOS_ADDR, reg);
+    uint8_t nmi_bit = inb(CMOS_ADDR) & 0x80;
+    outb(CMOS_ADDR, reg | nmi_bit);
     uint8_t val = inb(CMOS_DATA);
     spinlock_release_irqrestore(&cmos_lock, flags);
     return val;
