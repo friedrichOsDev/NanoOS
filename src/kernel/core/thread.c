@@ -45,7 +45,7 @@ thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
     thread->cpu_affinity = cpu_affinity;
 
     // allocate stack (16 KiB)
-    thread->kernel_stack = (void *)kmalloc(STACK_SIZE);
+    thread->kernel_stack = (void *)kzalloc(STACK_SIZE);
     if (!thread->kernel_stack) {
         kfree((virt_addr_t)thread);
         return NULL;

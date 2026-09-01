@@ -121,14 +121,20 @@ virt_addr_t kmalloc(size_t size) {
     size_t total_required_size = size + HEAP_HEADER_SIZE;
 
     heap_list_t *current = heap_list_head;
-    heap_list_t *best_fit =
-        NULL; // TODO: change to Best-Fit (currently First-Fit)
+    heap_list_t *best_fit = NULL;
+    size_t min_suitable_size = (size_t)-1; // Max size_t Value
 
+    // Best-Fit
     while (current != NULL) {
-        if (current->magic == HEAP_MAGIC_FREE &&
-            current->size >= total_required_size) {
-            best_fit = current;
-            break;
+        if (current->magic == HEAP_MAGIC_FREE && current->size >= total_required_size) {
+            if (current->size < min_suitable_size) {
+                best_fit = current;
+                min_suitable_size = current->size;
+
+                if (current->size == total_required_size) {
+                    break;
+                }
+            }
         }
         current = current->next;
     }
@@ -136,6 +142,7 @@ virt_addr_t kmalloc(size_t size) {
     if (!best_fit) {
         best_fit = heap_extend(total_required_size);
         if (!best_fit) {
+            spinlock_release_irqrestore(&heap_lock, flags);
             panic("heap dynamic extension failed", size);
         }
     }
@@ -229,15 +236,15 @@ void kfree(virt_addr_t addr) {
 /**
  * Dumps the current HEAP doubly-linked list and HEAP status
  */
-void heap_dump() {
-    serial_printf(COM1, "\n=== HEAP DUMP START (End Address: %llx) ===\n",
-                  heap_end_addr);
-    serial_printf(COM1, "%-18s | %-6s | %-10s | %-10s | %-18s | %-18s\n",
-                  "Header Address", "Status", "Block Size", "Payload Sz",
-                  "Prev Block", "Next Block");
+void heap_dump(void) {
+    uint64_t flags = spinlock_acquire_irqsave(&heap_lock);
+
+    serial_printf(COM1, "\n====================================== HEAP MANAGER =======================================\n");
+    serial_printf(COM1, "%-18s %-8s %-12s %-12s %-18s %-18s\n",
+                  "HEADER ADDR", "STATUS", "BLOCK SIZE", "PAYLOAD SZ",
+                  "PREV BLOCK", "NEXT BLOCK");
     serial_printf(COM1,
-                  "--------------------------------------------------------"
-                  "-----------------------------------------------\n");
+                  "-------------------------------------------------------------------------------------------\n");
 
     heap_list_t *current = heap_list_head;
     size_t block_count = 0;
@@ -256,14 +263,16 @@ void heap_dump() {
             status = "CORRUPT";
         }
 
-        serial_printf(
-            COM1, "%018llx | %-6s | %010llx | %010llx | %018llx | %018llx\n",
-            (uintptr_t)current, status, current->size, current->payload_size,
-            (uintptr_t)current->prev, (uintptr_t)current->next);
+        serial_printf(COM1, "%018llx %-8s %-12zu %-12zu %018llx %018llx\n",
+                      (unsigned long long)(uintptr_t)current,
+                      status,
+                      current->size,
+                      current->payload_size,
+                      (unsigned long long)(uintptr_t)current->prev,
+                      (unsigned long long)(uintptr_t)current->next);
 
         if (current->next == current) {
-            serial_printf(
-                COM1, "HEAP: Circular link detected (next points to self)!\n");
+            serial_printf(COM1, "HEAP: Circular link detected (next points to self)!\n");
             break;
         }
 
@@ -272,12 +281,11 @@ void heap_dump() {
     }
 
     serial_printf(COM1,
-                  "--------------------------------------------------------"
-                  "-----------------------------------------------\n");
-    serial_printf(
-        COM1,
-        "Summary: %d Blocks | Free: %d Bytes | Used: %d Bytes | Total "
-        "Managed: %d Bytes\n",
-        block_count, total_free, total_used, total_free + total_used);
-    serial_printf(COM1, "=== HEAP DUMP END ===\n\n");
+                  "-------------------------------------------------------------------------------------------\n");
+    serial_printf(COM1,
+                  "Summary: %zu Blocks | Free: %zu Bytes | Used: %zu Bytes | Total: %zu Bytes\n",
+                  block_count, total_free, total_used, total_free + total_used);
+    serial_printf(COM1, "===========================================================================================\n\n");
+
+    spinlock_release_irqrestore(&heap_lock, flags);
 }

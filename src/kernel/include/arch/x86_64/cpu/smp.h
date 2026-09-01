@@ -16,6 +16,7 @@
 typedef struct cpu_local {
     uint32_t cpu_id;          // logical CPU number (0 = BSP, 1 = AP1, ...)
     uint32_t lapic_id;        // physical APIC ID from ACPI MADT
+    uint64_t kernel_stack;
     volatile bool online;     // Flag: core online
     thread_t *current_thread; // current thread of the core
     thread_t *idle_thread;    // dedicated idle thread for every core

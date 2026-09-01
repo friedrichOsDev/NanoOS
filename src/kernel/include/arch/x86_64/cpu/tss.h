@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <arch/x86_64/cpu/smp.h>
 
 struct tss_entry {
     uint32_t reserved0;
@@ -27,5 +28,6 @@ struct tss_entry {
 } __attribute__((packed));
 
 extern struct tss_entry tss;
+extern struct tss_entry tss_cores[MAX_CPUS];
 
-void tss_init();
+void tss_init_core(size_t cpu_id, uint64_t kernel_stack);

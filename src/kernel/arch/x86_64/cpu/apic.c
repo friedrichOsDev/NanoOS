@@ -232,7 +232,7 @@ void lapic_send_sipi(uint32_t lapic_id, uint8_t vector) {
 /**
  * Sends reschedule IPI to all cores
  */
-void lapic_send_broadcast_reschedule_ipi(void) {
+void lapic_send_broadcast_reschedule_ipi() {
     if (!lapic_base)
         return;
 
@@ -245,6 +245,26 @@ void lapic_send_broadcast_reschedule_ipi(void) {
     // 0xFD
     lapic_write(LAPIC_REG_ICR_HIGH, 0);
     lapic_write(LAPIC_REG_ICR_LOW, (3 << 18) | IPI_RESCHEDULE_VECTOR);
+
+    spinlock_release_irqrestore(&icr_lock, flags);
+}
+
+/**
+ * Sends stop IPI to all other cores to halt execution
+ */
+void lapic_send_broadcast_stop_ipi() {
+    if (!lapic_base)
+        return;
+
+    uint64_t flags = spinlock_acquire_irqsave(&icr_lock);
+
+    while (lapic_read(LAPIC_REG_ICR_LOW) & (1 << 12)) {
+        __asm__ __volatile__("pause");
+    }
+
+    // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vector = 0xFC
+    lapic_write(LAPIC_REG_ICR_HIGH, 0);
+    lapic_write(LAPIC_REG_ICR_LOW, (3 << 18) | IPI_STOP_VECTOR);
 
     spinlock_release_irqrestore(&icr_lock, flags);
 }

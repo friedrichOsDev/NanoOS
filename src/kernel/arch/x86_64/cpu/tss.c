@@ -9,25 +9,23 @@
 
 struct tss_entry tss;
 
-extern uint8_t stack_top[];
-static uint8_t double_fault_stack[4096];
+struct tss_entry tss_cores[MAX_CPUS];
+static uint8_t double_fault_stacks[MAX_CPUS][4096];
 
 /**
  * Initializes the TSS
  */
-void tss_init() {
-    serial_printf(COM1, "TSS: initializing\n");
+void tss_init_core(size_t cpu_id, uint64_t kernel_stack) {
+    struct tss_entry *tss = &tss_cores[cpu_id];
 
-    for (uint32_t i = 0; i < sizeof(struct tss_entry); i++) {
-        ((uint8_t *)&tss)[i] = 0;
+    for (size_t i = 0; i < sizeof(struct tss_entry); i++) {
+        ((uint8_t *)tss)[i] = 0;
     }
 
-    tss.rsp0 = (uint64_t)stack_top; // set Ring 0 Stack
-    tss.ist1 = (uint64_t)&double_fault_stack[sizeof(
-        double_fault_stack)]; // set Interrupt Stack Table 1 (IST1) for Double
-                              // Faults
-    tss.iomap_base = sizeof(struct tss_entry);
+    tss->rsp0 = kernel_stack;
+    tss->ist1 = (uint64_t)&double_fault_stacks[cpu_id][sizeof(double_fault_stacks[cpu_id])];
+    tss->iomap_base = sizeof(struct tss_entry);
 
-    serial_printf(COM1, "TSS: init done (rsp0 = %p, ist1 = %p)\n",
-                  (void *)tss.rsp0, (void *)tss.ist1);
+    serial_printf(COM1, "TSS Core %d: init done (rsp0 = %p, ist1 = %p)\n",
+                  (int)cpu_id, (void *)tss->rsp0, (void *)tss->ist1);
 }

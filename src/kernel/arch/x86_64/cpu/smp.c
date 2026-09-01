@@ -29,6 +29,8 @@ extern phys_addr_t kernel_pml4_phys;
 extern struct gdt_ptr gdtp;
 extern struct idt_ptr idtp;
 
+extern uint8_t stack_top[];
+
 cpu_local_t cpus[MAX_CPUS];
 size_t smp_cpu_count = 1;
 
@@ -55,7 +57,7 @@ cpu_local_t *smp_get_current_cpu(void) {
             return &cpus[i];
         }
     }
-    return &cpus[0];
+    return NULL;
 }
 
 /**
@@ -66,23 +68,17 @@ void smp_ap_main(void) {
     gdt_flush((uint64_t)&gdtp);
     idt_load((uint64_t)&idtp);
 
-    // initialize Local APIC of the AP
-    smp_enable_lapic();
-
-    lapic_timer_start_ap();
-
-    uint32_t lapic_id = lapic_get_id();
-    cpu_local_t *local_cpu = NULL;
-    for (size_t i = 0; i < smp_cpu_count; i++) {
-        if (cpus[i].lapic_id == lapic_id) {
-            local_cpu = &cpus[i];
-            break;
-        }
-    }
+    cpu_local_t *local_cpu = smp_get_current_cpu();
 
     if (!local_cpu) {
-        panic("SMP: AP core booted with unknown LAPIC ID", lapic_id);
+        panic("SMP: AP core booted with unknown LAPIC ID", lapic_get_id());
     }
+
+    gdt_init_core(local_cpu->cpu_id, local_cpu->kernel_stack);
+
+    // initialize Local APIC of the AP
+    smp_enable_lapic();
+    lapic_timer_start_ap();
 
     // create different idle tasks for each core
     char idle_name[16];
@@ -123,6 +119,7 @@ void smp_init(void) {
     // register BSP (Core 0)
     cpus[0].cpu_id = 0;
     cpus[0].lapic_id = bsp_lapic_id;
+    cpus[0].kernel_stack = (uint64_t)stack_top;
     cpus[0].online = true;
 
     // search MADT for all cores
@@ -138,6 +135,7 @@ void smp_init(void) {
                 if (smp_cpu_count < MAX_CPUS) {
                     cpus[smp_cpu_count].cpu_id = smp_cpu_count;
                     cpus[smp_cpu_count].lapic_id = lapic->apic_id;
+                    cpus[smp_cpu_count].kernel_stack = 0;
                     cpus[smp_cpu_count].online = false;
                     smp_cpu_count++;
                 }
@@ -160,15 +158,19 @@ void smp_init(void) {
     for (size_t i = 1; i < smp_cpu_count; i++) {
         uint32_t target_apic_id = cpus[i].lapic_id;
 
+        if (target_apic_id == bsp_lapic_id) {
+            continue;
+        }
+
         // allocate stack for the core
-        void *ap_stack = (void *)kmalloc(STACK_SIZE);
+        void *ap_stack = (void *)kzalloc(STACK_SIZE);
         if (!ap_stack) return;
+
         uint64_t ap_stack_top = (uint64_t)ap_stack + STACK_SIZE;
+        cpus[i].kernel_stack = ap_stack_top;
 
         // write the parameter (for each core different)
-        uint64_t *trampoline_vars =
-            (uint64_t *)P2V(0x8000 + ((uint64_t)&smp_trampoline_pml4 -
-                                      (uint64_t)smp_trampoline_start));
+        uint64_t *trampoline_vars = (uint64_t *)P2V(0x8000 + ((uint64_t)&smp_trampoline_pml4 - (uint64_t)smp_trampoline_start));
 
         trampoline_vars[0] = kernel_pml4_phys;      // smp_trampoline_pml4
         trampoline_vars[1] = ap_stack_top;          // smp_trampoline_stack
@@ -176,8 +178,7 @@ void smp_init(void) {
 
         ap_boot_flag = false;
 
-        serial_printf(COM1, "SMP: booting Core %d (APIC ID %d)...\n", i,
-                      target_apic_id);
+        serial_printf(COM1, "SMP: booting Core %d (APIC ID %d)...\n", i, target_apic_id);
 
         // INIT-SIPI-SIPI
         lapic_send_init(target_apic_id);

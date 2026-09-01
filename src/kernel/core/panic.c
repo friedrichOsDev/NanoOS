@@ -7,6 +7,7 @@
 #include <arch/x86_64/cpu/interrupts.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <core/panic.h>
+#include <arch/x86_64/cpu/apic.h>
 
 /**
  * This is a Kernel Panic
@@ -15,6 +16,7 @@
  */
 void panic(const char *message, uint64_t error_code) {
     idt_disable();
+    lapic_send_broadcast_stop_ipi();
     serial_printf(COM1, "KERNEL PANIC: %s (Error code %llx)\n", message,
                   error_code);
     while (1)

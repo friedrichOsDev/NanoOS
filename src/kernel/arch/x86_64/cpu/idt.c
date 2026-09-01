@@ -47,6 +47,9 @@ void idt_init() {
                  0x8E);
     serial_printf(COM1, "IDT: set IPI reschedule vector (0xFD) entry\n");
 
+    idt_set_gate(IPI_STOP_VECTOR, (uint64_t)ipi_stop_stub, 0x08, 0, 0x8E);
+    serial_printf(COM1, "IDT: set IPI stop vector (0xFC) entry\n");
+
     idt_set_gate(LAPIC_TIMER_VECTOR, (uint64_t)lapic_timer_stub, 0x08, 0, 0x8E);
     serial_printf(COM1, "IDT: set LAPIC timer vector (0xFE) entry\n");
 

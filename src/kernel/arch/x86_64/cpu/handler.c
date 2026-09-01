@@ -105,6 +105,19 @@ void reschedule_ipi_handler(struct registers *regs) {
 }
 
 /**
+ * IPI stop handler (halts the receiving CPU core)
+ * @param regs CPU registers
+ */
+void stop_ipi_handler(struct registers *regs) {
+    (void)regs;
+    lapic_eoi();
+    __asm__ __volatile__("cli");
+    while (1) {
+        __asm__ __volatile__("hlt");
+    }
+}
+
+/**
  * LAPIC timer interrupt handler
  * @note fires independently on each core
  */

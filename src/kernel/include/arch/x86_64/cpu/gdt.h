@@ -7,8 +7,9 @@
 #pragma once
 
 #include <stdint.h>
+#include <arch/x86_64/cpu/smp.h>
 
-#define GDT_ENTRIES 7
+#define GDT_ENTRIES (5 + (MAX_CPUS * 2))
 
 struct gdt_entry {
     uint16_t limit_low;
@@ -27,6 +28,7 @@ struct gdt_ptr {
 extern void gdt_flush(uint64_t gdt_ptr);
 extern void tss_load(uint16_t selector);
 
+void gdt_init_core(size_t cpu_id, uint64_t kernel_stack);
 void gdt_init();
 void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access,
                   uint8_t gran);

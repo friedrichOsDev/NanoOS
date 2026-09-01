@@ -28,6 +28,7 @@ struct idt_ptr {
 extern void idt_load(uint64_t idt_ptr);
 extern void spurious_handler_stub();
 extern void ipi_reschedule_stub();
+extern void ipi_stop_stub();
 extern void lapic_timer_stub();
 
 void idt_init();
