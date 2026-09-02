@@ -100,11 +100,37 @@ iso-debug: $(KERNEL_DEBUG)
 
 # --- Run ---
 run: iso
-	qemu-system-x86_64 -smp 4 -bios ./uefi/OVMF.fd -m 8G -vga std -display gtk,gl=off -cdrom $(ISO_IMAGE) -no-reboot -d int,cpu_reset -D qemu.log -serial file:serial.log
+	qemu-system-x86_64 \
+		-machine q35,pflash0=ovmf-code,pflash1=ovmf-vars \
+		-blockdev node-name=ovmf-code,driver=file,filename=./uefi/OVMF_CODE.4m.fd,read-only=on \
+		-blockdev node-name=ovmf-vars,driver=file,filename=./uefi/OVMF_VARS.4m.fd \
+		-smp 4 \
+		-m 8G \
+		-vga virtio \
+		-display gtk,gl=off,zoom-to-fit=off \
+		-cdrom $(ISO_IMAGE) \
+		-no-reboot \
+		-d int,cpu_reset \
+		-D qemu.log \
+		-serial file:serial.log
+
 
 # --- Run with debug ---
 run-debug: iso-debug
-	qemu-system-x86_64 -smp 4 -bios ./uefi/OVMF.fd -m 8G -vga std -display gtk,gl=off -cdrom $(ISO_DEBUG) -no-reboot -d int,cpu_reset -D qemu.log -serial file:serial.log -S -s
+	qemu-system-x86_64 \
+		-machine q35,pflash0=ovmf-code,pflash1=ovmf-vars \
+		-blockdev node-name=ovmf-code,driver=file,filename=./uefi/OVMF_CODE.4m.fd,read-only=on \
+		-blockdev node-name=ovmf-vars,driver=file,filename=./uefi/OVMF_VARS.4m.fd \
+		-smp 4 \
+		-m 8G \
+		-vga virtio \
+		-display gtk,gl=off,zoom-to-fit=off \
+		-cdrom $(ISO_IMAGE) \
+		-no-reboot \
+		-d int,cpu_reset \
+		-D qemu.log \
+		-serial file:serial.log \
+		-S -s
 
 gdb:
 	gdb build/kernel.debug -ex "target remote localhost:1234"
