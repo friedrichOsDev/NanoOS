@@ -6,11 +6,11 @@
 
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/cpu/apic.h>
+#include <arch/x86_64/cpu/hpet.h>
 #include <arch/x86_64/cpu/pic.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
-#include <arch/x86_64/cpu/hpet.h>
 #include <core/sync.h>
 
 static volatile uint8_t *lapic_base = NULL;
@@ -262,7 +262,8 @@ void lapic_send_broadcast_stop_ipi() {
         __asm__ __volatile__("pause");
     }
 
-    // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vector = 0xFC
+    // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vector =
+    // 0xFC
     lapic_write(LAPIC_REG_ICR_HIGH, 0);
     lapic_write(LAPIC_REG_ICR_LOW, (3 << 18) | IPI_STOP_VECTOR);
 
@@ -273,7 +274,8 @@ void lapic_send_broadcast_stop_ipi() {
  * Calibrates the LAPIC timer frequency using the HPET as reference,
  * then starts the timer in periodic mode.
  * @note Must be called on the BSP first.
- * @param target_hz Desired interrupt frequency (e.g. 1000 for 1 kHz / 1ms ticks)
+ * @param target_hz Desired interrupt frequency (e.g. 1000 for 1 kHz / 1ms
+ * ticks)
  */
 void lapic_timer_calibrate_and_start(uint32_t target_hz) {
     lapic_timer_target_hz = target_hz;
@@ -282,7 +284,8 @@ void lapic_timer_calibrate_and_start(uint32_t target_hz) {
     lapic_write(LAPIC_REG_TIMER_DIV, LAPIC_TIMER_DIV_16);
 
     // 2. Set initial count to max for measurement
-    lapic_write(LAPIC_REG_TIMER_LVT, LAPIC_TIMER_MASKED); // Mask during calibration
+    lapic_write(LAPIC_REG_TIMER_LVT,
+                LAPIC_TIMER_MASKED); // Mask during calibration
     lapic_write(LAPIC_REG_TIMER_INITCNT, 0xFFFFFFFF);
 
     // 3. Wait exactly 10ms using HPET
@@ -297,7 +300,10 @@ void lapic_timer_calibrate_and_start(uint32_t target_hz) {
 
     lapic_timer_calibrated_initcnt = init_count;
 
-    serial_printf(COM1, "LAPIC TIMER: calibrated on CPU %d: %llu ticks/s, init_count=%u for %u Hz\n", lapic_get_id(), ticks_per_second, init_count, target_hz);
+    serial_printf(COM1,
+                  "LAPIC TIMER: calibrated on CPU %d: %llu ticks/s, "
+                  "init_count=%u for %u Hz\n",
+                  lapic_get_id(), ticks_per_second, init_count, target_hz);
 
     // 6. Start periodic timer with calibrated value
     lapic_write(LAPIC_REG_TIMER_DIV, LAPIC_TIMER_DIV_16);
@@ -319,6 +325,7 @@ void lapic_timer_start_ap(void) {
     lapic_write(LAPIC_REG_TIMER_LVT, LAPIC_TIMER_PERIODIC | LAPIC_TIMER_VECTOR);
     lapic_write(LAPIC_REG_TIMER_INITCNT, lapic_timer_calibrated_initcnt);
 
-    serial_printf(COM1, "LAPIC TIMER: started on CPU %d (init_count=%u, %u Hz)\n",
-                    lapic_get_id(), lapic_timer_calibrated_initcnt, lapic_timer_target_hz);
+    serial_printf(
+        COM1, "LAPIC TIMER: started on CPU %d (init_count=%u, %u Hz)\n",
+        lapic_get_id(), lapic_timer_calibrated_initcnt, lapic_timer_target_hz);
 }

@@ -4,10 +4,10 @@
  * @author friedrichOsDev
  */
 
+#include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/interrupts.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <core/panic.h>
-#include <arch/x86_64/cpu/apic.h>
 
 /**
  * This is a Kernel Panic

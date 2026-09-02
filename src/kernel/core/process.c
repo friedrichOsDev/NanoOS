@@ -7,9 +7,9 @@
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/heap.h>
 #include <arch/x86_64/mm/vmm.h>
+#include <core/panic.h>
 #include <core/process.h>
 #include <lib/string.h>
-#include <core/panic.h>
 
 process_t *kernel_process = NULL;
 process_t *proc_list = NULL;

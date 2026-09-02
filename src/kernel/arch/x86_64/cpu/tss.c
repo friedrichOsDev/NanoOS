@@ -23,7 +23,9 @@ void tss_init_core(size_t cpu_id, uint64_t kernel_stack) {
     }
 
     tss->rsp0 = kernel_stack;
-    tss->ist1 = (uint64_t)&double_fault_stacks[cpu_id][sizeof(double_fault_stacks[cpu_id])];
+    tss->ist1 =
+        (uint64_t)&double_fault_stacks[cpu_id]
+                                      [sizeof(double_fault_stacks[cpu_id])];
     tss->iomap_base = sizeof(struct tss_entry);
 
     serial_printf(COM1, "TSS Core %d: init done (rsp0 = %p, ist1 = %p)\n",

@@ -19,7 +19,7 @@ smp_trampoline_start:
 	mov es, ax
 	mov ss, ax
 	mov sp, REL_ADDR(smp_trampoline_stack_tmp)
-	; mov sp, 0x7C00
+	;   mov sp, 0x7C00
 
 	;    load temp gdt
 	lgdt [REL_ADDR(ap_gdt32_ptr)]
@@ -104,8 +104,9 @@ ap_gdt32_ptr:
 	smp_trampoline_stack: dq 0
 	smp_trampoline_entry: dq 0
 
-align 16
-    resb 256
+	align 16
+	times 256 db 0
+
 smp_trampoline_stack_tmp:
 
 smp_trampoline_end:

@@ -164,13 +164,16 @@ void smp_init(void) {
 
         // allocate stack for the core
         void *ap_stack = (void *)kzalloc(STACK_SIZE);
-        if (!ap_stack) return;
+        if (!ap_stack)
+            return;
 
         uint64_t ap_stack_top = (uint64_t)ap_stack + STACK_SIZE;
         cpus[i].kernel_stack = ap_stack_top;
 
         // write the parameter (for each core different)
-        uint64_t *trampoline_vars = (uint64_t *)P2V(0x8000 + ((uint64_t)&smp_trampoline_pml4 - (uint64_t)smp_trampoline_start));
+        uint64_t *trampoline_vars =
+            (uint64_t *)P2V(0x8000 + ((uint64_t)&smp_trampoline_pml4 -
+                                      (uint64_t)smp_trampoline_start));
 
         trampoline_vars[0] = kernel_pml4_phys;      // smp_trampoline_pml4
         trampoline_vars[1] = ap_stack_top;          // smp_trampoline_stack
@@ -178,7 +181,8 @@ void smp_init(void) {
 
         ap_boot_flag = false;
 
-        serial_printf(COM1, "SMP: booting Core %d (APIC ID %d)...\n", i, target_apic_id);
+        serial_printf(COM1, "SMP: booting Core %d (APIC ID %d)...\n", i,
+                      target_apic_id);
 
         // INIT-SIPI-SIPI
         lapic_send_init(target_apic_id);

@@ -3,6 +3,7 @@
 
 	global switch_context
 	global thread_entry_stub
+	extern scheduler_release_initial_lock
 	extern thread_exit
 
 	; void switch_context(uint64_t *prev_rsp_ptr, uint64_t next_rsp)
@@ -34,6 +35,8 @@ switch_context:
 	; R13 = Argument (void *arg)
 
 thread_entry_stub:
+	call scheduler_release_initial_lock
+
 	sti ; activate interrupts for the new thread
 
 	;    System V ABI: First Argument in RDI

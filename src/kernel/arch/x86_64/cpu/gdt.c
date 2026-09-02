@@ -12,18 +12,20 @@ struct gdt_entry gdt[GDT_ENTRIES];
 struct gdt_ptr gdtp;
 
 void gdt_init_core(size_t cpu_id, uint64_t kernel_stack) {
-    serial_printf(COM1, "GDT Core %zu: initializing TSS (rsp0 = %p)...\n", 
+    serial_printf(COM1, "GDT Core %zu: initializing TSS (rsp0 = %p)...\n",
                   cpu_id, (void *)kernel_stack);
     tss_init_core(cpu_id, kernel_stack);
 
     int gdt_index = 5 + (cpu_id * 2);
-    serial_printf(COM1, "GDT Core %zu: setting TSS gate at index %d (TSS addr = %p)\n", 
-                  cpu_id, gdt_index, (void *)&tss_cores[cpu_id]);
-    gdt_set_tss_gate(gdt_index, (uint64_t)&tss_cores[cpu_id], sizeof(struct tss_entry) - 1);
+    serial_printf(
+        COM1, "GDT Core %zu: setting TSS gate at index %d (TSS addr = %p)\n",
+        cpu_id, gdt_index, (void *)&tss_cores[cpu_id]);
+    gdt_set_tss_gate(gdt_index, (uint64_t)&tss_cores[cpu_id],
+                     sizeof(struct tss_entry) - 1);
 
     uint16_t tss_selector = gdt_index * 8;
-    serial_printf(COM1, "GDT Core %zu: loading TSS selector %02X\n", 
-                  cpu_id, tss_selector);
+    serial_printf(COM1, "GDT Core %zu: loading TSS selector %02X\n", cpu_id,
+                  tss_selector);
     tss_load(tss_selector);
 
     serial_printf(COM1, "GDT Core %zu: TSS loaded successfully!\n", cpu_id);

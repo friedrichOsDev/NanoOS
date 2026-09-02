@@ -24,7 +24,9 @@
 #include <core/scheduler.h>
 #include <core/taskmgr.h>
 #include <core/thread.h>
+#include <drivers/video/framebuffer/framebuffer.h>
 #include <lib/string.h>
+#include <stddef.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
@@ -226,8 +228,10 @@ void ps_dump_thread(void *arg) {
             uint64_t flags = spinlock_acquire_irqsave(&console_lock);
             ps_dump(proc_list);
             spinlock_release_irqrestore(&console_lock, flags);
+            thread_sleep_ms(1000);
+        } else {
+            thread_yield();
         }
-        thread_sleep_ms(1000);
     }
 }
 
@@ -240,8 +244,10 @@ void heap_dump_thread(void *arg) {
             uint64_t flags = spinlock_acquire_irqsave(&console_lock);
             heap_dump();
             spinlock_release_irqrestore(&console_lock, flags);
+            thread_sleep_ms(1000);
+        } else {
+            thread_yield();
         }
-        thread_sleep_ms(1000);
     }
 }
 
@@ -254,10 +260,14 @@ void time_dump_thread(void *arg) {
         if (time_dump_enable) {
             uint64_t flags = spinlock_acquire_irqsave(&console_lock);
             time = time_get_now();
-            serial_printf(COM1, "TIME: %04d-%02d-%02d %02d:%02d:%02d UTC\n", time.year, time.month, time.day, time.hour, time.minute, time.second);
+            serial_printf(COM1, "TIME: %04d-%02d-%02d %02d:%02d:%02d UTC\n",
+                          time.year, time.month, time.day, time.hour,
+                          time.minute, time.second);
             spinlock_release_irqrestore(&console_lock, flags);
+            thread_sleep_ms(1000);
+        } else {
+            thread_yield();
         }
-        thread_sleep_ms(1000);
     }
 }
 
@@ -272,9 +282,10 @@ void kernel_init_thread(void *arg) {
     thread_create(NULL, ps_dump_thread, NULL, "ps_dump_thread");
     thread_create(NULL, heap_dump_thread, NULL, "heap_dump_thread");
     thread_create(NULL, time_dump_thread, NULL, "time_dump_thread");
+    thread_create(NULL, framebuffer_init_thread, NULL, "framebuffer_thread");
 
     ps_dump_enable = true;
-    heap_dump_enable = true;
+    heap_dump_enable = false;
     time_dump_enable = true;
 
     while (1) {
@@ -327,7 +338,8 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
 
     serial_printf(COM1, "INIT: Multi-Core Scheduling running!\n");
 
-    thread_create_on_cpu(kernel_process, kernel_init_thread, NULL, "kernel_init", -1);
+    thread_create_on_cpu(kernel_process, kernel_init_thread, NULL,
+                         "kernel_init", -1);
 
     scheduler_enable();
     scheduler_thread_exit();

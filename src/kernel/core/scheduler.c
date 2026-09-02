@@ -26,6 +26,8 @@ static spinlock_t sched_lock = SPINLOCK_INIT;
 static volatile uint64_t system_ticks = 0;
 static bool scheduler_enabled = false;
 
+void scheduler_release_initial_lock(void) { spinlock_release(&sched_lock); }
+
 void idle_task(void *arg) {
     (void)arg;
     while (1) {
@@ -48,30 +50,35 @@ void thread_set_affinity(thread_t *thread, int cpu_id) {
     }
 }
 
-void scheduler_add_thread(thread_t *thread) {
+static void scheduler_add_thread_locked(thread_t *thread) {
+    if (!thread)
+        return;
+
     if (strncmp(thread->name, "idle", 4) == 0) {
         return;
     }
 
-    uint64_t flags = spinlock_acquire_irqsave(&sched_lock);
-
     thread->state = THREAD_READY;
     thread->next = NULL;
-    thread->prev = ready_queue_tail;
-
     if (ready_queue_tail) {
         ready_queue_tail->next = thread;
+        thread->prev = ready_queue_tail;
         ready_queue_tail = thread;
     } else {
         ready_queue_head = thread;
         ready_queue_tail = thread;
+        thread->prev = NULL;
     }
-
-    spinlock_release_irqrestore(&sched_lock, flags);
 
     if (smp_cpu_count > 1) {
         lapic_send_broadcast_reschedule_ipi();
     }
+}
+
+void scheduler_add_thread(thread_t *thread) {
+    uint64_t flags = spinlock_acquire_irqsave(&sched_lock);
+    scheduler_add_thread_locked(thread);
+    spinlock_release_irqrestore(&sched_lock, flags);
 }
 
 thread_t *pop_next_ready_thread_for_cpu(int cpu_id) {
@@ -108,6 +115,9 @@ static void cleanup_dead_threads(void) {
     while (curr) {
         thread_t *next = curr->next;
 
+        serial_printf(COM1, "Cleaning up dead thread %p with name %s\n", curr,
+                      curr->name);
+
         if (curr->process) {
             uint64_t pflags = spinlock_acquire_irqsave(&curr->process->lock);
             thread_t **pp = &curr->process->threads;
@@ -126,9 +136,7 @@ static void cleanup_dead_threads(void) {
             kfree((virt_addr_t)curr->kernel_stack);
         }
 
-        if (strcmp(curr->name, "kmain") != 0) {
-            kfree((virt_addr_t)curr);
-        }
+        kfree((virt_addr_t)curr);
 
         curr = next;
     }
@@ -181,30 +189,34 @@ void scheduler_schedule(void) {
     cleanup_dead_threads();
 
     cpu_local_t *my_cpu = smp_get_current_cpu();
-    thread_t *prev = my_cpu->current_thread;
-    thread_t *next = pop_next_ready_thread_for_cpu(my_cpu->cpu_id);
+    if (!my_cpu) {
+        serial_printf(COM1, "SCHED: scheduler enabled but no CPU found.\n");
+        spinlock_release_irqrestore(&sched_lock, flags);
+        return;
+    }
 
+    thread_t *prev = my_cpu->current_thread;
+
+    if (my_cpu->thread_to_enqueue != NULL) {
+        scheduler_add_thread_locked(my_cpu->thread_to_enqueue);
+        my_cpu->thread_to_enqueue = NULL;
+    }
+
+    thread_t *next = pop_next_ready_thread_for_cpu(my_cpu->cpu_id);
     if (!next) {
         if (prev && prev->state == THREAD_RUNNING) {
             prev->time_slice = DEFAULT_TIME_SLICE;
             spinlock_release_irqrestore(&sched_lock, flags);
             return;
         }
-        next = my_cpu ? my_cpu->idle_thread : NULL;
+        next = my_cpu->idle_thread ? my_cpu->idle_thread : NULL;
     }
 
     if (prev && prev->state == THREAD_RUNNING) {
         if (strncmp(prev->name, "idle", 4) != 0 &&
             strcmp(prev->name, "kmain") != 0) {
             prev->state = THREAD_READY;
-            if (ready_queue_tail) {
-                ready_queue_tail->next = prev;
-                prev->prev = ready_queue_tail;
-                ready_queue_tail = prev;
-            } else {
-                ready_queue_head = prev;
-                ready_queue_tail = prev;
-            }
+            my_cpu->thread_to_enqueue = prev;
         }
     } else if (prev && prev->state == THREAD_DEAD) {
         prev->next = dead_queue_head;
@@ -225,11 +237,11 @@ void scheduler_schedule(void) {
         }
     }
 
-    spinlock_release_irqrestore(&sched_lock, flags);
-
     if (prev != next && prev != NULL) {
         switch_context(&prev->rsp, next->rsp);
     }
+
+    spinlock_release_irqrestore(&sched_lock, flags);
 }
 
 void thread_yield(void) { scheduler_schedule(); }
@@ -298,7 +310,8 @@ void scheduler_tick(void) {
     }
 
     bool need_reschedule = false;
-    if (my_cpu && my_cpu->current_thread && my_cpu->current_thread->state == THREAD_RUNNING) {
+    if (my_cpu && my_cpu->current_thread &&
+        my_cpu->current_thread->state == THREAD_RUNNING) {
         if (my_cpu->current_thread->time_slice > 0) {
             my_cpu->current_thread->time_slice--;
         }

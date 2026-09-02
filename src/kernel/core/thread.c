@@ -25,6 +25,12 @@ thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
         return NULL;
     }
 
+    if (cpu_affinity == -1) {
+        if (smp_cpu_count <= 1) {
+            cpu_affinity = 0;
+        }
+    }
+
     thread_t *thread = (thread_t *)kzalloc(sizeof(thread_t));
     if (!thread)
         return NULL;

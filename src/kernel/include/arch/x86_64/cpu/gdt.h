@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <arch/x86_64/cpu/smp.h>
+#include <stdint.h>
 
 #define GDT_ENTRIES (5 + (MAX_CPUS * 2))
 

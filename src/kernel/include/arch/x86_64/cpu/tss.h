@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <arch/x86_64/cpu/smp.h>
+#include <stdint.h>
 
 struct tss_entry {
     uint32_t reserved0;
