@@ -26,6 +26,7 @@
 #include <core/thread.h>
 #include <drivers/video/framebuffer/framebuffer.h>
 #include <lib/string.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 mmap_t kernel_mmap;
@@ -284,9 +285,9 @@ void kernel_init_thread(void *arg) {
     thread_create(NULL, time_dump_thread, NULL, "time_dump_thread");
     thread_create(NULL, framebuffer_init_thread, NULL, "framebuffer_thread");
 
-    ps_dump_enable = true;
+    ps_dump_enable = false;
     heap_dump_enable = false;
-    time_dump_enable = true;
+    time_dump_enable = false;
 
     while (1) {
         thread_sleep_ms(5000);

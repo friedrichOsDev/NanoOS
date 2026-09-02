@@ -64,7 +64,7 @@ void ps_dump(process_t *proc_list) {
 
     serial_printf(COM1, "------------------------------------------------------"
                         "-------------------\n");
-    serial_printf(COM1, "%-11s %-13s %-29s %-17s\n", "CPU CORE", "ACTIVE TID",
+    serial_printf(COM1, "%-11s %-15s %-27s %-17s\n", "CPU CORE", "ACTIVE TID",
                   "ACTIVE THREAD", "STATUS");
     serial_printf(COM1, "------------------------------------------------------"
                         "-------------------\n");
@@ -73,14 +73,14 @@ void ps_dump(process_t *proc_list) {
         if (cpus[i].online) {
             thread_t *curr_t = cpus[i].current_thread;
             if (curr_t) {
-                serial_printf(COM1, "%-11d %-13d %-29s %-17s\n", cpus[i].cpu_id,
+                serial_printf(COM1, "%-11d %-15d %-27s %-17s\n", cpus[i].cpu_id,
                               curr_t->tid, curr_t->name, "ONLINE");
             } else {
-                serial_printf(COM1, "%-11d %-13s %-29s %-17s\n", cpus[i].cpu_id,
+                serial_printf(COM1, "%-11d %-15s %-27s %-17s\n", cpus[i].cpu_id,
                               "-", "none", "ONLINE");
             }
         } else {
-            serial_printf(COM1, "%-11d %-13s %-29s %-17s\n", cpus[i].cpu_id,
+            serial_printf(COM1, "%-11d %-15s %-27s %-17s\n", cpus[i].cpu_id,
                           "-", "-", "OFFLINE");
         }
     }

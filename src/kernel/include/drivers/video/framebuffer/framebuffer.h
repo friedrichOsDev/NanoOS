@@ -12,7 +12,6 @@
 typedef struct {
     uint8_t *backbuffer;
     size_t backbuffer_size;
-    uint64_t scroll_offset;
 } backbuffer_info_t;
 
 typedef struct {
