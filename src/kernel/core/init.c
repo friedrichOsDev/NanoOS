@@ -287,7 +287,7 @@ void kernel_init_thread(void *arg) {
 
     ps_dump_enable = false;
     heap_dump_enable = false;
-    time_dump_enable = false;
+    time_dump_enable = true;
 
     while (1) {
         thread_sleep_ms(5000);
