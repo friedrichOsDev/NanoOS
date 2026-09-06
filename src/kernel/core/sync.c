@@ -1,6 +1,6 @@
 /**
  * @file sync.c
- * @brief Spinlock implementation
+ * @brief Spinlock / Mutex implementation
  * @author friedrichOsDev
  */
 

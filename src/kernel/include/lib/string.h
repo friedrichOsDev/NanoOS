@@ -1,6 +1,6 @@
 /**
  * @file string.h
- * @brief String lib (Header)
+ * @brief String lib
  * @author friedrichOsDev
  */
 

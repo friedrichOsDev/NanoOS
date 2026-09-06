@@ -1,6 +1,6 @@
 /**
  * @file scheduler.c
- * @brief Preemptive Round-Robin Kernel Scheduler with Sleep Support
+ * @brief Round-Robin Kernel Scheduler
  * @author friedrichOsDev
  */
 

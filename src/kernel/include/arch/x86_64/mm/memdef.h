@@ -57,17 +57,16 @@ typedef struct heap_list {
 
 /* PAGING FLAGS AND STRUCTURES */
 
-#define PTE_PRESENT (1ULL << 0)  // Page ist im Speicher vorhanden
-#define PTE_WRITABLE (1ULL << 1) // Read/Write erlaubt (wenn 0: Read-Only)
-#define PTE_USER (1ULL << 2)     // User-Mode Zugriff erlaubt (Ring 3)
-#define PTE_PWT (1ULL << 3)      // Page-level Write-Through Cache
-#define PTE_PCD (1ULL << 4)      // Page-level Cache Disable
-#define PTE_ACCESSED (1ULL << 5) // Von CPU gesetzt, wenn Page gelesen wurde
-#define PTE_DIRTY                                                              \
-    (1ULL << 6) // Von CPU gesetzt, wenn Page beschrieben wurde (nur Level 1)
-#define PTE_HUGE (1ULL << 7)   // 2 MiB oder 1 GiB Page (nur in L2/L3 gültig)
-#define PTE_GLOBAL (1ULL << 8) // Verhindert TLB-Flush bei CR3-Wechsel
-#define PTE_NX (1ULL << 63)    // No-Execute (Befehlsausführung blockiert)
+#define PTE_PRESENT (1ULL << 0)
+#define PTE_WRITABLE (1ULL << 1)
+#define PTE_USER (1ULL << 2)
+#define PTE_PWT (1ULL << 3)
+#define PTE_PCD (1ULL << 4)
+#define PTE_ACCESSED (1ULL << 5)
+#define PTE_DIRTY (1ULL << 6)
+#define PTE_HUGE (1ULL << 7)
+#define PTE_GLOBAL (1ULL << 8)
+#define PTE_NX (1ULL << 63)
 
 #define PTE_ADDR_MASK 0x000FFFFFFFFFF000ULL
 #define PTE_GET_ADDR(entry) ((entry) & PTE_ADDR_MASK)

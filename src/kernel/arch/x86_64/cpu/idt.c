@@ -1,6 +1,6 @@
 /**
  * @file idt.c
- * @brief 64-bit Interrupt Descriptor Table Setup
+ * @brief 64-bit Interrupt Descriptor Table
  * @author friedrichOsDev
  */
 
@@ -50,7 +50,8 @@ void idt_init() {
     idt_set_gate(IPI_STOP_VECTOR, (uint64_t)ipi_stop_stub, 0x08, 0, 0x8E);
     serial_printf(COM1, "IDT: set IPI stop vector (0xFC) entry\n");
 
-    idt_set_gate(IPI_TLB_SHOOTDOWN_VECTOR, (uint64_t)ipi_tlb_shootdown_stub, 0x08, 0, 0x8E);
+    idt_set_gate(IPI_TLB_SHOOTDOWN_VECTOR, (uint64_t)ipi_tlb_shootdown_stub,
+                 0x08, 0, 0x8E);
     serial_printf(COM1, "IDT: set IPI TLB shootdown vector (0xFB) entry\n");
 
     idt_set_gate(LAPIC_TIMER_VECTOR, (uint64_t)lapic_timer_stub, 0x08, 0, 0x8E);

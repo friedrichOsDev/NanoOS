@@ -1,6 +1,6 @@
 /**
  * @file tss.c
- * @brief 64-bit Task State Segment Setup
+ * @brief 64-bit Task State Segment
  * @author friedrichOsDev
  */
 

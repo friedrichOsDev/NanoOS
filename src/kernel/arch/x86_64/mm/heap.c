@@ -1,6 +1,6 @@
 /**
  * @file heap.c
- * @brief Kernel HEAP allocator with splitting and bidirectional coalescing
+ * @brief Kernel HEAP allocator
  * @author friedrichOsDev
  */
 

@@ -8,11 +8,11 @@
 #include <arch/x86_64/cpu/smp.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/heap.h>
+#include <arch/x86_64/mm/vmm.h>
 #include <core/scheduler.h>
 #include <core/thread.h>
 #include <lib/string.h>
 #include <stddef.h>
-#include <arch/x86_64/mm/vmm.h>
 
 static uint64_t next_tid = 1;
 static spinlock_t tid_lock = SPINLOCK_INIT;
@@ -64,6 +64,7 @@ thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
 
     sp = (uint64_t *)((uint64_t)sp & ~0xFULL);
 
+    // this works do not touch it again (stack order is important)
     *(--sp) = (uint64_t)thread_entry_stub;
     *(--sp) = 0;
     *(--sp) = 0;

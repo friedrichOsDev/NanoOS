@@ -1,6 +1,6 @@
 /**
  * @file init.h
- * @brief Kernel initialization code (Header)
+ * @brief Kernel initialization
  * @author friedrichOsDev
  */
 

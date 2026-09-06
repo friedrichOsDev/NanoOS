@@ -1,6 +1,6 @@
 /**
  * @file print.h
- * @brief Printf implementation code (Header)
+ * @brief Printf implementation
  * @author friedrichOsDev
  */
 

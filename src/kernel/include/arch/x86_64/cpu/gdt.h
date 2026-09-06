@@ -1,6 +1,6 @@
 /**
  * @file gdt.h
- * @brief 64-bit Global Descriptor Table Setup (Header)
+ * @brief 64-bit Global Descriptor Table
  * @author friedrichOsDev
  */
 

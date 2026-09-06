@@ -1,6 +1,6 @@
 /**
  * @file idt.h
- * @brief 64-bit Interrupt Descriptor Table Setup (Header)
+ * @brief 64-bit Interrupt Descriptor Table
  * @author friedrichOsDev
  */
 

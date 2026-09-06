@@ -1,6 +1,6 @@
 /**
  * @file vmm.h
- * @brief Virtual Memory Management (Header)
+ * @brief Virtual Memory Management
  * @author friedrichOsDev
  */
 

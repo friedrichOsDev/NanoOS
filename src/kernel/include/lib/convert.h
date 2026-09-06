@@ -1,6 +1,6 @@
 /**
  * @file convert.h
- * @brief Convertion Functions (Header)
+ * @brief Convertion Functions
  * @author friedrichOsDev
  */
 

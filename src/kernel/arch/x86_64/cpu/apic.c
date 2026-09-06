@@ -1,6 +1,6 @@
 /**
  * @file apic.c
- * @brief Advanced Programmable Interrupt Controller Code
+ * @brief Advanced Programmable Interrupt Controller
  * @author friedrichOsDev
  */
 

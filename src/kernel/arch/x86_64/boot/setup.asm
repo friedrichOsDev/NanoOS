@@ -61,21 +61,15 @@ _setup:
 	add  eax, 4096
 	loop .link_direct_pds
 
-	; --- ALT (nur 2 MiB) ---
-	; mov eax, 0x0 | 0x83
-	; mov [boot_pd_low], eax
-	; dword [boot_pd_low + 4], 0
-
-	;   --- NEU (mapt 16 MiB in 2-MiB-Schritten) ---
 	mov edi, boot_pd_low
-	mov ecx, 8; 8 Einträge * 2 MiB = 16 MiB Speicherplatz
-	mov eax, 0x83; Present + Writable + Page Size (2MB Hugepage)
+	mov ecx, 8
+	mov eax, 0x83
 
 .fill_kernel_low_pages:
 	mov  [edi], eax
 	mov  dword [edi + 4], 0
 	add  edi, 8
-	add  eax, 0x200000; Nächste 2 MiB Region
+	add  eax, 0x200000
 	loop .fill_kernel_low_pages
 
 	mov edi, boot_pd_high

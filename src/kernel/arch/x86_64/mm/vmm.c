@@ -4,6 +4,7 @@
  * @author friedrichOsDev
  */
 
+#include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/idt.h>
 #include <arch/x86_64/drivers/serial.h>
@@ -12,7 +13,6 @@
 #include <core/init.h>
 #include <core/panic.h>
 #include <core/sync.h>
-#include <arch/x86_64/cpu/apic.h>
 #include <lib/string.h>
 
 phys_addr_t kernel_pml4_phys = 0;
@@ -61,11 +61,68 @@ static page_table_t *vmm_get_next_table(page_table_t *current_table,
  * @return Returns 1 if empty, 0 if not empty
  */
 static int vmm_is_table_empty(page_table_t *table) {
-    for (size_t i = 0; i < 512; i++) {
+    for (size_t i = 0; i < PT_MAX_ENTRIES; i++) {
         if (table->entries[i] & PTE_PRESENT) {
             return 0;
         }
     }
+    return 1;
+}
+
+/**
+ * Helper function to safely get a page table at a specific level
+ * @param pml4 The PML4 table
+ * @param pml4_idx Index in PML4 table
+ * @param pdpt Pointer to PDPT pointer (output)
+ * @param pdpt_idx Index in PDPT table
+ * @param pd Pointer to PD pointer (output)
+ * @param pd_idx Index in PD table
+ * @param pt Pointer to PT pointer (output)
+ * @param pt_idx Index in PT table
+ * @return 1 if successful, 0 if any table is missing or invalid
+ */
+static int vmm_get_page_table_level(page_table_t *pml4, size_t pml4_idx,
+                                    page_table_t **pdpt, size_t pdpt_idx,
+                                    page_table_t **pd, size_t pd_idx,
+                                    page_table_t **pt, size_t pt_idx) {
+    (void)pt_idx;
+
+    // Validate PML4 entry
+    if (!(pml4->entries[pml4_idx] & PTE_PRESENT)) {
+        return 0;
+    }
+
+    phys_addr_t pdpt_phys = PTE_GET_ADDR(pml4->entries[pml4_idx]);
+    if (!pdpt_phys) {
+        return 0;
+    }
+
+    *pdpt = (page_table_t *)P2V(pdpt_phys);
+
+    // Validate PDPT entry
+    if (!((*pdpt)->entries[pdpt_idx] & PTE_PRESENT)) {
+        return 0;
+    }
+
+    phys_addr_t pd_phys = PTE_GET_ADDR((*pdpt)->entries[pdpt_idx]);
+    if (!pd_phys) {
+        return 0;
+    }
+
+    *pd = (page_table_t *)P2V(pd_phys);
+
+    // Validate PD entry
+    if (!((*pd)->entries[pd_idx] & PTE_PRESENT)) {
+        return 0;
+    }
+
+    phys_addr_t pt_phys = PTE_GET_ADDR((*pd)->entries[pd_idx]);
+    if (!pt_phys) {
+        return 0;
+    }
+
+    *pt = (page_table_t *)P2V(pt_phys);
+
     return 1;
 }
 
@@ -226,40 +283,39 @@ void vmm_unmap_page(page_table_t *pml4, virt_addr_t vaddr) {
     size_t pd_idx = VMM_PD_INDEX(vaddr);
     size_t pt_idx = VMM_PT_INDEX(vaddr);
 
-    if (!(pml4->entries[pml4_idx] & PTE_PRESENT)) {
-        spinlock_release_irqrestore(&vmm_lock, lock_flags);
-        return;
-    }
-    phys_addr_t pdpt_phys = PTE_GET_ADDR(pml4->entries[pml4_idx]);
-    page_table_t *pdpt = (page_table_t *)P2V(pdpt_phys);
+    // Use helper function to safely traverse page tables
+    page_table_t *pdpt = NULL;
+    page_table_t *pd = NULL;
+    page_table_t *pt = NULL;
 
-    if (!(pdpt->entries[pdpt_idx] & PTE_PRESENT)) {
+    if (!vmm_get_page_table_level(pml4, pml4_idx, &pdpt, pdpt_idx, &pd, pd_idx,
+                                  &pt, pt_idx)) {
         spinlock_release_irqrestore(&vmm_lock, lock_flags);
         return;
     }
-    phys_addr_t pd_phys = PTE_GET_ADDR(pdpt->entries[pdpt_idx]);
-    page_table_t *pd = (page_table_t *)P2V(pd_phys);
 
-    if (!(pd->entries[pd_idx] & PTE_PRESENT)) {
+    // At this point we know all tables are valid
+    if (!(pt->entries[pt_idx] & PTE_PRESENT)) {
         spinlock_release_irqrestore(&vmm_lock, lock_flags);
         return;
     }
-    phys_addr_t pt_phys = PTE_GET_ADDR(pd->entries[pd_idx]);
-    page_table_t *pt = (page_table_t *)P2V(pt_phys);
 
     pt->entries[pt_idx] = 0;
     __asm__ __volatile__("invlpg (%0)" ::"r"(vaddr) : "memory");
     lapic_send_broadcast_tlb_ipi();
 
     if (vmm_is_table_empty(pt)) {
+        phys_addr_t pt_phys = PTE_GET_ADDR(pd->entries[pd_idx]);
         pd->entries[pd_idx] = 0;
         pmm_page_free(pt_phys);
 
         if (vmm_is_table_empty(pd)) {
+            phys_addr_t pd_phys = PTE_GET_ADDR(pdpt->entries[pdpt_idx]);
             pdpt->entries[pdpt_idx] = 0;
             pmm_page_free(pd_phys);
 
             if (vmm_is_table_empty(pdpt)) {
+                phys_addr_t pdpt_phys = PTE_GET_ADDR(pml4->entries[pml4_idx]);
                 pml4->entries[pml4_idx] = 0;
                 pmm_page_free(pdpt_phys);
             }

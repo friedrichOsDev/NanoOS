@@ -1,6 +1,6 @@
 /**
  * @file sync.h
- * @brief Spinlocks and synchronization primitives
+ * @brief Spinlock / Mutex implementation
  * @author friedrichOsDev
  */
 

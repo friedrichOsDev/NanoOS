@@ -1,6 +1,6 @@
 /**
  * @file print.c
- * @brief Printf implementation code
+ * @brief Printf implementation
  * @author friedrichOsDev
  */
 

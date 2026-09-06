@@ -1,6 +1,6 @@
 /**
  * @file irq.c
- * @brief 64-bit Interrupt Hardware Request Setup
+ * @brief 64-bit Interrupt Hardware Request
  * @author friedrichOsDev
  */
 

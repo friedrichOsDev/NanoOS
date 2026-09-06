@@ -1,6 +1,6 @@
 /**
  * @file pic.c
- * @brief PIC remapping
+ * @brief PIC (outdated)
  * @author friedrichOsDev
  */
 

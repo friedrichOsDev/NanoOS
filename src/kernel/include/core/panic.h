@@ -1,6 +1,6 @@
 /**
  * @file panic.h
- * @brief Kernel panic (Header)
+ * @brief Kernel panic
  * @author friedrichOsDev
  */
 

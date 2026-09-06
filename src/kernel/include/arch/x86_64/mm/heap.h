@@ -1,7 +1,6 @@
 /**
  * @file heap.h
- * @brief Kernel HEAP allocator with splitting and bidirectional coalescing
- * (Header)
+ * @brief Kernel HEAP allocator
  * @author friedrichOsDev
  */
 

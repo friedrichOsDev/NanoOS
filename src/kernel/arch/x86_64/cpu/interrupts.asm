@@ -13,11 +13,13 @@
 	extern reschedule_ipi_handler
 
 	global ipi_stop_stub
-	global ipi_tlb_shootdown_stub
 	extern stop_ipi_handler
 
 	global lapic_timer_stub
 	extern lapic_timer_handler
+
+	global ipi_tlb_shootdown_stub
+	extern tlb_shootdown_ipi_handler
 
 	;       Macro for exporting ISR symbols
 	%macro  EXPORT_ISR 1
@@ -359,7 +361,6 @@ ipi_tlb_shootdown_stub:
 	mov rbp, rsp
 	and rsp, ~0xF
 
-	extern tlb_shootdown_ipi_handler
 	call tlb_shootdown_ipi_handler
 
 	mov rsp, rbp

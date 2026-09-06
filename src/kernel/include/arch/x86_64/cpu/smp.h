@@ -1,6 +1,6 @@
 /**
  * @file smp.h
- * @brief Symmetric Multiprocessing (SMP) header
+ * @brief Symmetric Multiprocessing (SMP)
  * @author friedrichOsDev
  */
 

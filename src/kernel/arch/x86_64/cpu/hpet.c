@@ -1,6 +1,6 @@
 /**
  * @file hpet.c
- * @brief High Precision Event Timer Setup (Header)
+ * @brief High Precision Event Timer
  * @author friedrichOsDev
  */
 

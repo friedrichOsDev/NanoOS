@@ -90,12 +90,13 @@ void smp_ap_main(void) {
     // Create a thread struct for the currently running AP context
     thread_t *ap_main_thread = (thread_t *)kzalloc(sizeof(thread_t));
     ap_main_thread->tid = 1000 + local_cpu->cpu_id; // Dummy TID
-    snprintf(ap_main_thread->name, sizeof(ap_main_thread->name), "idle_ap_%d", local_cpu->cpu_id);
+    snprintf(ap_main_thread->name, sizeof(ap_main_thread->name), "idle_ap_%d",
+             local_cpu->cpu_id);
     ap_main_thread->state = THREAD_RUNNING;
     ap_main_thread->process = kernel_process;
     ap_main_thread->time_slice = DEFAULT_TIME_SLICE;
     ap_main_thread->cpu_affinity = local_cpu->cpu_id;
-    
+
     ap_main_thread->kernel_stack_top = local_cpu->kernel_stack;
 
     local_cpu->current_thread = ap_main_thread;

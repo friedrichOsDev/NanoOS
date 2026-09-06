@@ -74,7 +74,7 @@ static rtc_time_t rtc_read_hardware(void) {
         t1.hour = ((t1.hour & 0x7F) + 12) % 24;
     }
 
-    t1.year += 2000;
+    t1.year += 2000; // assuming the year is in the range 2000-2099
     return t1;
 }
 

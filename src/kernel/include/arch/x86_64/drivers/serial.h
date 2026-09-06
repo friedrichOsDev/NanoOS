@@ -1,6 +1,6 @@
 /**
  * @file serial.h
- * @brief x86_64 serial driver for debugging (Header)
+ * @brief x86_64 serial driver for debugging
  * @author friedrichOsDev
  */
 

@@ -1,6 +1,6 @@
 /**
  * @file pic.h
- * @brief PIC remapping (Header)
+ * @brief PIC (outdated)
  * @author friedrichOsDev
  */
 

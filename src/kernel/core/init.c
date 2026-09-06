@@ -1,6 +1,6 @@
 /**
  * @file init.c
- * @brief Kernel initialization code
+ * @brief Kernel initialization
  * @author friedrichOsDev
  */
 
@@ -219,59 +219,6 @@ static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
     }
 }
 
-static spinlock_t console_lock = SPINLOCK_INIT;
-
-static bool ps_dump_enable = false;
-void ps_dump_thread(void *arg) {
-    (void)arg;
-    while (1) {
-        if (ps_dump_enable) {
-            uint64_t flags = spinlock_acquire_irqsave(&console_lock);
-            ps_dump(proc_list);
-            spinlock_release_irqrestore(&console_lock, flags);
-            thread_sleep_ms(1000);
-        } else {
-            thread_yield();
-        }
-    }
-}
-
-static bool heap_dump_enable = false;
-void heap_dump_thread(void *arg) {
-    (void)arg;
-    thread_sleep_ms(100);
-    while (1) {
-        if (heap_dump_enable) {
-            uint64_t flags = spinlock_acquire_irqsave(&console_lock);
-            heap_dump();
-            spinlock_release_irqrestore(&console_lock, flags);
-            thread_sleep_ms(1000);
-        } else {
-            thread_yield();
-        }
-    }
-}
-
-static bool time_dump_enable = false;
-void time_dump_thread(void *arg) {
-    (void)arg;
-    thread_sleep_ms(200);
-    rtc_time_t time;
-    while (1) {
-        if (time_dump_enable) {
-            uint64_t flags = spinlock_acquire_irqsave(&console_lock);
-            time = time_get_now();
-            serial_printf(COM1, "TIME: %04d-%02d-%02d %02d:%02d:%02d UTC\n",
-                          time.year, time.month, time.day, time.hour,
-                          time.minute, time.second);
-            spinlock_release_irqrestore(&console_lock, flags);
-            thread_sleep_ms(1000);
-        } else {
-            thread_yield();
-        }
-    }
-}
-
 /**
  * Initializes the Kernel after first kernel_init function dies because the
  * scheduler was activated
@@ -280,17 +227,10 @@ void time_dump_thread(void *arg) {
 void kernel_init_thread(void *arg) {
     (void)arg;
 
-    thread_create(NULL, ps_dump_thread, NULL, "ps_dump_thread");
-    thread_create(NULL, heap_dump_thread, NULL, "heap_dump_thread");
-    thread_create(NULL, time_dump_thread, NULL, "time_dump_thread");
     thread_create(NULL, framebuffer_init_thread, NULL, "framebuffer_thread");
 
-    ps_dump_enable = true;
-    heap_dump_enable = false;
-    time_dump_enable = true;
-
     while (1) {
-        thread_sleep_ms(5000);
+        thread_yield();
     }
 }
 

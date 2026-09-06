@@ -1,6 +1,6 @@
 /**
  * @file pmm.h
- * @brief Physical Memory Management (Header)
+ * @brief Physical Memory Management
  * @author friedrichOsDev
  */
 
