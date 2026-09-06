@@ -87,7 +87,18 @@ void smp_ap_main(void) {
         kernel_process, idle_task, NULL, idle_name, local_cpu->cpu_id);
     pop_next_ready_thread_for_cpu(local_cpu->cpu_id);
 
-    local_cpu->current_thread = local_cpu->idle_thread;
+    // Create a thread struct for the currently running AP context
+    thread_t *ap_main_thread = (thread_t *)kzalloc(sizeof(thread_t));
+    ap_main_thread->tid = 1000 + local_cpu->cpu_id; // Dummy TID
+    snprintf(ap_main_thread->name, sizeof(ap_main_thread->name), "idle_ap_%d", local_cpu->cpu_id);
+    ap_main_thread->state = THREAD_RUNNING;
+    ap_main_thread->process = kernel_process;
+    ap_main_thread->time_slice = DEFAULT_TIME_SLICE;
+    ap_main_thread->cpu_affinity = local_cpu->cpu_id;
+    
+    ap_main_thread->kernel_stack_top = local_cpu->kernel_stack;
+
+    local_cpu->current_thread = ap_main_thread;
 
     local_cpu->online = true;
     ap_boot_flag = true;

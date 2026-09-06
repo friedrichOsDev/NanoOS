@@ -11,11 +11,16 @@
 #include <arch/x86_64/mm/vmm.h>
 #include <core/init.h>
 #include <core/panic.h>
+#include <core/sync.h>
+#include <arch/x86_64/cpu/apic.h>
 #include <lib/string.h>
 
 phys_addr_t kernel_pml4_phys = 0;
 virt_addr_t kernel_pml4 = 0;
 static virt_addr_t next_free_mmio_vaddr = MMIO_REGION_START;
+
+static spinlock_t vmm_lock = SPINLOCK_INIT;
+static spinlock_t mmio_lock = SPINLOCK_INIT;
 
 /**
  * Gets the next table in a table based on the given index and flags
@@ -133,19 +138,20 @@ virt_addr_t vmm_map_mmio(page_table_t *pml4, phys_addr_t paddr, size_t size) {
     uint64_t offset = paddr - phys_start;
     size_t aligned_size = ALIGN_UP(size + offset);
 
+    uint64_t flags = spinlock_acquire_irqsave(&mmio_lock);
     if (next_free_mmio_vaddr + aligned_size > MMIO_REGION_END) {
+        spinlock_release_irqrestore(&mmio_lock, flags);
         panic("vmm out of virtual memory for mmio region", 0);
     }
 
     virt_addr_t assigned_vaddr = next_free_mmio_vaddr;
+    next_free_mmio_vaddr += aligned_size;
+    spinlock_release_irqrestore(&mmio_lock, flags);
 
     for (uint64_t i = 0; i < aligned_size; i += PAGE_SIZE) {
         uint64_t mmio_flags = PTE_WRITABLE | PTE_PCD | PTE_PWT;
-
         vmm_map_page(pml4, assigned_vaddr + i, phys_start + i, mmio_flags);
     }
-
-    next_free_mmio_vaddr += aligned_size;
 
     return assigned_vaddr + offset;
 }
@@ -164,6 +170,8 @@ void vmm_map_page(page_table_t *pml4, virt_addr_t vaddr, phys_addr_t paddr,
     if (!IS_PAGE_ALIGNED(paddr))
         panic("vmm map unaligned paddr", paddr);
 
+    uint64_t lock_flags = spinlock_acquire_irqsave(&vmm_lock);
+
     size_t pml4_idx = VMM_PML4_INDEX(vaddr);
     size_t pdpt_idx = VMM_PDPT_INDEX(vaddr);
     size_t pd_idx = VMM_PD_INDEX(vaddr);
@@ -172,24 +180,34 @@ void vmm_map_page(page_table_t *pml4, virt_addr_t vaddr, phys_addr_t paddr,
     uint64_t table_flags = PTE_WRITABLE | (flags & PTE_USER);
 
     page_table_t *pdpt = vmm_get_next_table(pml4, pml4_idx, table_flags);
-    if (!pdpt)
+    if (!pdpt) {
+        spinlock_release_irqrestore(&vmm_lock, lock_flags);
         panic("vmm map failed at PDPT allocation", vaddr);
+    }
 
     page_table_t *pd = vmm_get_next_table(pdpt, pdpt_idx, table_flags);
-    if (!pd)
+    if (!pd) {
+        spinlock_release_irqrestore(&vmm_lock, lock_flags);
         panic("vmm map failed at PD allocation", vaddr);
+    }
 
     page_table_t *pt = vmm_get_next_table(pd, pd_idx, table_flags);
-    if (!pt)
+    if (!pt) {
+        spinlock_release_irqrestore(&vmm_lock, lock_flags);
         panic("vmm map failed at PT allocation", vaddr);
+    }
 
     if (pt->entries[pt_idx] & PTE_PRESENT) {
+        spinlock_release_irqrestore(&vmm_lock, lock_flags);
         panic("vmm page already mapped", vaddr);
     }
 
     pt->entries[pt_idx] = (paddr & PAGE_MASK) | PTE_PRESENT | flags;
 
     __asm__ __volatile__("invlpg (%0)" ::"r"(vaddr) : "memory");
+    lapic_send_broadcast_tlb_ipi();
+
+    spinlock_release_irqrestore(&vmm_lock, lock_flags);
 }
 
 /**
@@ -201,28 +219,37 @@ void vmm_unmap_page(page_table_t *pml4, virt_addr_t vaddr) {
     if (!IS_PAGE_ALIGNED(vaddr))
         panic("vmm unmap unaligned vaddr", vaddr);
 
+    uint64_t lock_flags = spinlock_acquire_irqsave(&vmm_lock);
+
     size_t pml4_idx = VMM_PML4_INDEX(vaddr);
     size_t pdpt_idx = VMM_PDPT_INDEX(vaddr);
     size_t pd_idx = VMM_PD_INDEX(vaddr);
     size_t pt_idx = VMM_PT_INDEX(vaddr);
 
-    if (!(pml4->entries[pml4_idx] & PTE_PRESENT))
+    if (!(pml4->entries[pml4_idx] & PTE_PRESENT)) {
+        spinlock_release_irqrestore(&vmm_lock, lock_flags);
         return;
+    }
     phys_addr_t pdpt_phys = PTE_GET_ADDR(pml4->entries[pml4_idx]);
     page_table_t *pdpt = (page_table_t *)P2V(pdpt_phys);
 
-    if (!(pdpt->entries[pdpt_idx] & PTE_PRESENT))
+    if (!(pdpt->entries[pdpt_idx] & PTE_PRESENT)) {
+        spinlock_release_irqrestore(&vmm_lock, lock_flags);
         return;
+    }
     phys_addr_t pd_phys = PTE_GET_ADDR(pdpt->entries[pdpt_idx]);
     page_table_t *pd = (page_table_t *)P2V(pd_phys);
 
-    if (!(pd->entries[pd_idx] & PTE_PRESENT))
+    if (!(pd->entries[pd_idx] & PTE_PRESENT)) {
+        spinlock_release_irqrestore(&vmm_lock, lock_flags);
         return;
+    }
     phys_addr_t pt_phys = PTE_GET_ADDR(pd->entries[pd_idx]);
     page_table_t *pt = (page_table_t *)P2V(pt_phys);
 
     pt->entries[pt_idx] = 0;
     __asm__ __volatile__("invlpg (%0)" ::"r"(vaddr) : "memory");
+    lapic_send_broadcast_tlb_ipi();
 
     if (vmm_is_table_empty(pt)) {
         pd->entries[pd_idx] = 0;
@@ -238,4 +265,6 @@ void vmm_unmap_page(page_table_t *pml4, virt_addr_t vaddr) {
             }
         }
     }
+
+    spinlock_release_irqrestore(&vmm_lock, lock_flags);
 }

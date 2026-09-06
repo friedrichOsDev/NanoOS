@@ -13,6 +13,7 @@
 	extern reschedule_ipi_handler
 
 	global ipi_stop_stub
+	global ipi_tlb_shootdown_stub
 	extern stop_ipi_handler
 
 	global lapic_timer_stub
@@ -314,6 +315,52 @@ lapic_timer_stub:
 	and rsp, ~0xF
 
 	call lapic_timer_handler
+
+	mov rsp, rbp
+	pop r15
+	pop r14
+	pop r13
+	pop r12
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	pop rbp
+	pop rdi
+	pop rsi
+	pop rdx
+	pop rcx
+	pop rbx
+	pop rax
+
+	add rsp, 16
+	iretq
+
+ipi_tlb_shootdown_stub:
+	push 0; Dummy Error Code
+	push 0xFB; Interrupt Nummer 251 (0xFB)
+	push rax
+	push rbx
+	push rcx
+	push rdx
+	push rsi
+	push rdi
+	push rbp
+	push r8
+	push r9
+	push r10
+	push r11
+	push r12
+	push r13
+	push r14
+	push r15
+
+	mov rdi, rsp
+	mov rbp, rsp
+	and rsp, ~0xF
+
+	extern tlb_shootdown_ipi_handler
+	call tlb_shootdown_ipi_handler
 
 	mov rsp, rbp
 	pop r15

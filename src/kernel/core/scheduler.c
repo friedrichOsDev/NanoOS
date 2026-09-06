@@ -228,8 +228,8 @@ void scheduler_schedule(void) {
         next->time_slice = DEFAULT_TIME_SLICE;
         if (my_cpu) {
             my_cpu->current_thread = next;
+            tss_cores[my_cpu->cpu_id].rsp0 = next->kernel_stack_top;
         }
-        tss.rsp0 = next->kernel_stack_top;
 
         if (prev && prev->process != next->process && next->process) {
             __asm__ __volatile__("mov %0, %%cr3" ::"r"(next->process->cr3)

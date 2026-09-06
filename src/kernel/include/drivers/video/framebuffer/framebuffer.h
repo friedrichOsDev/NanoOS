@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define MAKE_COLOR(r_val, g_val, b_val) ((color_t){ .r = r_val, .g = g_val, .b = b_val, .a = 255 })
+
 typedef struct {
     uint8_t *backbuffer;
     size_t backbuffer_size;
@@ -19,7 +21,7 @@ typedef struct {
     uint8_t g;
     uint8_t r;
     uint8_t a;
-} color_t;
+} __attribute__((packed)) color_t;
 
 extern color_t black;
 extern color_t white;

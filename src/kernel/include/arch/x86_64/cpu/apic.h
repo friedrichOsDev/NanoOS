@@ -55,6 +55,7 @@
 // IPI vectors
 #define IPI_RESCHEDULE_VECTOR 0xFD
 #define IPI_STOP_VECTOR 0xFC
+#define IPI_TLB_SHOOTDOWN_VECTOR 0xFB
 
 void apic_init(void);
 void lapic_write(uint32_t reg, uint32_t val);
@@ -66,6 +67,7 @@ void lapic_send_sipi(uint32_t lapic_id, uint8_t vector);
 uint32_t lapic_get_id(void);
 void lapic_send_broadcast_reschedule_ipi();
 void lapic_send_broadcast_stop_ipi();
+void lapic_send_broadcast_tlb_ipi();
 void lapic_timer_calibrate_and_start(uint32_t target_hz);
 void lapic_timer_start_ap(void);
 

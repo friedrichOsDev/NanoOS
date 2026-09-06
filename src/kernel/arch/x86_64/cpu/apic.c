@@ -271,6 +271,27 @@ void lapic_send_broadcast_stop_ipi() {
 }
 
 /**
+ * Sends TLB Shootdown IPI to all other cores
+ */
+void lapic_send_broadcast_tlb_ipi() {
+    if (!lapic_base)
+        return;
+
+    uint64_t flags = spinlock_acquire_irqsave(&icr_lock);
+
+    while (lapic_read(LAPIC_REG_ICR_LOW) & (1 << 12)) {
+        __asm__ __volatile__("pause");
+    }
+
+    // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vector =
+    // 0xFB
+    lapic_write(LAPIC_REG_ICR_HIGH, 0);
+    lapic_write(LAPIC_REG_ICR_LOW, (3 << 18) | IPI_TLB_SHOOTDOWN_VECTOR);
+
+    spinlock_release_irqrestore(&icr_lock, flags);
+}
+
+/**
  * Calibrates the LAPIC timer frequency using the HPET as reference,
  * then starts the timer in periodic mode.
  * @note Must be called on the BSP first.

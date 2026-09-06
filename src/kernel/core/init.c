@@ -285,7 +285,7 @@ void kernel_init_thread(void *arg) {
     thread_create(NULL, time_dump_thread, NULL, "time_dump_thread");
     thread_create(NULL, framebuffer_init_thread, NULL, "framebuffer_thread");
 
-    ps_dump_enable = false;
+    ps_dump_enable = true;
     heap_dump_enable = false;
     time_dump_enable = true;
 

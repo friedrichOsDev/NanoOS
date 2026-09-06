@@ -12,6 +12,7 @@
 #include <core/thread.h>
 #include <lib/string.h>
 #include <stddef.h>
+#include <arch/x86_64/mm/vmm.h>
 
 static uint64_t next_tid = 1;
 static spinlock_t tid_lock = SPINLOCK_INIT;
@@ -58,15 +59,6 @@ thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
     }
 
     thread->kernel_stack_top = (uint64_t)thread->kernel_stack + STACK_SIZE;
-
-    // initialize stack frame for context switch
-    // [thread_entry_stub]  <- destination for ret
-    // [r15]
-    // [r14]
-    // [r13 = arg]          <- args for thread_entry_stub
-    // [r12 = entry]        <- pointer to thread_entry_stub
-    // [rbp = 0]
-    // [rbx = 0]            <- Hierhin zeigt thread->rsp initial
 
     uint64_t *sp = (uint64_t *)thread->kernel_stack_top;
 

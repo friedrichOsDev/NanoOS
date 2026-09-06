@@ -79,7 +79,7 @@ void mutex_lock(mutex_t *mux) {
         temp->next = current;
     }
 
-    spinlock_release(&mux->lock);
+    spinlock_release_irqrestore(&mux->lock, flags);
 
     scheduler_schedule();
 }
