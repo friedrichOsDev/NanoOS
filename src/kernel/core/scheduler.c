@@ -6,6 +6,7 @@
 
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/context.h>
+#include <arch/x86_64/cpu/fpu.h>
 #include <arch/x86_64/cpu/smp.h>
 #include <arch/x86_64/cpu/tss.h>
 #include <arch/x86_64/drivers/serial.h>
@@ -159,6 +160,7 @@ void scheduler_init(void) {
     main_thread->process = kernel_process;
     main_thread->time_slice = DEFAULT_TIME_SLICE;
     main_thread->cpu_affinity = 0; // kmain läuft auf Core 0
+    fpu_state_init(main_thread->fpu_state);
 
     uint64_t current_rsp;
     __asm__ __volatile__("mov %%rsp, %0" : "=r"(current_rsp));
@@ -238,7 +240,7 @@ void scheduler_schedule(void) {
     }
 
     if (prev != next && prev != NULL) {
-        switch_context(&prev->rsp, next->rsp);
+        switch_context(&prev->rsp, next->rsp, prev->fpu_state, next->fpu_state);
     }
 
     spinlock_release_irqrestore(&sched_lock, flags);

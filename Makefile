@@ -27,25 +27,28 @@ INCLUDE_FLAGS = -Isrc/kernel/include $(foreach dir,$(ALL_INCLUDE_DIRS),-I$(dir))
 
 C_SOURCES   = $(call rwildcard,$(KERNEL_DIR),*.c)
 ASM_SOURCES = $(call rwildcard,$(KERNEL_DIR),*.asm)
+S_SOURCES := $(call rwildcard,$(KERNEL_DIR),*.s)
 
 C_OBJECTS       = $(patsubst $(KERNEL_DIR)/%.c,$(BUILD_DIR)/release/%.o,$(C_SOURCES))
 ASM_OBJECTS     = $(patsubst $(KERNEL_DIR)/%.asm,$(BUILD_DIR)/release/%.o,$(ASM_SOURCES))
-OBJECTS         = $(C_OBJECTS) $(ASM_OBJECTS)
+S_OBJECTS       = $(patsubst $(KERNEL_DIR)/%.s,$(BUILD_DIR)/release/%.o,$(S_SOURCES))
+OBJECTS         = $(C_OBJECTS) $(ASM_OBJECTS) $(S_OBJECTS)
 
 DEBUG_C_OBJECTS   = $(patsubst $(KERNEL_DIR)/%.c,$(BUILD_DIR)/debug/%.o,$(C_SOURCES))
 DEBUG_ASM_OBJECTS = $(patsubst $(KERNEL_DIR)/%.asm,$(BUILD_DIR)/debug/%.o,$(ASM_SOURCES))
-DEBUG_OBJECTS     = $(DEBUG_C_OBJECTS) $(DEBUG_ASM_OBJECTS)
+DEBUG_S_OBJECTS   = $(patsubst $(KERNEL_DIR)/%.s,$(BUILD_DIR)/debug/%.o,$(S_SOURCES))
+DEBUG_OBJECTS     = $(DEBUG_C_OBJECTS) $(DEBUG_ASM_OBJECTS) $(DEBUG_S_OBJECTS)
 
 # Default flags (Release)
 CFLAGS = -ffreestanding -m64 -O1 -Wall -Wextra -Werror \
          -fno-stack-protector -fno-builtin -fno-strict-aliasing \
-         -mcmodel=kernel -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -nostdlib \
+         -mcmodel=kernel -mno-red-zone -mno-mmx -nostdlib \
          $(INCLUDE_FLAGS)
 
 # Default flags (Debug)
 DEBUG_CFLAGS = -ffreestanding -m64 -O0 -g -Wall -Wextra -Werror \
                -fno-stack-protector -fno-builtin -fno-strict-aliasing \
-               -mcmodel=kernel -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -nostdlib \
+               -mcmodel=kernel -mno-red-zone -mno-mmx -nostdlib \
                $(INCLUDE_FLAGS)
 
 LDFLAGS = -m elf_x86_64 -T $(LINKER)
@@ -70,6 +73,10 @@ $(BUILD_DIR)/release/%.o: $(KERNEL_DIR)/%.asm
 	@mkdir -p $(dir $@)
 	$(NASM) -f elf64 $< -o $@
 
+$(BUILD_DIR)/release/%.o: $(KERNEL_DIR)/%.s
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 # --- Kernel (Debug) ---
 debug: $(KERNEL_DEBUG)
 
@@ -84,6 +91,10 @@ $(BUILD_DIR)/debug/%.o: $(KERNEL_DIR)/%.c
 $(BUILD_DIR)/debug/%.o: $(KERNEL_DIR)/%.asm
 	@mkdir -p $(dir $@)
 	$(NASM) -g -F dwarf -f elf64 $< -o $@
+
+$(BUILD_DIR)/debug/%.o: $(KERNEL_DIR)/%.s
+	@mkdir -p $(dir $@)
+	$(CC) $(DEBUG_CFLAGS) -c $< -o $@
 
 # --- ISOs ---
 iso: $(KERNEL_ELF)

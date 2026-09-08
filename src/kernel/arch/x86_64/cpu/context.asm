@@ -1,4 +1,4 @@
-	[BITS   64]
+[BITS   64]
 	section .text
 
 	global switch_context
@@ -6,9 +6,12 @@
 	extern scheduler_release_initial_lock
 	extern thread_exit
 
-	; void switch_context(uint64_t *prev_rsp_ptr, uint64_t next_rsp)
+	; void switch_context(uint64_t *prev_rsp_ptr, uint64_t next_rsp,
+	;                    void *prev_fpu_state, void *next_fpu_state)
 	; RDI = &prev->rsp
 	; RSI = next->rsp
+	; RDX = prev->fpu_state
+	; RCX = next->fpu_state
 
 switch_context:
 	push rbx
@@ -18,8 +21,18 @@ switch_context:
 	push r14
 	push r15
 
+	test rdx, rdx
+	jz   .skip_fxsave
+	fxsave64 [rdx]
+.skip_fxsave:
+
 	mov [rdi], rsp; save current RSP to RDI
 	mov rsp, rsi; set new RSP
+
+	test rcx, rcx
+	jz   .skip_fxrstor
+	fxrstor64 [rcx]
+.skip_fxrstor:
 
 	pop r15
 	pop r14

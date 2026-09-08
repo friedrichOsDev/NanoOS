@@ -7,6 +7,7 @@
 #include "arch/x86_64/mm/memdef.h"
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/cpu/apic.h>
+#include <arch/x86_64/cpu/fpu.h>
 #include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/hpet.h>
 #include <arch/x86_64/cpu/idt.h>
@@ -68,6 +69,8 @@ void smp_ap_main(void) {
     gdt_flush((uint64_t)&gdtp);
     idt_load((uint64_t)&idtp);
 
+    cpu_fpu_init();
+
     cpu_local_t *local_cpu = smp_get_current_cpu();
 
     if (!local_cpu) {
@@ -96,6 +99,7 @@ void smp_ap_main(void) {
     ap_main_thread->process = kernel_process;
     ap_main_thread->time_slice = DEFAULT_TIME_SLICE;
     ap_main_thread->cpu_affinity = local_cpu->cpu_id;
+    fpu_state_init(ap_main_thread->fpu_state);
 
     ap_main_thread->kernel_stack_top = local_cpu->kernel_stack;
 

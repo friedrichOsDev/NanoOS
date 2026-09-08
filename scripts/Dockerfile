@@ -54,8 +54,10 @@ RUN wget https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.gz \
         --target=$TARGET \
         --prefix=$PREFIX \
         --disable-nls \
-        --enable-languages=c,c++ \
+        --enable-languages=c \
         --without-headers \
+        --with-newlib \
+        --disable-hosted-libstdc++ \
     && make all-gcc -j$(nproc) \
     && make all-target-libgcc -j$(nproc) \
     && make install-gcc \

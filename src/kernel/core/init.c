@@ -6,6 +6,7 @@
 
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/cpu/apic.h>
+#include <arch/x86_64/cpu/fpu.h>
 #include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/handler.h>
 #include <arch/x86_64/cpu/hpet.h>
@@ -28,6 +29,7 @@
 #include <lib/string.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <lib/math/math.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
@@ -246,6 +248,8 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     gdt_init();
     idt_init();
     irq_init();
+
+    cpu_fpu_init();
 
     idt_enable();
 

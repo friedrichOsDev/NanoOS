@@ -201,6 +201,31 @@ static int print_formatted(void *dest, size_t size, const void *format,
             break;
         }
 
+        case 'f': {
+            double val_f = va_arg(args, double);
+            int p = (precision >= 0) ? precision : 6;
+            uint32_t w_buf[64];
+            char a_buf[64];
+            int len = is_wide ? double_to_wstr(val_f, w_buf, p)
+                              : double_to_str(val_f, a_buf, p);
+            int pad = (width > len) ? (width - len) : 0;
+
+            if (!r_width && !pad_zero)
+                while (pad-- > 0)
+                    PUSH_CHAR(' ');
+            if (!r_width && pad_zero)
+                while (pad-- > 0)
+                    PUSH_CHAR('0');
+
+            for (int j = 0; j < len; j++)
+                PUSH_CHAR(is_wide ? w_buf[j]
+                                  : (uint32_t)(unsigned char)a_buf[j]);
+            if (r_width)
+                while (pad-- > 0)
+                    PUSH_CHAR(' ');
+            break;
+        }
+
         case 's': {
             int pad;
             if (is_wide) {

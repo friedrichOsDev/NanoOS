@@ -1,4 +1,4 @@
-	[BITS   32]
+[BITS   32]
 	section .setup
 	global  _setup
 	global  multiboot_info_ptr
@@ -170,7 +170,24 @@ init_long_mode:
 	mov gs, ax
 	mov ss, ax
 
-	;   9. jump to the higher half
+	;   9. FPU / SSE Early HW Init
+	mov rax, cr0
+	and rax, ~((1 << 2) | (1 << 3))   ; clear EM, TS
+	or  rax, (1 << 1)                  ; set MP
+	mov cr0, rax
+
+	mov rax, cr4
+	or  rax, (1 << 9) | (1 << 10)     ; set OSFXSR, OSXMMEXCPT
+	mov cr4, rax
+
+	fninit
+
+	sub rsp, 4
+	mov dword [rsp], 0x1F80
+	ldmxcsr [rsp]
+	add rsp, 4
+
+	;   10. jump to the higher half
 	mov rax, _entry
 	jmp rax
 

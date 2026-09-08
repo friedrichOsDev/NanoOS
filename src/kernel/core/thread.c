@@ -4,6 +4,7 @@
  * @author friedrichOsDev
  */
 
+#include <arch/x86_64/cpu/fpu.h>
 #include <arch/x86_64/cpu/context.h>
 #include <arch/x86_64/cpu/smp.h>
 #include <arch/x86_64/drivers/serial.h>
@@ -50,6 +51,7 @@ thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
     thread->state = THREAD_EMBRYO;
     thread->time_slice = DEFAULT_TIME_SLICE;
     thread->cpu_affinity = cpu_affinity;
+    fpu_state_init(thread->fpu_state);
 
     // allocate stack (16 KiB)
     thread->kernel_stack = (void *)kzalloc(STACK_SIZE);

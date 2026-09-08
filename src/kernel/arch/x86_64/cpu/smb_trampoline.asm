@@ -75,6 +75,22 @@ ap_long_mode_entry:
 	mov gs, ax
 	mov ss, ax
 
+	; FPU / SSE Early HW Init
+	mov rax, cr0
+    and rax, ~((1 << 2) | (1 << 3)) ; EM = 0, TS = 0
+    or  rax, (1 << 1)               ; MP = 1
+    mov cr0, rax
+
+    mov rax, cr4
+    or  rax, (1 << 9) | (1 << 10)   ; OSFXSR = 1, OSXMMEXCPT = 1
+    mov cr4, rax
+
+    fninit
+    sub rsp, 4
+    mov dword [rsp], 0x1F80         ; Default MXCSR (Exceptions maskieren)
+    ldmxcsr [rsp]
+    add rsp, 4
+
 	;   load stack
 	mov rsp, [REL_ADDR(smp_trampoline_stack)]
 
