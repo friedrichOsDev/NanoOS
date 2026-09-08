@@ -2,12 +2,47 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build Kernel",
+            "label": "Build Kernel (Release)",
             "type": "shell",
             "command": "make",
             "args": [
-                "clean",
                 "iso"
+            ],
+            "presentation": {
+                "echo": false,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": false,
+                "close": true
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Kernel (Debug)",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "iso-debug"
+            ],
+            "presentation": {
+                "echo": false,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": false,
+                "close": true
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Clean Kernel",
+            "type": "shell",
+            "command": "make",
+            "args": [
+                "clean"
             ],
             "presentation": {
                 "echo": false,
@@ -41,7 +76,7 @@
             "label": "Build & Run",
             "dependsOrder": "sequence",
             "dependsOn": [
-                "Build Kernel",
+                "Build Kernel (Release)",
                 "Run QEMU"
             ],
             "group": {

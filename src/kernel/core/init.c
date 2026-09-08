@@ -30,6 +30,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <lib/math/math.h>
+#include <core/gui.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
@@ -230,6 +231,9 @@ void kernel_init_thread(void *arg) {
     (void)arg;
 
     thread_create(NULL, framebuffer_init_thread, NULL, "framebuffer_thread");
+    thread_create(NULL, main_display_loop, NULL, "main_display_loop");
+    thread_create(NULL, window_thread, NULL, "window_thread");
+    thread_create(NULL, window_thread2, NULL, "window_thread2");
 
     while (1) {
         thread_yield();
