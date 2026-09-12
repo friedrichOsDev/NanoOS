@@ -22,18 +22,18 @@ static int print_formatted(void *dest, size_t size, const void *format,
     size_t i = 0;
     size_t fmt_idx = 0;
 
-#define GET_CHAR()                                                             \
-    (is_wide ? (uint32_t)((const uint32_t *)format)[fmt_idx]                   \
+#define GET_CHAR()                                           \
+    (is_wide ? (uint32_t)((const uint32_t *)format)[fmt_idx] \
              : (uint32_t)((const char *)format)[fmt_idx])
-#define PUSH_CHAR(c)                                                           \
-    do {                                                                       \
-        if (dest && i < size - 1) {                                            \
-            if (is_wide)                                                       \
-                ((uint32_t *)dest)[i] = (uint32_t)(c);                         \
-            else                                                               \
-                ((char *)dest)[i] = (char)(c);                                 \
-        }                                                                      \
-        i++;                                                                   \
+#define PUSH_CHAR(c)                                   \
+    do {                                               \
+        if (dest && i < size - 1) {                    \
+            if (is_wide)                               \
+                ((uint32_t *)dest)[i] = (uint32_t)(c); \
+            else                                       \
+                ((char *)dest)[i] = (char)(c);         \
+        }                                              \
+        i++;                                           \
     } while (0)
 
     uint32_t c;

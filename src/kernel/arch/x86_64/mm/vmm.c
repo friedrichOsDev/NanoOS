@@ -32,6 +32,10 @@ static spinlock_t mmio_lock = SPINLOCK_INIT;
  */
 static page_table_t *vmm_get_next_table(page_table_t *current_table,
                                         size_t index, uint64_t flags) {
+    if (!current_table) {
+        panic("vmm_get_next_table called with NULL current_table!", 0);
+    }
+
     if (index >= PT_MAX_ENTRIES) {
         panic("vmm bad next table index", index);
     }
@@ -273,6 +277,10 @@ void vmm_map_page(page_table_t *pml4, virt_addr_t vaddr, phys_addr_t paddr,
  * @param vaddr The address of the virtual page
  */
 void vmm_unmap_page(page_table_t *pml4, virt_addr_t vaddr) {
+    if (vaddr == 0 || pml4 == NULL) {
+        return;
+    }
+
     if (!IS_PAGE_ALIGNED(vaddr))
         panic("vmm unmap unaligned vaddr", vaddr);
 

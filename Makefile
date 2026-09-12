@@ -121,6 +121,7 @@ run: iso
 		-display gtk,gl=off,zoom-to-fit=off \
 		-cdrom $(ISO_IMAGE) \
 		-no-reboot \
+		-no-shutdown \
 		-d int,cpu_reset \
 		-D qemu.log \
 		-serial file:serial.log
@@ -138,6 +139,7 @@ run-debug: iso-debug
 		-display gtk,gl=off,zoom-to-fit=off \
 		-cdrom $(ISO_IMAGE) \
 		-no-reboot \
+		-no-shutdown \
 		-d int,cpu_reset \
 		-D qemu.log \
 		-serial file:serial.log \

@@ -51,7 +51,7 @@ typedef struct heap_list {
     uint32_t magic; // MAGIC_FREE or MAGIC_USED
     uint32_t _reserved;
     uint64_t _align_pad;
-    size_t size;    // Header + Payload
+    size_t size; // Header + Payload
     size_t payload_size;
     struct heap_list *prev;
     struct heap_list *next;

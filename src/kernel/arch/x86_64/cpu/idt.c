@@ -20,9 +20,9 @@ void idt_init() {
     idtp.base = (uint64_t)&idt;
 
     uint64_t isr_table[] = {
-        (uint64_t)isr0,  (uint64_t)isr1,  (uint64_t)isr2,  (uint64_t)isr3,
-        (uint64_t)isr4,  (uint64_t)isr5,  (uint64_t)isr6,  (uint64_t)isr7,
-        (uint64_t)isr8,  (uint64_t)isr9,  (uint64_t)isr10, (uint64_t)isr11,
+        (uint64_t)isr0, (uint64_t)isr1, (uint64_t)isr2, (uint64_t)isr3,
+        (uint64_t)isr4, (uint64_t)isr5, (uint64_t)isr6, (uint64_t)isr7,
+        (uint64_t)isr8, (uint64_t)isr9, (uint64_t)isr10, (uint64_t)isr11,
         (uint64_t)isr12, (uint64_t)isr13, (uint64_t)isr14, (uint64_t)isr15,
         (uint64_t)isr16, (uint64_t)isr17, (uint64_t)isr18, (uint64_t)isr19,
         (uint64_t)isr20, (uint64_t)isr21, (uint64_t)isr22, (uint64_t)isr23,

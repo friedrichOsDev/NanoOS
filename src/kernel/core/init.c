@@ -19,6 +19,7 @@
 #include <arch/x86_64/mm/heap.h>
 #include <arch/x86_64/mm/pmm.h>
 #include <arch/x86_64/mm/vmm.h>
+#include <core/gui.h>
 #include <core/init.h>
 #include <core/panic.h>
 #include <core/process.h>
@@ -26,11 +27,10 @@
 #include <core/taskmgr.h>
 #include <core/thread.h>
 #include <drivers/video/framebuffer/framebuffer.h>
+#include <lib/math/math.h>
 #include <lib/string.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <lib/math/math.h>
-#include <core/gui.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
@@ -230,7 +230,8 @@ static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
 void kernel_init_thread(void *arg) {
     (void)arg;
 
-    thread_create(NULL, framebuffer_init_thread, NULL, "framebuffer_thread");
+    fb_init();
+
     thread_create(NULL, main_display_loop, NULL, "main_display_loop");
     thread_create(NULL, window_thread, NULL, "window_thread");
     thread_create(NULL, window_thread2, NULL, "window_thread2");

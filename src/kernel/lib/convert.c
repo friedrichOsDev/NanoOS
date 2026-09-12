@@ -83,25 +83,34 @@ int uint_to_str_legacy(uint64_t value, char *buffer, int base) {
  * Converts a double-precision float to a string
  */
 int double_to_str(double value, char *buf, int prec) {
-    if (prec < 0) prec = 6;
-    if (prec > 9) prec = 9;
+    if (prec < 0)
+        prec = 6;
+    if (prec > 9)
+        prec = 9;
 
     union {
         double d;
         uint64_t u;
-    } pun = { .d = value };
+    } pun = {.d = value};
 
     uint64_t exp_bits = (pun.u >> 52) & 0x7FF;
     uint64_t mant_bits = pun.u & 0x000FFFFFFFFFFFFFULL;
 
     if (exp_bits == 0x7FF) {
         if (mant_bits != 0) {
-            buf[0] = 'n'; buf[1] = 'a'; buf[2] = 'n'; buf[3] = '\0';
+            buf[0] = 'n';
+            buf[1] = 'a';
+            buf[2] = 'n';
+            buf[3] = '\0';
             return 3;
         }
         int idx = 0;
-        if ((pun.u >> 63) != 0) buf[idx++] = '-';
-        buf[idx++] = 'i'; buf[idx++] = 'n'; buf[idx++] = 'f'; buf[idx] = '\0';
+        if ((pun.u >> 63) != 0)
+            buf[idx++] = '-';
+        buf[idx++] = 'i';
+        buf[idx++] = 'n';
+        buf[idx++] = 'f';
+        buf[idx] = '\0';
         return idx;
     }
 
@@ -120,7 +129,8 @@ int double_to_str(double value, char *buf, int prec) {
         buf[idx++] = '.';
 
         double mult = 1.0;
-        for (int i = 0; i < prec; i++) mult *= 10.0;
+        for (int i = 0; i < prec; i++)
+            mult *= 10.0;
         uint64_t fdigits = (uint64_t)(fpart * mult + 0.5);
 
         char fbuf[16];

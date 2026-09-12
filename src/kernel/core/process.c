@@ -6,6 +6,7 @@
 
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/heap.h>
+#include <arch/x86_64/mm/memdef.h>
 #include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
 #include <core/process.h>
@@ -19,7 +20,7 @@ static spinlock_t pid_lock = SPINLOCK_INIT;
 static spinlock_t proc_list_lock = SPINLOCK_INIT;
 
 void process_init(void) {
-    kernel_process = process_create("kernel", (page_table_t *)V2P(kernel_pml4));
+    kernel_process = process_create("kernel", (page_table_t *)kernel_pml4);
     if (!kernel_process) {
         panic("Process: Failed to initialize kernel process!", 0);
     }
@@ -48,6 +49,7 @@ process_t *process_create(const char *name, page_table_t *pml4) {
 
     proc->pml4 = pml4;
     proc->cr3 = V2P((virt_addr_t)pml4);
+    serial_printf(COM1, "Process: pml4: %llx, cr3: %llx\n", (virt_addr_t)proc->pml4, (phys_addr_t)proc->cr3);
 
     spinlock_init(&proc->lock);
 

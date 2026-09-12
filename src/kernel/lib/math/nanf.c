@@ -1,3 +1,6 @@
 #include <lib/math/math.h>
 
-float nanf(const char *s) { (void)s; return NAN; }
+float nanf(const char *s) {
+    (void)s;
+    return NAN;
+}

@@ -66,12 +66,17 @@ RUN wget https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.gz \
     && rm -rf build-gcc gcc-14.2.0 gcc-14.2.0.tar.gz
 
 # ==========================================
-# STAGE 2: ASMFMT Builder
+# STAGE 2: ASM Formatters Builder
 # ==========================================
 FROM golang:1.22-alpine AS builder
 
 RUN apk add --no-cache git
+ENV GOPATH=/go
+
 RUN go install github.com/klauspost/asmfmt/cmd/asmfmt@latest
+RUN go install github.com/yamnikov-oleg/nasmfmt@latest
+
+RUN ls -la /go/bin/
 
 # ==========================================
 # STAGE 3: Final Devcontainer
@@ -84,6 +89,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Copy Toolchain from Toolchain Builder
 COPY --from=toolchain-builder /opt/cross /opt/cross
 COPY --from=builder /go/bin/asmfmt /usr/local/bin/asmfmt
+COPY --from=builder /go/bin/nasmfmt /usr/local/bin/nasmfmt
 
 ENV PREFIX="/opt/cross"
 ENV TARGET="x86_64-elf"
@@ -111,12 +117,12 @@ RUN apt-get update && apt-get install -y \
     btop \
     wget \
     curl \
-    make \
     && rm -rf /var/lib/apt/lists/*
 
-# Verify Toolchain
+# Verify Toolchain & Binaries
 RUN $TARGET-gcc --version && \
-    $TARGET-ld --version
+    $TARGET-ld --version && \
+    test -f /usr/local/bin/nasmfmt && echo "nasmfmt successfully installed"
 
 # Create User
 RUN usermod -l vscode ubuntu \
