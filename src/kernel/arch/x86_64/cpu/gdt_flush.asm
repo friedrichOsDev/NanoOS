@@ -1,28 +1,32 @@
-    [BITS 64]
-    section .text
+        [BITS 64]
+        section .text
 
-    global gdt_flush
+        global gdt_flush
+        global tss_load
 
+; void gdt_flush(uint64_t gdt_ptr_phys)
+; RDI = Pointer to GDTR structure (gdtp)
 gdt_flush:
-    lgdt [rdi]
+        lgdt [rdi]
 
-    push 0x08
-    lea rax, [rel .flush]
-    push rax
-    retfq
+; Far Jump to reload CS (Code Segment = 0x08)
+        push 0x08
+        lea rax, [rel .reload_cs]
+        push rax
+        retfq
 
-.flush:
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
+.reload_cs:
+; Reload all Data Segment Registers (Kernel Data = 0x10)
+        mov ax, 0x10
+        mov ds, ax
+        mov es, ax
+        mov fs, ax
+        mov gs, ax
+        mov ss, ax
+        ret
 
-    ret
-
-    global tss_load
-
+; void tss_load(uint16_t selector)
+; RDI = TSS Segment Selector
 tss_load:
-    ltr di
-    ret
+        ltr di
+        ret
