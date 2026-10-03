@@ -1,7 +1,6 @@
 /**
  * @file pic.h
- * @brief PIC (outdated)
- * @author friedrichOsDev
+ * @brief Legacy PIC disabling for APIC mode
  */
 
 #pragma once
@@ -13,4 +12,7 @@
 #define ICW1_INIT 0x11
 #define ICW4_8086 0x01
 
-void pic_disable();
+/**
+ * @brief Masks all legacy PIC lines to avoid conflicts with APIC routing
+ */
+void pic_disable(void);

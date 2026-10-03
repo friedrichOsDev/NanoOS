@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #define IOAPIC_DEFAULT_PHYS 0xFEC00000
@@ -73,3 +74,8 @@ void lapic_timer_start_ap(void);
 
 extern uint32_t lapic_timer_calibrated_initcnt;
 extern uint32_t lapic_timer_target_hz;
+extern bool apic_initialized;
+
+static inline bool is_apic_initialized(void) {
+    return apic_initialized;
+}

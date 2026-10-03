@@ -5,20 +5,20 @@
 
 #include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/drivers/serial.h>
+#include <core/panic.h>
 
 /* Global GDT array & GDTR pointer */
 struct gdt_entry gdt[GDT_ENTRIES];
 struct gdt_ptr gdtp;
 
 /* Per-CPU TSS structures and dedicated Double Fault Stacks (16 KB aligned) */
-static struct tss_entry tss_cores[MAX_CPUS];
+struct tss_entry tss_cores[MAX_CPUS];
 static uint8_t double_fault_stacks[MAX_CPUS][16384] __attribute__((aligned(16)));
 
 /**
  * @brief Initializes the TSS structure for a specific CPU core.
  * @param cpu_id The ID of the CPU core.
  * @param kernel_stack The address of the kernel
- * @return void
  */
 static void tss_init_core(size_t cpu_id, uintptr_t kernel_stack) {
     if (cpu_id >= MAX_CPUS) {
@@ -34,16 +34,22 @@ static void tss_init_core(size_t cpu_id, uintptr_t kernel_stack) {
     }
 
     /* Set Kernel Stack Pointer (RSP0) for Ring 3 -> Ring 0 transitions */
+    if (kernel_stack % 16 != 0) {
+        panic("GDT TSS: RSP0 (kernel_stack) not 16-byte aligned (SSE/FPU)", kernel_stack % 16);
+    }
     tss->rsp0 = (uint64_t)kernel_stack;
 
     /* Set IST1 Stack Pointer for Double Fault Exception Handler */
     uintptr_t df_stack_top = (uintptr_t)&double_fault_stacks[cpu_id][sizeof(double_fault_stacks[cpu_id])];
+    if (df_stack_top % 16 != 0) {
+        panic("GDT TSS: IST1 (df_stack_top) not 16-byte aligned (SSE/FPU)", df_stack_top % 16);
+    }
     tss->ist1 = (uint64_t)df_stack_top;
 
     /* Offset to IO Permission Bitmap (set to size of TSS = disabled) */
     tss->iomap_base = sizeof(struct tss_entry);
 
-    serial_printf(COM1, "TSS Core %zu: RSP0 = 0x%p, IST1 = 0x%p\n", cpu_id, (void *)tss->rsp0, (void *)tss->ist1);
+    serial_printf(COM1, "TSS Core %zu: RSP0 = %p, IST1 = %p\n", cpu_id, (void *)tss->rsp0, (void *)tss->ist1);
 }
 
 void gdt_init(void) {
@@ -91,7 +97,7 @@ void gdt_init_core(size_t cpu_id, uintptr_t kernel_stack) {
     uint16_t tss_selector = gdt_index * 8;
     tss_load(tss_selector);
 
-    serial_printf(COM1, "GDT Core %zu: Loaded TSS Selector 0x%02X (Index %d)\n",
+    serial_printf(COM1, "GDT Core %zu: Loaded TSS Selector %02x (Index %d)\n",
                   cpu_id, tss_selector, gdt_index);
 }
 

@@ -96,6 +96,8 @@ ap_long_mode_entry:
         mov rax, [rel smp_trampoline_stack]
         mov rsp, rax
 
+        and rsp, -16
+
         mov rax, [rel smp_trampoline_entry]
         jmp rax
 

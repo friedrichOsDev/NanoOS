@@ -83,23 +83,22 @@ struct tss_entry {
     uint16_t iomap_base;
 } __attribute__((packed));
 
+extern struct tss_entry tss_cores[MAX_CPUS];
+
 /**
  * @brief GDT Flush function
  * @param gdt_ptr_phys The physical address of the GDT pointer
- * @return void
  */
 extern void gdt_flush(uint64_t gdt_ptr_phys);
 
 /**
  * @brief TSS Load function
  * @param selector The selector to load the TSS with
- * @return void
  */
 extern void tss_load(uint16_t selector);
 
 /**
  * @brief GDT Initialization function
- * @return void
  */
 void gdt_init();
 
@@ -107,7 +106,6 @@ void gdt_init();
  * @brief Per CPU GDT Initialization function
  * @param cpu_id The CPU ID
  * @param kernel_stack The kernel stack pointer
- * @return void
  */
 void gdt_init_core(size_t cpu_id, uintptr_t kernel_stack);
 
@@ -118,7 +116,6 @@ void gdt_init_core(size_t cpu_id, uintptr_t kernel_stack);
  * @param limit The limit of the gate
  * @param access The access rights of the gate
  * @param gran The granularity of the gate
- * @return void
  */
 void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);
 
@@ -127,6 +124,5 @@ void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_
  * @param num The gate number
  * @param base The base address of the gate
  * @param limit The limit of the gate
- * @return void
  */
 void gdt_set_tss_gate(int num, uintptr_t base, uint32_t limit);

@@ -17,6 +17,8 @@ static volatile uint8_t *lapic_base = NULL;
 static volatile uint8_t *ioapic_base = NULL;
 static spinlock_t ioapic_lock = SPINLOCK_INIT;
 static spinlock_t icr_lock = SPINLOCK_INIT;
+bool apic_initialized = false;
+bool ioapic_initialized = false;
 
 uint32_t lapic_timer_calibrated_initcnt = 0;
 uint32_t lapic_timer_target_hz = 0;
@@ -131,6 +133,8 @@ void apic_init() {
 
     serial_printf(COM1, "APIC: LAPIC initialized and enabled. BSP ID: %x\n",
                   lapic_read(LAPIC_REG_ID) >> 24);
+
+    apic_initialized = true;
 }
 
 /**

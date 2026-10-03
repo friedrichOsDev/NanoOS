@@ -7,8 +7,8 @@
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/context.h>
 #include <arch/x86_64/cpu/fpu.h>
+#include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/smp.h>
-#include <arch/x86_64/cpu/tss.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/heap.h>
 #include <arch/x86_64/mm/vmm.h>
@@ -164,6 +164,8 @@ void scheduler_init(void) {
 
     uint64_t current_rsp;
     __asm__ __volatile__("mov %%rsp, %0" : "=r"(current_rsp));
+    /* NOTE: current_rsp is 8 mod 16 here (inside a called function per ABI),
+     * that is correct and does not affect fxsave64/fxrstor64 which use fpu_state. */
     main_thread->kernel_stack_top = current_rsp;
 
     uint64_t pflags = spinlock_acquire_irqsave(&kernel_process->lock);
@@ -240,6 +242,9 @@ void scheduler_schedule(void) {
     }
 
     if (prev != next && prev != NULL) {
+        if ((uintptr_t)next->fpu_state % 16 != 0) {
+            panic("SCHED: next->fpu_state not 16-byte aligned (fxrstor64 requires this)", (uintptr_t)next->fpu_state % 16);
+        }
         switch_context(&prev->rsp, next->rsp, prev->fpu_state, next->fpu_state);
     }
 

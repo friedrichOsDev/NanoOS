@@ -136,6 +136,9 @@ void smp_init(void) {
     cpus[0].cpu_id = 0;
     cpus[0].lapic_id = bsp_lapic_id;
     cpus[0].kernel_stack = (uint64_t)stack_top;
+    if ((uint64_t)stack_top % 16 != 0) {
+        panic("SMP: BSP stack_top not 16-byte aligned (SSE/FPU)", (uint64_t)stack_top % 16);
+    }
     cpus[0].online = true;
 
     // search MADT for all cores
@@ -184,6 +187,9 @@ void smp_init(void) {
             return;
 
         uint64_t ap_stack_top = (uint64_t)ap_stack + STACK_SIZE;
+        if (ap_stack_top % 16 != 0) {
+            panic("SMP: AP stack_top not 16-byte aligned (SSE/FPU)", ap_stack_top % 16);
+        }
         cpus[i].kernel_stack = ap_stack_top;
 
         // write the parameter (for each core different)

@@ -10,6 +10,7 @@
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/heap.h>
 #include <arch/x86_64/mm/vmm.h>
+#include <core/panic.h>
 #include <core/scheduler.h>
 #include <core/thread.h>
 #include <lib/string.h>
@@ -67,18 +68,23 @@ thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
 
     uint64_t *sp = (uint64_t *)thread->kernel_stack_top;
 
+    // Stack auf 16 Bytes ausrichten
     sp = (uint64_t *)((uint64_t)sp & ~0xFULL);
-
-    // this works do not touch it again (stack order is important)
+    // 2. Fake Return Address für ret in switch_context
     *(--sp) = (uint64_t)thread_entry_stub;
-    *(--sp) = 0;
-    *(--sp) = 0;
-    *(--sp) = (uint64_t)entry;
-    *(--sp) = (uint64_t)arg;
-    *(--sp) = 0;
-    *(--sp) = 0;
+
+    // 3. Register für switch_context (pop rbp, rbx, r12, r13, r14, r15)
+    *(--sp) = (uint64_t)0;     // RBP
+    *(--sp) = (uint64_t)0;     // RBX
+    *(--sp) = (uint64_t)entry; // R12 (Function Pointer)
+    *(--sp) = (uint64_t)arg;   // R13 (Argument)
+    *(--sp) = (uint64_t)0;     // R14
+    *(--sp) = (uint64_t)0;     // R15
 
     thread->rsp = (uint64_t)sp;
+    if (thread->rsp % 16 != 8) {
+        panic("RSP new Thread not aligned", thread->rsp % 16);
+    }
     thread->state = THREAD_READY;
 
     uint64_t proc_flags = spinlock_acquire_irqsave(&thread->process->lock);

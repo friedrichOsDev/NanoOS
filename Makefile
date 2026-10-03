@@ -1,3 +1,7 @@
+# META
+NAME = "NanoOS"
+VERSION = 0
+
 # Compilers
 TARGET = x86_64-elf
 CC = $(TARGET)-gcc
@@ -5,15 +9,14 @@ LD = $(TARGET)-ld
 OBJCOPY = $(TARGET)-objcopy
 NASM = nasm
 
+rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+
 # Directories
 SRC_DIR = src
 BUILD_DIR = build
 ISO_DIR = iso
 GRUB_DIR = grub
 KERNEL_DIR = $(SRC_DIR)/kernel
-
-# Recursive Wildcard
-rwildcard = $(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
 # Files
 KERNEL_ELF   = $(BUILD_DIR)/kernel.elf

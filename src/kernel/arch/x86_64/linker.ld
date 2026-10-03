@@ -24,7 +24,7 @@ SECTIONS
     . = ALIGN(4K);
     kernel_setup_end_phys = .;
 
-    /* --- Higher-Half Sections (64-Bit Execution) --- */
+    /* --- Higher-Half Sections (64-Bit Code) --- */
 
     . = kernel_virt_base + kernel_setup_end_phys;
 

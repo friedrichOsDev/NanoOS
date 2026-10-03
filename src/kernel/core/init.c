@@ -19,15 +19,13 @@
 #include <arch/x86_64/mm/heap.h>
 #include <arch/x86_64/mm/pmm.h>
 #include <arch/x86_64/mm/vmm.h>
-#include <core/gui.h>
 #include <core/init.h>
 #include <core/panic.h>
 #include <core/process.h>
 #include <core/scheduler.h>
+#include <core/stress_test.h>
 #include <core/taskmgr.h>
 #include <core/thread.h>
-#include <drivers/video/framebuffer/framebuffer.h>
-#include <lib/math/math.h>
 #include <lib/string.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -230,11 +228,21 @@ static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
 void kernel_init_thread(void *arg) {
     (void)arg;
 
-    fb_init();
+    heap_dump();
+    for (int i = 0; i < 10; i++)
+        thread_yield();
 
-    thread_create(NULL, main_display_loop, NULL, "main_display_loop");
-    thread_create(NULL, window_thread, NULL, "window_thread");
-    thread_create(NULL, window_thread2, NULL, "window_thread2");
+    run_kernel_stress_test();
+
+    heap_dump();
+    for (int i = 0; i < 10; i++)
+        thread_yield();
+
+    run_extended_stress_tests();
+
+    heap_dump();
+    for (int i = 0; i < 10; i++)
+        thread_yield();
 
     while (1) {
         thread_yield();

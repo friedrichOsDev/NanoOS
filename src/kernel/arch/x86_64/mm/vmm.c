@@ -14,6 +14,7 @@
 #include <core/panic.h>
 #include <core/sync.h>
 #include <lib/string.h>
+#include <stdbool.h>
 
 phys_addr_t kernel_pml4_phys = 0;
 virt_addr_t kernel_pml4 = 0;
@@ -165,9 +166,10 @@ void vmm_init() {
     for (uint64_t addr = 0; addr < 0x1000000; addr += PAGE_SIZE) {
         vmm_map_page(k_pml4, addr, addr, PTE_WRITABLE);
     }
-    vmm_unmap_page(k_pml4, 0x0);
 
     __asm__ __volatile__("mov %0, %%cr3" ::"r"(kernel_pml4_phys) : "memory");
+
+    vmm_unmap_page(k_pml4, 0x0);
 
     serial_printf(COM1, "VMM: map framebuffer via active paging\n");
     if (kernel_fb_info.fb_addr) {
@@ -266,7 +268,9 @@ void vmm_map_page(page_table_t *pml4, virt_addr_t vaddr, phys_addr_t paddr,
     pt->entries[pt_idx] = (paddr & PAGE_MASK) | PTE_PRESENT | flags;
 
     __asm__ __volatile__("invlpg (%0)" ::"r"(vaddr) : "memory");
-    lapic_send_broadcast_tlb_ipi();
+    if (apic_initialized) {
+        lapic_send_broadcast_tlb_ipi();
+    }
 
     spinlock_release_irqrestore(&vmm_lock, lock_flags);
 }
@@ -278,6 +282,10 @@ void vmm_map_page(page_table_t *pml4, virt_addr_t vaddr, phys_addr_t paddr,
  */
 void vmm_unmap_page(page_table_t *pml4, virt_addr_t vaddr) {
     if (vaddr == 0 || pml4 == NULL) {
+        return;
+    }
+    if (!pml4) {
+        serial_printf(COM1, "VMM ERROR: vmm_unmap_page called with NULL pml4!\n");
         return;
     }
 
@@ -294,7 +302,7 @@ void vmm_unmap_page(page_table_t *pml4, virt_addr_t vaddr) {
     // Use helper function to safely traverse page tables
     page_table_t *pdpt = NULL;
     page_table_t *pd = NULL;
-    page_table_t *pt = NULL;
+    page_table_t *pt = NULL; // ln 297
 
     if (!vmm_get_page_table_level(pml4, pml4_idx, &pdpt, pdpt_idx, &pd, pd_idx,
                                   &pt, pt_idx)) {
@@ -310,7 +318,9 @@ void vmm_unmap_page(page_table_t *pml4, virt_addr_t vaddr) {
 
     pt->entries[pt_idx] = 0;
     __asm__ __volatile__("invlpg (%0)" ::"r"(vaddr) : "memory");
-    lapic_send_broadcast_tlb_ipi();
+    if (apic_initialized) {
+        lapic_send_broadcast_tlb_ipi();
+    }
 
     if (vmm_is_table_empty(pt)) {
         phys_addr_t pt_phys = PTE_GET_ADDR(pd->entries[pd_idx]);
