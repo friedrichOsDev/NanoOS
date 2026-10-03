@@ -1,6 +1,6 @@
 /**
  * @file convert.c
- * @brief Conversion Functions
+ * @brief Konvertierungsfunktionen
  * @author friedrichOsDev
  */
 
@@ -8,12 +8,13 @@
 #include <stdbool.h>
 
 /**
- * Converts an unsigned 64-bit integer to a string (Internal)
- * @param buffer The destination buffer
- * @param value The value to convert
- * @param base The numerical base (e.g., 10 for decimal, 16 for hex)
- * @param is_wide If true: Unicode Else: Char
- * @return The length of the resulting string
+ * @brief Interne Hilfsfunktion zur Umwandlung einer Zahl in einen String.
+ *
+ * @param buffer Zielpuffer (entweder `char*` oder `uint32_t*`).
+ * @param value Der zu konvertierende Wert.
+ * @param base Basis des Zahlensystems.
+ * @param is_wide `true` für 32-Bit-Zeichen (uint32_t*), `false` für ASCII (char*).
+ * @return Länge des erzeugten Strings.
  */
 static int uint_to_str_internal(void *buffer, uint64_t value, int base,
                                 bool is_wide) {
@@ -57,31 +58,14 @@ static int uint_to_str_internal(void *buffer, uint64_t value, int base,
     return len;
 }
 
-/**
- * Converts an unsigned 64-bit integer to a string
- * @param value The value to convert
- * @param buffer The destination buffer
- * @param base The numerical base (e.g., 10 for decimal, 16 for hex)
- * @return The length of the resulting string
- */
 int uint_to_str(uint64_t value, uint32_t *buffer, int base) {
     return uint_to_str_internal(buffer, value, base, true);
 }
 
-/**
- * Converts an unsigned 64-bit integer to a string (legacy)
- * @param value The value to convert
- * @param buffer The destination buffer
- * @param base The numerical base (e.g., 10 for decimal, 16 for hex)
- * @return The length of the resulting string
- */
-int uint_to_str_legacy(uint64_t value, char *buffer, int base) {
+int uint_to_wstr(uint64_t value, char *buffer, int base) {
     return uint_to_str_internal(buffer, value, base, false);
 }
 
-/**
- * Converts a double-precision float to a string
- */
 int double_to_str(double value, char *buf, int prec) {
     if (prec < 0)
         prec = 6;
@@ -123,7 +107,7 @@ int double_to_str(double value, char *buf, int prec) {
     uint64_t ipart = (uint64_t)value;
     double fpart = value - (double)ipart;
 
-    idx += uint_to_str_legacy(ipart, buf + idx, 10);
+    idx += uint_to_wstr(ipart, buf + idx, 10);
 
     if (prec > 0) {
         buf[idx++] = '.';
@@ -134,7 +118,7 @@ int double_to_str(double value, char *buf, int prec) {
         uint64_t fdigits = (uint64_t)(fpart * mult + 0.5);
 
         char fbuf[16];
-        int flen = uint_to_str_legacy(fdigits, fbuf, 10);
+        int flen = uint_to_wstr(fdigits, fbuf, 10);
 
         for (int i = 0; i < (prec - flen); i++) {
             buf[idx++] = '0';
@@ -148,9 +132,6 @@ int double_to_str(double value, char *buf, int prec) {
     return idx;
 }
 
-/**
- * Converts a double-precision float to a unicode string
- */
 int double_to_wstr(double value, uint32_t *buf, int prec) {
     char cbuf[64];
     int len = double_to_str(value, cbuf, prec);
