@@ -4,6 +4,7 @@
  */
 
 #include <arch/x86_64/cpu/gdt.h>
+#include <arch/x86_64/cpu/gdt_flush.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <core/panic.h>
 

@@ -86,18 +86,6 @@ struct tss_entry {
 extern struct tss_entry tss_cores[MAX_CPUS];
 
 /**
- * @brief GDT Flush function
- * @param gdt_ptr_phys The physical address of the GDT pointer
- */
-extern void gdt_flush(uint64_t gdt_ptr_phys);
-
-/**
- * @brief TSS Load function
- * @param selector The selector to load the TSS with
- */
-extern void tss_load(uint16_t selector);
-
-/**
  * @brief GDT Initialization function
  */
 void gdt_init();

@@ -1,8 +1,8 @@
 ; /**
-; * @file context.asm
-; * @brief Implementierung des Kontextwechsels und des Thread-Einstiegs-Stubs in x86_64 Assembler.
-; * @author friedrichOsDev
-; */
+;  * @file context.asm
+;  * @brief Implementierung des Kontextwechsels und des Thread-Einstiegs-Stubs in x86_64 Assembler.
+;  * @author friedrichOsDev
+;  */
         [BITS 64]
         section .text
 
