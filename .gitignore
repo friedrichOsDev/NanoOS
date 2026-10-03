@@ -9,3 +9,4 @@ screen.log
 *.DS_Store
 repomix-output.xml
 *.tmp
+docs

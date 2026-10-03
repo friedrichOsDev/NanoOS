@@ -117,6 +117,8 @@ RUN apt-get update && apt-get install -y \
     btop \
     wget \
     curl \
+    doxygen \
+    graphviz \
     && rm -rf /var/lib/apt/lists/*
 
 # Verify Toolchain & Binaries

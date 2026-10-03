@@ -1,0 +1,37 @@
+PROJECT_NAME           = "NanoOS"
+PROJECT_NUMBER         = "0.1.0"
+PROJECT_BRIEF          = "x86_64 Kernel and Operating System"
+OUTPUT_DIRECTORY       = docs
+
+TARGET_LANGUAGE        = C
+OPTIMIZE_OUTPUT_FOR_C  = YES
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = YES
+TYPEDEF_HIDES_STRUCT   = YES
+
+INPUT                  = src \
+                         README.md
+
+RECURSIVE              = YES
+FILE_PATTERNS          = *.h \
+                         *.c \
+                         *.md
+
+USE_MDFILE_AS_MAINPAGE = README.md
+
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+HTML_COLORSTYLE_HUE    = 220
+HTML_COLORSTYLE_SAT    = 100
+HTML_COLORSTYLE_GAMMA  = 80
+
+GENERATE_LATEX         = NO
+
+HAVE_DOT               = YES
+DOT_NUM_THREADS        = 4
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+DIRECTORY_GRAPH        = YES
+CLASS_GRAPH            = YES
+INLINE_SOURCES         = NO
