@@ -1,6 +1,6 @@
 /**
  * @file print.c
- * @brief Printf implementation
+ * @brief Printf Implementation
  * @author friedrichOsDev
  */
 
@@ -9,13 +9,17 @@
 #include <stdbool.h>
 
 /**
- * Optimized print format function for Unicode and Char
- * @param dest The destination buffer.
- * @param size The size of the buffer.
- * @param format The format string.
- * @param args Arguments for the format string.
- * @param is_wide If true: Unicode Else: Char
- * @return The number of characters that would have been written.
+ * @brief Interne Kernfunktion zur Verarbeitung und Formatierung von Zeichenketten.
+ *
+ * Unterstützt sowohl schmale (8-Bit char) als auch breite (32-Bit uint32_t) Strings und
+ * verarbeitet gängige Format-Spezifizierer (%d, %i, %u, %x, %X, %o, %f, %s, %c, %p, %%).
+ *
+ * @param dest Zeiger auf den Zielpuffer (char* oder uint32_t*).
+ * @param size Maximale Puffergröße.
+ * @param format Formatstring (const char* oder const uint32_t*).
+ * @param args Liste der variablen Argumente.
+ * @param is_wide `true` für 32-Bit-Zeichen (UTF-32), `false` für standardmäßige 8-Bit-Zeichen.
+ * @return Gesamtanzahl der verarbeiteten/generierten Zeichen.
  */
 static int print_formatted(void *dest, size_t size, const void *format,
                            va_list args, bool is_wide) {
@@ -320,14 +324,6 @@ static int print_formatted(void *dest, size_t size, const void *format,
     return (int)i;
 }
 
-/**
- * Formatted print to a fixed-size buffer.
- * @param dest The destination buffer.
- * @param size The size of the buffer.
- * @param format The format string.
- * @param ... Arguments for the format string.
- * @return The number of characters that would have been written.
- */
 int usnprintf(uint32_t *dest, const size_t size, const uint32_t *format, ...) {
     va_list args;
     va_start(args, format);
@@ -336,27 +332,11 @@ int usnprintf(uint32_t *dest, const size_t size, const uint32_t *format, ...) {
     return res;
 }
 
-/**
- * Formatted print to a fixed-size buffer using a va_list.
- * @param dest The destination buffer.
- * @param size The size of the buffer.
- * @param format The format string.
- * @param args The list of arguments.
- * @return The number of characters that would have been written.
- */
 int uvsnprintf(uint32_t *dest, size_t size, const uint32_t *format,
                va_list args) {
     return print_formatted(dest, size, format, args, true);
 }
 
-/**
- * @brief Formatted print to a fixed-size buffer.
- * @param dest The destination buffer.
- * @param size The size of the buffer.
- * @param format The format string.
- * @param ... Arguments for the format string.
- * @return The number of characters that would have been written.
- */
 int snprintf(char *dest, const size_t size, const char *format, ...) {
     va_list args;
     va_start(args, format);
@@ -365,14 +345,6 @@ int snprintf(char *dest, const size_t size, const char *format, ...) {
     return res;
 }
 
-/**
- * @brief Formatted print to a fixed-size buffer using a va_list.
- * @param dest The destination buffer.
- * @param size The size of the buffer.
- * @param format The format string.
- * @param args The list of arguments.
- * @return The number of characters that would have been written.
- */
 int vsnprintf(char *dest, size_t size, const char *format, va_list args) {
     return print_formatted(dest, size, format, args, false);
 }
