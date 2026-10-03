@@ -1,3 +1,9 @@
+; /**
+;  * @file interrupts.asm
+;  * @brief Assembler-Stubs für IDT-Laden, ISRs, IRQs und IPI-Handler.
+;  * @author friedrichOsDev
+;  */
+
         [BITS 64]
         section .text
 
@@ -17,7 +23,7 @@
         global lapic_timer_stub
         global ipi_tlb_shootdown_stub
 
-; Macro for exporting ISR symbols
+; Makro zum Exportieren der ISR-Symbole
         %macro EXPORT_ISR 1
         global isr%1
         %endmacro
@@ -27,7 +33,7 @@
         %assign i i+1
         %endrep
 
-; Macro for exporting IRQ symbols
+; Makro zum Exportieren der IRQ-Symbole
         %macro EXPORT_IRQ 1
         global irq%1
         %endmacro
@@ -37,29 +43,30 @@
         %assign i i+1
         %endrep
 
-; ISR Stubs
+; ISR-Stub ohne Fehlercode (schiebt Dummy-0 auf den Stack)
         %macro ISR_NOERR 1
 isr%1:
         push qword 0                   ; Dummy Error Code
-        push qword %1                  ; Interrupt Vector
+        push qword %1                  ; Interrupt-Vektor
         jmp common_isr_stub
         %endmacro
 
+; ISR-Stub mit Fehlercode (Hardware schiebt Fehlercode bereits auf den Stack)
         %macro ISR_ERR 1
 isr%1:
-        push qword %1                  ; Interrupt Vector with HW Error Code
+        push qword %1                  ; Interrupt-Vektor mit HW-Fehlercode
         jmp common_isr_stub
         %endmacro
 
-; IRQ Stub
+; IRQ-Stub (Gemappt ab Vektor 32)
         %macro IRQ_STUB 1
 irq%1:
         push qword 0                   ; Dummy Error Code
-        push qword (32 + %1)           ; Mapped Interrupt Vector
+        push qword (32 + %1)           ; Gemappter Interrupt-Vektor
         jmp common_irq_stub
         %endmacro
 
-; Vector Definitions
+; Vektor-Definitionen (ISR 0 - 31)
         ISR_NOERR 0
         ISR_NOERR 1
         ISR_NOERR 2
@@ -88,13 +95,14 @@ irq%1:
         %assign i i+1
         %endrep
 
+; IRQ-Definitionen (IRQ 0 - 15)
         %assign i 0
         %rep 16
         IRQ_STUB i
         %assign i i+1
         %endrep
 
-; Unified Context Saver Macro (Ensures strict 16-byte alignment compliance)
+; Sichert den gesamten Registerkontext (Einhaltung der 16-Byte-Stack-Ausrichtung)
         %macro SAVE_CONTEXT 0
         push rax
         push rbx
@@ -113,6 +121,7 @@ irq%1:
         push r15
         %endmacro
 
+; Stellt den gesicherten Registerkontext wieder her
         %macro RESTORE_CONTEXT 0
         pop r15
         pop r14
@@ -131,40 +140,59 @@ irq%1:
         pop rax
         %endmacro
 
+; ==============================================================================
+; Gemeinsamer Handler für CPU-Exceptions (ISRs)
+; ==============================================================================
 common_isr_stub:
         SAVE_CONTEXT
-        mov rdi, rsp                   ; Pass struct registers* as 1st arg
+        mov rdi, rsp                   ; Zeiger auf struct registers* als 1. Argument
         call isr_handler
         RESTORE_CONTEXT
-        add rsp, 16                    ; Clean interrupt vector & error code
+        add rsp, 16                    ; Vektor und Fehlercode vom Stack entfernen
         iretq
 
+; ==============================================================================
+; Gemeinsamer Handler für Hardware-Interrupts (IRQs)
+; ==============================================================================
 common_irq_stub:
         SAVE_CONTEXT
-        mov rdi, rsp
+        mov rdi, rsp                   ; Zeiger auf struct registers* als 1. Argument
         call irq_handler
         RESTORE_CONTEXT
-        add rsp, 16
+        add rsp, 16                    ; Vektor und Fehlercode vom Stack entfernen
         iretq
 
+; ==============================================================================
+; IDT-Steuerungsfunktionen
+; ==============================================================================
+
+; void idt_load(uint64_t idt_ptr) -> RDI = Pointer auf IDTR
 idt_load:
         lidt [rdi]
         ret
 
+; void idt_enable(void)
 idt_enable:
         sti
         ret
 
+; void idt_disable(void)
 idt_disable:
         cli
         ret
 
+; Stub für Spurious Interrupts (ignoriert den Interrupt)
 spurious_handler_stub:
         iretq
 
+; ==============================================================================
+; APIC & Inter-Processor Interrupt (IPI) Stubs
+; ==============================================================================
+
+; Reschedule IPI Stub (Vektor 253 / 0xFD)
 ipi_reschedule_stub:
         push qword 0
-        push qword 0xFD                ; Vector 253
+        push qword 0xFD                ; Vektor 253
         SAVE_CONTEXT
         mov rdi, rsp
         call reschedule_ipi_handler
@@ -172,9 +200,10 @@ ipi_reschedule_stub:
         add rsp, 16
         iretq
 
+; CPU-Stop IPI Stub (Vektor 252 / 0xFC)
 ipi_stop_stub:
         push qword 0
-        push qword 0xFC                ; Vector 252
+        push qword 0xFC                ; Vektor 252
         SAVE_CONTEXT
         mov rdi, rsp
         call stop_ipi_handler
@@ -182,9 +211,10 @@ ipi_stop_stub:
         add rsp, 16
         iretq
 
+; Local APIC Timer Stub (Vektor 254 / 0xFE)
 lapic_timer_stub:
         push qword 0
-        push qword 0xFE                ; Vector 254
+        push qword 0xFE                ; Vektor 254
         SAVE_CONTEXT
         mov rdi, rsp
         call lapic_timer_handler
@@ -192,9 +222,10 @@ lapic_timer_stub:
         add rsp, 16
         iretq
 
+; TLB-Shootdown IPI Stub (Vektor 251 / 0xFB)
 ipi_tlb_shootdown_stub:
         push qword 0
-        push qword 0xFB                ; Vector 251
+        push qword 0xFB                ; Vektor 251
         SAVE_CONTEXT
         mov rdi, rsp
         call tlb_shootdown_ipi_handler
