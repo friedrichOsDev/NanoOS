@@ -34,6 +34,6 @@ extern void switch_context(uint64_t *prev_rsp_ptr, uint64_t next_rsp, void *prev
  * ruft die Thread-Funktion mit dem vorgegebenen Argument auf und beendet den Thread
  * anschließend ordnungsgemäß über `thread_exit()`.
  *
- * @note Erwartet die Thread-Funktion in Register R12 und das Argument (void * arg) in Register R13.
+ * @note Erwartet die Thread-Funktion in Register R12 und das Argument (void *arg) in Register R13.
  */
 extern void thread_entry_stub();
