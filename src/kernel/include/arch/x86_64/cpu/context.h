@@ -36,4 +36,4 @@ extern void switch_context(uint64_t *prev_rsp_ptr, uint64_t next_rsp, void *prev
  *
  * @note Erwartet die Thread-Funktion in Register R12 und das Argument (void * arg) in Register R13.
  */
-extern void thread_entry_stub(void);
+extern void thread_entry_stub();
