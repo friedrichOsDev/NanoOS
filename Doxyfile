@@ -9,6 +9,7 @@ EXTRACT_ALL            = YES
 EXTRACT_PRIVATE        = NO
 EXTRACT_STATIC         = YES
 TYPEDEF_HIDES_STRUCT   = YES
+EXTENSION_MAPPING      = S=C asm=C ASM=C
 
 INPUT                  = src \
                          README.md
@@ -16,6 +17,8 @@ INPUT                  = src \
 RECURSIVE              = YES
 FILE_PATTERNS          = *.h \
                          *.c \
+                         *.S \
+                         *.asm \
                          *.md
 
 USE_MDFILE_AS_MAINPAGE = README.md
