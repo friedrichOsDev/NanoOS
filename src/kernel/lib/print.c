@@ -135,7 +135,7 @@ static int print_formatted(void *dest, size_t size, const void *format,
             uint32_t w_buf[64];
             char a_buf[64];
             int len = is_wide ? uint_to_str(abs_val, w_buf, 10)
-                              : uint_to_str_legacy(abs_val, a_buf, 10);
+                              : uint_to_wstr(abs_val, a_buf, 10);
             int pad = (width > len) ? (width - len) : 0;
 
             if (!r_width && !pad_zero)
@@ -174,7 +174,7 @@ static int print_formatted(void *dest, size_t size, const void *format,
             uint32_t w_buf[64];
             char a_buf[64];
             int len = is_wide ? uint_to_str(val_u, w_buf, base)
-                              : uint_to_str_legacy(val_u, a_buf, base);
+                              : uint_to_wstr(val_u, a_buf, base);
 
             int prefix_len = (c == 'x' || c == 'X' || c == 'o') ? 2 : 0;
             int pad =
@@ -277,7 +277,7 @@ static int print_formatted(void *dest, size_t size, const void *format,
             uint32_t w_buf[64];
             char a_buf[64];
             int len = is_wide ? uint_to_str(val_p, w_buf, 16)
-                              : uint_to_str_legacy(val_p, a_buf, 16);
+                              : uint_to_wstr(val_p, a_buf, 16);
             int pad = (width > len + 2) ? (width - (len + 2)) : 0;
 
             if (!r_width && !pad_zero)
