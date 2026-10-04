@@ -1,6 +1,6 @@
 /**
  * @file fpu.c
- * @brief FPU and SSE management implementation
+ * @brief Implementierung der FPU- und SSE-Initialisierung.
  * @author friedrichOsDev
  */
 
