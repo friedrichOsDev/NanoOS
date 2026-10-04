@@ -3,7 +3,7 @@ name: Generate & Deploy Doxygen Docs
 on:
   push:
     branches:
-      - main
+      - x86_64-main
 
 permissions:
   contents: read
