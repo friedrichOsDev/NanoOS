@@ -1,0 +1,7 @@
+<map id="src/kernel/include/arch/x86_64/mm/memdef.h" name="src/kernel/include/arch/x86_64/mm/memdef.h">
+<area shape="rect" id="Node000001" title="Definitionen und Strukturen für die Speicherverwaltung (PMM, VMM und Heap)." alt="" coords="5,5,211,45"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="23,93,97,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="99,47,77,83,72,80,94,44"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="122,93,193,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="122,44,145,80,141,83,118,47"/>
+</map>

@@ -1,0 +1,21 @@
+<map id="rtc_is_updating" name="rtc_is_updating">
+<area shape="rect" id="Node000001" title="Prüft, ob die RTC derzeit ein internes Update durchführt (Bit 7 in Status A)." alt="" coords="5,80,127,105"/>
+<area shape="rect" id="Node000002" href="$rtc_8c.html#af1a1e5c54dbff7de336450e0912fd193" title="Liest ein Byte aus einem angegebenen CMOS&#45;Register unter Wahrung des Spinlocks." alt="" coords="175,80,268,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="127,90,161,90,161,95,127,95"/>
+<area shape="rect" id="Node000003" href="$io_8c.html#a2e1e8e2c5724c1e8fd2dff2eada06479" title="Liest ein Byte (8 Bit) von einem I/O&#45;Port." alt="" coords="395,5,438,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="241,77,275,58,315,39,381,21,383,26,317,45,278,63,244,82"/>
+<area shape="rect" id="Node000004" href="$io_8c.html#a8bf7a9af91c08e6f876aaffeccd48ff3" title="Schreibt ein Byte (8 Bit) an einen I/O&#45;Port." alt="" coords="391,55,442,80"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="268,84,377,70,378,75,269,89"/>
+<area shape="rect" id="Node000005" href="$sync_8c.html#ae73323be1db27d6cc8c7a2c05d6a4359" title="Deaktiviert Interrupts (CLI) und fordert einen Spinlock an." alt="" coords="323,104,510,129"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="269,96,310,101,309,106,268,101"/>
+<area shape="rect" id="Node000008" href="$sync_8c.html#a1966cf7e20d526d338be6583812e6e7c" title="Gibt einen Spinlock frei und stellt den vorherigen Interrupt&#45;Zustand wieder her." alt="" coords="316,153,517,179"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="245,103,317,138,344,147,342,152,315,143,243,108"/>
+<area shape="rect" id="Node000006" href="$sync_8c.html#a263e1c2013a0d5a0f9fb69c0df2d96d4" title="Liest das aktuelle RFLAGS&#45;Register aus und deaktiviert Interrupts per CLI&#45;Instruktion." alt="" coords="565,55,712,80"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="474,101,567,80,568,86,475,107"/>
+<area shape="rect" id="Node000007" href="$sync_8c.html#a398072d64b2e85e6bb30dc5f5386537a" title="Fordert einen Spinlock an (Busy&#45;Waiting)." alt="" coords="573,104,704,129"/>
+<area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="510,114,559,114,559,119,510,119"/>
+<area shape="rect" id="Node000009" href="$sync_8c.html#acdadc270410e94936ea4b73f461f934b" title="Stellt den im RFLAGS&#45;Register gespeicherten Zustand (inkl. Interrupt&#45;Flag) wieder her." alt="" coords="583,153,694,179"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="517,163,570,163,570,169,517,169"/>
+<area shape="rect" id="Node000010" href="$sync_8c.html#a3790ffc28e026905fbf25ebfa426fcc3" title="Gibt einen Spinlock wieder frei." alt="" coords="573,203,704,228"/>
+<area shape="poly" id="edge9_Node000008_Node000010" title=" " alt="" coords="475,176,568,197,567,202,474,181"/>
+</map>

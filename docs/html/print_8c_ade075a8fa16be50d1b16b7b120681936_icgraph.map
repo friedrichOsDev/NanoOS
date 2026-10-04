@@ -1,0 +1,11 @@
+<map id="snprintf" name="snprintf">
+<area shape="rect" id="Node000001" title="Formatiert einen Standard&#45;ASCII/UTF&#45;8&#45;String in einen Puffer mit variabler Argumentliste." alt="" coords="432,31,504,56"/>
+<area shape="rect" id="Node000002" href="$taskmgr_8c.html#aaf524151902bb41a84591980163fb107" title="Gibt eine strukturierte Übersicht der laufenden Prozesse, Threads und SMP&#45;CPU&#45;Zustände über COM1 aus." alt="" coords="287,5,368,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="418,37,368,28,369,23,419,32"/>
+<area shape="rect" id="Node000003" href="$smp_8c.html#ac1a3051a145a26dff08b461bcf797f1a" title="Einstiegspunkt im 64&#45;Bit Long Mode für hochgefahrene Application Processors (APs)." alt="" coords="271,55,384,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="419,54,385,60,384,55,418,49"/>
+<area shape="rect" id="Node000004" href="$smp_8c.html#ada90e7df26bedf7fa2ab468c9db88bdc" title="Scanned die ACPI MADT, registriert alle verfügbaren Kerne und führt die INIT&#45;SIPI&#45;SIPI Sequenz durch." alt="" coords="144,55,223,80"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="257,70,223,70,223,65,257,65"/>
+<area shape="rect" id="Node000005" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,55,96,80"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="130,70,96,70,96,65,130,65"/>
+</map>

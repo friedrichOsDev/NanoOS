@@ -1,0 +1,7 @@
+<map id="smp_get_current_cpu" name="smp_get_current_cpu">
+<area shape="rect" id="Node000001" title="Ermittelt die Pro&#45;CPU&#45;Struktur des aktuell ausführenden CPU&#45;Kerns über die LAPIC&#45;ID." alt="" coords="5,5,167,31"/>
+<area shape="rect" id="Node000002" href="$apic_8c.html#a10e878032135b8b26418c2d2e9839689" title="Ermittelt die APIC&#45;ID des aktuell ausführenden Prozessorkerns." alt="" coords="215,5,315,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="167,15,201,15,201,21,167,21"/>
+<area shape="rect" id="Node000003" href="$apic_8c.html#aaf813d1571621dcb09ce13c41f2b8799" title="Liest einen 32&#45;Bit&#45;Wert aus einem Register des Local APIC." alt="" coords="363,5,452,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="315,15,349,15,349,21,315,21"/>
+</map>

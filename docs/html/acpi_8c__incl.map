@@ -1,0 +1,28 @@
+<map id="src/kernel/arch/x86_64/cpu/acpi.c" name="src/kernel/arch/x86_64/cpu/acpi.c">
+<area shape="rect" id="Node000001" title="Implementierung des ACPI&#45;Parsings und der Power&#45;Management&#45;Funktionen." alt="" coords="366,5,512,45"/>
+<area shape="rect" id="Node000002" href="$acpi_8h.html" title="64&#45;Bit&#45;ACPI&#45;Strukturen (Advanced Configuration and Power Interface)." alt="" coords="292,93,463,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="426,47,397,84,393,81,422,44"/>
+<area shape="rect" id="Node000006" href="$serial_8h.html" title="Treiber&#45;Schnittstelle für die serielle UART&#45;Kommunikation (16550/COM&#45;Ports)." alt="" coords="417,167,568,207"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="454,45,477,92,491,153,486,154,472,94,449,47"/>
+<area shape="rect" id="Node000007" href="$vmm_8h.html" title="Virtuelle Speicherverwaltung (Virtual Memory Management &#45; VMM)." alt="" coords="35,93,216,119"/>
+<area shape="poly" id="edge8_Node000001_Node000007" title=" " alt="" coords="367,47,185,93,184,87,366,42"/>
+<area shape="rect" id="Node000008" href="$io_8h.html" title="I/O Port Implementation." alt="" coords="592,174,659,199"/>
+<area shape="poly" id="edge11_Node000001_Node000008" title=" " alt="" coords="463,43,603,163,600,167,459,48"/>
+<area shape="rect" id="Node000009" href="$string_8h.html" title="String&#45; und Speicherfunktionen." alt="" coords="251,174,342,199"/>
+<area shape="poly" id="edge13_Node000001_Node000009" title=" " alt="" coords="367,41,320,61,299,76,283,95,276,110,276,127,286,161,281,162,271,128,271,109,278,92,295,72,317,56,365,36"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="588,93,671,119"/>
+<area shape="poly" id="edge16_Node000001_Node000010" title=" " alt="" coords="486,43,590,86,588,91,484,48"/>
+<area shape="rect" id="Node000003" href="$memdef_8h.html" title="Definitionen und Strukturen für die Speicherverwaltung (PMM, VMM und Heap)." alt="" coords="25,174,226,199"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="342,121,176,172,175,167,340,116"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="344,255,414,280"/>
+<area shape="poly" id="edge5_Node000002_Node000005" title=" " alt="" coords="380,119,381,241,376,241,375,119"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="88,255,163,280"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="128,200,128,241,123,241,123,200"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="163,197,331,248,329,254,162,202"/>
+<area shape="poly" id="edge7_Node000006_Node000005" title=" " alt="" coords="466,209,409,249,406,244,463,205"/>
+<area shape="poly" id="edge9_Node000007_Node000003" title=" " alt="" coords="128,119,128,160,123,160,123,119"/>
+<area shape="poly" id="edge10_Node000007_Node000004" title=" " alt="" coords="81,121,44,139,27,152,15,168,8,187,15,205,26,220,42,233,76,250,74,255,39,237,23,224,10,208,3,187,10,165,24,148,41,135,79,116"/>
+<area shape="poly" id="edge12_Node000008_Node000005" title=" " alt="" coords="600,202,581,209,428,256,427,251,579,204,598,197"/>
+<area shape="poly" id="edge14_Node000009_Node000004" title=" " alt="" coords="273,202,164,251,162,247,270,197"/>
+<area shape="poly" id="edge15_Node000009_Node000005" title=" " alt="" coords="310,198,359,243,355,247,307,201"/>
+</map>

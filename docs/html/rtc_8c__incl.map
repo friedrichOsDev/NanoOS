@@ -1,0 +1,23 @@
+<map id="src/kernel/arch/x86_64/cpu/rtc.c" name="src/kernel/arch/x86_64/cpu/rtc.c">
+<area shape="rect" id="Node000001" title="Treiber für die Real&#45;Time Clock (CMOS RTC) und Zeitberechnungen." alt="" coords="391,5,537,45"/>
+<area shape="rect" id="Node000002" href="$hpet_8h.html" title="Treiber&#45;Schnittstelle für den High Precision Event Timer (HPET)." alt="" coords="5,101,179,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="392,46,156,100,154,95,390,41"/>
+<area shape="rect" id="Node000004" href="$rtc_8h.html" title="Schnittstelle für die Real&#45;Time Clock (CMOS RTC)." alt="" coords="203,101,365,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="426,48,321,97,319,93,423,43"/>
+<area shape="rect" id="Node000005" href="$serial_8h.html" title="Treiber&#45;Schnittstelle für die serielle UART&#45;Kommunikation (16550/COM&#45;Ports)." alt="" coords="389,93,539,133"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="467,46,467,79,461,79,461,46"/>
+<area shape="rect" id="Node000006" href="$sync_8h.html" title="Implementierung von Spinlocks und Mutexes für die Kernel&#45;Synchronisation." alt="" coords="655,101,751,126"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="517,43,659,94,657,99,515,48"/>
+<area shape="rect" id="Node000009" href="$io_8h.html" title="I/O Port Implementation." alt="" coords="564,101,631,126"/>
+<area shape="poly" id="edge11_Node000001_Node000009" title=" " alt="" coords="495,43,569,91,567,95,492,48"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="429,181,499,207"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="147,123,416,180,415,185,146,129"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="311,124,426,173,424,178,309,128"/>
+<area shape="poly" id="edge6_Node000005_Node000003" title=" " alt="" coords="467,134,467,167,461,167,461,134"/>
+<area shape="poly" id="edge10_Node000006_Node000003" title=" " alt="" coords="669,129,513,180,511,175,667,123"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="609,181,692,207"/>
+<area shape="poly" id="edge8_Node000006_Node000007" title=" " alt="" coords="697,128,668,171,664,168,693,125"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="716,181,791,207"/>
+<area shape="poly" id="edge9_Node000006_Node000008" title=" " alt="" coords="712,125,741,168,736,171,708,128"/>
+<area shape="poly" id="edge12_Node000009_Node000003" title=" " alt="" coords="579,128,497,177,494,172,576,124"/>
+</map>

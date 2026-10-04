@@ -1,0 +1,48 @@
+<map id="src/kernel/include/core/thread.h" name="src/kernel/include/core/thread.h">
+<area shape="rect" id="Node000001" title="Thread&#45;Verwaltung und Definition des Thread Control Blocks (TCB)." alt="" coords="339,5,475,45"/>
+<area shape="rect" id="Node000002" href="$init_8c.html" title="Hauptinitialisierungsroutine und Multiboot2&#45;Parser des Kernels." alt="" coords="1255,277,1408,302"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="490,28,681,41,919,68,1037,88,1143,113,1231,143,1265,160,1292,179,1311,202,1323,229,1333,276,1328,277,1318,231,1306,205,1288,183,1262,165,1229,148,1142,118,1036,93,918,73,680,46,489,33"/>
+<area shape="rect" id="Node000003" href="$scheduler_8c.html" title="Implementierung des Preemptive Round&#45;Robin&#45;Schedulers für SMP&#45;Systeme." alt="" coords="189,277,383,302"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="326,37,175,58,106,75,79,85,60,96,39,114,28,132,14,182,8,203,9,211,13,220,40,238,83,253,189,274,188,280,82,259,37,243,9,223,4,212,3,202,9,181,23,130,35,110,57,91,77,80,104,70,174,53,325,31"/>
+<area shape="rect" id="Node000004" href="$sync_8c.html" title="Implementierung der Primitiven für Spinlocks und Mutexes." alt="" coords="35,189,198,214"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="381,57,335,97,281,136,215,168,155,191,153,186,213,163,278,131,332,92,377,53"/>
+<area shape="rect" id="Node000005" href="$taskmgr_8c.html" title="Serieller Task&#45;Manager und Prozessauflistung." alt="" coords="1092,189,1277,214"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="490,33,649,56,833,91,1015,141,1154,186,1152,191,1014,146,832,96,648,61,489,39"/>
+<area shape="rect" id="Node000006" href="$thread_8c.html" title="Erstellung und Verwaltung von Threads." alt="" coords="223,189,397,214"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="393,58,319,190,314,187,388,56"/>
+<area shape="rect" id="Node000007" href="$context_8h.html" title="Deklarationen für den Kontextwechsel in Assembler." alt="" coords="70,93,267,133"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="343,53,222,96,220,91,341,48"/>
+<area shape="rect" id="Node000008" href="$smp_8h.html" title="Symmetric Multiprocessing (SMP) – Schnittstelle und Kernstrukturen." alt="" coords="645,93,821,133"/>
+<area shape="poly" id="edge9_Node000001_Node000008" title=" " alt="" coords="489,45,662,91,661,96,488,51"/>
+<area shape="rect" id="Node000016" href="$scheduler_8h.html" title="Schnittstelle für den Round&#45;Robin&#45;Kernel&#45;Scheduler." alt="" coords="393,93,529,133"/>
+<area shape="poly" id="edge24_Node000001_Node000016" title=" " alt="" coords="429,56,451,92,447,95,424,58"/>
+<area shape="poly" id="edge7_Node000007_Node000003" title=" " alt="" coords="93,141,59,157,31,176,23,186,19,197,19,208,25,220,51,238,92,253,194,274,193,279,91,258,48,242,21,223,14,209,13,196,18,183,28,172,56,152,91,136"/>
+<area shape="poly" id="edge8_Node000007_Node000006" title=" " alt="" coords="213,138,293,186,290,191,210,143"/>
+<area shape="poly" id="edge12_Node000008_Node000002" title=" " alt="" coords="835,126,928,146,977,161,1023,179,1041,189,1053,199,1064,209,1081,219,1170,247,1280,274,1279,279,1169,252,1078,224,1061,214,1049,203,1038,193,1021,184,975,166,927,151,834,131"/>
+<area shape="poly" id="edge13_Node000008_Node000003" title=" " alt="" coords="728,147,712,187,699,207,682,223,645,247,611,261,579,267,547,269,479,266,440,267,396,272,353,279,352,274,395,267,440,262,479,261,547,263,578,262,610,256,643,242,679,219,695,204,707,185,723,145"/>
+<area shape="poly" id="edge14_Node000008_Node000005" title=" " alt="" coords="835,131,1125,186,1124,191,834,136"/>
+<area shape="poly" id="edge15_Node000008_Node000006" title=" " alt="" coords="632,138,367,191,366,186,631,133"/>
+<area shape="rect" id="Node000009" href="$handler_8c.html" title="Implementierung der Handler für ISRs, IRQs und IPIs." alt="" coords="524,181,669,221"/>
+<area shape="poly" id="edge10_Node000008_Node000009" title=" " alt="" coords="693,143,628,184,625,179,690,139"/>
+<area shape="rect" id="Node000010" href="$smp_8c.html" title="Implementierung des Symmetric Multiprocessing (SMP) Bootstrappings." alt="" coords="408,269,553,309"/>
+<area shape="poly" id="edge11_Node000008_Node000010" title=" " alt="" coords="743,147,743,185,738,205,728,223,665,244,555,273,553,268,664,239,724,219,733,203,738,185,737,147"/>
+<area shape="rect" id="Node000011" href="$gdt_8h.html" title="Schnittstelle für die Global Descriptor Table (GDT) und das Task State Segment (TSS)." alt="" coords="796,181,965,221"/>
+<area shape="poly" id="edge16_Node000008_Node000011" title=" " alt="" coords="779,138,850,179,847,184,776,143"/>
+<area shape="poly" id="edge22_Node000011_Node000002" title=" " alt="" coords="980,218,1244,267,1279,274,1278,279,1243,272,979,223"/>
+<area shape="poly" id="edge23_Node000011_Node000003" title=" " alt="" coords="783,218,396,272,351,279,350,274,395,267,782,213"/>
+<area shape="poly" id="edge20_Node000011_Node000010" title=" " alt="" coords="783,226,565,272,554,274,553,269,564,267,782,221"/>
+<area shape="rect" id="Node000012" href="$gdt_8c.html" title="Implementierung der GDT&#45; und TSS&#45;Einrichtung." alt="" coords="577,269,723,309"/>
+<area shape="poly" id="edge17_Node000011_Node000012" title=" " alt="" coords="819,229,702,272,700,267,817,224"/>
+<area shape="rect" id="Node000013" href="$idt_8c.html" title="Setup und Initialisierung des Interrupt Descriptor Table (IDT)." alt="" coords="747,269,892,309"/>
+<area shape="poly" id="edge18_Node000011_Node000013" title=" " alt="" coords="861,234,835,271,831,268,857,231"/>
+<area shape="rect" id="Node000014" href="$irq_8c.html" title="Einrichtung der Hardware&#45;Interrupt&#45;Lines (IRQs) in der IDT." alt="" coords="916,269,1061,309"/>
+<area shape="poly" id="edge19_Node000011_Node000014" title=" " alt="" coords="917,228,967,267,963,271,914,232"/>
+<area shape="rect" id="Node000015" href="$vmm_8c.html" title="Implementierung der virtuellen Speicherverwaltung (4&#45;Level Paging x86_64)." alt="" coords="1085,269,1231,309"/>
+<area shape="poly" id="edge21_Node000011_Node000015" title=" " alt="" coords="955,223,1098,267,1097,272,954,228"/>
+<area shape="poly" id="edge27_Node000016_Node000002" title=" " alt="" coords="543,121,806,153,921,168,978,179,993,189,1002,199,1010,210,1023,219,1278,274,1277,279,1021,224,1007,213,998,203,989,193,976,184,920,174,805,158,543,127"/>
+<area shape="poly" id="edge28_Node000016_Node000003" title=" " alt="" coords="453,148,437,186,411,223,390,242,366,257,321,279,318,274,364,252,386,237,407,220,432,184,449,146"/>
+<area shape="poly" id="edge29_Node000016_Node000004" title=" " alt="" coords="380,137,163,191,162,186,379,132"/>
+<area shape="poly" id="edge30_Node000016_Node000006" title=" " alt="" coords="417,142,332,191,329,186,415,138"/>
+<area shape="poly" id="edge25_Node000016_Node000009" title=" " alt="" coords="504,139,568,179,566,184,501,143"/>
+<area shape="poly" id="edge26_Node000016_Node000010" title=" " alt="" coords="467,147,481,269,476,269,462,147"/>
+</map>

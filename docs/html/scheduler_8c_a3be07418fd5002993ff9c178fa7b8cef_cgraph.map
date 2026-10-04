@@ -1,0 +1,5 @@
+<map id="scheduler_release_initial_lock" name="scheduler_release_initial_lock">
+<area shape="rect" id="Node000001" title="Gibt den Scheduler&#45;Lock nach der Initialisierung frei." alt="" coords="5,5,224,31"/>
+<area shape="rect" id="Node000002" href="$sync_8c.html#a3790ffc28e026905fbf25ebfa426fcc3" title="Gibt einen Spinlock wieder frei." alt="" coords="272,5,403,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="224,15,258,15,258,21,224,21"/>
+</map>

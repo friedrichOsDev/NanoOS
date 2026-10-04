@@ -1,0 +1,41 @@
+<map id="src/kernel/include/arch/x86_64/drivers/serial.h" name="src/kernel/include/arch/x86_64/drivers/serial.h">
+<area shape="rect" id="Node000001" title="Treiber&#45;Schnittstelle für die serielle UART&#45;Kommunikation (16550/COM&#45;Ports)." alt="" coords="1525,5,1679,60"/>
+<area shape="rect" id="Node000002" href="$acpi_8c.html" title="Implementierung des ACPI&#45;Parsings und der Power&#45;Management&#45;Funktionen." alt="" coords="5,108,151,148"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1511,36,1275,38,941,47,554,70,356,88,162,111,151,112,150,107,162,105,356,82,554,65,940,42,1275,33,1511,31"/>
+<area shape="rect" id="Node000003" href="$apic_8c.html" title="Implementierung des Advanced Programmable Interrupt Controllers (APIC)." alt="" coords="175,108,320,148"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="1511,37,1300,41,1007,52,671,74,500,90,332,111,320,112,320,107,331,105,499,85,671,68,1007,46,1300,35,1511,32"/>
+<area shape="rect" id="Node000004" href="$gdt_8c.html" title="Implementierung der GDT&#45; und TSS&#45;Einrichtung." alt="" coords="344,108,489,148"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="1511,38,1326,44,1074,56,789,77,501,111,490,112,489,107,500,105,789,72,1074,51,1325,38,1511,33"/>
+<area shape="rect" id="Node000005" href="$handler_8c.html" title="Implementierung der Handler für ISRs, IRQs und IPIs." alt="" coords="513,108,659,148"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="1511,40,1352,47,1142,60,907,81,670,111,659,112,658,107,670,105,907,76,1142,55,1351,42,1510,34"/>
+<area shape="rect" id="Node000006" href="$hpet_8c.html" title="Implementierung des Treiber für den High Precision Event Timer (HPET)." alt="" coords="683,108,828,148"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="1511,42,1212,65,1026,85,840,111,829,113,828,107,839,105,1025,80,1211,60,1511,37"/>
+<area shape="rect" id="Node000007" href="$idt_8c.html" title="Setup und Initialisierung des Interrupt Descriptor Table (IDT)." alt="" coords="852,108,997,148"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="1511,45,1283,71,1009,111,998,113,997,107,1008,105,1282,66,1511,40"/>
+<area shape="rect" id="Node000008" href="$irq_8c.html" title="Einrichtung der Hardware&#45;Interrupt&#45;Lines (IRQs) in der IDT." alt="" coords="1021,108,1167,148"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="1512,51,1178,111,1167,113,1166,108,1178,105,1511,46"/>
+<area shape="rect" id="Node000009" href="$rtc_8c.html" title="Treiber für die Real&#45;Time Clock (CMOS RTC) und Zeitberechnungen." alt="" coords="1191,108,1336,148"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="1512,61,1333,110,1331,105,1511,56"/>
+<area shape="rect" id="Node000010" href="$smp_8c.html" title="Implementierung des Symmetric Multiprocessing (SMP) Bootstrappings." alt="" coords="1360,108,1505,148"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="1544,69,1468,110,1466,106,1541,64"/>
+<area shape="rect" id="Node000011" href="$serial_8c.html" title="Implementierung des UART 16550 Serial&#45;Driver." alt="" coords="1529,108,1675,148"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="1605,74,1605,108,1599,108,1599,74"/>
+<area shape="rect" id="Node000012" href="$heap_8c.html" title="Implementierung des Kernel&#45;Heap&#45;Allocators." alt="" coords="1699,108,1844,148"/>
+<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="1663,64,1738,106,1736,110,1660,69"/>
+<area shape="rect" id="Node000013" href="$pmm_8c.html" title="Implementierung der physischen Speicherverwaltung (Bitmap&#45;Allokator)." alt="" coords="1868,108,2013,148"/>
+<area shape="poly" id="edge12_Node000001_Node000013" title=" " alt="" coords="1693,56,1873,105,1871,110,1692,61"/>
+<area shape="rect" id="Node000014" href="$vmm_8c.html" title="Implementierung der virtuellen Speicherverwaltung (4&#45;Level Paging x86_64)." alt="" coords="2037,108,2183,148"/>
+<area shape="poly" id="edge13_Node000001_Node000014" title=" " alt="" coords="1693,46,2026,105,2038,108,2037,113,2026,111,1692,51"/>
+<area shape="rect" id="Node000015" href="$init_8c.html" title="Hauptinitialisierungsroutine und Multiboot2&#45;Parser des Kernels." alt="" coords="2207,115,2360,141"/>
+<area shape="poly" id="edge14_Node000001_Node000015" title=" " alt="" coords="1693,40,1922,66,2196,105,2234,113,2233,118,2195,111,1921,71,1693,46"/>
+<area shape="rect" id="Node000016" href="$panic_8c.html" title="Implementierung der Kernel&#45;Panic&#45;Routine zur Behandlung kritischer Systemfehler." alt="" coords="2384,115,2551,141"/>
+<area shape="poly" id="edge15_Node000001_Node000016" title=" " alt="" coords="1693,37,1996,62,2184,81,2373,105,2415,113,2414,118,2372,111,2183,86,1995,67,1693,42"/>
+<area shape="rect" id="Node000017" href="$process_8c.html" title="Implementierung der Prozessverwaltung und &#45;registrierung." alt="" coords="2575,115,2757,141"/>
+<area shape="poly" id="edge16_Node000001_Node000017" title=" " alt="" coords="1693,35,2073,58,2317,78,2564,105,2610,113,2609,118,2563,111,2317,83,2073,63,1693,41"/>
+<area shape="rect" id="Node000018" href="$scheduler_8c.html" title="Implementierung des Preemptive Round&#45;Robin&#45;Schedulers für SMP&#45;Systeme." alt="" coords="2782,115,2977,141"/>
+<area shape="poly" id="edge17_Node000001_Node000018" title=" " alt="" coords="1693,34,2156,54,2461,75,2770,105,2820,113,2819,118,2770,111,2461,81,2155,60,1693,39"/>
+<area shape="rect" id="Node000019" href="$taskmgr_8c.html" title="Serieller Task&#45;Manager und Prozessauflistung." alt="" coords="3001,115,3187,141"/>
+<area shape="poly" id="edge18_Node000001_Node000019" title=" " alt="" coords="1693,32,1921,37,2242,49,2613,71,2803,86,2989,105,3038,113,3037,118,2988,111,2802,92,2612,76,2242,54,1921,43,1693,38"/>
+<area shape="rect" id="Node000020" href="$thread_8c.html" title="Erstellung und Verwaltung von Threads." alt="" coords="3211,115,3385,141"/>
+<area shape="poly" id="edge19_Node000001_Node000020" title=" " alt="" coords="1693,31,1951,33,2324,43,2758,66,2981,83,3200,105,3246,113,3245,118,3199,111,2981,88,2758,71,2324,49,1951,39,1693,36"/>
+</map>

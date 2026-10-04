@@ -1,0 +1,5 @@
+<map id="lapic_send_sipi" name="lapic_send_sipi">
+<area shape="rect" id="Node000001" title="Sendet ein Startup&#45;IPI (SIPI) an einen spezifischen Prozessorkern." alt="" coords="5,5,127,31"/>
+<area shape="rect" id="Node000002" href="$apic_8c.html#a677d245b069a1353e90bfdf10a2ccb62" title="Schreibt einen 32&#45;Bit&#45;Wert in ein Register des Local APIC." alt="" coords="175,5,268,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="127,15,161,15,161,21,127,21"/>
+</map>

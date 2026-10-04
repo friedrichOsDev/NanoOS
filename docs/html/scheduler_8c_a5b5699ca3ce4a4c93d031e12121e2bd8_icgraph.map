@@ -1,0 +1,44 @@
+<map id="scheduler_add_thread_locked" name="scheduler_add_thread_locked">
+<area shape="rect" id="Node000001" title="Fügt einen Thread unter genutzter Sperre (Locked) zur Bereit&#45;Warteschlange hinzu." alt="" coords="989,172,1155,212"/>
+<area shape="rect" id="Node000002" href="$scheduler_8c.html#a933aa91c62b849e056e133b98148865c" title="Fügt einen Thread zur Bereit&#45;Warteschlange (Ready Queue) hinzu." alt="" coords="776,81,941,106"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1014,169,886,109,888,104,1016,164"/>
+<area shape="rect" id="Node000010" href="$scheduler_8c.html#ab10c6637958ab9a6df8573944d9bd046" title="Führt den Kernelscheduler aus und wechselt bei Bedarf den Kontext." alt="" coords="570,254,721,280"/>
+<area shape="poly" id="edge11_Node000001_Node000010" title=" " alt="" coords="976,212,719,257,718,252,975,207"/>
+<area shape="rect" id="Node000003" href="$sync_8c.html#ac96dd7c8321ff834991801b395c2686a" title="Entsperrt ein Mutex und weckt den nächsten wartenden Thread in der Warteschlange auf." alt="" coords="588,32,703,57"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="789,81,700,60,702,55,790,75"/>
+<area shape="rect" id="Node000004" href="$thread_8c.html#ab875d586e855b4ecad3a9e2fd4639b32" title="Erstellt einen neuen Thread mit expliziter CPU&#45;Affinität." alt="" coords="563,81,728,106"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="762,96,728,96,728,91,762,91"/>
+<area shape="rect" id="Node000005" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,130,96,156"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="586,80,562,71,538,59,514,50,410,25,325,10,285,9,243,13,197,25,145,46,117,63,93,87,61,132,57,129,89,83,114,59,143,41,196,20,242,8,285,3,326,4,411,20,515,45,540,54,564,66,588,74"/>
+<area shape="rect" id="Node000006" href="$scheduler_8c.html#a1b51d443323ad636166157b164bdd9d3" title="Initialisiert das Scheduler&#45;Subsystem für den Bootstrap Processor (BSP)." alt="" coords="163,56,276,81"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="577,81,514,71,387,66,276,68,276,63,387,60,515,66,578,76"/>
+<area shape="rect" id="Node000007" href="$smp_8c.html#ac1a3051a145a26dff08b461bcf797f1a" title="Einstiegspunkt im 64&#45;Bit Long Mode für hochgefahrene Application Processors (APs)." alt="" coords="372,130,485,156"/>
+<area shape="poly" id="edge7_Node000004_Node000007" title=" " alt="" coords="576,112,486,133,485,128,575,107"/>
+<area shape="rect" id="Node000009" href="$thread_8c.html#a5c7502c7ad53d8b368bac9b62a9c7b94" title="Erstellt einen neuen Thread mit automatischer CPU&#45;Zuweisung." alt="" coords="373,81,485,106"/>
+<area shape="poly" id="edge10_Node000004_Node000009" title=" " alt="" coords="549,96,485,96,485,91,549,91"/>
+<area shape="poly" id="edge6_Node000006_Node000005" title=" " alt="" coords="178,89,81,133,79,128,176,84"/>
+<area shape="rect" id="Node000008" href="$smp_8c.html#ada90e7df26bedf7fa2ab468c9db88bdc" title="Scanned die ACPI MADT, registriert alle verfügbaren Kerne und führt die INIT&#45;SIPI&#45;SIPI Sequenz durch." alt="" coords="180,130,259,156"/>
+<area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="358,146,259,146,259,140,358,140"/>
+<area shape="poly" id="edge9_Node000008_Node000005" title=" " alt="" coords="166,146,96,146,96,140,166,140"/>
+<area shape="poly" id="edge19_Node000010_Node000007" title=" " alt="" coords="619,247,573,208,513,170,484,158,486,153,516,165,576,203,623,243"/>
+<area shape="rect" id="Node000011" href="$sync_8c.html#abe360c49c4461d8cb1d16902d2e301e2" title="Sperrt ein Mutex. Blockiert den aufrufenden Thread, falls das Mutex belegt ist." alt="" coords="379,180,478,205"/>
+<area shape="poly" id="edge12_Node000010_Node000011" title=" " alt="" coords="601,252,514,219,477,208,479,203,516,214,603,247"/>
+<area shape="rect" id="Node000012" href="$handler_8c.html#a7932594c37c2583d6ac035046109ecd3" title="Handler für Rescheduling&#45;IPIs zur Auslösung einer Thread&#45;Umschaltung auf dem Zielkern." alt="" coords="343,229,515,254"/>
+<area shape="poly" id="edge13_Node000010_Node000012" title=" " alt="" coords="556,259,514,254,515,249,557,254"/>
+<area shape="rect" id="Node000013" href="$scheduler_8c.html#aba769cd5aecde24db3a5825591f2d0de" title="Beendet den aktuellen Thread und leitet die Bereinigung ein." alt="" coords="345,278,512,304"/>
+<area shape="poly" id="edge14_Node000010_Node000013" title=" " alt="" coords="557,280,512,285,512,279,556,274"/>
+<area shape="rect" id="Node000015" href="$scheduler_8c.html#a9c9732a9775e27b7b99acb159e4c9fb2" title="Verarbeitet einen System&#45;Timer&#45;Tick (Inkrementiert Ticks, prüft Schlafzustände und Zeitscheiben)." alt="" coords="371,328,487,353"/>
+<area shape="poly" id="edge17_Node000010_Node000015" title=" " alt="" coords="601,287,516,319,478,330,477,325,514,314,599,282"/>
+<area shape="rect" id="Node000017" href="$scheduler_8c.html#a8f08023806b62d1f7161dfd36ec871dd" title="Versetzt den aktuellen Thread für eine bestimmte Zeitdauer in den Schlafzustand." alt="" coords="362,377,495,402"/>
+<area shape="poly" id="edge20_Node000010_Node000017" title=" " alt="" coords="622,291,575,330,516,368,487,380,485,375,513,363,572,326,619,287"/>
+<area shape="rect" id="Node000018" href="$scheduler_8c.html#a8509e036500f28148d973ac73dd9d5d8" title="Gibt die verbleibende Rechenzeit freiwillig ab (Yield)." alt="" coords="377,426,480,452"/>
+<area shape="poly" id="edge21_Node000010_Node000018" title=" " alt="" coords="631,293,585,355,553,389,516,417,481,432,479,428,513,413,549,385,581,352,627,290"/>
+<area shape="poly" id="edge15_Node000013_Node000005" title=" " alt="" coords="365,277,342,270,191,210,78,158,80,154,194,205,344,265,366,272"/>
+<area shape="rect" id="Node000014" href="$thread_8c.html#ac574f92ef7dce87ce16800cd8fc54be5" title="Beendet den aktuell ausführenden Thread und übergibt die Kontrolle an den Scheduler." alt="" coords="171,278,267,304"/>
+<area shape="poly" id="edge16_Node000013_Node000014" title=" " alt="" coords="331,294,268,294,268,288,331,288"/>
+<area shape="rect" id="Node000016" href="$handler_8c.html#a7bd127618e2b4c491c612398af848827" title="Handler für den periodischen Local APIC Timer&#45;Interrupt (Scheduler&#45;Tick)." alt="" coords="144,328,295,353"/>
+<area shape="poly" id="edge18_Node000015_Node000016" title=" " alt="" coords="357,343,295,343,295,338,357,338"/>
+<area shape="rect" id="Node000019" href="$init_8c.html#a83f0ebf3007395d905124661e8c63dfc" title="Erster Kernel&#45;Thread nach der Aktivierung des Schedulers." alt="" coords="150,401,289,426"/>
+<area shape="poly" id="edge22_Node000018_Node000019" title=" " alt="" coords="363,434,289,425,289,420,364,429"/>
+<area shape="poly" id="edge23_Node000019_Node000005" title=" " alt="" coords="177,397,159,384,142,368,105,311,79,250,61,196,52,157,57,155,66,194,84,249,110,309,146,364,162,380,180,392"/>
+</map>

@@ -1,0 +1,19 @@
+<map id="scheduler_add_thread" name="scheduler_add_thread">
+<area shape="rect" id="Node000001" title="Fügt einen Thread zur Bereit&#45;Warteschlange (Ready Queue) hinzu." alt="" coords="680,31,845,56"/>
+<area shape="rect" id="Node000002" href="$sync_8c.html#ac96dd7c8321ff834991801b395c2686a" title="Entsperrt ein Mutex und weckt den nächsten wartenden Thread in der Warteschlange auf." alt="" coords="492,5,607,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="666,35,607,27,607,22,667,29"/>
+<area shape="rect" id="Node000003" href="$thread_8c.html#ab875d586e855b4ecad3a9e2fd4639b32" title="Erstellt einen neuen Thread mit expliziter CPU&#45;Affinität." alt="" coords="467,55,632,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="667,57,633,61,632,55,666,51"/>
+<area shape="rect" id="Node000004" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,29,96,55"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="491,54,421,37,335,23,239,15,191,15,144,19,90,32,89,27,144,14,191,10,240,9,335,17,422,32,492,48"/>
+<area shape="rect" id="Node000005" href="$scheduler_8c.html#a1b51d443323ad636166157b164bdd9d3" title="Initialisiert das Scheduler&#45;Subsystem für den Bootstrap Processor (BSP)." alt="" coords="144,29,257,55"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="453,63,257,49,258,43,453,58"/>
+<area shape="rect" id="Node000006" href="$smp_8c.html#ac1a3051a145a26dff08b461bcf797f1a" title="Einstiegspunkt im 64&#45;Bit Long Mode für hochgefahrene Application Processors (APs)." alt="" coords="305,80,419,105"/>
+<area shape="poly" id="edge6_Node000003_Node000006" title=" " alt="" coords="454,83,419,88,419,82,453,78"/>
+<area shape="rect" id="Node000008" href="$thread_8c.html#a5c7502c7ad53d8b368bac9b62a9c7b94" title="Erstellt einen neuen Thread mit automatischer CPU&#45;Zuweisung." alt="" coords="306,129,418,155"/>
+<area shape="poly" id="edge9_Node000003_Node000008" title=" " alt="" coords="505,88,396,132,394,127,503,83"/>
+<area shape="poly" id="edge5_Node000005_Node000004" title=" " alt="" coords="130,45,96,45,96,39,130,39"/>
+<area shape="rect" id="Node000007" href="$smp_8c.html#ada90e7df26bedf7fa2ab468c9db88bdc" title="Scanned die ACPI MADT, registriert alle verfügbaren Kerne und führt die INIT&#45;SIPI&#45;SIPI Sequenz durch." alt="" coords="161,79,240,104"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="291,95,240,94,240,89,291,89"/>
+<area shape="poly" id="edge8_Node000007_Node000004" title=" " alt="" coords="148,77,89,57,91,52,149,72"/>
+</map>

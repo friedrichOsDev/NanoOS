@@ -1,0 +1,5 @@
+<map id="src/kernel/include/arch/x86_64/cpu/handler.h" name="src/kernel/include/arch/x86_64/cpu/handler.h">
+<area shape="rect" id="Node000001" title="Schnittstelle für Interrupt&#45;Service&#45;Routinen (ISRs), Hardware&#45;IRQs und Inter&#45;Processor&#45;Interrupts (IP..." alt="" coords="5,5,201,45"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="68,93,139,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="106,46,106,79,101,79,101,46"/>
+</map>

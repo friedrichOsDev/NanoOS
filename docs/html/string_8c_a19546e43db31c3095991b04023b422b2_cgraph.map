@@ -1,0 +1,7 @@
+<map id="strcat" name="strcat">
+<area shape="rect" id="Node000001" title="Hängt den Quellstring an den Zielstring an." alt="" coords="5,31,64,56"/>
+<area shape="rect" id="Node000002" href="$string_8c.html#ac5082c8ce4f0cddd88bf4d0d2e738308" title="Kopiert einen String inklusive Nullbyte." alt="" coords="112,5,175,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="64,34,98,26,99,31,65,39"/>
+<area shape="rect" id="Node000003" href="$string_8c.html#a008e171a518fe0e0352f31b245e03875" title="Ermittelt die Länge eines Null&#45;terminierten Strings." alt="" coords="114,55,173,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="65,47,101,55,100,61,64,52"/>
+</map>

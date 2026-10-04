@@ -1,0 +1,13 @@
+<map id="tan" name="tan">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,56,48,81"/>
+<area shape="rect" id="Node000002" href="$____rem__pio2_8c.html#a8442e9294e96e0853232bc3bd6697e83" title=" " alt="" coords="96,31,193,56"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="48,62,82,54,83,59,49,67"/>
+<area shape="rect" id="Node000006" href="$____tan_8c.html#a2372b9414f96f229d295b3a18f5b8338" title=" " alt="" coords="116,80,173,105"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="49,70,103,82,102,87,48,75"/>
+<area shape="rect" id="Node000003" href="$____rem__pio2__large_8c.html#a620c93fbfbfa978532a32432f6b41ada" title=" " alt="" coords="241,31,379,56"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="193,41,227,41,227,46,193,46"/>
+<area shape="rect" id="Node000004" href="$floor_8c.html#a6de60a3e907dcf0bfe3ea8d64f1e8873" title=" " alt="" coords="433,5,484,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="378,29,419,22,420,27,379,34"/>
+<area shape="rect" id="Node000005" href="$scalbn_8c.html#a0353978ec1ae247f2d95f2dc75856ed6" title=" " alt="" coords="427,55,491,80"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="379,52,414,57,413,63,378,57"/>
+</map>

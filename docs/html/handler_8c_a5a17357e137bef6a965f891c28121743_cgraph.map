@@ -1,0 +1,7 @@
+<map id="tlb_shootdown_ipi_handler" name="tlb_shootdown_ipi_handler">
+<area shape="rect" id="Node000001" title="Handler für TLB&#45;Shootdown&#45;IPIs zum Ungültigmachen von Paging&#45;Caches über Kernelkerne hinweg." alt="" coords="5,5,201,31"/>
+<area shape="rect" id="Node000002" href="$apic_8c.html#a9965a95f6ecd7222e7698184487cf698" title="Sendet das End&#45;Of&#45;Interrupt&#45;Signal (EOI) an den Local APIC." alt="" coords="249,5,329,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="202,15,236,15,236,21,202,21"/>
+<area shape="rect" id="Node000003" href="$apic_8c.html#a677d245b069a1353e90bfdf10a2ccb62" title="Schreibt einen 32&#45;Bit&#45;Wert in ein Register des Local APIC." alt="" coords="377,5,471,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="330,15,364,15,364,21,330,21"/>
+</map>

@@ -1,0 +1,19 @@
+<map id="src/kernel/lib/math/powf_data.c" name="src/kernel/lib/math/powf_data.c">
+<area shape="rect" id="Node000001" title=" " alt="" coords="141,5,284,45"/>
+<area shape="rect" id="Node000002" href="$powf__data_8h.html" title=" " alt="" coords="161,93,264,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="215,46,215,79,210,79,210,46"/>
+<area shape="rect" id="Node000003" href="$exp2f__data_8h.html" title=" " alt="" coords="205,167,311,192"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="222,118,246,154,241,157,218,120"/>
+<area shape="rect" id="Node000004" href="$libm_8h.html" title=" " alt="" coords="107,240,228,265"/>
+<area shape="poly" id="edge9_Node000002_Node000004" title=" " alt="" coords="211,120,195,167,177,227,172,226,190,166,206,118"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="245,194,195,233,191,229,242,190"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="243,313,313,339"/>
+<area shape="poly" id="edge8_Node000003_Node000008" title=" " alt="" coords="262,192,277,299,272,300,257,193"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="5,313,68,339"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="148,268,71,309,69,304,145,263"/>
+<area shape="rect" id="Node000006" href="$math_8h.html" title=" " alt="" coords="92,313,219,339"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="168,266,162,300,157,299,163,265"/>
+<area shape="poly" id="edge7_Node000004_Node000008" title=" " alt="" coords="187,263,250,303,247,308,184,268"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="120,387,191,412"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="158,339,158,373,153,373,153,339"/>
+</map>

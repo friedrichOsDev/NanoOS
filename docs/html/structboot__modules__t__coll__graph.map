@@ -1,0 +1,5 @@
+<map id="boot_modules_t" name="boot_modules_t">
+<area shape="rect" id="Node000001" title="Liste aller vom Bootloader übergebenen Module." alt="" coords="5,93,132,119"/>
+<area shape="rect" id="Node000002" href="$structboot__module__t.html" title="Beschreibung eines vom Bootloader geladenen Moduls." alt="" coords="9,5,128,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="71,45,71,93,66,93,66,45"/>
+</map>

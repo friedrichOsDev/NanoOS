@@ -1,0 +1,5 @@
+<map id="time_get_unix" name="time_get_unix">
+<area shape="rect" id="Node000001" title="Berechnet die aktuelle Systemzeit als Unix&#45;Timestamp unter Nutzung der HPET&#45;Uptime." alt="" coords="168,5,283,31"/>
+<area shape="rect" id="Node000002" href="$rtc_8c.html#a7bc9ba5f226564615f01ba61b51b4f2c" title="Gibt die aktuelle Systemzeit als rtc_time_t Struktur zurück." alt="" coords="5,5,120,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="154,21,120,21,120,15,154,15"/>
+</map>

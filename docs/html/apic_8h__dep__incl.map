@@ -1,0 +1,19 @@
+<map id="src/kernel/include/arch/x86_64/cpu/apic.h" name="src/kernel/include/arch/x86_64/cpu/apic.h">
+<area shape="rect" id="Node000001" title="Advanced Programmable Interrupt Controller (APIC) Treiber&#45;Schnittstelle." alt="" coords="583,5,757,45"/>
+<area shape="rect" id="Node000002" href="$apic_8c.html" title="Implementierung des Advanced Programmable Interrupt Controllers (APIC)." alt="" coords="5,93,151,133"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="569,40,380,63,162,96,151,98,150,93,162,91,379,58,569,35"/>
+<area shape="rect" id="Node000003" href="$handler_8c.html" title="Implementierung der Handler für ISRs, IRQs und IPIs." alt="" coords="175,93,320,133"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="570,48,332,96,321,98,320,93,331,91,569,43"/>
+<area shape="rect" id="Node000004" href="$idt_8c.html" title="Setup und Initialisierung des Interrupt Descriptor Table (IDT)." alt="" coords="344,93,489,133"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="602,52,473,96,471,91,601,47"/>
+<area shape="rect" id="Node000005" href="$smp_8c.html" title="Implementierung des Symmetric Multiprocessing (SMP) Bootstrappings." alt="" coords="513,93,659,133"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="644,57,606,95,603,91,640,53"/>
+<area shape="rect" id="Node000006" href="$vmm_8c.html" title="Implementierung der virtuellen Speicherverwaltung (4&#45;Level Paging x86_64)." alt="" coords="683,93,828,133"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="700,53,738,91,735,95,697,57"/>
+<area shape="rect" id="Node000007" href="$init_8c.html" title="Hauptinitialisierungsroutine und Multiboot2&#45;Parser des Kernels." alt="" coords="852,101,1005,126"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="741,47,895,98,893,103,739,52"/>
+<area shape="rect" id="Node000008" href="$panic_8c.html" title="Implementierung der Kernel&#45;Panic&#45;Routine zur Behandlung kritischer Systemfehler." alt="" coords="1029,101,1196,126"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="771,43,1019,91,1056,98,1055,103,1017,96,770,48"/>
+<area shape="rect" id="Node000009" href="$scheduler_8c.html" title="Implementierung des Preemptive Round&#45;Robin&#45;Schedulers für SMP&#45;Systeme." alt="" coords="1221,101,1415,126"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="771,35,974,59,1209,91,1255,98,1254,103,1208,96,973,64,771,40"/>
+</map>

@@ -1,0 +1,15 @@
+<map id="sinf" name="sinf">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,55,52,80"/>
+<area shape="rect" id="Node000002" href="$____cosdf_8c.html#a7010459f0c8532ed5188fe2dc81dea85" title=" " alt="" coords="116,5,187,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="51,56,106,33,108,38,53,61"/>
+<area shape="rect" id="Node000003" href="$____rem__pio2f_8c.html#aed605e3152699fa9ba9eab8272bc3b3d" title=" " alt="" coords="100,55,203,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="52,65,86,65,86,70,52,70"/>
+<area shape="rect" id="Node000007" href="$____sindf_8c.html#a2f1d1d81200a3adb0dac45c48f32f133" title=" " alt="" coords="117,104,185,129"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="53,74,108,96,106,101,51,79"/>
+<area shape="rect" id="Node000004" href="$____rem__pio2__large_8c.html#a620c93fbfbfa978532a32432f6b41ada" title=" " alt="" coords="251,55,388,80"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="203,65,237,65,237,70,203,70"/>
+<area shape="rect" id="Node000005" href="$floor_8c.html#a6de60a3e907dcf0bfe3ea8d64f1e8873" title=" " alt="" coords="443,29,493,55"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="388,53,429,46,430,51,389,58"/>
+<area shape="rect" id="Node000006" href="$scalbn_8c.html#a0353978ec1ae247f2d95f2dc75856ed6" title=" " alt="" coords="436,79,500,104"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="389,76,423,81,422,87,388,81"/>
+</map>

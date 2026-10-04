@@ -1,0 +1,96 @@
+<map id="reschedule_ipi_handler" name="reschedule_ipi_handler">
+<area shape="rect" id="Node000001" title="Handler für Rescheduling&#45;IPIs zur Auslösung einer Thread&#45;Umschaltung auf dem Zielkern." alt="" coords="5,525,177,551"/>
+<area shape="rect" id="Node000002" href="$apic_8c.html#a9965a95f6ecd7222e7698184487cf698" title="Sendet das End&#45;Of&#45;Interrupt&#45;Signal (EOI) an den Local APIC." alt="" coords="261,549,341,575"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="178,545,247,553,246,559,178,551"/>
+<area shape="rect" id="Node000004" href="$scheduler_8c.html#ab10c6637958ab9a6df8573944d9bd046" title="Führt den Kernelscheduler aus und wechselt bei Bedarf den Kontext." alt="" coords="225,385,376,411"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="110,523,267,416,270,421,113,528"/>
+<area shape="rect" id="Node000003" href="$apic_8c.html#a677d245b069a1353e90bfdf10a2ccb62" title="Schreibt einen 32&#45;Bit&#45;Wert in ein Register des Local APIC." alt="" coords="1121,556,1214,581"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="314,573,359,617,390,640,425,657,472,666,538,671,704,666,879,648,1018,625,1076,606,1128,585,1130,590,1078,612,1019,630,880,654,704,671,538,676,471,672,423,662,387,644,356,621,311,577"/>
+<area shape="rect" id="Node000005" href="$scheduler_8c.html#a1edc617362d94a6bf93b2eecfdda5b8f" title="Gibt Ressourcen beendeter (Dead) Threads frei." alt="" coords="427,208,595,233"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="307,383,350,318,383,279,422,245,439,236,441,241,426,250,387,283,354,321,311,386"/>
+<area shape="rect" id="Node000007" href="$serial_8c.html#a0e253cacd4ac20def9c7e3ce9703ae80" title="Formatierte Ausgabe über die serielle Schnittstelle (Thread&#45;sicher)." alt="" coords="887,208,987,233"/>
+<area shape="poly" id="edge49_Node000004_Node000007" title=" " alt="" coords="334,383,423,351,672,282,874,232,875,237,674,287,425,357,336,388"/>
+<area shape="rect" id="Node000013" href="$sync_8c.html#ae73323be1db27d6cc8c7a2c05d6a4359" title="Deaktiviert Interrupts (CLI) und fordert einen Spinlock an." alt="" coords="1074,159,1261,184"/>
+<area shape="poly" id="edge53_Node000004_Node000013" title=" " alt="" coords="303,384,317,346,341,295,376,240,398,216,422,195,464,168,508,147,555,130,602,118,700,104,799,102,893,109,980,122,1113,152,1112,157,979,127,892,114,799,107,701,109,603,123,556,135,510,152,467,173,426,199,401,219,380,244,345,297,322,349,308,386"/>
+<area shape="rect" id="Node000016" href="$sync_8c.html#a1966cf7e20d526d338be6583812e6e7c" title="Gibt einen Spinlock frei und stellt den vorherigen Interrupt&#45;Zustand wieder her." alt="" coords="1067,359,1268,384"/>
+<area shape="poly" id="edge54_Node000004_Node000016" title=" " alt="" coords="376,392,424,390,1053,371,1053,377,424,395,376,397"/>
+<area shape="rect" id="Node000026" href="$panic_8c.html#ae8e9b008cd0047eb478ad63565767797" title="Löst eine Kernel Panic aus und versetzt das System in einen sicheren Halt&#45;Zustand." alt="" coords="699,413,756,439"/>
+<area shape="poly" id="edge33_Node000004_Node000026" title=" " alt="" coords="377,400,685,421,684,426,376,406"/>
+<area shape="rect" id="Node000030" href="$scheduler_8c.html#a15518935b5e75ebfb84129b4b509d43c" title="Entnimmt der Bereit&#45;Warteschlange den nächsten lauffähigen Thread für eine bestimmte CPU." alt="" coords="424,575,599,615"/>
+<area shape="poly" id="edge41_Node000004_Node000030" title=" " alt="" coords="311,409,354,477,387,518,426,555,444,567,441,571,422,559,383,522,350,480,307,412"/>
+<area shape="rect" id="Node000031" href="$scheduler_8c.html#a5b5699ca3ce4a4c93d031e12121e2bd8" title="Fügt einen Thread unter genutzter Sperre (Locked) zur Bereit&#45;Warteschlange hinzu." alt="" coords="429,461,594,501"/>
+<area shape="poly" id="edge42_Node000004_Node000031" title=" " alt="" coords="335,408,447,453,446,458,333,413"/>
+<area shape="rect" id="Node000033" href="$string_8c.html#a07f4a84c11c106e95c32b6ab509346ef" title="Vergleicht maximal n Zeichen zweier Strings." alt="" coords="690,527,765,552"/>
+<area shape="poly" id="edge56_Node000004_Node000033" title=" " alt="" coords="311,410,426,625,470,646,510,651,550,644,597,625,613,615,622,602,630,588,645,573,676,555,679,560,648,577,635,591,626,605,617,618,600,630,551,649,510,657,469,651,422,629,306,412"/>
+<area shape="rect" id="Node000034" href="$smp_8c.html#a692d79e300ebddd72b5a7ca8fdd3aa7c" title="Ermittelt die Pro&#45;CPU&#45;Struktur des aktuell ausführenden CPU&#45;Kerns über die LAPIC&#45;ID." alt="" coords="647,587,808,612"/>
+<area shape="poly" id="edge50_Node000004_Node000034" title=" " alt="" coords="314,409,359,458,390,486,425,510,669,580,667,585,423,515,387,491,355,462,310,413"/>
+<area shape="rect" id="Node000036" href="$string_8c.html#a11bd144d7d44914099a3aeddf1c8567d" title="Vergleicht zwei Null&#45;terminierte Strings lexikografisch." alt="" coords="478,5,545,31"/>
+<area shape="poly" id="edge55_Node000004_Node000036" title=" " alt="" coords="300,385,307,326,325,236,341,186,362,137,388,90,422,48,442,34,464,24,466,29,444,38,426,52,393,93,366,139,346,188,330,237,312,326,305,386"/>
+<area shape="rect" id="Node000037" href="$context_8h.html#ad42fadeb74328337c0a6af64e44b3fc9" title="Führt einen Kontextwechsel zwischen zwei Threads durch." alt="" coords="451,259,571,284"/>
+<area shape="poly" id="edge57_Node000004_Node000037" title=" " alt="" coords="314,383,360,344,423,301,454,286,456,291,425,306,363,348,317,387"/>
+<area shape="rect" id="Node000006" href="$heap_8c.html#a726eb3f950ebb2168193e4d4153f3961" title="Gibt einen zuvor allokierten Heap&#45;Speicherbereich wieder frei." alt="" coords="699,208,755,233"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="596,218,686,218,686,223,596,223"/>
+<area shape="poly" id="edge30_Node000005_Node000007" title=" " alt="" coords="571,205,646,194,727,189,808,194,874,204,873,209,808,199,727,194,647,199,571,211"/>
+<area shape="poly" id="edge31_Node000005_Node000013" title=" " alt="" coords="541,205,590,187,646,173,756,159,866,154,971,154,1060,159,1060,164,970,160,867,159,756,164,647,178,591,193,543,210"/>
+<area shape="poly" id="edge32_Node000005_Node000016" title=" " alt="" coords="565,231,857,301,1094,353,1093,358,855,306,564,236"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="755,218,874,218,874,223,755,223"/>
+<area shape="poly" id="edge28_Node000006_Node000013" title=" " alt="" coords="755,212,856,194,961,182,1060,175,1061,180,961,188,856,199,756,217"/>
+<area shape="poly" id="edge29_Node000006_Node000016" title=" " alt="" coords="756,224,872,254,1020,301,1130,350,1128,355,1018,306,870,259,755,229"/>
+<area shape="rect" id="Node000008" href="$serial_8c.html#a74407e28da770139f17fb3623cf5a072" title="Sendet einen nullterminierten String über den COM&#45;Port." alt="" coords="1121,283,1214,308"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="979,231,1115,276,1114,281,977,236"/>
+<area shape="poly" id="edge12_Node000007_Node000013" title=" " alt="" coords="987,207,1093,184,1094,190,988,213"/>
+<area shape="poly" id="edge15_Node000007_Node000016" title=" " alt="" coords="985,231,1020,251,1037,268,1045,285,1054,302,1068,319,1093,336,1120,351,1118,355,1091,341,1065,323,1049,305,1041,287,1032,271,1017,255,982,236"/>
+<area shape="rect" id="Node000019" href="$print_8c.html#ad648eaafa4592e59b7b5689cbde14001" title="Formatiert einen Standard&#45;ASCII/UTF&#45;8&#45;String unter Verwendung eines va_list&#45;Arguments." alt="" coords="1127,208,1207,233"/>
+<area shape="poly" id="edge18_Node000007_Node000019" title=" " alt="" coords="987,218,1114,218,1114,223,987,223"/>
+<area shape="rect" id="Node000009" href="$serial_8c.html#affa18793b548d2d734343d3713113025" title="Sendet ein einzelnes Zeichen über den angegebenen COM&#45;Port." alt="" coords="1343,309,1436,335"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="1214,298,1330,312,1329,318,1214,304"/>
+<area shape="rect" id="Node000010" href="$io_8c.html#a8bf7a9af91c08e6f876aaffeccd48ff3" title="Schreibt ein Byte (8 Bit) an einen I/O&#45;Port." alt="" coords="1555,309,1605,335"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="1436,319,1541,319,1541,325,1436,325"/>
+<area shape="rect" id="Node000011" href="$serial_8c.html#a9318ee1a519af753ac0a26d8bc5267a8" title="Prüft, ob der Sende&#45;Puffer (Transmit Holding Register) des UARTs leer ist." alt="" coords="1511,359,1649,399"/>
+<area shape="poly" id="edge10_Node000009_Node000011" title=" " alt="" coords="1433,332,1501,353,1500,358,1432,337"/>
+<area shape="rect" id="Node000012" href="$io_8c.html#a2e1e8e2c5724c1e8fd2dff2eada06479" title="Liest ein Byte (8 Bit) von einem I/O&#45;Port." alt="" coords="1731,367,1774,392"/>
+<area shape="poly" id="edge11_Node000011_Node000012" title=" " alt="" coords="1649,377,1718,377,1718,382,1649,382"/>
+<area shape="rect" id="Node000014" href="$sync_8c.html#a263e1c2013a0d5a0f9fb69c0df2d96d4" title="Liest das aktuelle RFLAGS&#45;Register aus und deaktiviert Interrupts per CLI&#45;Instruktion." alt="" coords="1316,109,1463,135"/>
+<area shape="poly" id="edge13_Node000013_Node000014" title=" " alt="" coords="1225,156,1317,135,1319,140,1226,161"/>
+<area shape="rect" id="Node000015" href="$sync_8c.html#a398072d64b2e85e6bb30dc5f5386537a" title="Fordert einen Spinlock an (Busy&#45;Waiting)." alt="" coords="1324,159,1455,184"/>
+<area shape="poly" id="edge14_Node000013_Node000015" title=" " alt="" coords="1261,169,1310,169,1310,174,1261,174"/>
+<area shape="rect" id="Node000017" href="$sync_8c.html#acdadc270410e94936ea4b73f461f934b" title="Stellt den im RFLAGS&#45;Register gespeicherten Zustand (inkl. Interrupt&#45;Flag) wieder her." alt="" coords="1334,359,1445,384"/>
+<area shape="poly" id="edge16_Node000016_Node000017" title=" " alt="" coords="1268,369,1320,369,1320,374,1268,374"/>
+<area shape="rect" id="Node000018" href="$sync_8c.html#a3790ffc28e026905fbf25ebfa426fcc3" title="Gibt einen Spinlock wieder frei." alt="" coords="1324,408,1455,433"/>
+<area shape="poly" id="edge17_Node000016_Node000018" title=" " alt="" coords="1226,381,1319,402,1317,408,1225,387"/>
+<area shape="rect" id="Node000020" href="$print_8c.html#afcf3df00bbf63790ef22dc6e6da370b3" title="Interne Kernfunktion zur Verarbeitung und Formatierung von Zeichenketten." alt="" coords="1327,208,1451,233"/>
+<area shape="poly" id="edge19_Node000019_Node000020" title=" " alt="" coords="1207,218,1314,218,1314,223,1207,223"/>
+<area shape="rect" id="Node000021" href="$convert_8c.html#ad88875b8bd20d40beefb727b612d28f5" title="Konvertiert eine Gleitkommazahl (double) in einen ASCII&#45;String." alt="" coords="1697,183,1808,208"/>
+<area shape="poly" id="edge20_Node000020_Node000021" title=" " alt="" coords="1442,205,1510,194,1601,189,1683,190,1683,195,1601,194,1511,199,1443,211"/>
+<area shape="rect" id="Node000022" href="$convert_8c.html#aff1fd460eb9d0f3e6fabf9434a3e6da5" title="Konvertiert einen vorzeichenlosen 64&#45;Bit&#45;Ganzzahlwert in einen Standard&#45;ASCII&#45;String." alt="" coords="1856,183,1959,208"/>
+<area shape="poly" id="edge27_Node000020_Node000022" title=" " alt="" coords="1430,205,1462,194,1485,182,1510,173,1593,158,1659,154,1725,159,1808,169,1851,177,1850,182,1808,174,1724,164,1658,159,1593,163,1511,178,1487,187,1464,199,1432,210"/>
+<area shape="rect" id="Node000024" href="$convert_8c.html#affb15e60aa4aa840c6f0c4f098e7e6d8" title="Konvertiert eine Gleitkommazahl (double) in einen 32&#45;Bit&#45;String (UTF&#45;32/UCS&#45;4)." alt="" coords="1519,208,1641,233"/>
+<area shape="poly" id="edge23_Node000020_Node000024" title=" " alt="" coords="1452,218,1506,218,1506,223,1452,223"/>
+<area shape="rect" id="Node000025" href="$convert_8c.html#a16906651bafbd0ed3cd4671417aa4a84" title="Konvertiert einen vorzeichenlosen 64&#45;Bit&#45;Ganzzahlwert in einen 32&#45;Bit&#45;String (UTF&#45;32/UCS&#45;4)." alt="" coords="1862,232,1953,257"/>
+<area shape="poly" id="edge25_Node000020_Node000025" title=" " alt="" coords="1440,231,1511,243,1603,250,1695,251,1848,246,1848,251,1695,256,1603,255,1510,249,1439,236"/>
+<area shape="poly" id="edge21_Node000021_Node000022" title=" " alt="" coords="1808,193,1842,193,1842,198,1808,198"/>
+<area shape="rect" id="Node000023" href="$convert_8c.html#afeb50b92cad6a910df86a4b40d710304" title="Interne Hilfsfunktion zur Umwandlung einer Zahl in einen String." alt="" coords="2007,208,2155,233"/>
+<area shape="poly" id="edge22_Node000022_Node000023" title=" " alt="" coords="1959,200,1994,205,1993,211,1959,205"/>
+<area shape="poly" id="edge24_Node000024_Node000021" title=" " alt="" coords="1640,209,1684,203,1684,208,1641,214"/>
+<area shape="poly" id="edge26_Node000025_Node000023" title=" " alt="" coords="1953,236,1992,230,1993,236,1953,241"/>
+<area shape="poly" id="edge40_Node000026_Node000007" title=" " alt="" coords="740,411,911,241,915,245,744,415"/>
+<area shape="rect" id="Node000027" href="$interrupts_8h.html#a6434a3c4c4104d946c23a4e00f131234" title="Deaktiviert Hardware&#45;Interrupts global (cli)." alt="" coords="891,475,984,500"/>
+<area shape="poly" id="edge34_Node000026_Node000027" title=" " alt="" coords="757,432,880,468,879,473,755,437"/>
+<area shape="rect" id="Node000028" href="$apic_8c.html#a79a86223d328e56d39f59b0fef914ef2" title="Sendet einen Stop&#45;IPI&#45;Broadcast an alle anderen Prozessorkerne, um diese anzuhalten." alt="" coords="856,410,1019,450"/>
+<area shape="poly" id="edge35_Node000026_Node000028" title=" " alt="" coords="756,424,843,426,843,431,756,429"/>
+<area shape="poly" id="edge37_Node000028_Node000003" title=" " alt="" coords="1001,448,1020,461,1037,483,1044,504,1052,524,1068,543,1087,553,1108,560,1106,565,1085,558,1065,547,1047,527,1039,506,1032,485,1017,465,998,452"/>
+<area shape="poly" id="edge38_Node000028_Node000013" title=" " alt="" coords="941,409,956,364,980,306,1016,246,1039,218,1065,195,1075,188,1078,192,1068,199,1043,222,1021,249,985,309,961,366,946,411"/>
+<area shape="poly" id="edge39_Node000028_Node000016" title=" " alt="" coords="1016,407,1103,385,1104,390,1017,413"/>
+<area shape="rect" id="Node000029" href="$apic_8c.html#aaf813d1571621dcb09ce13c41f2b8799" title="Liest einen 32&#45;Bit&#45;Wert aus einem Register des Local APIC." alt="" coords="1123,507,1212,532"/>
+<area shape="poly" id="edge36_Node000028_Node000029" title=" " alt="" coords="991,448,1122,499,1120,504,989,453"/>
+<area shape="rect" id="Node000032" href="$apic_8c.html#aa697243de113911fe04354131d3d69fb" title="Sendet einen Reschedule&#45;IPI&#45;Broadcast an alle anderen Prozessorkerne." alt="" coords="856,525,1019,565"/>
+<area shape="poly" id="edge43_Node000031_Node000032" title=" " alt="" coords="595,485,697,496,808,513,843,519,842,525,808,518,696,502,594,491"/>
+<area shape="poly" id="edge48_Node000031_Node000033" title=" " alt="" coords="586,498,678,523,676,528,585,503"/>
+<area shape="poly" id="edge45_Node000032_Node000003" title=" " alt="" coords="1019,550,1107,560,1106,565,1019,556"/>
+<area shape="poly" id="edge46_Node000032_Node000013" title=" " alt="" coords="1004,523,1017,511,1030,491,1040,471,1047,431,1045,392,1037,353,1030,314,1029,275,1038,235,1049,215,1065,195,1069,190,1073,194,1069,198,1054,218,1043,237,1034,275,1035,313,1043,352,1050,391,1053,431,1045,472,1035,493,1021,514,1008,526"/>
+<area shape="poly" id="edge47_Node000032_Node000016" title=" " alt="" coords="996,522,1017,510,1055,482,1090,451,1145,393,1149,397,1094,455,1059,486,1020,515,998,527"/>
+<area shape="poly" id="edge44_Node000032_Node000029" title=" " alt="" coords="1019,533,1109,523,1109,528,1019,538"/>
+<area shape="rect" id="Node000035" href="$apic_8c.html#a10e878032135b8b26418c2d2e9839689" title="Ermittelt die APIC&#45;ID des aktuell ausführenden Prozessorkerns." alt="" coords="887,589,987,615"/>
+<area shape="poly" id="edge51_Node000034_Node000035" title=" " alt="" coords="808,598,873,599,873,604,808,603"/>
+<area shape="poly" id="edge52_Node000035_Node000029" title=" " alt="" coords="986,587,1017,574,1041,558,1066,542,1108,528,1110,533,1068,547,1044,563,1020,579,987,592"/>
+</map>

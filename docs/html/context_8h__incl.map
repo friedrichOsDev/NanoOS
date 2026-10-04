@@ -1,0 +1,24 @@
+<map id="src/kernel/include/arch/x86_64/cpu/context.h" name="src/kernel/include/arch/x86_64/cpu/context.h">
+<area shape="rect" id="Node000001" title="Deklarationen für den Kontextwechsel in Assembler." alt="" coords="212,5,409,45"/>
+<area shape="rect" id="Node000002" href="$thread_8h.html" title="Thread&#45;Verwaltung und Definition des Thread Control Blocks (TCB)." alt="" coords="256,93,364,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="313,46,313,79,308,79,308,46"/>
+<area shape="rect" id="Node000003" href="$process_8h.html" title="Definitionen und Datenstrukturen zur Prozessverwaltung." alt="" coords="204,167,320,192"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="305,121,280,157,275,154,300,118"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="28,313,102,339"/>
+<area shape="poly" id="edge13_Node000002_Node000005" title=" " alt="" coords="257,116,196,129,128,152,95,169,63,189,36,213,13,241,8,257,13,273,25,289,39,303,35,306,21,292,8,275,3,257,8,239,32,209,60,184,92,164,126,147,195,124,256,111"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="238,313,308,339"/>
+<area shape="poly" id="edge14_Node000002_Node000006" title=" " alt="" coords="330,117,367,143,404,179,419,200,428,222,429,245,420,267,405,280,381,293,322,314,320,309,379,288,402,276,416,264,424,244,423,223,414,203,400,183,363,147,327,121"/>
+<area shape="rect" id="Node000007" href="$sync_8h.html" title="Implementierung von Spinlocks und Mutexes für die Kernel&#45;Synchronisation." alt="" coords="310,240,406,265"/>
+<area shape="poly" id="edge12_Node000002_Node000007" title=" " alt="" coords="318,118,335,166,354,226,349,227,330,168,313,120"/>
+<area shape="rect" id="Node000004" href="$memdef_8h.html" title="Definitionen und Strukturen für die Speicherverwaltung (PMM, VMM und Heap)." alt="" coords="34,240,235,265"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="243,194,169,235,166,231,240,190"/>
+<area shape="poly" id="edge10_Node000003_Node000005" title=" " alt="" coords="205,189,98,208,51,223,34,232,23,242,18,256,21,271,43,302,39,305,16,273,12,255,19,238,31,228,49,218,96,203,204,184"/>
+<area shape="poly" id="edge11_Node000003_Node000006" title=" " alt="" coords="266,192,274,299,268,300,260,193"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="279,190,333,229,330,234,276,194"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="125,268,87,305,84,302,121,264"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="158,263,239,305,237,309,155,268"/>
+<area shape="poly" id="edge8_Node000007_Node000005" title=" " alt="" coords="312,268,117,315,115,310,311,263"/>
+<area shape="poly" id="edge9_Node000007_Node000006" title=" " alt="" coords="346,267,299,307,296,302,343,263"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="333,313,416,339"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="364,265,371,300,366,301,358,266"/>
+</map>

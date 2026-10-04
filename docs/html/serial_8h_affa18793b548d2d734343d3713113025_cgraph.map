@@ -1,0 +1,9 @@
+<map id="serial_putc" name="serial_putc">
+<area shape="rect" id="Node000001" title="Sendet ein einzelnes Zeichen über den angegebenen COM&#45;Port." alt="" coords="5,35,99,60"/>
+<area shape="rect" id="Node000002" href="$io_8c.html#a8bf7a9af91c08e6f876aaffeccd48ff3" title="Schreibt ein Byte (8 Bit) an einen I/O&#45;Port." alt="" coords="191,5,241,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="98,36,177,22,177,27,99,42"/>
+<area shape="rect" id="Node000003" href="$serial_8c.html#a9318ee1a519af753ac0a26d8bc5267a8" title="Prüft, ob der Sende&#45;Puffer (Transmit Holding Register) des UARTs leer ist." alt="" coords="147,55,285,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="99,53,133,59,132,64,98,58"/>
+<area shape="rect" id="Node000004" href="$io_8c.html#a2e1e8e2c5724c1e8fd2dff2eada06479" title="Liest ein Byte (8 Bit) von einem I/O&#45;Port." alt="" coords="333,63,376,88"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="286,73,319,73,319,78,286,78"/>
+</map>

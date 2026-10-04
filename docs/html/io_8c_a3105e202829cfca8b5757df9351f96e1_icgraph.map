@@ -1,0 +1,5 @@
+<map id="outw" name="outw">
+<area shape="rect" id="Node000001" title="Schreibt ein Word (16 Bit) an einen I/O&#45;Port." alt="" coords="173,5,228,31"/>
+<area shape="rect" id="Node000002" href="$acpi_8c.html#addcfac2effb9c31154ad8b9481074558" title="Führt den System&#45;Shutdown über den ACPI S5&#45;State durch." alt="" coords="5,5,125,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="159,21,126,21,126,15,159,15"/>
+</map>

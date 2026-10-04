@@ -1,0 +1,7 @@
+<map id="process_init" name="process_init">
+<area shape="rect" id="Node000001" title="Initialisiert das Prozess&#45;Subsystem und erstellt den initialen Kernel&#45;Prozess." alt="" coords="305,5,405,31"/>
+<area shape="rect" id="Node000002" href="$scheduler_8c.html#a1b51d443323ad636166157b164bdd9d3" title="Initialisiert das Scheduler&#45;Subsystem für den Bootstrap Processor (BSP)." alt="" coords="144,5,257,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="292,21,258,21,258,15,292,15"/>
+<area shape="rect" id="Node000003" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,5,96,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="130,21,96,21,96,15,130,15"/>
+</map>

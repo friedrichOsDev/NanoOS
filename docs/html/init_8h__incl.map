@@ -1,0 +1,8 @@
+<map id="src/kernel/include/core/init.h" name="src/kernel/include/core/init.h">
+<area shape="rect" id="Node000001" title="Schnittstellen und Datenstrukturen für die Kernel&#45;Initialisierung." alt="" coords="121,5,257,45"/>
+<area shape="rect" id="Node000002" href="$multiboot2_8h.html" title="Definitionen und Datenstrukturen der Multiboot2&#45;Spezifikation." alt="" coords="5,93,227,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="174,47,138,85,134,81,170,44"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="154,167,225,192"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="211,44,228,66,241,92,244,106,241,120,230,141,215,159,211,155,225,138,236,118,239,106,236,94,223,69,207,47"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="130,117,169,155,166,159,126,121"/>
+</map>

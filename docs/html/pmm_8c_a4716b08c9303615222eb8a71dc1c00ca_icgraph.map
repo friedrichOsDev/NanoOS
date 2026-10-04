@@ -1,0 +1,7 @@
+<map id="mmap_parse" name="mmap_parse">
+<area shape="rect" id="Node000001" title="Wertet die vom Bootloader bereitgestellte Memory Map aus und baut die Bitmap auf." alt="" coords="276,5,383,31"/>
+<area shape="rect" id="Node000002" href="$pmm_8c.html#ad393172de809c66a5037e4b4e505e3f8" title="Initialisiert den physischen Speicherverwalter." alt="" coords="144,5,228,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="262,21,228,21,228,15,262,15"/>
+<area shape="rect" id="Node000003" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,5,96,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="130,21,96,21,96,15,130,15"/>
+</map>

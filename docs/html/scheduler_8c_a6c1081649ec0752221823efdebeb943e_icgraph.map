@@ -1,0 +1,5 @@
+<map id="scheduler_get_current_thread" name="scheduler_get_current_thread">
+<area shape="rect" id="Node000001" title="Gibt den aktuell auf der aufrufenden CPU laufenden Thread zurück." alt="" coords="152,5,319,45"/>
+<area shape="rect" id="Node000002" href="$sync_8c.html#abe360c49c4461d8cb1d16902d2e301e2" title="Sperrt ein Mutex. Blockiert den aufrufenden Thread, falls das Mutex belegt ist." alt="" coords="5,13,104,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="138,28,104,28,104,23,138,23"/>
+</map>

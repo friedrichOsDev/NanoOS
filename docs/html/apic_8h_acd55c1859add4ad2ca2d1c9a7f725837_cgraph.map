@@ -1,0 +1,17 @@
+<map id="ioapic_route_irq" name="ioapic_route_irq">
+<area shape="rect" id="Node000001" title="Routet einen externen Hardware&#45;Interrupt (IRQ) auf einen IDT&#45;Vektor." alt="" coords="5,80,132,105"/>
+<area shape="rect" id="Node000002" href="$apic_8c.html#ae314f5fb10235cccbd343ce98128898c" title="Schreibt einen Wert in ein bestimmtes Register des I/O&#45;APIC." alt="" coords="180,80,281,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="132,90,166,90,166,95,132,95"/>
+<area shape="rect" id="Node000003" href="$sync_8c.html#ae73323be1db27d6cc8c7a2c05d6a4359" title="Deaktiviert Interrupts (CLI) und fordert einen Spinlock an." alt="" coords="337,55,523,80"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="281,84,323,78,324,84,282,89"/>
+<area shape="rect" id="Node000006" href="$sync_8c.html#a1966cf7e20d526d338be6583812e6e7c" title="Gibt einen Spinlock frei und stellt den vorherigen Interrupt&#45;Zustand wieder her." alt="" coords="329,104,531,129"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="282,96,316,100,315,106,281,101"/>
+<area shape="rect" id="Node000004" href="$sync_8c.html#a263e1c2013a0d5a0f9fb69c0df2d96d4" title="Liest das aktuelle RFLAGS&#45;Register aus und deaktiviert Interrupts per CLI&#45;Instruktion." alt="" coords="579,5,725,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="487,52,580,31,581,36,488,57"/>
+<area shape="rect" id="Node000005" href="$sync_8c.html#a398072d64b2e85e6bb30dc5f5386537a" title="Fordert einen Spinlock an (Busy&#45;Waiting)." alt="" coords="587,55,717,80"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="524,65,573,65,573,70,524,70"/>
+<area shape="rect" id="Node000007" href="$sync_8c.html#acdadc270410e94936ea4b73f461f934b" title="Stellt den im RFLAGS&#45;Register gespeicherten Zustand (inkl. Interrupt&#45;Flag) wieder her." alt="" coords="597,104,707,129"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="531,114,583,114,583,119,531,119"/>
+<area shape="rect" id="Node000008" href="$sync_8c.html#a3790ffc28e026905fbf25ebfa426fcc3" title="Gibt einen Spinlock wieder frei." alt="" coords="587,153,717,179"/>
+<area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="488,127,581,148,580,153,487,132"/>
+</map>

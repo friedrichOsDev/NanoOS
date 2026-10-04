@@ -1,0 +1,14 @@
+<map id="src/kernel/lib/math/exp_data.h" name="src/kernel/lib/math/exp_data.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="145,5,288,45"/>
+<area shape="rect" id="Node000002" href="$libm_8h.html" title=" " alt="" coords="107,93,228,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="207,47,184,83,180,80,202,44"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="243,167,313,192"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="227,45,271,153,266,155,222,47"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,167,68,192"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="148,121,71,162,69,158,145,116"/>
+<area shape="rect" id="Node000004" href="$math_8h.html" title=" " alt="" coords="92,167,219,192"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="168,119,162,154,157,153,163,119"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="187,116,250,157,247,161,184,121"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="120,240,191,265"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="158,192,158,226,153,226,153,192"/>
+</map>

@@ -1,0 +1,36 @@
+<map id="src/kernel/arch/x86_64/mm/heap.c" name="src/kernel/arch/x86_64/mm/heap.c">
+<area shape="rect" id="Node000001" title="Implementierung des Kernel&#45;Heap&#45;Allocators." alt="" coords="330,5,475,45"/>
+<area shape="rect" id="Node000002" href="$serial_8h.html" title="Treiber&#45;Schnittstelle für die serielle UART&#45;Kommunikation (16550/COM&#45;Ports)." alt="" coords="90,167,241,207"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="330,30,289,35,246,47,207,66,174,95,167,108,163,122,162,153,156,153,157,122,162,106,170,92,204,62,245,42,288,30,330,24"/>
+<area shape="rect" id="Node000004" href="$heap_8h.html" title="Kernel&#45;Heap&#45;Allocator." alt="" coords="440,93,619,119"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="435,43,501,84,498,88,432,48"/>
+<area shape="rect" id="Node000007" href="$pmm_8h.html" title="Physische Speicherverwaltung (Physical Memory Management &#45; PMM)." alt="" coords="184,93,365,119"/>
+<area shape="poly" id="edge8_Node000001_Node000007" title=" " alt="" coords="373,48,306,88,304,84,370,43"/>
+<area shape="rect" id="Node000008" href="$vmm_8h.html" title="Virtuelle Speicherverwaltung (Virtual Memory Management &#45; VMM)." alt="" coords="643,93,824,119"/>
+<area shape="poly" id="edge11_Node000001_Node000008" title=" " alt="" coords="476,41,673,88,671,93,475,46"/>
+<area shape="rect" id="Node000009" href="$panic_8h.html" title="Schnittstelle für den Absturz&#45; und Fehlerbehandlungskernel (Kernel Panic)." alt="" coords="5,93,107,119"/>
+<area shape="poly" id="edge14_Node000001_Node000009" title=" " alt="" coords="331,46,121,93,119,88,329,40"/>
+<area shape="rect" id="Node000010" href="$sync_8h.html" title="Implementierung von Spinlocks und Mutexes für die Kernel&#45;Synchronisation." alt="" coords="759,174,855,199"/>
+<area shape="poly" id="edge16_Node000001_Node000010" title=" " alt="" coords="476,24,572,28,681,38,732,47,777,58,813,73,838,92,846,109,845,128,827,164,823,161,839,127,841,110,834,95,811,78,775,63,731,52,680,44,572,33,475,30"/>
+<area shape="rect" id="Node000012" href="$string_8h.html" title="String&#45; und Speicherfunktionen." alt="" coords="316,174,407,199"/>
+<area shape="poly" id="edge20_Node000001_Node000012" title=" " alt="" coords="400,46,370,161,365,160,395,45"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="285,255,355,280"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="204,204,286,246,284,251,201,209"/>
+<area shape="rect" id="Node000005" href="$memdef_8h.html" title="Definitionen und Strukturen für die Speicherverwaltung (PMM, VMM und Heap)." alt="" coords="431,174,633,199"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="532,119,534,160,528,160,527,119"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="633,255,708,280"/>
+<area shape="poly" id="edge7_Node000004_Node000006" title=" " alt="" coords="571,116,612,135,631,148,647,165,658,183,666,203,672,240,667,241,661,204,654,185,643,168,627,153,609,140,569,121"/>
+<area shape="poly" id="edge6_Node000005_Node000003" title=" " alt="" coords="502,202,364,253,363,248,500,197"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="554,197,640,246,637,250,551,202"/>
+<area shape="poly" id="edge10_Node000007_Node000003" title=" " alt="" coords="280,118,315,240,310,242,275,119"/>
+<area shape="poly" id="edge9_Node000007_Node000005" title=" " alt="" coords="313,116,482,167,480,172,311,121"/>
+<area shape="poly" id="edge12_Node000008_Node000005" title=" " alt="" coords="705,121,575,172,573,167,703,116"/>
+<area shape="poly" id="edge13_Node000008_Node000006" title=" " alt="" coords="731,120,683,243,678,241,726,118"/>
+<area shape="poly" id="edge15_Node000009_Node000003" title=" " alt="" coords="58,119,59,161,66,185,79,205,111,223,161,238,271,258,270,263,160,243,109,228,75,209,61,187,54,162,52,119"/>
+<area shape="poly" id="edge19_Node000010_Node000003" title=" " alt="" coords="759,198,369,261,368,256,758,193"/>
+<area shape="poly" id="edge18_Node000010_Node000006" title=" " alt="" coords="788,202,704,250,701,245,785,197"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="765,255,848,280"/>
+<area shape="poly" id="edge17_Node000010_Node000011" title=" " alt="" coords="809,200,809,241,804,241,804,200"/>
+<area shape="poly" id="edge22_Node000012_Node000003" title=" " alt="" coords="358,201,335,244,330,241,353,198"/>
+<area shape="poly" id="edge21_Node000012_Node000006" title=" " alt="" coords="397,197,421,204,620,252,619,258,419,209,395,202"/>
+</map>

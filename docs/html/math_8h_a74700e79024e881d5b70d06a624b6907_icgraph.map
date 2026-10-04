@@ -1,0 +1,9 @@
+<map id="log1p" name="log1p">
+<area shape="rect" id="Node000001" title=" " alt="" coords="113,55,172,80"/>
+<area shape="rect" id="Node000002" href="$acosh_8c.html#ac862445bcb46911b1782c284829d5e46" title=" " alt="" coords="5,5,65,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="101,51,63,33,65,28,103,46"/>
+<area shape="rect" id="Node000003" href="$asinh_8c.html#a907297107e93ea9c8a0c8409a8e65079" title=" " alt="" coords="7,55,64,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="100,70,64,70,64,65,100,65"/>
+<area shape="rect" id="Node000004" href="$atanh_8c.html#ac07fd7b77fa341563abccf9efcc1a711" title=" " alt="" coords="6,104,65,129"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="103,88,65,106,63,101,101,83"/>
+</map>

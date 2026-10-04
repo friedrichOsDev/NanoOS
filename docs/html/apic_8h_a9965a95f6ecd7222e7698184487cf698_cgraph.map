@@ -1,0 +1,5 @@
+<map id="lapic_eoi" name="lapic_eoi">
+<area shape="rect" id="Node000001" title="Sendet das End&#45;Of&#45;Interrupt&#45;Signal (EOI) an den Local APIC." alt="" coords="5,5,85,31"/>
+<area shape="rect" id="Node000002" href="$apic_8c.html#a677d245b069a1353e90bfdf10a2ccb62" title="Schreibt einen 32&#45;Bit&#45;Wert in ein Register des Local APIC." alt="" coords="133,5,227,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="86,15,120,15,120,21,86,21"/>
+</map>

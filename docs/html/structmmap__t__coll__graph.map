@@ -1,0 +1,5 @@
+<map id="mmap_t" name="mmap_t">
+<area shape="rect" id="Node000001" title="Globale Speichermap&#45;Struktur des Kernels." alt="" coords="26,93,102,119"/>
+<area shape="rect" id="Node000002" href="$structmmap__entry__t.html" title="Einzeleintrag der Speichermap." alt="" coords="5,5,123,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="67,45,67,93,61,93,61,45"/>
+</map>

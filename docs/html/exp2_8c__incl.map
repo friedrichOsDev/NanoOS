@@ -1,0 +1,19 @@
+<map id="src/kernel/lib/math/exp2.c" name="src/kernel/lib/math/exp2.c">
+<area shape="rect" id="Node000001" title=" " alt="" coords="125,5,268,45"/>
+<area shape="rect" id="Node000002" href="$exp__data_8h.html" title=" " alt="" coords="192,93,287,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="209,44,229,80,224,83,205,47"/>
+<area shape="rect" id="Node000003" href="$libm_8h.html" title=" " alt="" coords="115,167,236,192"/>
+<area shape="poly" id="edge8_Node000001_Node000003" title=" " alt="" coords="193,46,182,94,178,153,173,153,177,93,188,45"/>
+<area shape="rect" id="Node000005" href="$math_8h.html" title=" " alt="" coords="5,240,132,265"/>
+<area shape="poly" id="edge9_Node000001_Node000005" title=" " alt="" coords="184,47,146,100,104,168,79,228,74,226,100,165,141,97,180,44"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="243,240,313,265"/>
+<area shape="poly" id="edge10_Node000001_Node000007" title=" " alt="" coords="246,43,276,63,300,92,311,127,310,164,302,199,292,228,287,226,297,198,305,164,306,128,296,95,273,67,243,48"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="231,121,197,158,193,155,227,117"/>
+<area shape="poly" id="edge7_Node000002_Node000007" title=" " alt="" coords="245,118,274,226,269,227,240,120"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="156,240,219,265"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="180,192,186,226,180,227,175,193"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="160,194,99,235,96,230,157,190"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="193,190,251,230,248,234,190,194"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="33,313,104,339"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="71,266,71,300,66,300,66,266"/>
+</map>

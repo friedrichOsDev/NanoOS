@@ -1,0 +1,11 @@
+<map id="log" name="log">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,80,48,105"/>
+<area shape="rect" id="Node000002" href="$____math__divzero_8c.html#a8c10e0e17b8529cc85535823a84f2799" title=" " alt="" coords="96,5,221,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="41,78,95,40,106,34,108,39,97,44,44,82"/>
+<area shape="rect" id="Node000003" href="$____math__invalid_8c.html#a11c62c401c5f851280dc0a4032943305" title=" " alt="" coords="98,55,219,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="48,86,84,79,85,84,49,91"/>
+<area shape="rect" id="Node000004" href="$libm_8h.html#a4e92ce39e6a616f6014883f1d05c33bc" title=" " alt="" coords="97,104,220,129"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="49,94,84,100,83,106,48,99"/>
+<area shape="rect" id="Node000005" href="$log_8c.html#ad659092c71fb8c0a80b32323a26a9c31" title=" " alt="" coords="129,153,188,179"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="46,103,97,138,118,148,116,153,95,143,43,108"/>
+</map>

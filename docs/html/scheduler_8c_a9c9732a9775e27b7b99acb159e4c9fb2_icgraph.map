@@ -1,0 +1,5 @@
+<map id="scheduler_tick" name="scheduler_tick">
+<area shape="rect" id="Node000001" title="Verarbeitet einen System&#45;Timer&#45;Tick (Inkrementiert Ticks, prüft Schlafzustände und Zeitscheiben)." alt="" coords="204,5,320,31"/>
+<area shape="rect" id="Node000002" href="$handler_8c.html#a7bd127618e2b4c491c612398af848827" title="Handler für den periodischen Local APIC Timer&#45;Interrupt (Scheduler&#45;Tick)." alt="" coords="5,5,156,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="190,21,156,21,156,15,190,15"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="strlen" name="strlen">
+<area shape="rect" id="Node000001" title="Ermittelt die Länge eines Null&#45;terminierten Strings." alt="" coords="112,5,171,31"/>
+<area shape="rect" id="Node000002" href="$string_8c.html#a19546e43db31c3095991b04023b422b2" title="Hängt den Quellstring an den Zielstring an." alt="" coords="5,5,64,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="98,21,64,21,64,15,98,15"/>
+</map>

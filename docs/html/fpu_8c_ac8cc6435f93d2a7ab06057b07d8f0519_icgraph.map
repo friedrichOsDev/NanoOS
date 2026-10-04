@@ -1,0 +1,19 @@
+<map id="fpu_state_init" name="fpu_state_init">
+<area shape="rect" id="Node000001" title="Initialisiert einen 512&#45;Byte&#45;Puffer für den FPU/SSE&#45;Kontext mit Standardwerten." alt="" coords="645,56,756,81"/>
+<area shape="rect" id="Node000002" href="$scheduler_8c.html#a1b51d443323ad636166157b164bdd9d3" title="Initialisiert das Scheduler&#45;Subsystem für den Bootstrap Processor (BSP)." alt="" coords="271,5,384,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="631,58,597,53,384,26,385,21,598,47,632,53"/>
+<area shape="rect" id="Node000004" href="$smp_8c.html#ac1a3051a145a26dff08b461bcf797f1a" title="Einstiegspunkt im 64&#45;Bit Long Mode für hochgefahrene Application Processors (APs)." alt="" coords="271,56,384,81"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="631,71,384,71,384,66,631,66"/>
+<area shape="rect" id="Node000006" href="$thread_8c.html#ab875d586e855b4ecad3a9e2fd4639b32" title="Erstellt einen neuen Thread mit expliziter CPU&#45;Affinität." alt="" coords="432,107,597,132"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="641,88,563,109,562,104,639,83"/>
+<area shape="rect" id="Node000003" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,56,96,81"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="257,28,145,46,95,58,93,53,143,41,256,23"/>
+<area shape="rect" id="Node000005" href="$smp_8c.html#ada90e7df26bedf7fa2ab468c9db88bdc" title="Scanned die ACPI MADT, registriert alle verfügbaren Kerne und führt die INIT&#45;SIPI&#45;SIPI Sequenz durch." alt="" coords="144,56,223,81"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="257,71,223,71,223,66,257,66"/>
+<area shape="poly" id="edge5_Node000005_Node000003" title=" " alt="" coords="130,71,96,71,96,66,130,66"/>
+<area shape="poly" id="edge8_Node000006_Node000002" title=" " alt="" coords="480,102,383,46,357,33,359,28,385,41,483,97"/>
+<area shape="poly" id="edge7_Node000006_Node000003" title=" " alt="" coords="418,120,287,112,144,95,94,84,95,79,144,90,288,107,418,115"/>
+<area shape="poly" id="edge9_Node000006_Node000004" title=" " alt="" coords="453,106,375,84,376,79,455,100"/>
+<area shape="rect" id="Node000007" href="$thread_8c.html#a5c7502c7ad53d8b368bac9b62a9c7b94" title="Erstellt einen neuen Thread mit automatischer CPU&#45;Zuweisung." alt="" coords="271,157,383,183"/>
+<area shape="poly" id="edge10_Node000006_Node000007" title=" " alt="" coords="455,138,376,160,375,155,453,133"/>
+</map>

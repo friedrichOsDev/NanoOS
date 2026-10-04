@@ -1,0 +1,13 @@
+<map id="thread" name="thread">
+<area shape="rect" id="Node000001" title="Thread Control Block (TCB)." alt="" coords="5,15,69,40"/>
+<area shape="poly" id="edge6_Node000001_Node000001" title=" " alt="" coords="84,16,92,20,96,28,88,38,70,40,69,35,85,33,91,27,89,24,82,21"/>
+<area shape="rect" id="Node000002" href="$structprocess__t.html" title=" " alt="" coords="194,112,278,137"/>
+<area shape="poly" id="edge3_Node000002_Node000001" title=" " alt="" coords="51,51,63,70,80,86,107,100,137,110,194,119,194,125,136,115,105,105,77,90,59,73,46,54"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="199,108,60,42,62,38,201,104"/>
+<area shape="rect" id="Node000003" href="$structpage__table__t.html" title="Generische x86_64&#45;Seitentabellenstruktur für alle 4 Hierarchie&#45;Ebenen (PML4, PDPT,..." alt="" coords="183,15,289,40"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="239,54,239,112,233,112,233,54"/>
+<area shape="rect" id="Node000004" href="$structspinlock__t.html" title="Struktur für ein einfaches Atomic&#45;Spinlock." alt="" coords="313,15,401,40"/>
+<area shape="poly" id="edge4_Node000002_Node000004" title=" " alt="" coords="333,51,252,114,249,110,330,47"/>
+<area shape="rect" id="Node000005" href="$structprocess.html" title="Repräsentiert einen Prozess im System." alt="" coords="425,15,497,40"/>
+<area shape="poly" id="edge5_Node000002_Node000005" title=" " alt="" coords="427,48,334,90,271,114,269,109,332,86,425,44"/>
+</map>

@@ -1,0 +1,15 @@
+<map id="src/kernel/include/arch/x86_64/mm/heap.h" name="src/kernel/include/arch/x86_64/mm/heap.h">
+<area shape="rect" id="Node000001" title="Kernel&#45;Heap&#45;Allocator." alt="" coords="425,5,608,45"/>
+<area shape="rect" id="Node000002" href="$smp_8c.html" title="Implementierung des Symmetric Multiprocessing (SMP) Bootstrappings." alt="" coords="5,93,151,133"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="412,48,163,96,151,98,150,93,161,91,411,43"/>
+<area shape="rect" id="Node000003" href="$heap_8c.html" title="Implementierung des Kernel&#45;Heap&#45;Allocators." alt="" coords="175,93,320,133"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="445,52,307,96,305,91,444,47"/>
+<area shape="rect" id="Node000004" href="$init_8c.html" title="Hauptinitialisierungsroutine und Multiboot2&#45;Parser des Kernels." alt="" coords="344,101,497,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="487,57,436,102,432,98,483,53"/>
+<area shape="rect" id="Node000005" href="$process_8c.html" title="Implementierung der Prozessverwaltung und &#45;registrierung." alt="" coords="521,101,704,126"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="550,53,601,98,598,102,546,57"/>
+<area shape="rect" id="Node000006" href="$scheduler_8c.html" title="Implementierung des Preemptive Round&#45;Robin&#45;Schedulers für SMP&#45;Systeme." alt="" coords="729,101,923,126"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="598,46,786,98,784,103,597,52"/>
+<area shape="rect" id="Node000007" href="$thread_8c.html" title="Erstellung und Verwaltung von Threads." alt="" coords="948,101,1123,126"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="622,40,936,91,976,98,975,103,935,96,621,45"/>
+</map>

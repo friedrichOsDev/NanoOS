@@ -1,0 +1,7 @@
+<map id="stop_ipi_handler" name="stop_ipi_handler">
+<area shape="rect" id="Node000001" title="Handler für Stop&#45;IPIs zum Herunterfahren/Anhalten von Nebenkernen (HALT&#45;Schleife)." alt="" coords="5,5,135,31"/>
+<area shape="rect" id="Node000002" href="$apic_8c.html#a9965a95f6ecd7222e7698184487cf698" title="Sendet das End&#45;Of&#45;Interrupt&#45;Signal (EOI) an den Local APIC." alt="" coords="183,5,263,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="135,15,169,15,169,21,135,21"/>
+<area shape="rect" id="Node000003" href="$apic_8c.html#a677d245b069a1353e90bfdf10a2ccb62" title="Schreibt einen 32&#45;Bit&#45;Wert in ein Register des Local APIC." alt="" coords="311,5,404,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="263,15,297,15,297,21,263,21"/>
+</map>

@@ -1,0 +1,9 @@
+<map id="src/kernel/arch/x86_64/cpu/pic.c" name="src/kernel/arch/x86_64/cpu/pic.c">
+<area shape="rect" id="Node000001" title="Deaktivierung des veralteten 8259 PIC Controllers." alt="" coords="83,5,229,45"/>
+<area shape="rect" id="Node000002" href="$pic_8h.html" title="Schnittstelle zum Deaktivieren des Legacy&#45;8259&#45;PICs für den APIC&#45;Betrieb." alt="" coords="5,93,168,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="141,47,108,84,104,81,137,44"/>
+<area shape="rect" id="Node000003" href="$io_8h.html" title="I/O Port Implementation." alt="" coords="192,93,259,119"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="175,44,208,81,204,84,171,47"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="190,167,261,192"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="228,119,228,153,223,153,223,119"/>
+</map>

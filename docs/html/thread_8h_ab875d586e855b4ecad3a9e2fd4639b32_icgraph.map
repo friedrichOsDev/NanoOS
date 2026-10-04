@@ -1,0 +1,15 @@
+<map id="thread_create_on_cpu" name="thread_create_on_cpu">
+<area shape="rect" id="Node000001" title="Erstellt einen neuen Thread mit expliziter CPU&#45;Affinität." alt="" coords="467,48,632,74"/>
+<area shape="rect" id="Node000002" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,23,96,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="491,47,421,31,335,16,239,8,191,9,144,13,90,26,89,20,144,8,191,3,240,3,335,11,422,26,492,42"/>
+<area shape="rect" id="Node000003" href="$scheduler_8c.html#a1b51d443323ad636166157b164bdd9d3" title="Initialisiert das Scheduler&#45;Subsystem für den Bootstrap Processor (BSP)." alt="" coords="144,23,257,48"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="453,57,257,42,258,37,453,51"/>
+<area shape="rect" id="Node000004" href="$smp_8c.html#ac1a3051a145a26dff08b461bcf797f1a" title="Einstiegspunkt im 64&#45;Bit Long Mode für hochgefahrene Application Processors (APs)." alt="" coords="305,74,419,99"/>
+<area shape="poly" id="edge4_Node000001_Node000004" title=" " alt="" coords="454,77,419,81,419,76,453,71"/>
+<area shape="rect" id="Node000006" href="$thread_8c.html#a5c7502c7ad53d8b368bac9b62a9c7b94" title="Erstellt einen neuen Thread mit automatischer CPU&#45;Zuweisung." alt="" coords="306,123,418,148"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="505,81,396,125,394,121,503,77"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="130,38,96,38,96,33,130,33"/>
+<area shape="rect" id="Node000005" href="$smp_8c.html#ada90e7df26bedf7fa2ab468c9db88bdc" title="Scanned die ACPI MADT, registriert alle verfügbaren Kerne und führt die INIT&#45;SIPI&#45;SIPI Sequenz durch." alt="" coords="161,72,240,98"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="291,88,240,88,240,83,291,83"/>
+<area shape="poly" id="edge6_Node000005_Node000002" title=" " alt="" coords="148,71,89,51,91,46,149,65"/>
+</map>

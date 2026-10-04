@@ -1,0 +1,11 @@
+<map id="src/kernel/include/arch/x86_64/boot/multiboot2.h" name="src/kernel/include/arch/x86_64/boot/multiboot2.h">
+<area shape="rect" id="Node000001" title="Definitionen und Datenstrukturen der Multiboot2&#45;Spezifikation." alt="" coords="135,5,360,45"/>
+<area shape="rect" id="Node000002" href="$init_8h.html" title="Schnittstellen und Datenstrukturen für die Kernel&#45;Initialisierung." alt="" coords="179,93,315,133"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="250,59,250,93,245,93,245,59"/>
+<area shape="rect" id="Node000003" href="$pmm_8c.html" title="Implementierung der physischen Speicherverwaltung (Bitmap&#45;Allokator)." alt="" coords="5,181,151,221"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="199,142,116,184,114,179,197,137"/>
+<area shape="rect" id="Node000004" href="$vmm_8c.html" title="Implementierung der virtuellen Speicherverwaltung (4&#45;Level Paging x86_64)." alt="" coords="175,181,320,221"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="250,147,250,181,245,181,245,147"/>
+<area shape="rect" id="Node000005" href="$init_8c.html" title="Hauptinitialisierungsroutine und Multiboot2&#45;Parser des Kernels." alt="" coords="344,189,497,214"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="299,137,399,186,396,191,296,142"/>
+</map>

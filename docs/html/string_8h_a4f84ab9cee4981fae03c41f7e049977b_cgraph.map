@@ -1,0 +1,7 @@
+<map id="u32_strcat" name="u32_strcat">
+<area shape="rect" id="Node000001" title="Hängt einen 32&#45;Bit&#45;Quellstring an den Zielstring an." alt="" coords="5,31,96,56"/>
+<area shape="rect" id="Node000002" href="$string_8c.html#ad8029e5ee79b7d7111f6c359059829ed" title="Kopiert einen 32&#45;Bit&#45;String." alt="" coords="144,5,237,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="96,33,130,26,131,31,97,38"/>
+<area shape="rect" id="Node000003" href="$string_8c.html#aaf62c7253d674f8a8fbed67413943100" title="Ermittelt die Länge eines Null&#45;terminierten 32&#45;Bit&#45;Strings (UTF&#45;32/UCS&#45;4)." alt="" coords="145,55,236,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="97,48,132,55,132,60,96,54"/>
+</map>

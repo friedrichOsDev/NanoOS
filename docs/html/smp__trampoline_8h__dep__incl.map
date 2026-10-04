@@ -1,0 +1,5 @@
+<map id="src/kernel/include/arch/x86_64/cpu/smp_trampoline.h" name="src/kernel/include/arch/x86_64/cpu/smp_trampoline.h">
+<area shape="rect" id="Node000001" title="Deklarationen für den SMP Trampoline Boot Code (AP&#45;Startups)." alt="" coords="5,5,169,60"/>
+<area shape="rect" id="Node000002" href="$smp_8c.html" title="Implementierung des Symmetric Multiprocessing (SMP) Bootstrappings." alt="" coords="15,108,160,148"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="90,74,90,108,85,108,85,74"/>
+</map>

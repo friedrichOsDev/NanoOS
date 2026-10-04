@@ -1,0 +1,5 @@
+<map id="thread_state_to_string" name="thread_state_to_string">
+<area shape="rect" id="Node000001" title="Wandelt einen Thread&#45;Zustand (thread_state_t) in eine lesbare Zeichenkette um." alt="" coords="135,5,303,31"/>
+<area shape="rect" id="Node000002" href="$taskmgr_8c.html#aaf524151902bb41a84591980163fb107" title="Gibt eine strukturierte Übersicht der laufenden Prozesse, Threads und SMP&#45;CPU&#45;Zustände über COM1 aus." alt="" coords="5,5,87,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="121,21,87,21,87,15,121,15"/>
+</map>

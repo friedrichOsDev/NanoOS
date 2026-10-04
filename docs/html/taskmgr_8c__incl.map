@@ -1,0 +1,43 @@
+<map id="src/kernel/core/taskmgr.c" name="src/kernel/core/taskmgr.c">
+<area shape="rect" id="Node000001" title="Serieller Task&#45;Manager und Prozessauflistung." alt="" coords="402,5,587,31"/>
+<area shape="rect" id="Node000002" href="$smp_8h.html" title="Symmetric Multiprocessing (SMP) – Schnittstelle und Kernstrukturen." alt="" coords="186,79,358,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="460,33,322,77,320,72,458,28"/>
+<area shape="rect" id="Node000003" href="$thread_8h.html" title="Thread&#45;Verwaltung und Definition des Thread Control Blocks (TCB)." alt="" coords="226,159,334,185"/>
+<area shape="poly" id="edge24_Node000001_Node000003" title=" " alt="" coords="480,33,309,154,306,149,477,29"/>
+<area shape="rect" id="Node000004" href="$process_8h.html" title="Definitionen und Datenstrukturen zur Prozessverwaltung." alt="" coords="365,240,481,265"/>
+<area shape="poly" id="edge21_Node000001_Node000004" title=" " alt="" coords="493,32,476,79,432,228,427,226,471,78,488,30"/>
+<area shape="rect" id="Node000010" href="$serial_8h.html" title="Treiber&#45;Schnittstelle für die serielle UART&#45;Kommunikation (16550/COM&#45;Ports)." alt="" coords="558,152,709,192"/>
+<area shape="poly" id="edge19_Node000001_Node000010" title=" " alt="" coords="542,28,582,47,602,60,618,77,632,107,637,138,632,139,627,108,614,80,598,64,580,51,539,33"/>
+<area shape="rect" id="Node000011" href="$taskmgr_8h.html" title="Serieller Task&#45;Manager und die Prozessauflistung." alt="" coords="485,79,603,104"/>
+<area shape="poly" id="edge22_Node000001_Node000011" title=" " alt="" coords="505,29,530,66,526,69,501,33"/>
+<area shape="rect" id="Node000012" href="$print_8h.html" title="Printf Implementation." alt="" coords="701,313,785,339"/>
+<area shape="poly" id="edge25_Node000001_Node000012" title=" " alt="" coords="542,28,589,44,640,69,688,104,708,126,724,151,738,189,746,230,748,299,742,300,740,231,733,191,719,153,703,129,684,108,637,74,587,49,541,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="276,104,280,145,275,146,271,104"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="153,387,228,412"/>
+<area shape="poly" id="edge17_Node000002_Node000006" title=" " alt="" coords="256,106,214,137,163,184,137,213,115,244,96,278,83,314,79,326,82,337,94,352,108,364,142,382,139,386,105,368,90,356,78,340,74,326,77,313,91,276,110,241,133,209,159,180,211,133,252,102"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="526,387,597,412"/>
+<area shape="poly" id="edge18_Node000002_Node000007" title=" " alt="" coords="305,102,367,129,442,173,479,201,513,234,542,271,564,312,570,344,569,373,563,373,565,344,559,314,538,274,509,237,476,205,439,177,364,134,303,107"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="5,387,88,412"/>
+<area shape="poly" id="edge16_Node000002_Node000009" title=" " alt="" coords="236,107,192,126,150,154,127,178,108,206,79,267,62,327,52,373,47,372,56,325,74,266,103,204,123,175,146,150,189,121,233,102"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="302,183,391,231,389,236,300,187"/>
+<area shape="poly" id="edge14_Node000003_Node000006" title=" " alt="" coords="251,187,212,206,167,233,123,269,105,291,90,314,87,325,88,334,99,352,119,367,144,379,141,384,116,371,95,355,83,336,82,324,86,312,101,288,120,266,163,229,209,201,249,182"/>
+<area shape="poly" id="edge15_Node000003_Node000007" title=" " alt="" coords="281,185,278,215,279,256,289,300,298,319,311,337,325,347,344,356,397,371,512,390,512,395,396,376,342,361,322,351,307,341,294,322,284,301,274,257,273,215,276,185"/>
+<area shape="rect" id="Node000008" href="$sync_8h.html" title="Implementierung von Spinlocks und Mutexes für die Kernel&#45;Synchronisation." alt="" coords="100,313,196,339"/>
+<area shape="poly" id="edge13_Node000003_Node000008" title=" " alt="" coords="272,186,169,305,165,301,268,183"/>
+<area shape="rect" id="Node000005" href="$memdef_8h.html" title="Definitionen und Strukturen für die Speicherverwaltung (PMM, VMM und Heap)." alt="" coords="322,313,523,339"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="425,266,425,300,420,300,420,266"/>
+<area shape="poly" id="edge11_Node000004_Node000006" title=" " alt="" coords="400,268,311,316,218,380,215,376,308,311,397,263"/>
+<area shape="poly" id="edge12_Node000004_Node000007" title=" " alt="" coords="463,263,502,282,521,295,538,312,554,342,562,372,556,373,549,343,534,315,518,299,499,286,460,268"/>
+<area shape="poly" id="edge7_Node000004_Node000008" title=" " alt="" coords="379,268,206,312,205,307,378,263"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="386,341,242,385,240,380,385,336"/>
+<area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="446,336,528,378,525,383,444,341"/>
+<area shape="poly" id="edge9_Node000008_Node000006" title=" " alt="" coords="157,338,179,374,175,376,153,340"/>
+<area shape="poly" id="edge10_Node000008_Node000007" title=" " alt="" coords="197,333,512,387,511,392,196,338"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="133,341,76,381,73,376,130,336"/>
+<area shape="poly" id="edge20_Node000010_Node000007" title=" " alt="" coords="640,192,645,222,648,259,645,300,633,340,617,363,596,381,592,377,613,359,628,337,640,299,643,259,640,222,635,193"/>
+<area shape="poly" id="edge23_Node000011_Node000004" title=" " alt="" coords="537,106,442,230,438,227,533,102"/>
+<area shape="poly" id="edge27_Node000012_Node000006" title=" " alt="" coords="701,335,242,394,241,389,700,330"/>
+<area shape="poly" id="edge28_Node000012_Node000007" title=" " alt="" coords="715,341,605,384,603,379,713,336"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="705,387,780,412"/>
+<area shape="poly" id="edge26_Node000012_Node000013" title=" " alt="" coords="745,339,745,373,740,373,740,339"/>
+</map>

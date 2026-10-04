@@ -1,0 +1,5 @@
+<map id="src/kernel/include/arch/x86_64/drivers/serial.h" name="src/kernel/include/arch/x86_64/drivers/serial.h">
+<area shape="rect" id="Node000001" title="Treiber&#45;Schnittstelle für die serielle UART&#45;Kommunikation (16550/COM&#45;Ports)." alt="" coords="5,5,160,60"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="47,108,118,133"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="85,60,85,94,80,94,80,60"/>
+</map>

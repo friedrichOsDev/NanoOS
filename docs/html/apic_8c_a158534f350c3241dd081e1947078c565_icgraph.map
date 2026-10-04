@@ -1,0 +1,5 @@
+<map id="lapic_timer_calibrate_and_start" name="lapic_timer_calibrate_and_start">
+<area shape="rect" id="Node000001" title="Kalibriert den LAPIC&#45;Timer mithilfe des HPET und startet ihn im periodischen Modus." alt="" coords="144,5,303,45"/>
+<area shape="rect" id="Node000002" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,13,96,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="130,28,96,28,96,23,130,23"/>
+</map>

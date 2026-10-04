@@ -1,0 +1,13 @@
+<map id="src/kernel/include/arch/x86_64/cpu/idt.h" name="src/kernel/include/arch/x86_64/cpu/idt.h">
+<area shape="rect" id="Node000001" title="Schnittstelle zur Initialisierung des Interrupt Descriptor Table (IDT)." alt="" coords="334,5,499,45"/>
+<area shape="rect" id="Node000002" href="$idt_8c.html" title="Setup und Initialisierung des Interrupt Descriptor Table (IDT)." alt="" coords="5,93,151,133"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="330,51,152,96,150,91,329,46"/>
+<area shape="rect" id="Node000003" href="$irq_8c.html" title="Einrichtung der Hardware&#45;Interrupt&#45;Lines (IRQs) in der IDT." alt="" coords="175,93,320,133"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="369,54,286,96,283,91,366,49"/>
+<area shape="rect" id="Node000004" href="$smp_8c.html" title="Implementierung des Symmetric Multiprocessing (SMP) Bootstrappings." alt="" coords="344,93,489,133"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="419,59,419,93,414,93,414,59"/>
+<area shape="rect" id="Node000005" href="$vmm_8c.html" title="Implementierung der virtuellen Speicherverwaltung (4&#45;Level Paging x86_64)." alt="" coords="513,93,659,133"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="467,49,550,91,548,96,465,54"/>
+<area shape="rect" id="Node000006" href="$init_8c.html" title="Hauptinitialisierungsroutine und Multiboot2&#45;Parser des Kernels." alt="" coords="683,101,836,126"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="506,46,714,98,713,103,504,51"/>
+</map>

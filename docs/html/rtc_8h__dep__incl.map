@@ -1,0 +1,7 @@
+<map id="src/kernel/include/arch/x86_64/cpu/rtc.h" name="src/kernel/include/arch/x86_64/cpu/rtc.h">
+<area shape="rect" id="Node000001" title="Schnittstelle für die Real&#45;Time Clock (CMOS RTC)." alt="" coords="82,5,247,45"/>
+<area shape="rect" id="Node000002" href="$rtc_8c.html" title="Treiber für die Real&#45;Time Clock (CMOS RTC) und Zeitberechnungen." alt="" coords="5,93,151,133"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="138,57,99,95,95,91,134,53"/>
+<area shape="rect" id="Node000003" href="$init_8c.html" title="Hauptinitialisierungsroutine und Multiboot2&#45;Parser des Kernels." alt="" coords="175,101,328,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="196,53,241,98,237,102,192,57"/>
+</map>

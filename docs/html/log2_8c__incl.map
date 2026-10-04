@@ -1,0 +1,18 @@
+<map id="src/kernel/lib/math/log2.c" name="src/kernel/lib/math/log2.c">
+<area shape="rect" id="Node000001" title=" " alt="" coords="124,5,267,45"/>
+<area shape="rect" id="Node000002" href="$log2__data_8h.html" title=" " alt="" coords="103,93,202,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="187,47,168,83,163,80,183,44"/>
+<area shape="rect" id="Node000003" href="$libm_8h.html" title=" " alt="" coords="129,167,251,192"/>
+<area shape="poly" id="edge7_Node000001_Node000003" title=" " alt="" coords="206,45,216,79,218,99,217,119,204,155,199,154,211,118,213,99,211,80,201,46"/>
+<area shape="rect" id="Node000005" href="$math_8h.html" title=" " alt="" coords="5,240,132,265"/>
+<area shape="poly" id="edge8_Node000001_Node000005" title=" " alt="" coords="151,48,119,67,94,95,79,128,71,163,69,226,64,226,65,162,74,126,89,92,116,63,148,43"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="251,240,321,265"/>
+<area shape="poly" id="edge9_Node000001_Node000007" title=" " alt="" coords="210,44,236,92,265,164,283,226,277,228,259,166,232,94,205,47"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="161,118,180,153,175,156,156,120"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="159,240,221,265"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="193,192,193,226,187,226,187,192"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="172,194,101,235,99,231,169,190"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="207,190,261,229,258,234,204,194"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="33,313,104,339"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="71,266,71,300,66,300,66,266"/>
+</map>

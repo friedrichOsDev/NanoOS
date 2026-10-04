@@ -1,0 +1,24 @@
+<map id="sinh" name="sinh">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,131,55,156"/>
+<area shape="rect" id="Node000002" href="$____expo2_8c.html#a3fc5c44ffd2d4227ff22351bc281c3f5" title=" " alt="" coords="103,105,179,131"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="54,135,88,127,90,132,55,140"/>
+<area shape="rect" id="Node000010" href="$expm1_8c.html#ae4963ac40f96d4b1fe8af1b1e90a20bb" title=" " alt="" coords="107,155,174,180"/>
+<area shape="poly" id="edge12_Node000001_Node000010" title=" " alt="" coords="55,146,94,155,93,160,54,151"/>
+<area shape="rect" id="Node000003" href="$exp_8c.html#ae09128febbbe6372cde4fa0c65608a42" title=" " alt="" coords="227,105,273,131"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="179,115,213,115,213,121,179,121"/>
+<area shape="rect" id="Node000004" href="$____math__oflow_8c.html#a0774e0db5836ef25d68e3056390f5922" title=" " alt="" coords="321,5,433,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="258,103,284,72,320,40,327,35,330,39,323,44,288,76,263,107"/>
+<area shape="rect" id="Node000006" href="$libm_8h.html#a4e92ce39e6a616f6014883f1d05c33bc" title=" " alt="" coords="641,105,764,131"/>
+<area shape="poly" id="edge8_Node000003_Node000006" title=" " alt="" coords="274,115,627,115,627,121,274,121"/>
+<area shape="rect" id="Node000007" href="$____math__uflow_8c.html#afbbec1745b910b5895a572e8a6bda50f" title=" " alt="" coords="321,55,433,80"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="273,106,331,83,333,88,275,111"/>
+<area shape="rect" id="Node000008" href="$exp_8c.html#a6ef22ca11d9c2c60b31265b578fba2a5" title=" " alt="" coords="488,156,587,181"/>
+<area shape="poly" id="edge9_Node000003_Node000008" title=" " alt="" coords="275,122,322,134,475,159,474,164,321,139,273,127"/>
+<area shape="rect" id="Node000009" href="$exp_8c.html#ab4e75764b0379c3f5b260a6f59588b70" title=" " alt="" coords="348,207,407,232"/>
+<area shape="poly" id="edge11_Node000003_Node000009" title=" " alt="" coords="264,129,290,156,323,185,341,197,338,202,320,189,286,160,260,133"/>
+<area shape="rect" id="Node000005" href="$____math__xflow_8c.html#a31a7795f2fee69ae357b9d27d985d3c5" title=" " alt="" coords="481,55,593,80"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="420,28,483,48,481,53,418,33"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="581,78,648,99,646,104,579,83"/>
+<area shape="poly" id="edge7_Node000007_Node000005" title=" " alt="" coords="434,65,468,65,468,70,434,70"/>
+<area shape="poly" id="edge10_Node000008_Node000006" title=" " alt="" coords="579,153,646,132,648,137,581,158"/>
+</map>

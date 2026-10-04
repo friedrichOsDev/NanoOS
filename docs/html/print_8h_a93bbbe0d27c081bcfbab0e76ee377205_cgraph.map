@@ -1,0 +1,18 @@
+<map id="snprintf" name="snprintf">
+<area shape="rect" id="Node000001" title="Formatiert einen Standard&#45;ASCII/UTF&#45;8&#45;String in einen Puffer mit variabler Argumentliste." alt="" coords="5,49,77,75"/>
+<area shape="rect" id="Node000002" href="$print_8c.html#afcf3df00bbf63790ef22dc6e6da370b3" title="Interne Kernfunktion zur Verarbeitung und Formatierung von Zeichenketten." alt="" coords="125,49,249,75"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="77,59,112,59,112,65,77,65"/>
+<area shape="rect" id="Node000003" href="$convert_8c.html#ad88875b8bd20d40beefb727b612d28f5" title="Konvertiert eine Gleitkommazahl (double) in einen ASCII&#45;String." alt="" coords="467,24,577,49"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="208,47,248,26,297,9,341,3,386,4,466,18,466,23,386,10,341,9,298,14,250,31,210,52"/>
+<area shape="rect" id="Node000004" href="$convert_8c.html#aff1fd460eb9d0f3e6fabf9434a3e6da5" title="Konvertiert einen vorzeichenlosen 64&#45;Bit&#45;Ganzzahlwert in einen Standard&#45;ASCII&#45;String." alt="" coords="625,75,728,100"/>
+<area shape="poly" id="edge9_Node000002_Node000004" title=" " alt="" coords="250,63,611,81,611,87,250,68"/>
+<area shape="rect" id="Node000006" href="$convert_8c.html#affb15e60aa4aa840c6f0c4f098e7e6d8" title="Konvertiert eine Gleitkommazahl (double) in einen 32&#45;Bit&#45;String (UTF&#45;32/UCS&#45;4)." alt="" coords="297,24,419,49"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="249,50,283,45,284,50,250,55"/>
+<area shape="rect" id="Node000007" href="$convert_8c.html#a16906651bafbd0ed3cd4671417aa4a84" title="Konvertiert einen vorzeichenlosen 64&#45;Bit&#45;Ganzzahlwert in einen 32&#45;Bit&#45;String (UTF&#45;32/UCS&#45;4)." alt="" coords="477,125,567,151"/>
+<area shape="poly" id="edge7_Node000002_Node000007" title=" " alt="" coords="216,72,254,89,298,103,384,121,463,131,463,136,383,126,297,109,252,94,214,77"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="563,47,625,68,623,73,561,52"/>
+<area shape="rect" id="Node000005" href="$convert_8c.html#afeb50b92cad6a910df86a4b40d710304" title="Interne Hilfsfunktion zur Umwandlung einer Zahl in einen String." alt="" coords="776,100,924,125"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="729,92,763,97,762,103,728,97"/>
+<area shape="poly" id="edge6_Node000006_Node000003" title=" " alt="" coords="419,34,453,34,453,39,419,39"/>
+<area shape="poly" id="edge8_Node000007_Node000005" title=" " alt="" coords="567,132,762,117,763,122,568,137"/>
+</map>

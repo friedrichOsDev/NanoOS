@@ -1,0 +1,5 @@
+<map id="strncpy" name="strncpy">
+<area shape="rect" id="Node000001" title="Kopiert maximal n Zeichen eines Strings. Füllt mit Nullbytes auf, falls src kürzer ist." alt="" coords="5,5,76,31"/>
+<area shape="rect" id="Node000002" href="$string_8c.html#af85d6254989d749552279b35a5681377" title="Füllt einen Speicherbereich mit einem bestimmten Byte&#45;Wert." alt="" coords="124,5,200,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="76,15,110,15,110,21,76,21"/>
+</map>

@@ -1,0 +1,26 @@
+<map id="strncpy" name="strncpy">
+<area shape="rect" id="Node000001" title="Kopiert maximal n Zeichen eines Strings. Füllt mit Nullbytes auf, falls src kürzer ist." alt="" coords="695,67,765,92"/>
+<area shape="rect" id="Node000002" href="$init_8c.html#a268c0ec129362970ef4ff7550011e9aa" title="Liest und verarbeitet die Multiboot2&#45;Tags des Bootloaders." alt="" coords="144,18,272,43"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="702,61,676,44,646,31,597,20,546,13,443,8,349,13,272,22,272,17,349,8,443,3,546,7,598,15,647,26,678,39,704,56"/>
+<area shape="rect" id="Node000004" href="$process_8c.html#a1bca73362c193b0967c573aa4bbead9e" title="Erstellt einen neuen Prozess mit einem angegebenen Namen und einer Seitentabelle." alt="" coords="504,42,624,67"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="681,75,624,66,625,61,681,69"/>
+<area shape="rect" id="Node000006" href="$scheduler_8c.html#a1b51d443323ad636166157b164bdd9d3" title="Initialisiert das Scheduler&#45;Subsystem für den Bootstrap Processor (BSP)." alt="" coords="151,118,265,143"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="682,87,265,127,264,122,681,81"/>
+<area shape="rect" id="Node000007" href="$thread_8c.html#ab875d586e855b4ecad3a9e2fd4639b32" title="Erstellt einen neuen Thread mit expliziter CPU&#45;Affinität." alt="" coords="481,194,647,219"/>
+<area shape="poly" id="edge8_Node000001_Node000007" title=" " alt="" coords="703,103,583,195,580,191,700,99"/>
+<area shape="rect" id="Node000003" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,168,96,194"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="186,54,67,170,63,166,182,51"/>
+<area shape="rect" id="Node000005" href="$process_8c.html#aae4d3240509e9d67a749da3ea506522a" title="Initialisiert das Prozess&#45;Subsystem und erstellt den initialen Kernel&#45;Prozess." alt="" coords="327,42,427,67"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="490,57,427,57,427,52,490,52"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="336,75,238,120,236,115,334,70"/>
+<area shape="poly" id="edge6_Node000006_Node000003" title=" " alt="" coords="155,150,92,171,90,166,154,145"/>
+<area shape="poly" id="edge9_Node000007_Node000003" title=" " alt="" coords="468,204,96,186,96,180,468,199"/>
+<area shape="poly" id="edge10_Node000007_Node000006" title=" " alt="" coords="490,193,265,145,266,140,491,188"/>
+<area shape="rect" id="Node000008" href="$smp_8c.html#ac1a3051a145a26dff08b461bcf797f1a" title="Einstiegspunkt im 64&#45;Bit Long Mode für hochgefahrene Application Processors (APs)." alt="" coords="320,244,433,270"/>
+<area shape="poly" id="edge11_Node000007_Node000008" title=" " alt="" coords="504,225,425,247,424,242,502,220"/>
+<area shape="rect" id="Node000010" href="$thread_8c.html#a5c7502c7ad53d8b368bac9b62a9c7b94" title="Erstellt einen neuen Thread mit automatischer CPU&#45;Zuweisung." alt="" coords="321,294,433,319"/>
+<area shape="poly" id="edge14_Node000007_Node000010" title=" " alt="" coords="533,228,435,285,410,296,408,291,432,280,530,224"/>
+<area shape="rect" id="Node000009" href="$smp_8c.html#ada90e7df26bedf7fa2ab468c9db88bdc" title="Scanned die ACPI MADT, registriert alle verfügbaren Kerne und führt die INIT&#45;SIPI&#45;SIPI Sequenz durch." alt="" coords="169,244,247,270"/>
+<area shape="poly" id="edge12_Node000008_Node000009" title=" " alt="" coords="306,260,247,260,247,254,306,254"/>
+<area shape="poly" id="edge13_Node000009_Node000003" title=" " alt="" coords="167,241,77,196,79,191,170,236"/>
+</map>

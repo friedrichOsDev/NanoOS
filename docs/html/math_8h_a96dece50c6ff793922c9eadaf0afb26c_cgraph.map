@@ -1,0 +1,17 @@
+<map id="acosh" name="acosh">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,153,65,179"/>
+<area shape="rect" id="Node000002" href="$log_8c.html#adb302c9aafbaa5e180d9f60ee954bb82" title=" " alt="" coords="121,104,164,129"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="62,151,107,130,110,135,65,156"/>
+<area shape="rect" id="Node000007" href="$log1p_8c.html#ac2aac20ab1347498e6e4f209148fea84" title=" " alt="" coords="113,177,172,203"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="66,170,100,178,99,183,65,175"/>
+<area shape="rect" id="Node000003" href="$____math__divzero_8c.html#a8c10e0e17b8529cc85535823a84f2799" title=" " alt="" coords="220,5,345,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="152,102,180,72,218,40,228,34,231,39,222,44,184,75,156,106"/>
+<area shape="rect" id="Node000004" href="$____math__invalid_8c.html#a11c62c401c5f851280dc0a4032943305" title=" " alt="" coords="222,55,343,80"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="163,107,232,82,234,87,165,112"/>
+<area shape="rect" id="Node000005" href="$libm_8h.html#a4e92ce39e6a616f6014883f1d05c33bc" title=" " alt="" coords="221,104,344,129"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="164,114,208,114,208,119,164,119"/>
+<area shape="rect" id="Node000006" href="$log_8c.html#ad659092c71fb8c0a80b32323a26a9c31" title=" " alt="" coords="253,153,312,179"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="165,121,241,149,239,154,163,126"/>
+<area shape="rect" id="Node000008" href="$acos_8c.html#a919c046b8742f1539239e7f71e0ac62b" title=" " alt="" coords="263,203,302,228"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="173,193,250,207,249,212,172,198"/>
+</map>

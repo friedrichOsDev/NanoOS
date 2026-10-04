@@ -1,0 +1,79 @@
+<map id="memset" name="memset">
+<area shape="rect" id="Node000001" title="Füllt einen Speicherbereich mit einem bestimmten Byte&#45;Wert." alt="" coords="1573,453,1649,478"/>
+<area shape="rect" id="Node000002" href="$acpi_8c.html#a67e20e8615056b48c4a21ead53cb4096" title="Parst die Unterstrukturen der MADT (Multiple APIC Description Table)." alt="" coords="1379,154,1512,179"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1605,440,1598,393,1583,333,1559,270,1543,240,1523,213,1503,195,1480,182,1483,177,1506,190,1527,209,1547,237,1564,268,1588,332,1603,392,1610,439"/>
+<area shape="rect" id="Node000006" href="$fpu_8c.html#ac8cc6435f93d2a7ab06057b07d8f0519" title="Initialisiert einen 512&#45;Byte&#45;Puffer für den FPU/SSE&#45;Kontext mit Standardwerten." alt="" coords="695,174,805,199"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="1590,444,1537,386,1500,351,1457,316,1409,283,1357,257,1302,239,1245,232,1053,232,985,229,919,222,805,202,806,196,919,216,986,224,1053,227,1245,227,1303,234,1359,252,1412,279,1460,311,1503,347,1541,382,1594,440"/>
+<area shape="rect" id="Node000012" href="$heap_8c.html#ad7225573e76f888daacd49f1dffc7244" title="Erweitert den Heap dynamisch um mindestens die angeforderte Größe." alt="" coords="1001,402,1107,427"/>
+<area shape="poly" id="edge16_Node000001_Node000012" title=" " alt="" coords="1559,456,1525,449,1408,436,1292,427,1107,418,1108,413,1293,421,1409,430,1526,444,1560,450"/>
+<area shape="rect" id="Node000014" href="$heap_8c.html#a5a965d7ff39507448e243d4f15f0b67f" title="Allokiert Speicher aus dem Kernel&#45;Heap und nullt diesen vollständig aus." alt="" coords="716,351,784,377"/>
+<area shape="poly" id="edge28_Node000001_Node000014" title=" " alt="" coords="1578,448,1524,421,1448,395,1388,378,1326,369,1245,367,1053,367,784,367,784,361,1053,361,1245,361,1326,364,1389,373,1450,389,1526,416,1581,443"/>
+<area shape="rect" id="Node000017" href="$heap_8c.html#a4b5e2a8ec0b6ac33e17ab8fe3820894e" title="Initialisiert den Kernel&#45;Heap&#45;Allocator." alt="" coords="1013,654,1095,679"/>
+<area shape="poly" id="edge26_Node000001_Node000017" title=" " alt="" coords="1603,492,1575,545,1553,572,1527,594,1472,623,1413,645,1352,660,1291,669,1180,676,1095,673,1096,668,1180,671,1291,664,1351,655,1411,640,1470,619,1524,590,1549,568,1570,542,1598,490"/>
+<area shape="rect" id="Node000018" href="$pmm_8c.html#a4716b08c9303615222eb8a71dc1c00ca" title="Wertet die vom Bootloader bereitgestellte Memory Map aus und baut die Bitmap auf." alt="" coords="1392,706,1499,731"/>
+<area shape="poly" id="edge29_Node000001_Node000018" title=" " alt="" coords="1603,492,1573,560,1528,638,1495,677,1463,708,1460,704,1491,674,1523,635,1568,557,1598,490"/>
+<area shape="rect" id="Node000020" href="$string_8c.html#a9380f4a95b2c4e3d979b1634d3a8bcc9" title="Kopiert maximal n Zeichen eines Strings. Füllt mit Nullbytes auf, falls src kürzer ist." alt="" coords="715,453,785,478"/>
+<area shape="poly" id="edge32_Node000001_Node000020" title=" " alt="" coords="1560,468,1245,468,1053,468,786,468,786,463,1053,463,1245,463,1560,463"/>
+<area shape="rect" id="Node000022" href="$vmm_8c.html#ac84bf3cbc4dce87a58bef00f51c93a1f" title="Liefert die Untertabelle der nächsten Paging&#45;Ebene für einen gegebenen Index." alt="" coords="1365,554,1525,579"/>
+<area shape="poly" id="edge38_Node000001_Node000022" title=" " alt="" coords="1588,490,1560,514,1527,537,1486,556,1483,552,1524,532,1557,510,1585,486"/>
+<area shape="rect" id="Node000024" href="$vmm_8c.html#adef373f9b9c3be4e9176224263fa4335" title="Initialisiert das VMM&#45;Subsystem." alt="" coords="853,554,937,579"/>
+<area shape="poly" id="edge50_Node000001_Node000024" title=" " alt="" coords="1560,480,1526,487,1374,508,1256,519,1137,530,986,551,938,560,937,555,985,545,1137,525,1255,514,1374,503,1525,481,1559,475"/>
+<area shape="rect" id="Node000003" href="$acpi_8c.html#a871fd2b623ec4e7075a72549af08b745" title="Registriert eine einzelne ACPI&#45;Tabelle anhand ihrer Signatur." alt="" coords="1171,130,1317,155"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="1365,160,1317,154,1318,149,1365,155"/>
+<area shape="rect" id="Node000004" href="$acpi_8c.html#a1c83b2748bc94f9663c65e55e87121b4" title="Initialisiert das ACPI&#45;Subsystem." alt="" coords="711,106,789,131"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="1157,141,789,123,789,118,1157,136"/>
+<area shape="rect" id="Node000005" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,529,96,554"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="719,101,685,80,646,64,495,23,428,11,365,9,306,18,250,41,197,80,146,138,115,189,91,245,75,303,64,361,54,463,54,529,49,529,49,463,58,360,69,302,86,243,110,186,142,135,194,76,248,37,305,13,365,4,428,6,496,17,648,59,687,76,722,96"/>
+<area shape="rect" id="Node000007" href="$scheduler_8c.html#a1b51d443323ad636166157b164bdd9d3" title="Initialisiert das Scheduler&#45;Subsystem für den Bootstrap Processor (BSP)." alt="" coords="144,377,257,402"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="721,168,680,136,645,114,550,74,508,58,469,47,430,43,392,47,351,61,307,87,297,102,284,132,254,218,208,377,203,376,249,216,279,130,292,100,304,83,349,56,390,42,430,37,470,42,510,53,552,69,648,110,683,132,724,163"/>
+<area shape="rect" id="Node000008" href="$smp_8c.html#ac1a3051a145a26dff08b461bcf797f1a" title="Einstiegspunkt im 64&#45;Bit Long Mode für hochgefahrene Application Processors (APs)." alt="" coords="313,98,426,123"/>
+<area shape="poly" id="edge8_Node000006_Node000008" title=" " alt="" coords="711,171,646,145,588,133,529,124,426,115,426,110,530,119,589,127,647,140,713,166"/>
+<area shape="rect" id="Node000010" href="$thread_8c.html#ab875d586e855b4ecad3a9e2fd4639b32" title="Erstellt einen neuen Thread mit expliziter CPU&#45;Affinität." alt="" coords="481,250,647,275"/>
+<area shape="poly" id="edge11_Node000006_Node000010" title=" " alt="" coords="706,207,597,252,595,248,704,202"/>
+<area shape="poly" id="edge7_Node000007_Node000005" title=" " alt="" coords="179,414,66,530,63,527,175,410"/>
+<area shape="rect" id="Node000009" href="$smp_8c.html#ada90e7df26bedf7fa2ab468c9db88bdc" title="Scanned die ACPI MADT, registriert alle verfügbaren Kerne und führt die INIT&#45;SIPI&#45;SIPI Sequenz durch." alt="" coords="161,149,240,174"/>
+<area shape="poly" id="edge9_Node000008_Node000009" title=" " alt="" coords="314,130,241,152,240,147,313,125"/>
+<area shape="poly" id="edge10_Node000009_Node000005" title=" " alt="" coords="158,184,146,195,119,238,97,286,81,335,70,384,58,471,55,529,49,528,52,471,64,383,76,334,92,284,114,236,142,192,154,180"/>
+<area shape="poly" id="edge12_Node000010_Node000005" title=" " alt="" coords="496,250,433,240,368,231,340,231,306,240,253,262,216,288,184,321,146,366,115,410,90,456,59,530,54,528,85,454,111,407,142,362,180,317,212,284,251,258,304,235,340,226,368,226,434,235,497,245"/>
+<area shape="poly" id="edge13_Node000010_Node000007" title=" " alt="" coords="507,282,412,311,306,348,231,379,229,374,304,343,411,306,505,277"/>
+<area shape="poly" id="edge14_Node000010_Node000008" title=" " alt="" coords="534,243,385,126,389,122,537,239"/>
+<area shape="rect" id="Node000011" href="$thread_8c.html#a5c7502c7ad53d8b368bac9b62a9c7b94" title="Erstellt einen neuen Thread mit automatischer CPU&#45;Zuweisung." alt="" coords="313,250,425,275"/>
+<area shape="poly" id="edge15_Node000010_Node000011" title=" " alt="" coords="467,265,426,265,426,260,467,260"/>
+<area shape="rect" id="Node000013" href="$heap_8c.html#a22e3c840cac9ba03641627bc9e4a0d6f" title="Allokiert einen Speicherblock aus dem Kernel&#45;Heap (Best&#45;Fit&#45;Strategie)." alt="" coords="858,402,933,427"/>
+<area shape="poly" id="edge17_Node000012_Node000013" title=" " alt="" coords="986,417,933,417,933,412,986,412"/>
+<area shape="poly" id="edge18_Node000013_Node000014" title=" " alt="" coords="844,400,783,378,785,373,846,395"/>
+<area shape="poly" id="edge22_Node000014_Node000007" title=" " alt="" coords="702,369,258,390,258,384,702,364"/>
+<area shape="poly" id="edge23_Node000014_Node000008" title=" " alt="" coords="738,340,724,307,704,268,678,229,645,196,414,126,415,121,648,191,682,225,709,265,729,304,743,338"/>
+<area shape="poly" id="edge24_Node000014_Node000009" title=" " alt="" coords="734,341,698,288,674,262,645,240,623,231,582,222,468,202,240,169,240,164,469,196,583,217,624,226,648,235,677,258,702,285,738,338"/>
+<area shape="poly" id="edge25_Node000014_Node000010" title=" " alt="" coords="712,347,587,278,590,273,715,342"/>
+<area shape="rect" id="Node000015" href="$process_8c.html#a1bca73362c193b0967c573aa4bbead9e" title="Erstellt einen neuen Prozess mit einem angegebenen Namen und einer Seitentabelle." alt="" coords="504,402,624,427"/>
+<area shape="poly" id="edge19_Node000014_Node000015" title=" " alt="" coords="704,379,612,405,611,400,702,374"/>
+<area shape="rect" id="Node000016" href="$process_8c.html#aae4d3240509e9d67a749da3ea506522a" title="Initialisiert das Prozess&#45;Subsystem und erstellt den initialen Kernel&#45;Prozess." alt="" coords="319,402,419,427"/>
+<area shape="poly" id="edge20_Node000015_Node000016" title=" " alt="" coords="490,417,420,417,420,412,490,412"/>
+<area shape="poly" id="edge21_Node000016_Node000007" title=" " alt="" coords="305,408,257,401,258,395,306,403"/>
+<area shape="poly" id="edge27_Node000017_Node000005" title=" " alt="" coords="1000,684,886,709,819,718,751,721,368,721,302,722,249,720,200,708,142,677,110,649,85,615,54,555,59,553,89,612,114,645,146,673,201,703,250,715,302,717,368,716,751,716,819,712,885,703,999,679"/>
+<area shape="rect" id="Node000019" href="$pmm_8c.html#ad393172de809c66a5037e4b4e505e3f8" title="Initialisiert den physischen Speicherverwalter." alt="" coords="159,757,243,782"/>
+<area shape="poly" id="edge30_Node000018_Node000019" title=" " alt="" coords="1379,735,1231,759,1143,768,1055,772,563,772,243,772,243,767,563,767,1055,767,1143,763,1230,754,1378,730"/>
+<area shape="poly" id="edge31_Node000019_Node000005" title=" " alt="" coords="157,752,142,739,107,691,81,638,63,590,53,555,58,554,68,588,86,636,112,688,146,736,160,748"/>
+<area shape="poly" id="edge36_Node000020_Node000007" title=" " alt="" coords="701,471,625,474,525,473,414,463,305,443,259,425,221,405,223,400,261,420,306,438,415,458,525,467,624,469,701,466"/>
+<area shape="poly" id="edge37_Node000020_Node000010" title=" " alt="" coords="726,444,575,277,579,274,730,441"/>
+<area shape="poly" id="edge35_Node000020_Node000015" title=" " alt="" coords="701,455,611,430,612,425,702,450"/>
+<area shape="rect" id="Node000021" href="$init_8c.html#a268c0ec129362970ef4ff7550011e9aa" title="Liest und verarbeitet die Multiboot2&#45;Tags des Bootloaders." alt="" coords="305,503,433,529"/>
+<area shape="poly" id="edge33_Node000020_Node000021" title=" " alt="" coords="702,477,647,487,434,513,434,507,646,481,701,472"/>
+<area shape="poly" id="edge34_Node000021_Node000005" title=" " alt="" coords="292,525,97,541,96,535,292,520"/>
+<area shape="rect" id="Node000023" href="$vmm_8c.html#a7c4f48d2f1fc17a620d557a8b50f3160" title="Mappt eine einzelne physische Seite auf eine virtuelle Seite." alt="" coords="1179,554,1309,579"/>
+<area shape="poly" id="edge39_Node000022_Node000023" title=" " alt="" coords="1351,569,1309,569,1309,564,1351,564"/>
+<area shape="poly" id="edge40_Node000023_Node000012" title=" " alt="" coords="1214,547,1070,430,1073,426,1218,543"/>
+<area shape="poly" id="edge41_Node000023_Node000017" title=" " alt="" coords="1197,587,1172,601,1149,623,1139,634,1124,645,1096,658,1094,653,1121,640,1135,630,1145,619,1169,597,1194,583"/>
+<area shape="poly" id="edge42_Node000023_Node000024" title=" " alt="" coords="1165,569,938,569,938,564,1165,564"/>
+<area shape="rect" id="Node000025" href="$vmm_8c.html#ad176f40b84dc7792f183a81bbf1b052e" title="Mappt einen physischen MMIO&#45;Bereich in den virtuellen MMIO&#45;Speicherbereich." alt="" coords="985,605,1123,630"/>
+<area shape="poly" id="edge44_Node000023_Node000025" title=" " alt="" coords="1183,586,1103,607,1102,602,1182,581"/>
+<area shape="poly" id="edge43_Node000024_Node000005" title=" " alt="" coords="839,569,565,569,368,569,218,562,96,550,97,545,219,557,368,564,565,564,839,564"/>
+<area shape="poly" id="edge49_Node000025_Node000024" title=" " alt="" coords="1000,603,935,582,937,577,1001,598"/>
+<area shape="rect" id="Node000026" href="$apic_8c.html#aceae0c9fdf4abbdc2996cf78ed44ba42" title="Initialisiert das APIC&#45;Subsystem (LAPIC und I/O&#45;APIC)." alt="" coords="525,655,603,681"/>
+<area shape="poly" id="edge45_Node000025_Node000026" title=" " alt="" coords="990,636,938,645,844,656,750,664,603,670,603,665,750,658,843,651,937,640,989,631"/>
+<area shape="rect" id="Node000027" href="$hpet_8c.html#ada5d2c5d92bbba07712669aed1a1b36b" title="Initialisiert den HPET, mappt die MMIO&#45;Register, berechnet die Frequenz und startet den Hauptzähler." alt="" coords="856,605,935,630"/>
+<area shape="poly" id="edge47_Node000025_Node000027" title=" " alt="" coords="971,620,935,620,935,615,971,615"/>
+<area shape="poly" id="edge46_Node000026_Node000005" title=" " alt="" coords="512,678,437,684,343,683,292,679,241,670,191,657,143,638,115,621,91,598,58,556,62,553,95,595,118,617,145,634,192,652,242,665,293,673,343,678,437,678,512,673"/>
+<area shape="poly" id="edge48_Node000027_Node000005" title=" " alt="" coords="842,620,565,620,368,620,286,613,206,596,136,576,82,557,84,552,137,571,207,591,287,608,368,615,565,615,842,615"/>
+</map>

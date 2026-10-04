@@ -1,0 +1,9 @@
+<map id="sinpi" name="sinpi">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,55,59,80"/>
+<area shape="rect" id="Node000002" href="$____cos_8c.html#a2d00fbef46c6ae2bdd76580333737de6" title=" " alt="" coords="107,5,165,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="58,52,95,34,98,39,60,57"/>
+<area shape="rect" id="Node000003" href="$____sin_8c.html#aafdef93b1818a93e643f633144aace8e" title=" " alt="" coords="109,55,163,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="59,65,95,65,95,70,59,70"/>
+<area shape="rect" id="Node000004" href="$floor_8c.html#a6de60a3e907dcf0bfe3ea8d64f1e8873" title=" " alt="" coords="111,104,161,129"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="60,77,100,97,97,101,58,82"/>
+</map>

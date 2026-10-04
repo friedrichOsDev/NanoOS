@@ -1,0 +1,23 @@
+<map id="src/kernel/include/arch/x86_64/mm/vmm.h" name="src/kernel/include/arch/x86_64/mm/vmm.h">
+<area shape="rect" id="Node000001" title="Virtuelle Speicherverwaltung (Virtual Memory Management &#45; VMM)." alt="" coords="747,5,932,45"/>
+<area shape="rect" id="Node000002" href="$acpi_8c.html" title="Implementierung des ACPI&#45;Parsings und der Power&#45;Management&#45;Funktionen." alt="" coords="5,93,151,133"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="733,36,473,57,317,74,162,96,151,98,150,93,162,91,317,69,472,52,733,31"/>
+<area shape="rect" id="Node000003" href="$apic_8c.html" title="Implementierung des Advanced Programmable Interrupt Controllers (APIC)." alt="" coords="175,93,320,133"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="733,41,545,63,332,96,321,98,320,93,331,91,545,58,732,35"/>
+<area shape="rect" id="Node000004" href="$hpet_8c.html" title="Implementierung des Treiber für den High Precision Event Timer (HPET)." alt="" coords="344,93,489,133"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="734,50,501,96,490,98,489,93,500,91,732,44"/>
+<area shape="rect" id="Node000005" href="$smp_8c.html" title="Implementierung des Symmetric Multiprocessing (SMP) Bootstrappings." alt="" coords="513,93,659,133"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="772,52,642,96,641,91,770,47"/>
+<area shape="rect" id="Node000006" href="$heap_8c.html" title="Implementierung des Kernel&#45;Heap&#45;Allocators." alt="" coords="683,93,828,133"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="813,57,776,95,772,91,809,53"/>
+<area shape="rect" id="Node000007" href="$vmm_8c.html" title="Implementierung der virtuellen Speicherverwaltung (4&#45;Level Paging x86_64)." alt="" coords="852,93,997,133"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="870,53,908,91,904,95,866,57"/>
+<area shape="rect" id="Node000008" href="$init_8c.html" title="Hauptinitialisierungsroutine und Multiboot2&#45;Parser des Kernels." alt="" coords="1021,101,1175,126"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="910,47,1064,98,1063,103,908,52"/>
+<area shape="rect" id="Node000009" href="$process_8c.html" title="Implementierung der Prozessverwaltung und &#45;registrierung." alt="" coords="1199,101,1381,126"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="946,44,1230,98,1229,103,945,49"/>
+<area shape="rect" id="Node000010" href="$scheduler_8c.html" title="Implementierung des Preemptive Round&#45;Robin&#45;Schedulers für SMP&#45;Systeme." alt="" coords="1406,101,1601,126"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="946,35,1154,59,1394,91,1440,98,1439,103,1394,96,1153,64,945,41"/>
+<area shape="rect" id="Node000011" href="$thread_8c.html" title="Erstellung und Verwaltung von Threads." alt="" coords="1625,101,1800,126"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="946,30,1247,52,1430,69,1613,91,1658,98,1657,103,1612,96,1429,74,1246,57,946,35"/>
+</map>
