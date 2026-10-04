@@ -1,6 +1,8 @@
 /**
  * @file scheduler.c
- * @brief Round-Robin Kernel Scheduler
+ * @brief Implementierung des Preemptive Round-Robin-Schedulers für SMP-Systeme.
+ * @details Verwaltet Bereit- (Ready), Schlaf- (Sleep) und Toten- (Dead) Thread-Warteschlangen,
+ *          CPU-Affinitäten, FPU-Kontextwechsel sowie Inter-Processor Interrupts (IPI) zur Resynchronisation.
  * @author friedrichOsDev
  */
 
@@ -27,6 +29,9 @@ static spinlock_t sched_lock = SPINLOCK_INIT;
 static volatile uint64_t system_ticks = 0;
 static bool scheduler_enabled = false;
 
+/**
+ * @brief Gibt den Scheduler-Lock nach der Initialisierung frei.
+ */
 void scheduler_release_initial_lock() { spinlock_release(&sched_lock); }
 
 void idle_task(void *arg) {
@@ -51,6 +56,10 @@ void thread_set_affinity(thread_t *thread, int cpu_id) {
     }
 }
 
+/**
+ * @brief Fügt einen Thread unter genutzter Sperre (Locked) zur Bereit-Warteschlange hinzu.
+ * @param thread Zeiger auf den hinzuzufügenden Thread.
+ */
 static void scheduler_add_thread_locked(thread_t *thread) {
     if (!thread)
         return;
@@ -109,6 +118,9 @@ thread_t *pop_next_ready_thread_for_cpu(int cpu_id) {
     return NULL;
 }
 
+/**
+ * @brief Gibt Ressourcen beendeter (Dead) Threads frei.
+ */
 static void cleanup_dead_threads() {
     thread_t *curr = dead_queue_head;
     dead_queue_head = NULL;
@@ -147,7 +159,7 @@ void scheduler_init() {
 
     process_init();
 
-    // create kernel thread
+    // Haupt-Kernel-Thread erzeugen
     thread_t *main_thread = (thread_t *)kzalloc(sizeof(thread_t));
     if (!main_thread) {
         panic("SCHED: Failed to allocate main thread structure", 0);
@@ -173,7 +185,7 @@ void scheduler_init() {
 
     cpus[0].current_thread = main_thread;
     cpus[0].idle_thread = thread_create_on_cpu(kernel_process, idle_task, NULL, "idle_0", 0);
-    pop_next_ready_thread_for_cpu(0); // remove idle task from queue
+    pop_next_ready_thread_for_cpu(0); // Idle-Task aus der Warteschlange entfernen
 
     serial_printf(COM1, "SCHED: scheduler initialized for BSP.\n");
 }
@@ -286,7 +298,7 @@ void scheduler_tick() {
             thread_t *next_sleep = curr_sleep->next;
 
             if (system_ticks >= curr_sleep->sleep_until_tick) {
-                // remove from sleep queue
+                // Aus Schlaf-Warteschlange entfernen
                 if (curr_sleep->prev) {
                     curr_sleep->prev->next = curr_sleep->next;
                 } else {
@@ -296,7 +308,7 @@ void scheduler_tick() {
                     curr_sleep->next->prev = curr_sleep->prev;
                 }
 
-                // add to ready queue
+                // Zur Bereit-Warteschlange hinzufügen
                 curr_sleep->state = THREAD_READY;
                 curr_sleep->next = NULL;
                 curr_sleep->prev = ready_queue_tail;
