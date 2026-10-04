@@ -1,6 +1,6 @@
 /**
  * @file acpi.c
- * @brief 64-bit ACPI (Advanced Configuration and Power Interface)
+ * @brief Implementierung des ACPI-Parsings und der Power-Management-Funktionen.
  * @author friedrichOsDev
  */
 
@@ -21,9 +21,12 @@ madt_parsed_t madt_parsed;
 hpet_t *hpet = NULL;
 
 /**
- * Verifies the RSDP checksum(s)
- * @param target_rsdp The RSDP structure to verify
- * @return True if valid structure, False if invalid checksum(s)
+ * @brief Überprüft die Prüfsummen der RSDP-Struktur.
+ *
+ * Verifiziert die Standard-Prüfsumme (ACPI 1.0) sowie ggf. die erweiterte Prüfsumme (ACPI 2.0+).
+ *
+ * @param target_rsdp Zeiger auf die zu prüfende RSDP-Struktur.
+ * @return `true` bei gültigen Prüfsummen, sonst `false`.
  */
 static bool acpi_verify_rsdp_checksum(rsdp_t *target_rsdp) {
     if (!target_rsdp || memcmp(target_rsdp->signature, RSDP_SIGNATURE, 8) != 0) {
@@ -55,9 +58,10 @@ static bool acpi_verify_rsdp_checksum(rsdp_t *target_rsdp) {
 }
 
 /**
- * Verifies the SDT Header checksum
- * @param header The SDT Header to verify
- * @return True if valid header, False if invalid header
+ * @brief Überprüft die Byte-Prüfsumme eines SDT-Headers.
+ *
+ * @param header Zeiger auf den zu überprüfenden SDT-Header.
+ * @return `true` wenn die Gesamtsumme der Bytes 0 ergibt, sonst `false`.
  */
 static bool acpi_verify_sdt_checksum(acpi_sdt_header_t *header) {
     if (!header)
@@ -71,8 +75,11 @@ static bool acpi_verify_sdt_checksum(acpi_sdt_header_t *header) {
 }
 
 /**
- * Parses the MADT structure
- * @param target_madt The MADT structure to parse
+ * @brief Parst die Unterstrukturen der MADT (Multiple APIC Description Table).
+ *
+ * Iteriert durch die MADT-Einträge und sortiert LAPICs, IOAPICs, ISOs und NMIs in `madt_parsed` ein.
+ *
+ * @param target_madt Zeiger auf die MADT-Struktur.
  */
 static void acpi_parse_madt(madt_t *target_madt) {
     if (!target_madt)
@@ -142,8 +149,11 @@ static void acpi_parse_madt(madt_t *target_madt) {
 }
 
 /**
- * Registers a ACPI table
- * @param phys_header The physical address of the Header
+ * @brief Registriert eine einzelne ACPI-Tabelle anhand ihrer Signatur.
+ *
+ * Verifiziert die Prüfsumme der Tabelle und speichert relevante Zeiger (FADT, DSDT, MADT, HPET).
+ *
+ * @param phys_header Physische Adresse der zu registrierenden Tabelle.
  */
 static void acpi_register_table(acpi_sdt_header_t *phys_header) {
     acpi_sdt_header_t *header = (acpi_sdt_header_t *)P2V((uint64_t)phys_header);
@@ -174,11 +184,6 @@ static void acpi_register_table(acpi_sdt_header_t *phys_header) {
     }
 }
 
-/**
- * Initializes the ACPI
- * @param rsdp_phys The physical address of the RSDP found by the MULTIBOOT2
- * info parser
- */
 void acpi_init(phys_addr_t rsdp_phys) {
     if (!rsdp_phys) {
         serial_printf(COM1, "ACPI: bad RSDP address\n");
@@ -194,7 +199,7 @@ void acpi_init(phys_addr_t rsdp_phys) {
 
     serial_printf(COM1, "ACPI: RSDP Revision %d, OEM %c%c%c%c%c%c found\n", rsdp->revision, rsdp->oem_id[0], rsdp->oem_id[1], rsdp->oem_id[2], rsdp->oem_id[3], rsdp->oem_id[4], rsdp->oem_id[5]);
 
-    // If Revision >= 2 and xsdt_address is there, use XSDT
+    // Falls Revision >= 2 und xsdt_address gesetzt ist, präferiert 64-Bit XSDT nutzen
     if (rsdp->revision >= 2 && rsdp->xsdt_address != 0) {
         xsdt = (xsdt_t *)P2V(rsdp->xsdt_address);
         if (acpi_verify_sdt_checksum(&xsdt->header)) {
@@ -207,7 +212,7 @@ void acpi_init(phys_addr_t rsdp_phys) {
         }
     }
 
-    // RSDT is fallback
+    // Fallback auf 32-Bit RSDT
     if (rsdp->rsdt_address != 0) {
         rsdt = (rsdt_t *)P2V(rsdp->rsdt_address);
         if (acpi_verify_sdt_checksum(&rsdt->header)) {
@@ -220,9 +225,6 @@ void acpi_init(phys_addr_t rsdp_phys) {
     }
 }
 
-/**
- * Tries to power off the system via ACPI
- */
 void acpi_power_off() {
     if (!fadt || !dsdt) {
         serial_printf(COM1, "ACPI: Cannot power off, FADT or DSDT are missing\n");
@@ -236,10 +238,11 @@ void acpi_power_off() {
     uint16_t SLP_TYPb = 0;
     bool found = false;
 
+    // Suche nach dem AML-Name-Opcode "_S5_" in der DSDT
     while (ptr < end - 8) {
         if (memcmp(ptr, "_S5_", 4) == 0) {
             ptr += 4;
-            if (*ptr == 0x12) {
+            if (*ptr == 0x12) { // PackageOp
                 ptr++;
                 uint8_t b = *ptr++;
                 uint8_t pkg_len_bytes = (b >> 6);
@@ -247,11 +250,11 @@ void acpi_power_off() {
 
                 ptr++;
 
-                if (*ptr == 0x0A)
+                if (*ptr == 0x0A) // BytePrefix
                     ptr++;
                 SLP_TYPa = *ptr++;
 
-                if (*ptr == 0x0A)
+                if (*ptr == 0x0A) // BytePrefix
                     ptr++;
                 SLP_TYPb = *ptr++;
 

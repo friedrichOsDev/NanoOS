@@ -195,7 +195,6 @@ static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
 void kernel_init_thread(void *arg) {
     (void)arg;
 
-
     for (int i = 0; i < 10; i++)
         thread_yield();
     ps_dump(proc_list);
@@ -204,7 +203,6 @@ void kernel_init_thread(void *arg) {
         thread_yield();
 
     run_kernel_stress_test();
-
 
     for (int i = 0; i < 10; i++)
         thread_yield();
