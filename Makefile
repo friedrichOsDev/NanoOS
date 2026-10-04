@@ -57,12 +57,12 @@ DEBUG_CFLAGS = -ffreestanding -m64 -O0 -g -Wall -Wextra -Werror \
 LDFLAGS = -m elf_x86_64 -T $(LINKER)
 
 # Targets
-.PHONY: all clean iso iso-debug kernel debug run run-debug gdb
+.PHONY: all clean iso iso-debug debug release run run-debug gdb
 
 all: iso
 
 # --- Kernel (Release) ---
-kernel: $(KERNEL_ELF)
+release: $(KERNEL_ELF)
 
 $(KERNEL_ELF): $(OBJECTS)
 	@mkdir -p $(BUILD_DIR)
