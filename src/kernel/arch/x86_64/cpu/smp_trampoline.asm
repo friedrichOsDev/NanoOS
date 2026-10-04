@@ -1,9 +1,9 @@
 ; /**
-;  * @file smp_trampoline.asm
-;  * @brief Real-Mode Trampoline Code für das Aufwachen von Application Processors (APs) im SMP-Betrieb.
-;  * @details Führt den schrittweisen Übergang durch: 16-Bit Real Mode -> 32-Bit Protected Mode -> 64-Bit Long Mode.
-;  * @author friedrichOsDev
-;  */
+; * @file smp_trampoline.asm
+; * @brief Real-Mode Trampoline Code für das Aufwachen von Application Processors (APs) im SMP-Betrieb.
+; * @details Führt den schrittweisen Übergang durch: 16-Bit Real Mode -> 32-Bit Protected Mode -> 64-Bit Long Mode.
+; * @author friedrichOsDev
+; */
 
         [BITS 16]
         section .text
