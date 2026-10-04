@@ -8,7 +8,7 @@
 #include <core/sync.h>
 #include <core/thread.h>
 
-static inline uint64_t read_rflags_and_cli(void) {
+static inline uint64_t read_rflags_and_cli() {
     uint64_t rflags;
     __asm__ __volatile__("pushfq\n\t"
                          "pop %0\n\t"

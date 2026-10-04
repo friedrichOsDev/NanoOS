@@ -5,5 +5,5 @@
 
 #pragma once
 
-void run_kernel_stress_test(void);
-void run_extended_stress_tests(void);
+void run_kernel_stress_test();
+void run_extended_stress_tests();

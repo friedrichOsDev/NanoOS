@@ -15,4 +15,4 @@
 /**
  * @brief Masks all legacy PIC lines to avoid conflicts with APIC routing
  */
-void pic_disable(void);
+void pic_disable();

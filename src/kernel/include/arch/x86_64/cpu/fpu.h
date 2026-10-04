@@ -8,5 +8,5 @@
 
 #include <stdint.h>
 
-void cpu_fpu_init(void);
+void cpu_fpu_init();
 void fpu_state_init(void *fpu_buf);

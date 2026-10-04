@@ -71,7 +71,7 @@ void hpet_init() {
 /**
  * Returns the value of the main counter
  */
-uint64_t hpet_read_counter(void) {
+uint64_t hpet_read_counter() {
     if (!hpet_regs)
         panic("FATAL: Error failed to map HPET registers.", 0);
     return hpet_regs->main_counter_value;
@@ -97,13 +97,13 @@ void hpet_mdelay(uint64_t milliseconds) {
     }
 }
 
-uint64_t hpet_uptime_ms(void) {
+uint64_t hpet_uptime_ms() {
     if (!hpet_regs || hpet_ticks_per_ms == 0)
         return 0;
     return hpet_regs->main_counter_value / hpet_ticks_per_ms;
 }
 
-uint64_t hpet_uptime_us(void) {
+uint64_t hpet_uptime_us() {
     if (!hpet_regs || hpet_ticks_per_us == 0)
         return 0;
     return hpet_regs->main_counter_value / hpet_ticks_per_us;

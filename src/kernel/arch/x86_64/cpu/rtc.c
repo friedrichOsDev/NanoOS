@@ -23,13 +23,13 @@ static uint8_t cmos_read(uint8_t reg) {
     return val;
 }
 
-static int rtc_is_updating(void) { return cmos_read(RTC_REG_STATUS_A) & 0x80; }
+static int rtc_is_updating() { return cmos_read(RTC_REG_STATUS_A) & 0x80; }
 
 static inline uint8_t bcd_to_bin(uint8_t bcd) {
     return ((bcd >> 4) * 10) + (bcd & 0x0F);
 }
 
-static rtc_time_t rtc_read_hardware(void) {
+static rtc_time_t rtc_read_hardware() {
     rtc_time_t t1, t2;
 
     // Read twice and compare to avoid mid-update inconsistency
@@ -97,7 +97,7 @@ uint64_t rtc_to_unix(const rtc_time_t *t) {
            t->second;
 }
 
-void rtc_init(void) {
+void rtc_init() {
     boot_time = rtc_read_hardware();
     boot_epoch = rtc_to_unix(&boot_time);
 
@@ -107,11 +107,11 @@ void rtc_init(void) {
     serial_printf(COM1, "RTC: boot epoch: %llu\n", boot_epoch);
 }
 
-rtc_time_t rtc_get_boot_time(void) { return boot_time; }
+rtc_time_t rtc_get_boot_time() { return boot_time; }
 
-uint64_t time_get_unix(void) { return boot_epoch + (hpet_uptime_ms() / 1000); }
+uint64_t time_get_unix() { return boot_epoch + (hpet_uptime_ms() / 1000); }
 
-rtc_time_t time_get_now(void) {
+rtc_time_t time_get_now() {
     uint64_t now_epoch = time_get_unix();
     rtc_time_t t;
 

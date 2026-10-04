@@ -160,7 +160,7 @@ uint32_t lapic_read(uint32_t reg) {
 /**
  * Sends the "End of Interrupt" signal to the local APIC
  */
-void lapic_eoi(void) { lapic_write(LAPIC_REG_EOI, 0); }
+void lapic_eoi() { lapic_write(LAPIC_REG_EOI, 0); }
 
 /**
  * Routes an external hardware interrupt (IRQ) to an IDT vector
@@ -206,7 +206,7 @@ void ioapic_route_irq(uint8_t irq, uint8_t vector, uint8_t cpu_id) {
 /**
  * Returns the hardware APIC ID of the current core
  */
-uint32_t lapic_get_id(void) {
+uint32_t lapic_get_id() {
     if (!lapic_base)
         return 0;
     return (lapic_read(LAPIC_REG_ID) >> 24) & 0xFF;
@@ -340,7 +340,7 @@ void lapic_timer_calibrate_and_start(uint32_t target_hz) {
  * Starts the LAPIC timer on an AP using pre-calibrated values from the BSP.
  * Assumes all cores run at the same frequency (true for modern CPUs).
  */
-void lapic_timer_start_ap(void) {
+void lapic_timer_start_ap() {
     if (lapic_timer_calibrated_initcnt == 0) {
         serial_printf(COM1, "LAPIC TIMER: error - not calibrated yet!\n");
         return;

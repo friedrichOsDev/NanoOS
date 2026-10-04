@@ -19,7 +19,7 @@ static uint64_t next_pid = 0;
 static spinlock_t pid_lock = SPINLOCK_INIT;
 static spinlock_t proc_list_lock = SPINLOCK_INIT;
 
-void process_init(void) {
+void process_init() {
     kernel_process = process_create("kernel", (page_table_t *)kernel_pml4);
     if (!kernel_process) {
         panic("Process: Failed to initialize kernel process!", 0);

@@ -107,4 +107,4 @@ thread_t *thread_create(process_t *proc, thread_entry_t entry, void *arg,
     return thread_create_on_cpu(proc, entry, arg, name, -1);
 }
 
-void thread_exit(void) { scheduler_thread_exit(); }
+void thread_exit() { scheduler_thread_exit(); }

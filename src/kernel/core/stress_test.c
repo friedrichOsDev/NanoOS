@@ -40,7 +40,7 @@ static volatile bool fpu_stress_success = true;
  * Phase 1: PMM, VMM & Heap Stress Tests
  * ========================================================================= */
 
-static bool test_memory_management(void) {
+static bool test_memory_management() {
     serial_printf(COM1, "\n--- [Phase 1] Memory Management Tests ---\n");
 
     /* 1.1 PMM Allocation & Free Test */
@@ -89,7 +89,7 @@ static bool test_memory_management(void) {
  * Phase 2: ACPI, APIC & HPET Tests
  * ========================================================================= */
 
-static bool test_timers_and_apic(void) {
+static bool test_timers_and_apic() {
     serial_printf(COM1, "\n--- [Phase 2] ACPI, APIC & Timer Tests ---\n");
 
     TEST_ASSERT(is_apic_initialized(), "APIC is not initialized");
@@ -144,7 +144,7 @@ static void thread_fpu_worker_b(void *arg) {
     thread_exit();
 }
 
-static bool test_scheduler_and_fpu(void) {
+static bool test_scheduler_and_fpu() {
     serial_printf(COM1, "\n--- [Phase 3] Scheduler, Spinlock & FPU Tests ---\n");
 
     shared_counter = 0;
@@ -176,7 +176,7 @@ static bool test_scheduler_and_fpu(void) {
  * Phase 4: SMP Multi-Core & IPI Tests
  * ========================================================================= */
 
-static bool test_smp_and_ipis(void) {
+static bool test_smp_and_ipis() {
     serial_printf(COM1, "\n--- [Phase 4] SMP & Inter-Processor Interrupts ---\n");
 
     cpu_local_t *current_cpu = smp_get_current_cpu();
@@ -202,7 +202,7 @@ static bool test_smp_and_ipis(void) {
  * Kernel Stress Test Entry Point
  * ========================================================================= */
 
-void run_kernel_stress_test(void) {
+void run_kernel_stress_test() {
     serial_printf(COM1, "\n==================================================\n");
     serial_printf(COM1, "       NanoOS Kernel Integration Stress Test      \n");
     serial_printf(COM1, "==================================================\n");
@@ -230,11 +230,11 @@ void run_kernel_stress_test(void) {
 static volatile bool expected_page_fault_triggered = false;
 
 /* Custom Exception Handler Hook für den Test */
-void test_page_fault_handler(void) {
+void test_page_fault_handler() {
     expected_page_fault_triggered = true;
 }
 
-static bool test_page_fault_isolation(void) {
+static bool test_page_fault_isolation() {
     serial_printf(COM1, "\n--- [Phase 5] Fault Injection & Exception Tests ---\n");
 
     /* 5.1 Non-Present Page Allocation & Access Check */
@@ -256,7 +256,7 @@ static bool test_page_fault_isolation(void) {
  * Phase 6: Framebuffer & MMIO Mapping Tests
  * ========================================================================= */
 
-static bool test_framebuffer_and_mmio(void) {
+static bool test_framebuffer_and_mmio() {
     serial_printf(COM1, "\n--- [Phase 6] MMIO & Framebuffer Stress Tests ---\n");
 
     /* Map MMIO Region (z. B. LAPIC oder Framebuffer Physical Base) */
@@ -294,7 +294,7 @@ static void smp_lock_contention_worker(void *arg) {
     thread_exit();
 }
 
-static bool test_smp_lock_contention(void) {
+static bool test_smp_lock_contention() {
     serial_printf(COM1, "\n--- [Phase 7] SMP Multi-Core Lock Contention ---\n");
 
     smp_concurrent_hits = 0;
@@ -317,7 +317,7 @@ static bool test_smp_lock_contention(void) {
  * Phase 8: Scheduler Edge Cases & Thread Sleep Precision
  * ========================================================================= */
 
-static bool test_scheduler_edge_cases(void) {
+static bool test_scheduler_edge_cases() {
     serial_printf(COM1, "\n--- [Phase 8] Scheduler Precision & Edge-Cases ---\n");
 
     uint64_t start = hpet_uptime_ms();
@@ -335,7 +335,7 @@ static bool test_scheduler_edge_cases(void) {
  * Ergänzung in run_kernel_stress_test()
  * ========================================================================= */
 
-void run_extended_stress_tests(void) {
+void run_extended_stress_tests() {
     bool all_passed = true;
 
     all_passed &= test_page_fault_isolation();

@@ -237,7 +237,7 @@ void kfree(virt_addr_t addr) {
 /**
  * Dumps the current HEAP doubly-linked list and HEAP status
  */
-void heap_dump(void) {
+void heap_dump() {
     uint64_t flags = spinlock_acquire_irqsave(&heap_lock);
 
     serial_printf(COM1, "\n====================================== HEAP MANAGER "

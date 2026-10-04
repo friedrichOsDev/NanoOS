@@ -27,7 +27,7 @@ static spinlock_t sched_lock = SPINLOCK_INIT;
 static volatile uint64_t system_ticks = 0;
 static bool scheduler_enabled = false;
 
-void scheduler_release_initial_lock(void) { spinlock_release(&sched_lock); }
+void scheduler_release_initial_lock() { spinlock_release(&sched_lock); }
 
 void idle_task(void *arg) {
     (void)arg;
@@ -36,12 +36,12 @@ void idle_task(void *arg) {
     }
 }
 
-thread_t *scheduler_get_current_thread(void) {
+thread_t *scheduler_get_current_thread() {
     cpu_local_t *cpu = smp_get_current_cpu();
     return cpu ? cpu->current_thread : NULL;
 }
 
-uint64_t scheduler_get_ticks(void) { return system_ticks; }
+uint64_t scheduler_get_ticks() { return system_ticks; }
 
 void thread_set_affinity(thread_t *thread, int cpu_id) {
     if (thread) {
@@ -109,7 +109,7 @@ thread_t *pop_next_ready_thread_for_cpu(int cpu_id) {
     return NULL;
 }
 
-static void cleanup_dead_threads(void) {
+static void cleanup_dead_threads() {
     thread_t *curr = dead_queue_head;
     dead_queue_head = NULL;
 
@@ -143,7 +143,7 @@ static void cleanup_dead_threads(void) {
     }
 }
 
-void scheduler_init(void) {
+void scheduler_init() {
     serial_printf(COM1, "SCHED: initializing scheduler...\n");
 
     process_init();
@@ -184,7 +184,7 @@ void scheduler_init(void) {
 
 void scheduler_enable() { scheduler_enabled = true; }
 
-void scheduler_schedule(void) {
+void scheduler_schedule() {
     if (!scheduler_enabled)
         return;
 
@@ -251,7 +251,7 @@ void scheduler_schedule(void) {
     spinlock_release_irqrestore(&sched_lock, flags);
 }
 
-void thread_yield(void) { scheduler_schedule(); }
+void thread_yield() { scheduler_schedule(); }
 
 void thread_sleep_ms(uint64_t ms) {
     uint64_t flags = spinlock_acquire_irqsave(&sched_lock);
@@ -274,7 +274,7 @@ void thread_sleep_ms(uint64_t ms) {
     scheduler_schedule();
 }
 
-void scheduler_tick(void) {
+void scheduler_tick() {
     if (!scheduler_enabled)
         return;
 
@@ -334,7 +334,7 @@ void scheduler_tick(void) {
     }
 }
 
-void scheduler_thread_exit(void) {
+void scheduler_thread_exit() {
     uint64_t flags = spinlock_acquire_irqsave(&sched_lock);
     cpu_local_t *my_cpu = smp_get_current_cpu();
     my_cpu->current_thread->state = THREAD_DEAD;

@@ -30,8 +30,8 @@ typedef struct {
     uint16_t year;
 } rtc_time_t;
 
-void rtc_init(void);
-rtc_time_t rtc_get_boot_time(void);
+void rtc_init();
+rtc_time_t rtc_get_boot_time();
 uint64_t rtc_to_unix(const rtc_time_t *t);
-uint64_t time_get_unix(void);
-rtc_time_t time_get_now(void);
+uint64_t time_get_unix();
+rtc_time_t time_get_now();

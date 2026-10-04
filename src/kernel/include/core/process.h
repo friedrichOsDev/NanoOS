@@ -30,6 +30,6 @@ typedef struct process {
 extern process_t *kernel_process;
 extern process_t *proc_list;
 
-void process_init(void);
+void process_init();
 process_t *process_create(const char *name, page_table_t *pml4);
 void process_register(process_t *proc);

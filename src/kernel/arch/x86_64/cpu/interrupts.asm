@@ -171,12 +171,12 @@ idt_load:
         lidt [rdi]
         ret
 
-; void idt_enable(void)
+; void idt_enable()
 idt_enable:
         sti
         ret
 
-; void idt_disable(void)
+; void idt_disable()
 idt_disable:
         cli
         ret

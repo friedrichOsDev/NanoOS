@@ -53,7 +53,7 @@ static void tss_init_core(size_t cpu_id, uintptr_t kernel_stack) {
     serial_printf(COM1, "TSS Core %zu: RSP0 = %p, IST1 = %p\n", cpu_id, (void *)tss->rsp0, (void *)tss->ist1);
 }
 
-void gdt_init(void) {
+void gdt_init() {
     gdtp.limit = (sizeof(struct gdt_entry) * GDT_ENTRIES) - 1;
     gdtp.base = (uint64_t)&gdt;
 

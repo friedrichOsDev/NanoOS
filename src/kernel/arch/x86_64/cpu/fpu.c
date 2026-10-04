@@ -8,7 +8,7 @@
 #include <core/panic.h>
 #include <lib/string.h>
 
-void cpu_fpu_init(void) {
+void cpu_fpu_init() {
     uint64_t cr0, cr4;
 
     asm volatile("mov %%cr0, %0" : "=r"(cr0));

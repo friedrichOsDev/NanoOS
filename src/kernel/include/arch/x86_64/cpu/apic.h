@@ -58,24 +58,24 @@
 #define IPI_STOP_VECTOR 0xFC
 #define IPI_TLB_SHOOTDOWN_VECTOR 0xFB
 
-void apic_init(void);
+void apic_init();
 void lapic_write(uint32_t reg, uint32_t val);
 uint32_t lapic_read(uint32_t reg);
-void lapic_eoi(void);
+void lapic_eoi();
 void ioapic_route_irq(uint8_t irq, uint8_t vector, uint8_t cpu_id);
 void lapic_send_init(uint32_t lapic_id);
 void lapic_send_sipi(uint32_t lapic_id, uint8_t vector);
-uint32_t lapic_get_id(void);
+uint32_t lapic_get_id();
 void lapic_send_broadcast_reschedule_ipi();
 void lapic_send_broadcast_stop_ipi();
 void lapic_send_broadcast_tlb_ipi();
 void lapic_timer_calibrate_and_start(uint32_t target_hz);
-void lapic_timer_start_ap(void);
+void lapic_timer_start_ap();
 
 extern uint32_t lapic_timer_calibrated_initcnt;
 extern uint32_t lapic_timer_target_hz;
 extern bool apic_initialized;
 
-static inline bool is_apic_initialized(void) {
+static inline bool is_apic_initialized() {
     return apic_initialized;
 }
