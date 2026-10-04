@@ -1,6 +1,8 @@
 /**
  * @file serial.c
- * @brief
+ * @brief Implementierung des UART 16550 Serial-Driver.
+ * @details Enthält Low-Level-Funktionen zur Port-Ansteuerung, Pufferverwaltung und
+ *          synchronisierten formatierte Log-Ausgaben.
  * @author friedrichOsDev
  */
 
