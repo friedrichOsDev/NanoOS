@@ -42,7 +42,7 @@ static volatile bool ap_boot_flag = false;
  * @details Schaltet das Bit 11 in der IA32_APIC_BASE MSR ein, konfiguriert DFR,
  *          LDR, den Spurious Interrupt Vector Register (SIVR) sowie Task Priority (TPR).
  */
-static void smp_enable_lapic(void) {
+static void smp_enable_lapic() {
     // LAPIC im MSR aktivieren
     uint32_t low, high;
     __asm__ __volatile__("rdmsr" : "=a"(low), "=d"(high) : "c"(0x1B));
@@ -56,7 +56,7 @@ static void smp_enable_lapic(void) {
     lapic_write(LAPIC_REG_TPR, 0);
 }
 
-cpu_local_t *smp_get_current_cpu(void) {
+cpu_local_t *smp_get_current_cpu() {
     uint32_t lapic_id = lapic_get_id();
     for (size_t i = 0; i < smp_cpu_count; i++) {
         if (cpus[i].lapic_id == lapic_id) {
@@ -71,7 +71,7 @@ cpu_local_t *smp_get_current_cpu(void) {
  * @details Lädt GDT/IDT, initialisiert FPU/TSS/LAPIC, erstellt den Pro-CPU Idle-Thread
  *          sowie den Haupt-Kontext-Thread, schaltet Interrupts ein und geht in die Scheduler-Schleife über.
  */
-void smp_ap_main(void) {
+void smp_ap_main() {
     // GDT & IDT für den aktuellen Kern laden
     gdt_flush((uint64_t)&gdtp);
     idt_load((uint64_t)&idtp);
@@ -128,7 +128,7 @@ void smp_ap_main(void) {
     }
 }
 
-void smp_init(void) {
+void smp_init() {
     serial_printf(COM1, "SMP: scanning MADT for CPU cores...\n");
 
     if (!madt) {
