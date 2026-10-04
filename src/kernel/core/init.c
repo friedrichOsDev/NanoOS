@@ -25,7 +25,6 @@
 #include <core/panic.h>
 #include <core/process.h>
 #include <core/scheduler.h>
-#include <core/stress_test.h>
 #include <core/taskmgr.h>
 #include <core/thread.h>
 #include <lib/string.h>
@@ -196,8 +195,6 @@ void kernel_init_thread(void *arg) {
     (void)arg;
 
     serial_printf(COM1, "INIT: kernel_init_thread started\n");
-
-    run_kernel_stress_test();
 
     while (1) {
         thread_yield();
