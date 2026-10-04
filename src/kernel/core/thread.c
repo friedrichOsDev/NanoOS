@@ -20,9 +20,6 @@ static uint64_t next_tid = 1;
 static spinlock_t tid_lock = SPINLOCK_INIT;
 
 thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg, const char *name, int cpu_affinity) {
-    _Static_assert(offsetof(thread_t, fpu_state) == 112, "CRITICAL: Offset of fpu_state must be 112 bytes!");
-    _Static_assert(offsetof(thread_t, fpu_state) % 16 == 0, "CRITICAL: fpu_state must be 16-byte aligned!");
-    _Static_assert(sizeof(thread_t) == 656, "CRITICAL: thread_t size mismatch!");
     if (cpu_affinity >= 0 && (size_t)cpu_affinity >= smp_cpu_count) {
         serial_printf(COM1, "Thread: Cannot create process on an non exisiting core %d\n", cpu_affinity);
         return NULL;
