@@ -1,6 +1,6 @@
 /**
  * @file hpet.c
- * @brief High Precision Event Timer
+ * @brief Implementierung des Treiber für den High Precision Event Timer (HPET).
  * @author friedrichOsDev
  */
 
@@ -32,7 +32,7 @@ void hpet_init() {
         panic("FATAL: Error failed to map HPET registers.", 0);
     }
 
-    // 1. Calculate frequency from tick period (in femtoseconds)
+    /* 1. Berechne Frequenz basierend auf der Tick-Periode in Femtosekunden */
     uint32_t tick_period_fs = hpet_regs->general_capabilities >> 32;
     if (tick_period_fs == 0) {
         panic("FATAL: tick period is 0!", 0);
@@ -43,25 +43,22 @@ void hpet_init() {
     hpet_frequency_hz = 1000000000000000ULL / tick_period_fs;
     serial_printf(COM1, "HPET: tick period: %u fs, frequency: %llu Hz, ticks/ms: %llu\n", tick_period_fs, hpet_frequency_hz, hpet_ticks_per_ms);
 
-    // 2. Stop counter, reset to 0
-    hpet_regs->general_configuration &= ~3ULL; // Disable counter + legacy routing
+    /* 2. Zähler vorübergehend stoppen und auf 0 zurücksetzen */
+    hpet_regs->general_configuration &= ~3ULL; // Stoppt Hauptzähler und deaktiviert Legacy-Routing
     hpet_regs->main_counter_value = 0;
 
-    // 3. Disable all timer interrupts (we only want free-running counter)
+    /* 3. Alle Timer-Interrupts deaktivieren (HPET wird nur als frei laufender Timer genutzt) */
     uint32_t num_timers = ((hpet_regs->general_capabilities >> 8) & 0x1F) + 1;
     for (uint32_t i = 0; i < num_timers; i++) {
-        hpet_regs->timers[i].configuration_and_capability &= ~(1ULL << 2); // Disable IRQ
+        hpet_regs->timers[i].configuration_and_capability &= ~(1ULL << 2); // Deaktiviert Timer-IRQ
     }
 
-    // 4. Start the free-running counter (bit 0 only, no legacy routing)
+    /* 4. Hauptzähler starten */
     hpet_regs->general_configuration |= 1ULL;
 
     serial_printf(COM1, "HPET: free-running counter started (%d timers disabled)\n", num_timers);
 }
 
-/**
- * Returns the value of the main counter
- */
 uint64_t hpet_read_counter() {
     if (!hpet_regs)
         panic("FATAL: Error failed to map HPET registers.", 0);
