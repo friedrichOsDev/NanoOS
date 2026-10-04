@@ -4,7 +4,6 @@
  * @author friedrichOsDev
  */
 
-#include "arch/x86_64/mm/memdef.h"
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/fpu.h>
@@ -13,19 +12,15 @@
 #include <arch/x86_64/cpu/hpet.h>
 #include <arch/x86_64/cpu/idt.h>
 #include <arch/x86_64/cpu/smp.h>
+#include <arch/x86_64/cpu/smp_trampoline.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/heap.h>
+#include <arch/x86_64/mm/memdef.h>
 #include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
 #include <core/scheduler.h>
 #include <lib/print.h>
 #include <lib/string.h>
-
-extern uint8_t smp_trampoline_start[];
-extern uint8_t smp_trampoline_end[];
-extern uint64_t smp_trampoline_pml4;
-extern uint64_t smp_trampoline_stack;
-extern uint64_t smp_trampoline_entry;
 
 extern phys_addr_t kernel_pml4_phys;
 extern struct gdt_ptr gdtp;

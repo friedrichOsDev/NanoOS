@@ -1,8 +1,8 @@
 ; /**
-;  * @file interrupts.asm
-;  * @brief Assembler-Stubs für IDT-Laden, ISRs, IRQs und IPI-Handler.
-;  * @author friedrichOsDev
-;  */
+; * @file interrupts.asm
+; * @brief Assembler-Stubs für IDT-Laden, ISRs, IRQs und IPI-Handler.
+; * @author friedrichOsDev
+; */
 
         [BITS 64]
         section .text
