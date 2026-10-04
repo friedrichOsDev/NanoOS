@@ -20,17 +20,17 @@ struct thread;
  * @brief Repräsentiert einen Prozess im System.
  */
 typedef struct process {
-    uint64_t pid;  /**< Eindeutige Prozess-ID (PID)[cite: 29] */
-    char name[32]; /**< Name des Prozesses[cite: 29] */
+    uint64_t pid;  /**< Eindeutige Prozess-ID (PID) */
+    char name[32]; /**< Name des Prozesses */
 
-    page_table_t *pml4; /**< Virtuelle Adresse der PML4-Seitentabelle[cite: 29] */
-    phys_addr_t cr3;    /**< Physikalische Adresse der PML4-Seitentabelle (CR3-Registerwert)[cite: 29] */
+    page_table_t *pml4; /**< Virtuelle Adresse der PML4-Seitentabelle */
+    phys_addr_t cr3;    /**< Physikalische Adresse der PML4-Seitentabelle (CR3-Registerwert) */
 
-    struct thread *threads; /**< Zeiger auf die Liste der zugehörigen Threads[cite: 29] */
-    size_t thread_count;    /**< Anzahl der Threads im Prozess[cite: 29] */
+    struct thread *threads; /**< Zeiger auf die Liste der zugehörigen Threads */
+    size_t thread_count;    /**< Anzahl der Threads im Prozess */
 
-    spinlock_t lock;      /**< Spinlock zur Absicherung der Prozess-Datenstruktur[cite: 29] */
-    struct process *next; /**< Zeiger auf den nächsten Prozess in der globalen Prozessliste[cite: 29] */
+    spinlock_t lock;      /**< Spinlock zur Absicherung der Prozess-Datenstruktur */
+    struct process *next; /**< Zeiger auf den nächsten Prozess in der globalen Prozessliste */
 } process_t;
 
 /** @brief Globaler Zeiger auf den Kernel-Prozess. */

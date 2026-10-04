@@ -55,16 +55,16 @@ void spinlock_acquire(spinlock_t *lock);
 void spinlock_release(spinlock_t *lock);
 
 /**
- * @brief Deaktiviert Interrupts (CLI) und fordert einen Spinlock an[cite: 34, 35].
+ * @brief Deaktiviert Interrupts (CLI) und fordert einen Spinlock an.
  * @param lock Zeiger auf den Spinlock.
- * @return Der ursprüngliche RFLAGS-Registerwert vor dem Deaktivieren der Interrupts[cite: 34, 35].
+ * @return Der ursprüngliche RFLAGS-Registerwert vor dem Deaktivieren der Interrupts.
  */
 uint64_t spinlock_acquire_irqsave(spinlock_t *lock);
 
 /**
- * @brief Gibt einen Spinlock frei und stellt den vorherigen Interrupt-Zustand wieder her[cite: 34, 35].
+ * @brief Gibt einen Spinlock frei und stellt den vorherigen Interrupt-Zustand wieder her.
  * @param lock Zeiger auf den Spinlock.
- * @param rflags Gespeicherter RFLAGS-Registerwert zur Wiederherstellung des Interrupt-Status[cite: 34, 35].
+ * @param rflags Gespeicherter RFLAGS-Registerwert zur Wiederherstellung des Interrupt-Status.
  */
 void spinlock_release_irqrestore(spinlock_t *lock, uint64_t rflags);
 
@@ -81,13 +81,13 @@ static inline void mutex_init(mutex_t *mux, const char *name) {
 }
 
 /**
- * @brief Sperrt ein Mutex. Blockiert den aufrufenden Thread, falls das Mutex belegt ist[cite: 34, 35].
+ * @brief Sperrt ein Mutex. Blockiert den aufrufenden Thread, falls das Mutex belegt ist.
  * @param mux Zeiger auf das Mutex.
  */
 void mutex_lock(mutex_t *mux);
 
 /**
- * @brief Entsperrt ein Mutex und weckt den nächsten wartenden Thread in der Warteschlange auf[cite: 34, 35].
+ * @brief Entsperrt ein Mutex und weckt den nächsten wartenden Thread in der Warteschlange auf.
  * @param mux Zeiger auf das Mutex.
  */
 void mutex_unlock(mutex_t *mux);
