@@ -1,6 +1,6 @@
 /**
  * @file serial.c
- * @brief x86_64 Serial Driver for debugging
+ * @brief
  * @author friedrichOsDev
  */
 
@@ -17,33 +17,24 @@
 static spinlock_t serial_lock = SPINLOCK_INIT;
 
 /**
- * Checks if the serial transmit is empty
- * @param port The COM Port
- * @return True if Empty, False if not
+ * @brief Prüft, ob der Sende-Puffer (Transmit Holding Register) des UARTs leer ist.
+ * @param port I/O-Port-Adresse des COM-Ports.
+ * @return true, wenn das Register bereit für neue Daten ist, sonst false.
  */
 static bool serial_is_transmit_empty(uint16_t port) {
     return inb(port + 5) & SERIAL_LSR_THR_EMPTY;
 }
 
-/**
- * Initializes the Serial Driver for a specific COM Port
- * @param port The COM Port for the debugging
- */
 void serial_init(uint16_t port) {
-    outb(port + 1, 0x00);
-    outb(port + 3, 0x80);
-    outb(port + 0, 0x01);
-    outb(port + 1, 0x00);
-    outb(port + 3, 0x03);
-    outb(port + 2, 0xC7);
-    outb(port + 4, 0x0B);
+    outb(port + 1, 0x00); // Interrupts deaktivieren
+    outb(port + 3, 0x80); // DLAB aktivieren (Baudraten-Divisor setzen)
+    outb(port + 0, 0x01); // Divisor Low Byte (115200 Baud)
+    outb(port + 1, 0x00); // Divisor High Byte
+    outb(port + 3, 0x03); // 8 Bits, keine Parität, 1 Stoppbit (8N1)
+    outb(port + 2, 0xC7); // FIFO aktivieren, Puffer leeren, 14-Byte Schwelle
+    outb(port + 4, 0x0B); // IRQs aktivieren, RTS/DSR Pins setzen
 }
 
-/**
- * Puts a char to the debugging Port
- * @param port The COM Port
- * @param c The Character
- */
 void serial_putc(uint16_t port, char c) {
     uint32_t timeout = 100000;
     while (serial_is_transmit_empty(port) == 0) {
@@ -54,11 +45,6 @@ void serial_putc(uint16_t port, char c) {
     outb(port, c);
 }
 
-/**
- * Puts a string to the debugging Port
- * @param port The COM Port
- * @param str The String
- */
 void serial_puts(uint16_t port, const char *str) {
     while (*str) {
         if (*str == '\n') {
@@ -68,15 +54,10 @@ void serial_puts(uint16_t port, const char *str) {
     }
 }
 
-/**
- * Formatted print to a serial port.
- * @param port Serial Port to print to.
- * @param format The format string.
- * @param ... Arguments for the format string.
- */
 void serial_printf(uint16_t port, const char *format, ...) {
     char buffer[SERIAL_BUFFER_MAX_SIZE];
 
+    // Spinlock akquirieren und Interrupts sichern (Thread- & Interrupt-Sicherheit)
     uint64_t flags = spinlock_acquire_irqsave(&serial_lock);
 
     va_list args;
@@ -88,5 +69,6 @@ void serial_printf(uint16_t port, const char *format, ...) {
         serial_puts(port, buffer);
     }
 
+    // Spinlock freigeben und vorherigen Interrupt-Status wiederherstellen
     spinlock_release_irqrestore(&serial_lock, flags);
 }
