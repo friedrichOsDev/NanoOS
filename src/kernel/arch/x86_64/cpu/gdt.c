@@ -23,12 +23,12 @@ static uint8_t double_fault_stacks[MAX_CPUS][16384] __attribute__((aligned(16)))
 
 /**
  * @brief Initialisiert die TSS-Struktur für einen bestimmten Prozessorkern.
- * 
+ *
  * Verifiziert die 16-Byte-Ausrichtung der Stacks (RSP0 und IST1) für SSE/FPU-Kompatibilität,
- * nullt die Struktur und setzt das Offset für die I/O-Bitmap auf die Größe des TSS (deaktiviert)[cite: 29].
- * 
- * @param cpu_id Die ID des Prozessorkerns[cite: 29].
- * @param kernel_stack Basisadresse des Kernel-Stacks[cite: 29].
+ * nullt die Struktur und setzt das Offset für die I/O-Bitmap auf die Größe des TSS (deaktiviert).
+ *
+ * @param cpu_id Die ID des Prozessorkerns.
+ * @param kernel_stack Basisadresse des Kernel-Stacks.
  */
 static void tss_init_core(size_t cpu_id, uintptr_t kernel_stack) {
     if (cpu_id >= MAX_CPUS) {

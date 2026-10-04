@@ -1,6 +1,7 @@
 /**
  * @file handler.c
- * @brief Interrupt Handler for ISRs and IRQs
+ * @brief Implementierung der Handler für ISRs, IRQs und IPIs.
+ * @author friedrichOsDev
  */
 
 #include <arch/x86_64/cpu/apic.h>
@@ -12,17 +13,24 @@
 #include <core/scheduler.h>
 #include <core/sync.h>
 
+/** @brief Anzahl der unterstützen CPU-Exceptions (Vektoren 0-31) */
 #define ISR_COUNT 32
+
+/** @brief Anzahl der unterstützen IRQ-Lines (Vektoren 32+) */
 #define IRQ_COUNT 48
 
+/** @brief Tabelle registrierter ISR-Handler */
 static isr_handler_t isr_handlers[ISR_COUNT];
+
+/** @brief Tabelle registrierter IRQ-Handler */
 static irq_handler_t irq_handlers[IRQ_COUNT];
 
+/** @brief Spinlock zur Synchronisation von Exception-Dumps über mehrere Kerne */
 static spinlock_t exception_print_lock = SPINLOCK_INIT;
 
 /**
- * @brief Print a backtrace of the current call stack
- * @param rbp Return Pointer to the current stack frame
+ * @brief Gibt den Aufruf-Stack (Backtrace) der aktuellen Ausführung über die serielle Schnittstelle aus.
+ * @param rbp Frame Pointer (RBP) des aktuellen Stack-Frames.
  */
 static void print_backtrace(uint64_t rbp) {
     serial_printf(COM1, "Call Trace:\n");
@@ -75,14 +83,14 @@ void isr_handler(struct registers *regs) {
         return;
     }
 
-    /* Core & Thread Context */
+    /* Core & Thread Kontext auslesen */
     cpu_local_t *cpu = smp_get_current_cpu();
     int cpu_id = cpu ? (int)cpu->cpu_id : -1;
     const char *thread_name = (cpu && cpu->current_thread) ? cpu->current_thread->name : "unknown/none";
 
     serial_printf(COM1, "CPU Core: %d | Thread: %s\n", cpu_id, thread_name);
 
-    /* Control Registers */
+    /* Steuerregister auslesen */
     uint64_t cr2, cr3;
     __asm__ __volatile__("mov %%cr2, %0" : "=r"(cr2));
     __asm__ __volatile__("mov %%cr3, %0" : "=r"(cr3));
@@ -92,7 +100,7 @@ void isr_handler(struct registers *regs) {
     }
     serial_printf(COM1, "Page Table Base (CR3) : %016llx\n", cr3);
 
-    /* General Registers Dump */
+    /* Register-Dump der allgemeinen Register */
     serial_printf(COM1, "RAX: %016llx RBX: %016llx RCX: %016llx RDX: %016llx\n", regs->rax, regs->rbx, regs->rcx, regs->rdx);
     serial_printf(COM1, "RSI: %016llx RDI: %016llx RBP: %016llx RSP: %016llx\n", regs->rsi, regs->rdi, regs->rbp, regs->rsp);
     serial_printf(COM1, "R8 : %016llx R9 : %016llx R10: %016llx R11: %016llx\n", regs->r8, regs->r9, regs->r10, regs->r11);
