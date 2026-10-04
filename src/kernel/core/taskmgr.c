@@ -1,18 +1,26 @@
 /**
  * @file taskmgr.c
- * @brief Simple Serial Task Manager / Process Listing
+ * @brief Serieller Task-Manager und Prozessauflistung.
  * @author friedrichOsDev
  */
 
-#include "core/process.h"
+#include <core/process.h>
 #include <arch/x86_64/cpu/smp.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <core/taskmgr.h>
 #include <core/thread.h>
 #include <lib/print.h>
 
+/**
+ * @brief Spinlock zur Absicherung des Zugriffs auf die globale Prozessliste während der Ausgabe.
+ */
 static spinlock_t proc_list_lock = SPINLOCK_INIT;
 
+/**
+ * @brief Wandelt einen Thread-Zustand (`thread_state_t`) in eine lesbare Zeichenkette um.
+ * @param state Der abzufragende Thread-Zustand.
+ * @return Eine statische Zeichenkette, die den Namen des Zustands repräsentiert (z. B. "READY", "RUNNING").
+ */
 static const char *thread_state_to_string(thread_state_t state) {
     switch (state) {
     case THREAD_EMBRYO:
@@ -73,8 +81,7 @@ void ps_dump(process_t *proc_list) {
         }
     }
 
-    serial_printf(
-        COM1, "=========================================================================\n\n");
+    serial_printf(COM1, "=========================================================================\n\n");
 
     spinlock_release_irqrestore(&proc_list_lock, list_flags);
 }
