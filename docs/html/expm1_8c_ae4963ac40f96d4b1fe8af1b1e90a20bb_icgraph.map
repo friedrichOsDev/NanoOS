@@ -1,9 +1,0 @@
-<map id="expm1" name="expm1">
-<area shape="rect" id="Node000001" title=" " alt="" coords="105,55,172,80"/>
-<area shape="rect" id="Node000002" href="$cosh_8c.html#a3795d3c1f1d30819be56da4e4d67f64b" title=" " alt="" coords="5,5,57,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="97,51,56,32,59,27,99,47"/>
-<area shape="rect" id="Node000003" href="$sinh_8c.html#a862012e970c977c482507064e2793b45" title=" " alt="" coords="7,55,56,80"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="91,70,57,70,57,65,91,65"/>
-<area shape="rect" id="Node000004" href="$tanh_8c.html#af85bcf153d7ae805733927f12329dac1" title=" " alt="" coords="6,104,57,129"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="99,88,58,108,56,103,97,83"/>
-</map>

@@ -1,7 +1,0 @@
-<map id="src/kernel/include/arch/x86_64/cpu/context.h" name="src/kernel/include/arch/x86_64/cpu/context.h">
-<area shape="rect" id="Node000001" title="Deklarationen für den Kontextwechsel in Assembler." alt="" coords="108,5,305,45"/>
-<area shape="rect" id="Node000002" href="$scheduler_8c.html" title="Implementierung des Preemptive Round&#45;Robin&#45;Schedulers für SMP&#45;Systeme." alt="" coords="5,93,200,119"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="172,56,120,95,117,91,169,51"/>
-<area shape="rect" id="Node000003" href="$thread_8c.html" title="Erstellung und Verwaltung von Threads." alt="" coords="225,93,399,119"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="245,51,298,91,295,95,241,56"/>
-</map>

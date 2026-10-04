@@ -1,9 +1,0 @@
-<map id="sin_pi" name="sin_pi">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,55,65,80"/>
-<area shape="rect" id="Node000002" href="$____cosdf_8c.html#a7010459f0c8532ed5188fe2dc81dea85" title=" " alt="" coords="113,5,184,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="64,52,105,34,107,39,66,57"/>
-<area shape="rect" id="Node000003" href="$____sindf_8c.html#a2f1d1d81200a3adb0dac45c48f32f133" title=" " alt="" coords="115,55,183,80"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="66,65,101,65,101,70,66,70"/>
-<area shape="rect" id="Node000004" href="$floorf_8c.html#a0bcc6aa4b3c37bfa73f06ebdecc0d247" title=" " alt="" coords="121,104,177,129"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="66,78,109,97,107,102,64,82"/>
-</map>

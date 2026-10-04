@@ -1,7 +1,0 @@
-<map id="atanh" name="atanh">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,64,31"/>
-<area shape="rect" id="Node000002" href="$log1p_8c.html#ac2aac20ab1347498e6e4f209148fea84" title=" " alt="" coords="112,5,171,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="64,15,99,15,99,21,64,21"/>
-<area shape="rect" id="Node000003" href="$acos_8c.html#a919c046b8742f1539239e7f71e0ac62b" title=" " alt="" coords="219,5,257,31"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="171,15,205,15,205,21,171,21"/>
-</map>

@@ -1,7 +1,0 @@
-<map id="spinlock_release_irqrestore" name="spinlock_release_irqrestore">
-<area shape="rect" id="Node000001" title="Gibt einen Spinlock frei und stellt den vorherigen Interrupt&#45;Zustand wieder her." alt="" coords="5,31,207,56"/>
-<area shape="rect" id="Node000002" href="$sync_8c.html#acdadc270410e94936ea4b73f461f934b" title="Stellt den im RFLAGS&#45;Register gespeicherten Zustand (inkl. Interrupt&#45;Flag) wieder her." alt="" coords="265,5,375,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="206,29,251,23,251,29,207,34"/>
-<area shape="rect" id="Node000003" href="$sync_8c.html#a3790ffc28e026905fbf25ebfa426fcc3" title="Gibt einen Spinlock wieder frei." alt="" coords="255,55,385,80"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="207,52,241,56,241,61,207,57"/>
-</map>

@@ -1,5 +1,0 @@
-<map id="acpi_init" name="acpi_init">
-<area shape="rect" id="Node000001" title="Initialisiert das ACPI&#45;Subsystem." alt="" coords="144,5,221,31"/>
-<area shape="rect" id="Node000002" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,5,96,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="130,21,96,21,96,15,130,15"/>
-</map>

@@ -1,7 +1,0 @@
-<map id="rtc_read_hardware" name="rtc_read_hardware">
-<area shape="rect" id="Node000001" title="Liest die aktuelle Zeit direkt aus den Hardware&#45;Registern der RTC." alt="" coords="259,5,401,31"/>
-<area shape="rect" id="Node000002" href="$rtc_8c.html#abb4fa397a4a71ad09e3b0df51f40dbe8" title="Initialisiert die RTC und ermittelt die Startzeit des Systems." alt="" coords="144,5,211,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="245,21,211,21,211,15,245,15"/>
-<area shape="rect" id="Node000003" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,5,96,31"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="130,21,96,21,96,15,130,15"/>
-</map>

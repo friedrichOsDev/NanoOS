@@ -1,5 +1,0 @@
-<map id="u32_strncpy" name="u32_strncpy">
-<area shape="rect" id="Node000001" title="Kopiert maximal n Zeichen eines 32&#45;Bit&#45;Strings." alt="" coords="5,5,107,31"/>
-<area shape="rect" id="Node000002" href="$string_8c.html#a569d144100a4ee95617ed1445be335fd" title="Füllt einen Speicherbereich mit einem 32&#45;Bit&#45;Wert (DWord)." alt="" coords="155,5,247,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="107,15,141,15,141,21,107,21"/>
-</map>

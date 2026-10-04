@@ -1,5 +1,0 @@
-<map id="time_get_unix" name="time_get_unix">
-<area shape="rect" id="Node000001" title="Berechnet die aktuelle Systemzeit als Unix&#45;Timestamp unter Nutzung der HPET&#45;Uptime." alt="" coords="5,5,120,31"/>
-<area shape="rect" id="Node000002" href="$hpet_8c.html#aa1d2d3bea28620f7de6018645e59a574" title="Berechnet die System&#45;Laufzeit (Uptime) seit Start des HPET in Millisekunde." alt="" coords="168,5,299,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="120,15,155,15,155,21,120,21"/>
-</map>

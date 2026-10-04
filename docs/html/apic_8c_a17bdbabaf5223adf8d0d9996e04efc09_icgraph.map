@@ -1,7 +1,0 @@
-<map id="ioapic_read" name="ioapic_read">
-<area shape="rect" id="Node000001" title="Liest einen Wert aus einem bestimmten Register des I/O&#45;APIC." alt="" coords="269,5,367,31"/>
-<area shape="rect" id="Node000002" href="$apic_8c.html#aceae0c9fdf4abbdc2996cf78ed44ba42" title="Initialisiert das APIC&#45;Subsystem (LAPIC und I/O&#45;APIC)." alt="" coords="144,5,221,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="256,21,222,21,222,15,256,15"/>
-<area shape="rect" id="Node000003" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,5,96,31"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="130,21,96,21,96,15,130,15"/>
-</map>

@@ -1,5 +1,0 @@
-<map id="serial_init" name="serial_init">
-<area shape="rect" id="Node000001" title="Initialisiert einen UART COM&#45;Port für serielle Übertragung." alt="" coords="5,5,92,31"/>
-<area shape="rect" id="Node000002" href="$io_8c.html#a8bf7a9af91c08e6f876aaffeccd48ff3" title="Schreibt ein Byte (8 Bit) an einen I/O&#45;Port." alt="" coords="140,5,191,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="92,15,126,15,126,21,92,21"/>
-</map>

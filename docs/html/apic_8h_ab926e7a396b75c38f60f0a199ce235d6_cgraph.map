@@ -1,5 +1,0 @@
-<map id="lapic_send_init" name="lapic_send_init">
-<area shape="rect" id="Node000001" title="Sendet ein INIT&#45;IPI an einen spezifischen Prozessorkern." alt="" coords="5,5,124,31"/>
-<area shape="rect" id="Node000002" href="$apic_8c.html#a677d245b069a1353e90bfdf10a2ccb62" title="Schreibt einen 32&#45;Bit&#45;Wert in ein Register des Local APIC." alt="" coords="172,5,265,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="124,15,158,15,158,21,124,21"/>
-</map>

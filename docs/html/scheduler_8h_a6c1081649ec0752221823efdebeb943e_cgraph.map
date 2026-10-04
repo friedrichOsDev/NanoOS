@@ -1,9 +1,0 @@
-<map id="scheduler_get_current_thread" name="scheduler_get_current_thread">
-<area shape="rect" id="Node000001" title="Gibt den aktuell auf der aufrufenden CPU laufenden Thread zurück." alt="" coords="5,5,172,45"/>
-<area shape="rect" id="Node000002" href="$smp_8c.html#a692d79e300ebddd72b5a7ca8fdd3aa7c" title="Ermittelt die Pro&#45;CPU&#45;Struktur des aktuell ausführenden CPU&#45;Kerns über die LAPIC&#45;ID." alt="" coords="220,13,381,38"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="172,23,206,23,206,28,172,28"/>
-<area shape="rect" id="Node000003" href="$apic_8c.html#a10e878032135b8b26418c2d2e9839689" title="Ermittelt die APIC&#45;ID des aktuell ausführenden Prozessorkerns." alt="" coords="429,13,529,38"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="382,23,416,23,416,28,382,28"/>
-<area shape="rect" id="Node000004" href="$apic_8c.html#aaf813d1571621dcb09ce13c41f2b8799" title="Liest einen 32&#45;Bit&#45;Wert aus einem Register des Local APIC." alt="" coords="577,13,667,38"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="530,23,564,23,564,28,530,28"/>
-</map>

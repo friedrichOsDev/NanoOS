@@ -1,5 +1,0 @@
-<map id="print_backtrace" name="print_backtrace">
-<area shape="rect" id="Node000001" title="Gibt den Aufruf&#45;Stack (Backtrace) der aktuellen Ausführung über die serielle Schnittstelle aus." alt="" coords="148,5,271,31"/>
-<area shape="rect" id="Node000002" href="$handler_8c.html#ac4cfaf4a4ba5f921c763f439f94d50fb" title="Zentraler C&#45;Dispatcher für CPU&#45;Exceptions." alt="" coords="5,5,100,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="134,21,100,21,100,15,134,15"/>
-</map>

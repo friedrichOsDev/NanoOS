@@ -1,9 +1,0 @@
-<map id="vmm_is_table_empty" name="vmm_is_table_empty">
-<area shape="rect" id="Node000001" title="Prüft, ob eine Seitentabelle vollständig leer ist." alt="" coords="471,5,633,31"/>
-<area shape="rect" id="Node000002" href="$vmm_8c.html#a712ad63b705cf00866704653c5b8a7f5" title="Hebt das Mapping einer virtuellen Seite auf." alt="" coords="276,5,423,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="457,21,423,21,423,15,457,15"/>
-<area shape="rect" id="Node000003" href="$vmm_8c.html#adef373f9b9c3be4e9176224263fa4335" title="Initialisiert das VMM&#45;Subsystem." alt="" coords="144,5,228,31"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="262,21,228,21,228,15,262,15"/>
-<area shape="rect" id="Node000004" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,5,96,31"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="130,21,96,21,96,15,130,15"/>
-</map>

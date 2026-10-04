@@ -1,9 +1,0 @@
-<map id="ioapic_write" name="ioapic_write">
-<area shape="rect" id="Node000001" title="Schreibt einen Wert in ein bestimmtes Register des I/O&#45;APIC." alt="" coords="319,31,420,56"/>
-<area shape="rect" id="Node000002" href="$apic_8c.html#aceae0c9fdf4abbdc2996cf78ed44ba42" title="Initialisiert das APIC&#45;Subsystem (LAPIC und I/O&#45;APIC)." alt="" coords="169,5,246,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="305,36,246,27,246,21,305,31"/>
-<area shape="rect" id="Node000004" href="$apic_8c.html#acd55c1859add4ad2ca2d1c9a7f725837" title="Routet einen externen Hardware&#45;Interrupt (IRQ) auf einen IDT&#45;Vektor." alt="" coords="144,55,271,80"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="306,55,272,61,271,55,305,50"/>
-<area shape="rect" id="Node000003" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,5,96,31"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="154,21,96,21,96,15,154,15"/>
-</map>

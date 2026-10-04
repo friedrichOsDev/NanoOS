@@ -1,9 +1,0 @@
-<map id="pow" name="pow">
-<area shape="rect" id="Node000001" title=" " alt="" coords="261,31,311,56"/>
-<area shape="rect" id="Node000002" href="$exp10_8c.html#aea673cadd2aef111e2ee7a813776b768" title=" " alt="" coords="143,5,206,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="247,37,206,28,207,22,248,32"/>
-<area shape="rect" id="Node000003" href="$tgamma_8c.html#a54afbf509eea5e9d6f9efdebc572339a" title=" " alt="" coords="136,55,213,80"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="248,54,214,62,213,56,247,49"/>
-<area shape="rect" id="Node000004" href="$tgammaf_8c.html#a2ab69de9110cc2c62ca78b5d20a3a3ae" title=" " alt="" coords="5,55,88,80"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="122,70,88,70,88,65,122,65"/>
-</map>

@@ -1,7 +1,0 @@
-<map id="spinlock_acquire_irqsave" name="spinlock_acquire_irqsave">
-<area shape="rect" id="Node000001" title="Deaktiviert Interrupts (CLI) und fordert einen Spinlock an." alt="" coords="5,31,192,56"/>
-<area shape="rect" id="Node000002" href="$sync_8c.html#a263e1c2013a0d5a0f9fb69c0df2d96d4" title="Liest das aktuelle RFLAGS&#45;Register aus und deaktiviert Interrupts per CLI&#45;Instruktion." alt="" coords="240,5,387,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="192,30,226,26,227,31,193,35"/>
-<area shape="rect" id="Node000003" href="$sync_8c.html#a398072d64b2e85e6bb30dc5f5386537a" title="Fordert einen Spinlock an (Busy&#45;Waiting)." alt="" coords="248,55,379,80"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="193,51,235,56,234,61,192,56"/>
-</map>

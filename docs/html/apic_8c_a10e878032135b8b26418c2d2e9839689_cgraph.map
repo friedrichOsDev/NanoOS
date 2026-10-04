@@ -1,5 +1,0 @@
-<map id="lapic_get_id" name="lapic_get_id">
-<area shape="rect" id="Node000001" title="Ermittelt die APIC&#45;ID des aktuell ausführenden Prozessorkerns." alt="" coords="5,5,105,31"/>
-<area shape="rect" id="Node000002" href="$apic_8c.html#aaf813d1571621dcb09ce13c41f2b8799" title="Liest einen 32&#45;Bit&#45;Wert aus einem Register des Local APIC." alt="" coords="153,5,243,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="106,15,140,15,140,21,106,21"/>
-</map>

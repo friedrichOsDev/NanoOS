@@ -1,7 +1,0 @@
-<map id="scheduler_thread_exit" name="scheduler_thread_exit">
-<area shape="rect" id="Node000001" title="Beendet den aktuellen Thread und leitet die Bereinigung ein." alt="" coords="149,31,316,56"/>
-<area shape="rect" id="Node000002" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="8,5,99,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="135,32,99,27,99,22,136,27"/>
-<area shape="rect" id="Node000003" href="$thread_8c.html#ac574f92ef7dce87ce16800cd8fc54be5" title="Beendet den aktuell ausführenden Thread und übergibt die Kontrolle an den Scheduler." alt="" coords="5,55,101,80"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="136,59,102,64,101,58,135,54"/>
-</map>

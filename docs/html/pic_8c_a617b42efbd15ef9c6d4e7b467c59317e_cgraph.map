@@ -1,5 +1,0 @@
-<map id="pic_disable" name="pic_disable">
-<area shape="rect" id="Node000001" title="Maskiert alle Spuren/Leitungen des Legacy&#45;PICs, um Konflikte mit APIC&#45;Routing zu vermeiden." alt="" coords="5,5,100,31"/>
-<area shape="rect" id="Node000002" href="$io_8c.html#a8bf7a9af91c08e6f876aaffeccd48ff3" title="Schreibt ein Byte (8 Bit) an einen I/O&#45;Port." alt="" coords="148,5,199,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="100,15,134,15,134,21,100,21"/>
-</map>

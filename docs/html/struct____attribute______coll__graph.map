@@ -1,7 +1,0 @@
-<map id="__attribute__" name="__attribute__">
-<area shape="rect" id="Node000001" title="Hauptheader der Multiboot2&#45;Informationsstruktur." alt="" coords="91,240,198,265"/>
-<area shape="rect" id="Node000002" href="$structacpi__sdt__header__t.html" title="Gemeinsamer Header für alle ACPI System Description Tables (SDT)." alt="" coords="5,5,145,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="85,43,144,239,139,241,80,45"/>
-<area shape="rect" id="Node000003" href="$structacpi__gas__t.html" title="Generic Address Structure (GAS)." alt="" coords="170,5,261,31"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="220,44,220,80,216,124,207,172,188,217,178,231,165,242,162,238,174,227,184,215,201,171,211,124,214,80,214,44"/>
-</map>

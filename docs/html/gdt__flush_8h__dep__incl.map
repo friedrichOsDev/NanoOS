@@ -1,7 +1,0 @@
-<map id="src/kernel/include/arch/x86_64/cpu/gdt_flush.h" name="src/kernel/include/arch/x86_64/cpu/gdt_flush.h">
-<area shape="rect" id="Node000001" title="Deklarationen für das Laden der GDT (Global Descriptor Table) und der TSS (Task State Segment)." alt="" coords="83,5,241,60"/>
-<area shape="rect" id="Node000002" href="$gdt_8c.html" title="Implementierung der GDT&#45; und TSS&#45;Einrichtung." alt="" coords="5,108,151,148"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="131,72,97,110,93,106,127,69"/>
-<area shape="rect" id="Node000003" href="$smp_8c.html" title="Implementierung des Symmetric Multiprocessing (SMP) Bootstrappings." alt="" coords="175,108,320,148"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="197,69,232,106,228,110,193,72"/>
-</map>

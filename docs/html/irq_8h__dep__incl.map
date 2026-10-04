@@ -1,7 +1,0 @@
-<map id="src/kernel/include/arch/x86_64/cpu/irq.h" name="src/kernel/include/arch/x86_64/cpu/irq.h">
-<area shape="rect" id="Node000001" title="Schnittstelle zur Initialisierung von Hardware&#45;IRQs." alt="" coords="82,5,247,45"/>
-<area shape="rect" id="Node000002" href="$irq_8c.html" title="Einrichtung der Hardware&#45;Interrupt&#45;Lines (IRQs) in der IDT." alt="" coords="5,93,151,133"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="138,57,99,95,95,91,134,53"/>
-<area shape="rect" id="Node000003" href="$init_8c.html" title="Hauptinitialisierungsroutine und Multiboot2&#45;Parser des Kernels." alt="" coords="175,101,328,126"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="196,53,241,98,237,102,192,57"/>
-</map>

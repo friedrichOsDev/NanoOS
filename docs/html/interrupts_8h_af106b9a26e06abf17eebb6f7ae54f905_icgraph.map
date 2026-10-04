@@ -1,7 +1,0 @@
-<map id="isr21" name="isr21">
-<area shape="rect" id="Node000001" title=" " alt="" coords="259,5,313,31"/>
-<area shape="rect" id="Node000002" href="$idt_8c.html#a88d4205d069421eb4f8e7577285f1180" title="Initialisiert die IDT, registriert Standard&#45;Exceptions, IPIs sowie Timer&#45;Handler und lädt die IDT." alt="" coords="144,5,211,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="245,21,211,21,211,15,245,15"/>
-<area shape="rect" id="Node000003" href="$init_8c.html#a5fd56e7047f5fbc5e7bff1cb2f18d227" title="Haupt&#45;Einstiegspunkt des Kernels nach dem Bootloader&#45;Übergang." alt="" coords="5,5,96,31"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="130,21,96,21,96,15,130,15"/>
-</map>
