@@ -1,5 +1,5 @@
 PROJECT_NAME           = "NanoOS"
-PROJECT_NUMBER         = "0.1.0"
+PROJECT_NUMBER         = "0.0.2"
 PROJECT_BRIEF          = "x86_64 Kernel and Operating System"
 OUTPUT_DIRECTORY       = docs
 
