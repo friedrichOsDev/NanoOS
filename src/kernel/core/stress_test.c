@@ -1,14 +1,11 @@
 /**
  * @file stress_test.c
- * @brief NanoOS Integration & System Stress Test Suite
+ * @brief NanoOS Integration & System-Stresstest-Suite Implementation.
+ * @details Enthält Stresstests für Speicherverwaltung, Timervorgänge,
+ *          Preemptive Scheduler, FPU/SSE-Kontextwechsel, SMP-Multicore-Locks und IPIs.
+ * @author friedrichOsDev
  */
 
-#include <arch/x86_64/mm/memdef.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-
-/* Internal Headers */
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/fpu.h>
@@ -16,11 +13,21 @@
 #include <arch/x86_64/cpu/smp.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/heap.h>
+#include <arch/x86_64/mm/memdef.h>
 #include <arch/x86_64/mm/pmm.h>
 #include <arch/x86_64/mm/vmm.h>
 #include <core/scheduler.h>
 #include <core/sync.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
+/**
+ * @brief Makro zur Überprüfung von Testbedingungen.
+ * @param cond Die zu überprüfende Bedingung.
+ * @param msg Fehlermeldung, die bei Fehlschlag ausgegeben wird.
+ * @return Bricht die umschließende Funktion mit `false` ab, falls die Bedingung nicht erfüllt ist.
+ */
 #define TEST_ASSERT(cond, msg)                                                   \
     do {                                                                         \
         if (!(cond)) {                                                           \
@@ -29,20 +36,42 @@
         }                                                                        \
     } while (0)
 
+/**
+ * @brief Makro zur Ausgabe einer erfolgreich bestandenen Testnachricht.
+ * @param msg Name oder Beschreibung des erfolgreichen Tests.
+ */
 #define TEST_PASS(msg) serial_printf(COM1, "[PASS] %s\n", msg)
 
 /* Shared State for Multithreading & SMP Tests */
+
+/** @brief Spinlock für generelle Scheduler- und Threading-Tests. */
 static spinlock_t test_lock = SPINLOCK_INIT;
+
+/** @brief Spinlock für SMP-Lock-Contention Stresstests. */
 static spinlock_t smp_stress_lock = SPINLOCK_INIT;
+
+/** @brief Gemeinsam genutzter Zähler für Threading-Synchronisierungstests. */
 static volatile uint64_t shared_counter = 0;
+
+/** @brief Gemeinsam genutzter Zähler für SMP-Multicore-Lock-Contention. */
 static volatile uint64_t smp_concurrent_hits = 0;
+
+/** @brief Flag zur Validierung der Integrität des FPU/SSE-Kontextes über Thread-Wechsel hinweg. */
 static volatile bool fpu_stress_success = true;
+
+/** @brief Flag zur Indikation, ob ein erwarteter Page Fault ausgelöst wurde. */
 static volatile bool expected_page_fault_triggered = false;
 
 /* =========================================================================
  * Phase 1: PMM, VMM & Heap Stress Tests
  * ========================================================================= */
 
+/**
+ * @brief Testet die physische (PMM) und dynamische Kernel-Speicherverwaltung (Heap).
+ * @details Inkludiert Seitenzuweisung/-freigabe (Allokation & Alignment), Leakerkennung
+ * sowie `kmalloc`, `kzalloc` und `kfree`.
+ * @return `true` wenn alle Speichertests erfolgreich abgeschlossen wurden, sonst `false`.
+ */
 static bool test_memory_management(void) {
     serial_printf(COM1, "\n--- [Phase 1] Memory Management Tests ---\n");
 
@@ -92,6 +121,10 @@ static bool test_memory_management(void) {
  * Phase 2: ACPI, APIC & HPET Tests
  * ========================================================================= */
 
+/**
+ * @brief Validiert den Zustand des APIC und die HPET-Timer-Präzision.
+ * @return `true` wenn APIC initialisiert ist und HPET innerhalb des erlaubten Toleranzbereichs misst.
+ */
 static bool test_timers_and_apic(void) {
     serial_printf(COM1, "\n--- [Phase 2] ACPI, APIC & Timer Tests ---\n");
 
@@ -114,6 +147,10 @@ static bool test_timers_and_apic(void) {
  * Phase 3: Scheduler, Lock Stress & FPU/SSE Switching
  * ========================================================================= */
 
+/**
+ * @brief Worker-Thread für Spinlock-Synchronisierungstests unter Last.
+ * @param arg Ungenutzt.
+ */
 static void thread_spinlock_worker(void *arg) {
     (void)arg;
     for (int i = 0; i < 10000; i++) {
@@ -124,6 +161,10 @@ static void thread_spinlock_worker(void *arg) {
     thread_exit();
 }
 
+/**
+ * @brief Worker-Thread A zur Validierung der FPU/SSE-Register-Konsistenz.
+ * @param arg Ungenutzt.
+ */
 static void thread_fpu_worker_a(void *arg) {
     (void)arg;
     double val = 1.0;
@@ -137,9 +178,13 @@ static void thread_fpu_worker_a(void *arg) {
     thread_exit();
 }
 
+/**
+ * @brief Worker-Thread B zur Erzeugung von FPU/SSE-Kontextwechsel-Aktivität.
+ * @param arg Ungenutzt.
+ */
 static void thread_fpu_worker_b(void *arg) {
     (void)arg;
-    double val = 2.0;
+    volatile double val = 2.0;
     for (int i = 0; i < 100000; i++) {
         val *= 1.00001;
         thread_yield();
@@ -147,6 +192,10 @@ static void thread_fpu_worker_b(void *arg) {
     thread_exit();
 }
 
+/**
+ * @brief Testet präemptives Multithreading, Spinlocks und die Wiederherstellung von FPU/SSE-Zuständen.
+ * @return `true` bei erfolgreichem Testverlauf.
+ */
 static bool test_scheduler_and_fpu(void) {
     serial_printf(COM1, "\n--- [Phase 3] Scheduler, Spinlock & FPU Tests ---\n");
 
@@ -179,6 +228,10 @@ static bool test_scheduler_and_fpu(void) {
  * Phase 4: SMP Multi-Core & IPI Tests
  * ========================================================================= */
 
+/**
+ * @brief Testet die Erkennung der lokalen CPU-Struktur sowie das Senden von Broadcast-IPIs.
+ * @return `true` bei erfolgreicher IPI-Ausführung.
+ */
 static bool test_smp_and_ipis(void) {
     serial_printf(COM1, "\n--- [Phase 4] SMP & Inter-Processor Interrupts ---\n");
 
@@ -205,10 +258,17 @@ static bool test_smp_and_ipis(void) {
  * Phase 5: Exception Handling & Fault Injection Tests
  * ========================================================================= */
 
+/**
+ * @brief Callback-Handler zur Kennzeichnung eines ausgelösten Page Faults.
+ */
 void test_page_fault_handler(void) {
     expected_page_fault_triggered = true;
 }
 
+/**
+ * @brief Überprüft das Verhalten des Handlers bei einer Injektion eines ungemappten Speicherzugriffs.
+ * @return `true` wenn das Exception-Handling ordnungsgemäß durchlaufen wird.
+ */
 static bool test_page_fault_isolation(void) {
     serial_printf(COM1, "\n--- [Phase 5] Fault Injection & Exception Tests ---\n");
 
@@ -225,6 +285,10 @@ static bool test_page_fault_isolation(void) {
  * Phase 6: Framebuffer & MMIO Mapping Tests
  * ========================================================================= */
 
+/**
+ * @brief Testet dynamisches Mapping und Unmapping von Memory-Mapped I/O Bereichen im VMM.
+ * @return `true` bei korrekter Ausrichtung und Schreib-/Lesezugriff.
+ */
 static bool test_framebuffer_and_mmio(void) {
     serial_printf(COM1, "\n--- [Phase 6] MMIO & Framebuffer Stress Tests ---\n");
 
@@ -249,6 +313,10 @@ static bool test_framebuffer_and_mmio(void) {
  * Phase 7: SMP Multicore Lock Contention & IPI Avalanche
  * ========================================================================= */
 
+/**
+ * @brief Worker-Thread zur Simulation von extremer Lock-Contention über mehrere Kerne hinweg.
+ * @param arg Ungenutzt.
+ */
 static void smp_lock_contention_worker(void *arg) {
     (void)arg;
     for (int i = 0; i < 50000; i++) {
@@ -259,6 +327,10 @@ static void smp_lock_contention_worker(void *arg) {
     thread_exit();
 }
 
+/**
+ * @brief Stresstest für Multicore-Spinlocks mit hoher Race-Condition-Wahrscheinlichkeit.
+ * @return `true` wenn die erwartete Gesamtzahl der Aufrufe exakt erreicht wird.
+ */
 static bool test_smp_lock_contention(void) {
     serial_printf(COM1, "\n--- [Phase 7] SMP Multi-Core Lock Contention ---\n");
 
@@ -281,6 +353,10 @@ static bool test_smp_lock_contention(void) {
  * Phase 8: Scheduler Edge Cases & Thread Sleep Precision
  * ========================================================================= */
 
+/**
+ * @brief Überprüft die Exaktheit von Blockierungs- und Schlaf-Intervallen des Schedulers.
+ * @return `true` bei Einhaltung des zeitlichen Genauigkeitsfensters.
+ */
 static bool test_scheduler_edge_cases(void) {
     serial_printf(COM1, "\n--- [Phase 8] Scheduler Precision & Edge-Cases ---\n");
 
