@@ -1,6 +1,7 @@
 /**
  * @file pic.c
- * @brief Legacy PIC disabling for APIC mode
+ * @brief Deaktivierung des veralteten 8259 PIC Controllers.
+ * @author friedrichOsDev
  */
 
 #include <arch/x86_64/cpu/pic.h>
