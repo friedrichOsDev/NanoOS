@@ -1,6 +1,9 @@
 /**
  * @file panic.c
- * @brief Kernel panic
+ * @brief Implementierung der Kernel-Panic-Routine zur Behandlung kritischer Systemfehler.
+ * @details Deaktiviert die lokale Interruptverarbeitung, signalisiert allen weiteren
+ *          Prozessoren das sofortige Anhalten und gibt Diagnoseinformationen
+ *          über die serielle Schnittstelle aus.
  * @author friedrichOsDev
  */
 
@@ -9,11 +12,6 @@
 #include <arch/x86_64/drivers/serial.h>
 #include <core/panic.h>
 
-/**
- * This is a Kernel Panic
- * @param message The error message
- * @param error_code The error code (if not available it should be 0)
- */
 void panic(const char *message, uint64_t error_code) {
     idt_disable();
     lapic_send_broadcast_stop_ipi();
