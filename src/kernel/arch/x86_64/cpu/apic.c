@@ -1,6 +1,6 @@
 /**
  * @file apic.c
- * @brief Advanced Programmable Interrupt Controller
+ * @brief Implementierung des Advanced Programmable Interrupt Controllers (APIC).
  * @author friedrichOsDev
  */
 
@@ -13,10 +13,18 @@
 #include <core/panic.h>
 #include <core/sync.h>
 
+/** @brief Virtuelle Basisadresse des Local APIC MMIO-Bereichs */
 static volatile uint8_t *lapic_base = NULL;
+
+/** @brief Virtuelle Basisadresse des I/O APIC MMIO-Bereichs */
 static volatile uint8_t *ioapic_base = NULL;
+
+/** @brief Spinlock zur Synchronisation von Zugriffen auf den I/O-APIC */
 static spinlock_t ioapic_lock = SPINLOCK_INIT;
+
+/** @brief Spinlock zur Synchronisation von Zugriffen auf das Interrupt Command Register (ICR) */
 static spinlock_t icr_lock = SPINLOCK_INIT;
+
 bool apic_initialized = false;
 bool ioapic_initialized = false;
 
@@ -24,9 +32,9 @@ uint32_t lapic_timer_calibrated_initcnt = 0;
 uint32_t lapic_timer_target_hz = 0;
 
 /**
- * Writes a Value to a register of the I/O-APIC
- * @param reg The register
- * @param val The value
+ * @brief Schreibt einen Wert in ein bestimmtes Register des I/O-APIC.
+ * @param reg Die Register-Nummer.
+ * @param val Der zu schreibende 32-Bit-Wert.
  */
 static void ioapic_write(uint32_t reg, uint32_t val) {
     uint64_t flags = spinlock_acquire_irqsave(&ioapic_lock);
@@ -41,9 +49,9 @@ static void ioapic_write(uint32_t reg, uint32_t val) {
 }
 
 /**
- * Reads a Value from a register of the I/O-APIC
- * @param reg The register
- * @return Returns the read value
+ * @brief Liest einen Wert aus einem bestimmten Register des I/O-APIC.
+ * @param reg Die Register-Nummer.
+ * @return Der ausgelesene 32-Bit-Wert.
  */
 static uint32_t ioapic_read(uint32_t reg) {
     uint64_t flags = spinlock_acquire_irqsave(&ioapic_lock);
@@ -58,9 +66,6 @@ static uint32_t ioapic_read(uint32_t reg) {
     return ret;
 }
 
-/**
- * Initializes the APIC
- */
 void apic_init() {
     pic_disable();
     serial_printf(COM1, "APIC: 8259 PIC disabled\n");
@@ -86,7 +91,7 @@ void apic_init() {
         panic("apic failed to map lapic or ioapic address", 0);
     }
 
-// 1. Enable LAPIC in MSR
+    // 1. LAPIC über MSR aktivieren
 #define IA32_APIC_BASE_MSR 0x1B
 #define IA32_APIC_BASE_MSR_ENABLE 0x800
     uint32_t low, high;
@@ -97,21 +102,21 @@ void apic_init() {
     high = apic_base_msr >> 32;
     __asm__ __volatile__("wrmsr" ::"a"(low), "d"(high), "c"(IA32_APIC_BASE_MSR));
 
-    // 2. Set Logical Destination and Destination Format Registers
-    lapic_write(LAPIC_REG_DFR, 0xFFFFFFFF);                                           // Flat mode
-    lapic_write(LAPIC_REG_LDR, (lapic_read(LAPIC_REG_LDR) & 0x00FFFFFF) | (1 << 24)); // Logical ID 1
+    // 2. Logical Destination und Destination Format Register setzen
+    lapic_write(LAPIC_REG_DFR, 0xFFFFFFFF);                                           // Flat Mode
+    lapic_write(LAPIC_REG_LDR, (lapic_read(LAPIC_REG_LDR) & 0x00FFFFFF) | (1 << 24)); // Logische ID 1
 
-    // 3. Enable LAPIC software-wise and map Spurious Interrupt Vector to 0xFF
+    // 3. LAPIC per Software aktivieren und Spurious Interrupt Vector auf 0xFF legen
     lapic_write(LAPIC_REG_SIVR, lapic_read(LAPIC_REG_SIVR) | 0x100 | 0xFF);
 
-    // 4. Clear Task Priority Register to accept all interrupts
+    // 4. Task Priority Register zurücksetzen, um alle Interrupts zu akzeptieren
     lapic_write(LAPIC_REG_TPR, 0);
 
-    // 5. Mask all redirection entries of I/O APIC by default
+    // 5. Alle Redirection-Einträge des I/O-APIC standardmäßig maskieren
     uint32_t ver = ioapic_read(IOAPIC_REG_VER);
     uint32_t max_intr = (ver >> 16) & 0xFF;
     for (uint32_t i = 0; i <= max_intr; i++) {
-        ioapic_write(IOAPIC_REG_RED_TABLE(i), 0x00010000); // Masked, Edge, Active High, Physical, Fixed Vector 0
+        ioapic_write(IOAPIC_REG_RED_TABLE(i), 0x00010000); // Maskiert, Edge, Active High, Physical, Fixed Vector 0
         ioapic_write(IOAPIC_REG_RED_TABLE(i) + 1, 0);
     }
 
@@ -120,50 +125,30 @@ void apic_init() {
     apic_initialized = true;
 }
 
-/**
- * Writes a Value to a register of the local APIC
- * @param reg The register
- * @param val
- */
 void lapic_write(uint32_t reg, uint32_t val) {
     volatile uint32_t *addr = (volatile uint32_t *)(lapic_base + reg);
     *addr = val;
 }
 
-/**
- * Reads a Value from a register of the local APIC
- * @param reg The register
- * @return Returns the read value
- */
 uint32_t lapic_read(uint32_t reg) {
     volatile uint32_t *addr = (volatile uint32_t *)(lapic_base + reg);
     return *addr;
 }
 
-/**
- * Sends the "End of Interrupt" signal to the local APIC
- */
 void lapic_eoi() { lapic_write(LAPIC_REG_EOI, 0); }
 
-/**
- * Routes an external hardware interrupt (IRQ) to an IDT vector
- * @param irq The classic ISA interrupt vector (e.g. 1 for keyboard, or GSI pin
- * like 20)
- * @param vector The desired target IDT vector (e.g. 0x20/32)
- * @param cpu_id The ID of the target core (usually 0)
- */
 void ioapic_route_irq(uint8_t irq, uint8_t vector, uint8_t cpu_id) {
     uint32_t gsi = irq;
-    uint32_t flags = 0; // Default: edge triggered, active high, unmasked
+    uint32_t flags = 0; // Standard: edge triggered, active high, unmasked
 
-    // Search MADT for Interrupt Source Override (ISO)
+    // Durchsuche MADT nach Interrupt Source Overrides (ISO)
     if (madt_parsed.iso_count > 0 && madt_parsed.isos != NULL) {
         for (uint32_t i = 0; i < madt_parsed.iso_count; i++) {
             madt_iso_entry_t iso = madt_parsed.isos[i];
             if (iso.source == irq) {
                 gsi = iso.global_system_interrupt;
 
-                // Parse polarity and trigger flags
+                // Polarität und Trigger-Flags parsen
                 uint16_t iso_flags = iso.flags;
                 uint16_t polarity = iso_flags & 0x3;
                 uint16_t trigger = (iso_flags >> 2) & 0x3;
@@ -185,39 +170,24 @@ void ioapic_route_irq(uint8_t irq, uint8_t vector, uint8_t cpu_id) {
     ioapic_write(IOAPIC_REG_RED_TABLE(gsi) + 1, high);
 }
 
-/**
- * Returns the hardware APIC ID of the current core
- */
 uint32_t lapic_get_id() {
     if (!lapic_base)
         return 0;
     return (lapic_read(LAPIC_REG_ID) >> 24) & 0xFF;
 }
 
-/**
- * Sends INIT IPI to a target core
- * @param lapic_id the ID of the core to send the init to
- */
 void lapic_send_init(uint32_t lapic_id) {
     lapic_write(LAPIC_REG_ICR_HIGH, ((uint32_t)lapic_id) << 24);
     // Delivery Mode = 5 (INIT), Assert (1 << 14), Edge Triggered
     lapic_write(LAPIC_REG_ICR_LOW, 0x00004500);
 }
 
-/**
- * Sends startup IPI (SIPI) to a target core
- * @param lapic_id the ID of the core to send the sipi to
- * @param vector page number in 1M region (e.g. 0x08 for phys 0x8000)
- */
 void lapic_send_sipi(uint32_t lapic_id, uint8_t vector) {
     lapic_write(LAPIC_REG_ICR_HIGH, ((uint32_t)lapic_id) << 24);
     // Delivery Mode = 6 (Startup), Assert (1 << 14), Vektor
     lapic_write(LAPIC_REG_ICR_LOW, 0x00004600 | vector);
 }
 
-/**
- * Sends reschedule IPI to all cores
- */
 void lapic_send_broadcast_reschedule_ipi() {
     if (!lapic_base)
         return;
@@ -227,17 +197,13 @@ void lapic_send_broadcast_reschedule_ipi() {
     while (lapic_read(LAPIC_REG_ICR_LOW) & (1 << 12)) {
         __asm__ __volatile__("pause");
     }
-    // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vector =
-    // 0xFD
+    // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vektor = 0xFD
     lapic_write(LAPIC_REG_ICR_HIGH, 0);
     lapic_write(LAPIC_REG_ICR_LOW, (3 << 18) | IPI_RESCHEDULE_VECTOR);
 
     spinlock_release_irqrestore(&icr_lock, flags);
 }
 
-/**
- * Sends stop IPI to all other cores to halt execution
- */
 void lapic_send_broadcast_stop_ipi() {
     if (!lapic_base)
         return;
@@ -248,17 +214,13 @@ void lapic_send_broadcast_stop_ipi() {
         __asm__ __volatile__("pause");
     }
 
-    // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vector =
-    // 0xFC
+    // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vektor = 0xFC
     lapic_write(LAPIC_REG_ICR_HIGH, 0);
     lapic_write(LAPIC_REG_ICR_LOW, (3 << 18) | IPI_STOP_VECTOR);
 
     spinlock_release_irqrestore(&icr_lock, flags);
 }
 
-/**
- * Sends TLB Shootdown IPI to all other cores
- */
 void lapic_send_broadcast_tlb_ipi() {
     if (!lapic_base)
         return;
@@ -269,39 +231,31 @@ void lapic_send_broadcast_tlb_ipi() {
         __asm__ __volatile__("pause");
     }
 
-    // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vector =
-    // 0xFB
+    // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vektor = 0xFB
     lapic_write(LAPIC_REG_ICR_HIGH, 0);
     lapic_write(LAPIC_REG_ICR_LOW, (3 << 18) | IPI_TLB_SHOOTDOWN_VECTOR);
 
     spinlock_release_irqrestore(&icr_lock, flags);
 }
 
-/**
- * Calibrates the LAPIC timer frequency using the HPET as reference,
- * then starts the timer in periodic mode.
- * @note Must be called on the BSP first.
- * @param target_hz Desired interrupt frequency (e.g. 1000 for 1 kHz / 1ms
- * ticks)
- */
 void lapic_timer_calibrate_and_start(uint32_t target_hz) {
     lapic_timer_target_hz = target_hz;
 
-    // 1. Set divider to 16
+    // 1. Teiler auf 16 setzen
     lapic_write(LAPIC_REG_TIMER_DIV, LAPIC_TIMER_DIV_16);
 
-    // 2. Set initial count to max for measurement
+    // 2. Initialen Zählerwert für die Messung auf Maximum setzen
     lapic_write(LAPIC_REG_TIMER_LVT,
-                LAPIC_TIMER_MASKED); // Mask during calibration
+                LAPIC_TIMER_MASKED); // Während der Kalibrierung maskieren
     lapic_write(LAPIC_REG_TIMER_INITCNT, 0xFFFFFFFF);
 
-    // 3. Wait exactly 10ms using HPET
+    // 3. Exakt 10ms über den HPET warten
     hpet_mdelay(10);
 
-    // 4. Read how many ticks elapsed in 10ms
+    // 4. Vergangene Ticks in 10ms auslesen
     uint32_t elapsed = 0xFFFFFFFF - lapic_read(LAPIC_REG_TIMER_CURRCNT);
 
-    // 5. Calculate ticks per second, then ticks per interval
+    // 5. Ticks pro Sekunde und Ticks pro Intervall berechnen
     uint64_t ticks_per_second = (uint64_t)elapsed * 100; // 10ms * 100 = 1s
     uint32_t init_count = (uint32_t)(ticks_per_second / target_hz);
 
@@ -311,16 +265,12 @@ void lapic_timer_calibrate_and_start(uint32_t target_hz) {
                         "init_count=%u for %u Hz\n",
                   lapic_get_id(), ticks_per_second, init_count, target_hz);
 
-    // 6. Start periodic timer with calibrated value
+    // 6. Periodischen Timer mit dem kalibrierten Wert starten
     lapic_write(LAPIC_REG_TIMER_DIV, LAPIC_TIMER_DIV_16);
     lapic_write(LAPIC_REG_TIMER_LVT, LAPIC_TIMER_PERIODIC | LAPIC_TIMER_VECTOR);
     lapic_write(LAPIC_REG_TIMER_INITCNT, init_count);
 }
 
-/**
- * Starts the LAPIC timer on an AP using pre-calibrated values from the BSP.
- * Assumes all cores run at the same frequency (true for modern CPUs).
- */
 void lapic_timer_start_ap() {
     if (lapic_timer_calibrated_initcnt == 0) {
         serial_printf(COM1, "LAPIC TIMER: error - not calibrated yet!\n");
