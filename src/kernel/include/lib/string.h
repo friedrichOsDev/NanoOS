@@ -40,15 +40,6 @@ void *memcpy(void *dest, const void *src, size_t count);
 void memset32(void *dest, uint32_t value, size_t count);
 
 /**
- * @brief Kopiert 32-Bit-Elemente von einer Quelle zu einem Ziel.
- *
- * @param dest Zeiger auf den Zielspeicherbereich.
- * @param src Zeiger auf den Quellspeicherbereich.
- * @param count Anzahl der zu kopierenden 32-Bit-Elemente.
- */
-void memcpy32(void *dest, const void *src, size_t count);
-
-/**
  * @brief Füllt einen Speicherbereich mit einem 64-Bit-Wert (QWord).
  *
  * @param dest Zeiger auf den Zielspeicherbereich.
@@ -56,15 +47,6 @@ void memcpy32(void *dest, const void *src, size_t count);
  * @param count Anzahl der zu schreibenden 64-Bit-Elemente.
  */
 void memset64(void *dest, uint64_t value, size_t count);
-
-/**
- * @brief Kopiert 64-Bit-Elemente von einer Quelle zu einem Ziel.
- *
- * @param dest Zeiger auf den Zielspeicherbereich.
- * @param src Zeiger auf den Quellspeicherbereich.
- * @param count Anzahl der zu kopierenden 64-Bit-Elemente.
- */
-void memcpy64(void *dest, const void *src, size_t count);
 
 /**
  * @brief Vergleicht zwei Speicherbereiche Byte für Byte.
