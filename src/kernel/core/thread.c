@@ -1,6 +1,6 @@
 /**
  * @file thread.c
- * @brief Thread management and creation
+ * @brief Erstellung und Verwaltung von Threads.
  * @author friedrichOsDev
  */
 
@@ -16,7 +16,10 @@
 #include <lib/string.h>
 #include <stddef.h>
 
+/** @brief Globaler Zähler für die Vergabe eindeutiger Thread-IDs (TID). */
 static uint64_t next_tid = 1;
+
+/** @brief Spinlock zur Absicherung der TID-Vergabe. */
 static spinlock_t tid_lock = SPINLOCK_INIT;
 
 thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg, const char *name, int cpu_affinity) {

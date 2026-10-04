@@ -4,9 +4,9 @@
  * @author friedrichOsDev
  */
 
-#include <core/process.h>
 #include <arch/x86_64/cpu/smp.h>
 #include <arch/x86_64/drivers/serial.h>
+#include <core/process.h>
 #include <core/taskmgr.h>
 #include <core/thread.h>
 #include <lib/print.h>
