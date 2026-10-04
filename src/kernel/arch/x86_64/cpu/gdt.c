@@ -98,8 +98,7 @@ void gdt_init_core(size_t cpu_id, uintptr_t kernel_stack) {
     uint16_t tss_selector = gdt_index * 8;
     tss_load(tss_selector);
 
-    serial_printf(COM1, "GDT Core %zu: Loaded TSS Selector %02x (Index %d)\n",
-                  cpu_id, tss_selector, gdt_index);
+    serial_printf(COM1, "GDT Core %zu: Loaded TSS Selector %02x (Index %d)\n", cpu_id, tss_selector, gdt_index);
 }
 
 void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran) {

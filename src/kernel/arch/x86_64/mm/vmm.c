@@ -86,10 +86,7 @@ static int vmm_is_table_empty(page_table_t *table) {
  * @param pt_idx Index in PT table
  * @return 1 if successful, 0 if any table is missing or invalid
  */
-static int vmm_get_page_table_level(page_table_t *pml4, size_t pml4_idx,
-                                    page_table_t **pdpt, size_t pdpt_idx,
-                                    page_table_t **pd, size_t pd_idx,
-                                    page_table_t **pt, size_t pt_idx) {
+static int vmm_get_page_table_level(page_table_t *pml4, size_t pml4_idx, page_table_t **pdpt, size_t pdpt_idx, page_table_t **pd, size_t pd_idx, page_table_t **pt, size_t pt_idx) {
     (void)pt_idx;
 
     // Validate PML4 entry
@@ -144,9 +141,7 @@ void vmm_init() {
     memset(k_pml4, 0, PAGE_SIZE);
 
     uint64_t max_phys_ram = pmm_state.total_pages * PAGE_SIZE;
-    serial_printf(COM1,
-                  "VMM: create direct mapping for %lld MiB of physical RAM\n",
-                  max_phys_ram / 1024 / 1024);
+    serial_printf(COM1, "VMM: create direct mapping for %lld MiB of physical RAM\n", max_phys_ram / 1024 / 1024);
     for (uint64_t phys = 0; phys < max_phys_ram; phys += PAGE_SIZE) {
         vmm_map_page(k_pml4, P2V(phys), phys, PTE_WRITABLE);
     }
@@ -154,12 +149,9 @@ void vmm_init() {
     serial_printf(COM1, "VMM: map kernel + bitmap\n");
     phys_addr_t kernel_phys_start = KERNEL_START_PHYS;
     uint64_t kernel_size = ALIGN_UP(KERNEL_END_PHYS - kernel_phys_start);
-    uint64_t total_higher_half_size =
-        kernel_size + pmm_state.bitmap_size + 0x100000;
-    for (uint64_t offset = 0; offset < total_higher_half_size;
-         offset += PAGE_SIZE) {
-        vmm_map_page(k_pml4, KERNEL_CORE_START + kernel_phys_start + offset,
-                     kernel_phys_start + offset, PTE_WRITABLE);
+    uint64_t total_higher_half_size = kernel_size + pmm_state.bitmap_size + 0x100000;
+    for (uint64_t offset = 0; offset < total_higher_half_size; offset += PAGE_SIZE) {
+        vmm_map_page(k_pml4, KERNEL_CORE_START + kernel_phys_start + offset, kernel_phys_start + offset, PTE_WRITABLE);
     }
 
     // 16 MiB identity mapping
@@ -174,8 +166,7 @@ void vmm_init() {
     serial_printf(COM1, "VMM: map framebuffer via active paging\n");
     if (kernel_fb_info.fb_addr) {
         uint64_t fb_size = kernel_fb_info.fb_height * kernel_fb_info.fb_pitch;
-        virt_addr_t fb_vaddr =
-            vmm_map_mmio(k_pml4, kernel_fb_info.fb_addr, fb_size);
+        virt_addr_t fb_vaddr = vmm_map_mmio(k_pml4, kernel_fb_info.fb_addr, fb_size);
         if (!fb_vaddr) {
             panic("vmm failed to map UEFI framebuffer", 0);
         }
@@ -226,8 +217,7 @@ virt_addr_t vmm_map_mmio(page_table_t *pml4, phys_addr_t paddr, size_t size) {
  * @param paddr The address of the physical page
  * @param flags The flags for the mapping
  */
-void vmm_map_page(page_table_t *pml4, virt_addr_t vaddr, phys_addr_t paddr,
-                  uint64_t flags) {
+void vmm_map_page(page_table_t *pml4, virt_addr_t vaddr, phys_addr_t paddr, uint64_t flags) {
     if (!IS_PAGE_ALIGNED(vaddr))
         panic("vmm map unaligned vaddr", vaddr);
     if (!IS_PAGE_ALIGNED(paddr))
@@ -304,8 +294,7 @@ void vmm_unmap_page(page_table_t *pml4, virt_addr_t vaddr) {
     page_table_t *pd = NULL;
     page_table_t *pt = NULL; // ln 297
 
-    if (!vmm_get_page_table_level(pml4, pml4_idx, &pdpt, pdpt_idx, &pd, pd_idx,
-                                  &pt, pt_idx)) {
+    if (!vmm_get_page_table_level(pml4, pml4_idx, &pdpt, pdpt_idx, &pd, pd_idx, &pt, pt_idx)) {
         spinlock_release_irqrestore(&vmm_lock, lock_flags);
         return;
     }

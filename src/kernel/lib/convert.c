@@ -16,8 +16,7 @@
  * @param is_wide `true` für 32-Bit-Zeichen (uint32_t*), `false` für ASCII (char*).
  * @return Länge des erzeugten Strings.
  */
-static int uint_to_str_internal(void *buffer, uint64_t value, int base,
-                                bool is_wide) {
+static int uint_to_str_internal(void *buffer, uint64_t value, int base, bool is_wide) {
     char temp_buf[66];
     int idx = 0;
 
@@ -35,8 +34,7 @@ static int uint_to_str_internal(void *buffer, uint64_t value, int base,
     while (value != 0) {
         const uint64_t rem = value % base;
         value /= base;
-        temp_buf[idx++] =
-            (rem > 9) ? (char)((rem - 10) + 'A') : (char)(rem + '0');
+        temp_buf[idx++] = (rem > 9) ? (char)((rem - 10) + 'A') : (char)(rem + '0');
     }
 
     const int len = idx;

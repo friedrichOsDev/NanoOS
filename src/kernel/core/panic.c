@@ -15,8 +15,7 @@
 void panic(const char *message, uint64_t error_code) {
     idt_disable();
     lapic_send_broadcast_stop_ipi();
-    serial_printf(COM1, "KERNEL PANIC: %s (Error code %llx)\n", message,
-                  error_code);
+    serial_printf(COM1, "KERNEL PANIC: %s (Error code %llx)\n", message, error_code);
     while (1)
         __asm__ __volatile__("hlt");
 }

@@ -25,8 +25,7 @@ void process_init() {
         panic("Process: Failed to initialize kernel process!", 0);
     }
 
-    serial_printf(COM1, "Process: Initialized successfully (Kernel PID: %d)\n",
-                  kernel_process->pid);
+    serial_printf(COM1, "Process: Initialized successfully (Kernel PID: %d)\n", kernel_process->pid);
 }
 
 process_t *process_create(const char *name, page_table_t *pml4) {

@@ -31,10 +31,8 @@ uint32_t lapic_timer_target_hz = 0;
 static void ioapic_write(uint32_t reg, uint32_t val) {
     uint64_t flags = spinlock_acquire_irqsave(&ioapic_lock);
 
-    volatile uint32_t *index_reg =
-        (volatile uint32_t *)(ioapic_base + IOAPIC_REG_INDEX);
-    volatile uint32_t *data_reg =
-        (volatile uint32_t *)(ioapic_base + IOAPIC_REG_DATA);
+    volatile uint32_t *index_reg = (volatile uint32_t *)(ioapic_base + IOAPIC_REG_INDEX);
+    volatile uint32_t *data_reg = (volatile uint32_t *)(ioapic_base + IOAPIC_REG_DATA);
 
     *index_reg = reg;
     *data_reg = val;
@@ -50,10 +48,8 @@ static void ioapic_write(uint32_t reg, uint32_t val) {
 static uint32_t ioapic_read(uint32_t reg) {
     uint64_t flags = spinlock_acquire_irqsave(&ioapic_lock);
 
-    volatile uint32_t *index_reg =
-        (volatile uint32_t *)(ioapic_base + IOAPIC_REG_INDEX);
-    volatile uint32_t *data_reg =
-        (volatile uint32_t *)(ioapic_base + IOAPIC_REG_DATA);
+    volatile uint32_t *index_reg = (volatile uint32_t *)(ioapic_base + IOAPIC_REG_INDEX);
+    volatile uint32_t *data_reg = (volatile uint32_t *)(ioapic_base + IOAPIC_REG_DATA);
 
     *index_reg = reg;
     uint32_t ret = *data_reg;
@@ -70,8 +66,7 @@ void apic_init() {
     serial_printf(COM1, "APIC: 8259 PIC disabled\n");
 
     uint64_t lapic_phys = madt->local_apic_address;
-    if (madt_parsed.lapic_override_count > 0 &&
-        madt_parsed.lapic_overrides != NULL) {
+    if (madt_parsed.lapic_override_count > 0 && madt_parsed.lapic_overrides != NULL) {
         lapic_phys = madt_parsed.lapic_overrides[0].local_apic_address;
         serial_printf(COM1, "APIC: LAPIC address overridden by ACPI table\n");
     }
@@ -80,16 +75,12 @@ void apic_init() {
     if (madt_parsed.ioapic_count > 0 && madt_parsed.ioapics != NULL) {
         ioapic_phys = madt_parsed.ioapics[0].ioapic_address;
     } else {
-        serial_printf(COM1, "APIC: using fallback IOAPIC address (Phys: %x)\n",
-                      ioapic_phys);
+        serial_printf(COM1, "APIC: using fallback IOAPIC address (Phys: %x)\n", ioapic_phys);
     }
 
-    serial_printf(COM1, "APIC: Mapping LAPIC (Phys: %x) & IOAPIC (Phys: %x)\n",
-                  lapic_phys, ioapic_phys);
-    lapic_base = (volatile uint8_t *)vmm_map_mmio((page_table_t *)kernel_pml4,
-                                                  lapic_phys, 1);
-    ioapic_base = (volatile uint8_t *)vmm_map_mmio((page_table_t *)kernel_pml4,
-                                                   ioapic_phys, 1);
+    serial_printf(COM1, "APIC: Mapping LAPIC (Phys: %x) & IOAPIC (Phys: %x)\n", lapic_phys, ioapic_phys);
+    lapic_base = (volatile uint8_t *)vmm_map_mmio((page_table_t *)kernel_pml4, lapic_phys, 1);
+    ioapic_base = (volatile uint8_t *)vmm_map_mmio((page_table_t *)kernel_pml4, ioapic_phys, 1);
 
     if (!lapic_base || !ioapic_base) {
         panic("apic failed to map lapic or ioapic address", 0);
@@ -99,21 +90,16 @@ void apic_init() {
 #define IA32_APIC_BASE_MSR 0x1B
 #define IA32_APIC_BASE_MSR_ENABLE 0x800
     uint32_t low, high;
-    __asm__ __volatile__("rdmsr"
-                         : "=a"(low), "=d"(high)
-                         : "c"(IA32_APIC_BASE_MSR));
+    __asm__ __volatile__("rdmsr" : "=a"(low), "=d"(high) : "c"(IA32_APIC_BASE_MSR));
     uint64_t apic_base_msr = ((uint64_t)high << 32) | low;
     apic_base_msr |= IA32_APIC_BASE_MSR_ENABLE;
     low = apic_base_msr & 0xFFFFFFFF;
     high = apic_base_msr >> 32;
-    __asm__ __volatile__("wrmsr"
-                         :
-                         : "a"(low), "d"(high), "c"(IA32_APIC_BASE_MSR));
+    __asm__ __volatile__("wrmsr" ::"a"(low), "d"(high), "c"(IA32_APIC_BASE_MSR));
 
     // 2. Set Logical Destination and Destination Format Registers
-    lapic_write(LAPIC_REG_DFR, 0xFFFFFFFF); // Flat mode
-    lapic_write(LAPIC_REG_LDR, (lapic_read(LAPIC_REG_LDR) & 0x00FFFFFF) |
-                                   (1 << 24)); // Logical ID 1
+    lapic_write(LAPIC_REG_DFR, 0xFFFFFFFF);                                           // Flat mode
+    lapic_write(LAPIC_REG_LDR, (lapic_read(LAPIC_REG_LDR) & 0x00FFFFFF) | (1 << 24)); // Logical ID 1
 
     // 3. Enable LAPIC software-wise and map Spurious Interrupt Vector to 0xFF
     lapic_write(LAPIC_REG_SIVR, lapic_read(LAPIC_REG_SIVR) | 0x100 | 0xFF);
@@ -125,14 +111,11 @@ void apic_init() {
     uint32_t ver = ioapic_read(IOAPIC_REG_VER);
     uint32_t max_intr = (ver >> 16) & 0xFF;
     for (uint32_t i = 0; i <= max_intr; i++) {
-        ioapic_write(
-            IOAPIC_REG_RED_TABLE(i),
-            0x00010000); // Masked, Edge, Active High, Physical, Fixed Vector 0
+        ioapic_write(IOAPIC_REG_RED_TABLE(i), 0x00010000); // Masked, Edge, Active High, Physical, Fixed Vector 0
         ioapic_write(IOAPIC_REG_RED_TABLE(i) + 1, 0);
     }
 
-    serial_printf(COM1, "APIC: LAPIC initialized and enabled. BSP ID: %x\n",
-                  lapic_read(LAPIC_REG_ID) >> 24);
+    serial_printf(COM1, "APIC: LAPIC initialized and enabled. BSP ID: %x\n", lapic_read(LAPIC_REG_ID) >> 24);
 
     apic_initialized = true;
 }
@@ -195,8 +178,7 @@ void ioapic_route_irq(uint8_t irq, uint8_t vector, uint8_t cpu_id) {
         }
     }
 
-    uint32_t low = vector | flags; // Mask = 0 (Unmasked), Destination Mode = 0
-                                   // (Physical), Delivery Mode = 000 (Fixed)
+    uint32_t low = vector | flags; // Mask = 0 (Unmasked), Destination Mode = 0 (Physical), Delivery Mode = 000 (Fixed)
     uint32_t high = ((uint32_t)cpu_id) << 24;
 
     ioapic_write(IOAPIC_REG_RED_TABLE(gsi), low);
@@ -325,9 +307,8 @@ void lapic_timer_calibrate_and_start(uint32_t target_hz) {
 
     lapic_timer_calibrated_initcnt = init_count;
 
-    serial_printf(COM1,
-                  "LAPIC TIMER: calibrated on CPU %d: %llu ticks/s, "
-                  "init_count=%u for %u Hz\n",
+    serial_printf(COM1, "LAPIC TIMER: calibrated on CPU %d: %llu ticks/s, "
+                        "init_count=%u for %u Hz\n",
                   lapic_get_id(), ticks_per_second, init_count, target_hz);
 
     // 6. Start periodic timer with calibrated value
@@ -350,7 +331,5 @@ void lapic_timer_start_ap() {
     lapic_write(LAPIC_REG_TIMER_LVT, LAPIC_TIMER_PERIODIC | LAPIC_TIMER_VECTOR);
     lapic_write(LAPIC_REG_TIMER_INITCNT, lapic_timer_calibrated_initcnt);
 
-    serial_printf(
-        COM1, "LAPIC TIMER: started on CPU %d (init_count=%u, %u Hz)\n",
-        lapic_get_id(), lapic_timer_calibrated_initcnt, lapic_timer_target_hz);
+    serial_printf(COM1, "LAPIC TIMER: started on CPU %d (init_count=%u, %u Hz)\n", lapic_get_id(), lapic_timer_calibrated_initcnt, lapic_timer_target_hz);
 }

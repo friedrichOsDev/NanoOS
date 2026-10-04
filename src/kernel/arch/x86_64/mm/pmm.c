@@ -87,8 +87,7 @@ static void mmap_parse() {
 
     for (uint64_t i = 0; i < kernel_mmap.entry_count; i++) {
         if (kernel_mmap.entries[i].type == MMAP_USABLE) {
-            uint64_t region_end = kernel_mmap.entries[i].base_addr +
-                                  kernel_mmap.entries[i].length;
+            uint64_t region_end = kernel_mmap.entries[i].base_addr + kernel_mmap.entries[i].length;
             if (region_end > max_usable_addr) {
                 max_usable_addr = region_end;
             }
@@ -97,8 +96,7 @@ static void mmap_parse() {
 
     uint64_t total_pages = max_usable_addr / PAGE_SIZE;
     uint64_t bitmap_size = total_pages / 8;
-    serial_printf(COM1, "PMM: max_addr=%llx, bitmap_size=%llx\n",
-                  max_usable_addr, bitmap_size);
+    serial_printf(COM1, "PMM: max_addr=%llx, bitmap_size=%llx\n", max_usable_addr, bitmap_size);
 
     pmm_state.bitmap = (uint8_t *)KERNEL_END_PHYS;
     pmm_state.bitmap_size = bitmap_size;
@@ -129,25 +127,20 @@ void pmm_init() {
     mmap_parse();
 
     // lock kernel + bitmap
-    uint64_t kernel_and_bitmap_size =
-        KERNEL_END_PHYS + pmm_state.bitmap_size - KERNEL_START_PHYS;
+    uint64_t kernel_and_bitmap_size = KERNEL_END_PHYS + pmm_state.bitmap_size - KERNEL_START_PHYS;
     lock_pages(KERNEL_START_PHYS, ALIGN_UP(kernel_and_bitmap_size) / PAGE_SIZE);
 
     // lock framebuffer
     if (kernel_fb_info.fb_addr) {
         uint64_t fb_start_aligned = ALIGN_DOWN(kernel_fb_info.fb_addr);
-        uint64_t fb_end_aligned =
-            ALIGN_UP(kernel_fb_info.fb_addr +
-                     (kernel_fb_info.fb_height * kernel_fb_info.fb_pitch));
-        lock_pages(fb_start_aligned,
-                   (fb_end_aligned - fb_start_aligned) / PAGE_SIZE);
+        uint64_t fb_end_aligned = ALIGN_UP(kernel_fb_info.fb_addr + (kernel_fb_info.fb_height * kernel_fb_info.fb_pitch));
+        lock_pages(fb_start_aligned, (fb_end_aligned - fb_start_aligned) / PAGE_SIZE);
     }
 
     // lock below 1M
     lock_pages(0, 256);
 
-    serial_printf(COM1, "PMM: used_pages=%llx, free_pages=%llx\n",
-                  pmm_state.used_pages, pmm_state.free_pages);
+    serial_printf(COM1, "PMM: used_pages=%llx, free_pages=%llx\n", pmm_state.used_pages, pmm_state.free_pages);
 }
 
 /**

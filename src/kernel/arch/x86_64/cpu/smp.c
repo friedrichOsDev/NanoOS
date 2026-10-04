@@ -50,8 +50,7 @@ static void smp_enable_lapic() {
     __asm__ __volatile__("wrmsr" : : "a"(low), "d"(high), "c"(0x1B));
 
     lapic_write(LAPIC_REG_DFR, 0xFFFFFFFF);
-    lapic_write(LAPIC_REG_LDR,
-                (lapic_read(LAPIC_REG_LDR) & 0x00FFFFFF) | (1 << 24));
+    lapic_write(LAPIC_REG_LDR, (lapic_read(LAPIC_REG_LDR) & 0x00FFFFFF) | (1 << 24));
     lapic_write(LAPIC_REG_SIVR, lapic_read(LAPIC_REG_SIVR) | 0x100 | 0xFF);
     lapic_write(LAPIC_REG_TPR, 0);
 }
@@ -93,15 +92,13 @@ void smp_ap_main() {
     // Eigenständigen Idle-Task für diesen CPU-Kern erstellen
     char idle_name[16];
     snprintf(idle_name, sizeof(idle_name), "idle_%d", local_cpu->cpu_id);
-    local_cpu->idle_thread = thread_create_on_cpu(
-        kernel_process, idle_task, NULL, idle_name, local_cpu->cpu_id);
+    local_cpu->idle_thread = thread_create_on_cpu(kernel_process, idle_task, NULL, idle_name, local_cpu->cpu_id);
     pop_next_ready_thread_for_cpu(local_cpu->cpu_id);
 
     // Thread-Struktur für den aktuell laufenden AP-Kontext anlegen
     thread_t *ap_main_thread = (thread_t *)kzalloc(sizeof(thread_t));
     ap_main_thread->tid = 1000 + local_cpu->cpu_id; // Dummy TID
-    snprintf(ap_main_thread->name, sizeof(ap_main_thread->name), "idle_ap_%d",
-             local_cpu->cpu_id);
+    snprintf(ap_main_thread->name, sizeof(ap_main_thread->name), "idle_ap_%d", local_cpu->cpu_id);
     ap_main_thread->state = THREAD_RUNNING;
     ap_main_thread->process = kernel_process;
     ap_main_thread->time_slice = DEFAULT_TIME_SLICE;
@@ -115,8 +112,7 @@ void smp_ap_main() {
     local_cpu->online = true;
     ap_boot_flag = true;
 
-    serial_printf(COM1, "SMP: CPU Core %d (APIC ID %d) online and ready!\n",
-                  local_cpu->cpu_id, local_cpu->lapic_id);
+    serial_printf(COM1, "SMP: CPU Core %d (APIC ID %d) online and ready!\n", local_cpu->cpu_id, local_cpu->lapic_id);
 
     // Interrupts aktivieren
     __asm__ __volatile__("sti");
@@ -132,8 +128,7 @@ void smp_init() {
     serial_printf(COM1, "SMP: scanning MADT for CPU cores...\n");
 
     if (!madt) {
-        serial_printf(
-            COM1, "SMP: no MADT table found, staying in single-core mode\n");
+        serial_printf(COM1, "SMP: no MADT table found, staying in single-core mode\n");
         return;
     }
 
@@ -170,14 +165,12 @@ void smp_init() {
         ptr += entry->length;
     }
 
-    serial_printf(COM1, "SMP: detected %d CPU core(s) in system\n",
-                  smp_cpu_count);
+    serial_printf(COM1, "SMP: detected %d CPU core(s) in system\n", smp_cpu_count);
     if (smp_cpu_count == 1)
         return;
 
     // Real-Mode Trampoline-Code auf 0x8000 kopieren
-    size_t trampoline_size =
-        (size_t)(smp_trampoline_end - smp_trampoline_start);
+    size_t trampoline_size = (size_t)(smp_trampoline_end - smp_trampoline_start);
     memcpy((void *)P2V(0x8000), smp_trampoline_start, trampoline_size);
 
     // Alle erkannten AP-Kerne nacheinander hochfahren
@@ -200,9 +193,7 @@ void smp_init() {
         cpus[i].kernel_stack = ap_stack_top;
 
         // Trampoline-Parameter im Real-Mode Speicherbereich (0x8000) eintragen
-        uint64_t *trampoline_vars =
-            (uint64_t *)P2V(0x8000 + ((uint64_t)&smp_trampoline_pml4 -
-                                      (uint64_t)smp_trampoline_start));
+        uint64_t *trampoline_vars = (uint64_t *)P2V(0x8000 + ((uint64_t)&smp_trampoline_pml4 - (uint64_t)smp_trampoline_start));
 
         trampoline_vars[0] = kernel_pml4_phys;      // Page Table
         trampoline_vars[1] = ap_stack_top;          // Stack Pointer
@@ -210,8 +201,7 @@ void smp_init() {
 
         ap_boot_flag = false;
 
-        serial_printf(COM1, "SMP: booting Core %d (APIC ID %d)...\n", i,
-                      target_apic_id);
+        serial_printf(COM1, "SMP: booting Core %d (APIC ID %d)...\n", i, target_apic_id);
 
         // Standard INIT-SIPI-SIPI Sequenz senden
         lapic_send_init(target_apic_id);
@@ -236,8 +226,7 @@ void smp_init() {
         if (cpus[i].online) {
             serial_printf(COM1, "SMP: Core %d successfully initialized!\n", i);
         } else {
-            serial_printf(
-                COM1, "SMP: warning Core %d failed to boot (timeout)!\n", i);
+            serial_printf(COM1, "SMP: warning Core %d failed to boot (timeout)!\n", i);
             kfree((virt_addr_t)ap_stack);
         }
     }

@@ -49,8 +49,6 @@ typedef struct thread {
     struct thread *proc_next;
 } __attribute__((aligned(16))) thread_t;
 
-thread_t *thread_create(process_t *proc, thread_entry_t entry, void *arg,
-                        const char *name);
-thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
-                               const char *name, int cpu_affinity);
+thread_t *thread_create(process_t *proc, thread_entry_t entry, void *arg, const char *name);
+thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg, const char *name, int cpu_affinity);
 void thread_exit();

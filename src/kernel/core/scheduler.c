@@ -116,8 +116,7 @@ static void cleanup_dead_threads() {
     while (curr) {
         thread_t *next = curr->next;
 
-        serial_printf(COM1, "Cleaning up dead thread %p with name %s\n", curr,
-                      curr->name);
+        serial_printf(COM1, "Cleaning up dead thread %p with name %s\n", curr, curr->name);
 
         if (curr->process) {
             uint64_t pflags = spinlock_acquire_irqsave(&curr->process->lock);
@@ -164,8 +163,6 @@ void scheduler_init() {
 
     uint64_t current_rsp;
     __asm__ __volatile__("mov %%rsp, %0" : "=r"(current_rsp));
-    /* NOTE: current_rsp is 8 mod 16 here (inside a called function per ABI),
-     * that is correct and does not affect fxsave64/fxrstor64 which use fpu_state. */
     main_thread->kernel_stack_top = current_rsp;
 
     uint64_t pflags = spinlock_acquire_irqsave(&kernel_process->lock);
@@ -175,8 +172,7 @@ void scheduler_init() {
     spinlock_release_irqrestore(&kernel_process->lock, pflags);
 
     cpus[0].current_thread = main_thread;
-    cpus[0].idle_thread =
-        thread_create_on_cpu(kernel_process, idle_task, NULL, "idle_0", 0);
+    cpus[0].idle_thread = thread_create_on_cpu(kernel_process, idle_task, NULL, "idle_0", 0);
     pop_next_ready_thread_for_cpu(0); // remove idle task from queue
 
     serial_printf(COM1, "SCHED: scheduler initialized for BSP.\n");

@@ -19,15 +19,12 @@
 static uint64_t next_tid = 1;
 static spinlock_t tid_lock = SPINLOCK_INIT;
 
-thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
-                               const char *name, int cpu_affinity) {
+thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg, const char *name, int cpu_affinity) {
     _Static_assert(offsetof(thread_t, fpu_state) == 112, "CRITICAL: Offset of fpu_state must be 112 bytes!");
     _Static_assert(offsetof(thread_t, fpu_state) % 16 == 0, "CRITICAL: fpu_state must be 16-byte aligned!");
     _Static_assert(sizeof(thread_t) == 656, "CRITICAL: thread_t size mismatch!");
     if (cpu_affinity >= 0 && (size_t)cpu_affinity >= smp_cpu_count) {
-        serial_printf(
-            COM1, "Thread: Cannot create process on an non exisiting core %d\n",
-            cpu_affinity);
+        serial_printf(COM1, "Thread: Cannot create process on an non exisiting core %d\n", cpu_affinity);
         return NULL;
     }
 
@@ -68,12 +65,10 @@ thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
 
     uint64_t *sp = (uint64_t *)thread->kernel_stack_top;
 
-    // Stack auf 16 Bytes ausrichten
     sp = (uint64_t *)((uint64_t)sp & ~0xFULL);
-    // 2. Fake Return Address für ret in switch_context
     *(--sp) = (uint64_t)thread_entry_stub;
 
-    // 3. Register für switch_context (pop rbp, rbx, r12, r13, r14, r15)
+    // Register für switch_context (pop rbp, rbx, r12, r13, r14, r15)
     *(--sp) = (uint64_t)0;     // RBP
     *(--sp) = (uint64_t)0;     // RBX
     *(--sp) = (uint64_t)entry; // R12 (Function Pointer)
@@ -95,15 +90,12 @@ thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
 
     scheduler_add_thread(thread);
 
-    serial_printf(COM1,
-                  "Thread: Created new thread, Proc: %s, Core: %d, Name: %s\n",
-                  thread->process->name, cpu_affinity, name);
+    serial_printf(COM1, "Thread: Created new thread, Proc: %s, Core: %d, Name: %s\n", thread->process->name, cpu_affinity, name);
 
     return thread;
 }
 
-thread_t *thread_create(process_t *proc, thread_entry_t entry, void *arg,
-                        const char *name) {
+thread_t *thread_create(process_t *proc, thread_entry_t entry, void *arg, const char *name) {
     return thread_create_on_cpu(proc, entry, arg, name, -1);
 }
 

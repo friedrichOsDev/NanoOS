@@ -28,14 +28,10 @@ void heap_init() {
         panic("heap initial page allocation failed", 0);
     }
 
-    vmm_map_page((page_table_t *)kernel_pml4, KERNEL_HEAP_START, page1,
-                 PTE_WRITABLE);
-    vmm_map_page((page_table_t *)kernel_pml4, KERNEL_HEAP_START + PAGE_SIZE,
-                 page2, PTE_WRITABLE);
-    vmm_map_page((page_table_t *)kernel_pml4, KERNEL_HEAP_START + PAGE_SIZE * 2,
-                 page3, PTE_WRITABLE);
-    vmm_map_page((page_table_t *)kernel_pml4, KERNEL_HEAP_START + PAGE_SIZE * 3,
-                 page4, PTE_WRITABLE);
+    vmm_map_page((page_table_t *)kernel_pml4, KERNEL_HEAP_START, page1, PTE_WRITABLE);
+    vmm_map_page((page_table_t *)kernel_pml4, KERNEL_HEAP_START + PAGE_SIZE, page2, PTE_WRITABLE);
+    vmm_map_page((page_table_t *)kernel_pml4, KERNEL_HEAP_START + PAGE_SIZE * 2, page3, PTE_WRITABLE);
+    vmm_map_page((page_table_t *)kernel_pml4, KERNEL_HEAP_START + PAGE_SIZE * 3, page4, PTE_WRITABLE);
 
     memset((void *)KERNEL_HEAP_START, 0, PAGE_SIZE * 4);
 
@@ -50,8 +46,7 @@ void heap_init() {
     heap_list_head = initial_block;
     heap_end_addr = KERNEL_HEAP_START + initial_size;
 
-    serial_printf(COM1, "HEAP: initial_block at %llx with size %llx\n",
-                  initial_block, initial_size);
+    serial_printf(COM1, "HEAP: initial_block at %llx with size %llx\n", initial_block, initial_size);
     serial_printf(COM1, "HEAP: done\n");
 }
 
@@ -70,9 +65,7 @@ heap_list_t *heap_extend(size_t size) {
             panic("heap out of physical memory during extension", 0);
         }
 
-        vmm_map_page((page_table_t *)kernel_pml4,
-                     extension_start + (i * PAGE_SIZE), phys_page,
-                     PTE_WRITABLE);
+        vmm_map_page((page_table_t *)kernel_pml4, extension_start + (i * PAGE_SIZE), phys_page, PTE_WRITABLE);
     }
 
     size_t extended_bytes = needed_pages * PAGE_SIZE;
@@ -150,8 +143,7 @@ virt_addr_t kmalloc(size_t size) {
 
     size_t min_split_size = HEAP_HEADER_SIZE + HEAP_MIN_PAYLOAD_SIZE;
     if (best_fit->size >= total_required_size + min_split_size) {
-        heap_list_t *next_block =
-            (heap_list_t *)((uintptr_t)best_fit + total_required_size);
+        heap_list_t *next_block = (heap_list_t *)((uintptr_t)best_fit + total_required_size);
         next_block->magic = HEAP_MAGIC_FREE;
         next_block->size = best_fit->size - total_required_size;
         next_block->payload_size = next_block->size - HEAP_HEADER_SIZE;
@@ -199,10 +191,7 @@ void kfree(virt_addr_t addr) {
     heap_list_t *block = (heap_list_t *)(addr - HEAP_HEADER_SIZE);
 
     if (block->magic != HEAP_MAGIC_USED) {
-        serial_printf(
-            COM1,
-            "HEAP: Attempted kfree on invalid/already freed block at %llx!\n",
-            addr);
+        serial_printf(COM1, "HEAP: Attempted kfree on invalid/already freed block at %llx!\n", addr);
         return;
     }
 
@@ -240,13 +229,9 @@ void kfree(virt_addr_t addr) {
 void heap_dump() {
     uint64_t flags = spinlock_acquire_irqsave(&heap_lock);
 
-    serial_printf(COM1, "\n====================================== HEAP MANAGER "
-                        "=======================================\n");
-    serial_printf(COM1, "%-18s %-8s %-12s %-12s %-18s %-18s\n", "HEADER ADDR",
-                  "STATUS", "BLOCK SIZE", "PAYLOAD SZ", "PREV BLOCK",
-                  "NEXT BLOCK");
-    serial_printf(COM1, "------------------------------------------------------"
-                        "-------------------------------------\n");
+    serial_printf(COM1, "\n====================================== HEAP MANAGER =======================================\n");
+    serial_printf(COM1, "%-18s %-8s %-12s %-12s %-18s %-18s\n", "HEADER ADDR", "STATUS", "BLOCK SIZE", "PAYLOAD SZ", "PREV BLOCK", "NEXT BLOCK");
+    serial_printf(COM1, "-------------------------------------------------------------------------------------------\n");
 
     heap_list_t *current = heap_list_head;
     size_t block_count = 0;
@@ -265,15 +250,10 @@ void heap_dump() {
             status = "CORRUPT";
         }
 
-        serial_printf(COM1, "%018llx %-8s %-12zu %-12zu %018llx %018llx\n",
-                      (unsigned long long)(uintptr_t)current, status,
-                      current->size, current->payload_size,
-                      (unsigned long long)(uintptr_t)current->prev,
-                      (unsigned long long)(uintptr_t)current->next);
+        serial_printf(COM1, "%018llx %-8s %-12zu %-12zu %018llx %018llx\n", (unsigned long long)(uintptr_t)current, status, current->size, current->payload_size, (unsigned long long)(uintptr_t)current->prev, (unsigned long long)(uintptr_t)current->next);
 
         if (current->next == current) {
-            serial_printf(
-                COM1, "HEAP: Circular link detected (next points to self)!\n");
+            serial_printf(COM1, "HEAP: Circular link detected (next points to self)!\n");
             break;
         }
 
@@ -281,14 +261,11 @@ void heap_dump() {
         block_count++;
     }
 
-    serial_printf(COM1, "------------------------------------------------------"
-                        "-------------------------------------\n");
-    serial_printf(COM1,
-                  "Summary: %zu Blocks | Free: %zu Bytes | Used: %zu Bytes | "
-                  "Total: %zu Bytes\n",
+    serial_printf(COM1, "-------------------------------------------------------------------------------------------\n");
+    serial_printf(COM1, "Summary: %zu Blocks | Free: %zu Bytes | Used: %zu Bytes | "
+                        "Total: %zu Bytes\n",
                   block_count, total_free, total_used, total_free + total_used);
-    serial_printf(COM1, "======================================================"
-                        "=====================================\n\n");
+    serial_printf(COM1, "===========================================================================================\n\n");
 
     spinlock_release_irqrestore(&heap_lock, flags);
 }

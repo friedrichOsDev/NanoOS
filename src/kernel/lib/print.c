@@ -21,14 +21,11 @@
  * @param is_wide `true` für 32-Bit-Zeichen (UTF-32), `false` für standardmäßige 8-Bit-Zeichen.
  * @return Gesamtanzahl der verarbeiteten/generierten Zeichen.
  */
-static int print_formatted(void *dest, size_t size, const void *format,
-                           va_list args, bool is_wide) {
+static int print_formatted(void *dest, size_t size, const void *format, va_list args, bool is_wide) {
     size_t i = 0;
     size_t fmt_idx = 0;
 
-#define GET_CHAR()                                           \
-    (is_wide ? (uint32_t)((const uint32_t *)format)[fmt_idx] \
-             : (uint32_t)((const char *)format)[fmt_idx])
+#define GET_CHAR() (is_wide ? (uint32_t)((const uint32_t *)format)[fmt_idx] : (uint32_t)((const char *)format)[fmt_idx])
 #define PUSH_CHAR(c)                                   \
     do {                                               \
         if (dest && i < size - 1) {                    \
@@ -134,8 +131,7 @@ static int print_formatted(void *dest, size_t size, const void *format,
 
             uint32_t w_buf[64];
             char a_buf[64];
-            int len = is_wide ? uint_to_str(abs_val, w_buf, 10)
-                              : uint_to_wstr(abs_val, a_buf, 10);
+            int len = is_wide ? uint_to_str(abs_val, w_buf, 10) : uint_to_wstr(abs_val, a_buf, 10);
             int pad = (width > len) ? (width - len) : 0;
 
             if (!r_width && !pad_zero)
@@ -146,8 +142,7 @@ static int print_formatted(void *dest, size_t size, const void *format,
                     PUSH_CHAR('0');
 
             for (int j = 0; j < len; j++)
-                PUSH_CHAR(is_wide ? w_buf[j]
-                                  : (uint32_t)(unsigned char)a_buf[j]);
+                PUSH_CHAR(is_wide ? w_buf[j] : (uint32_t)(unsigned char)a_buf[j]);
             if (r_width)
                 while (pad-- > 0)
                     PUSH_CHAR(' ');
@@ -173,12 +168,10 @@ static int print_formatted(void *dest, size_t size, const void *format,
             int base = (c == 'u') ? 10 : ((c == 'o') ? 8 : 16);
             uint32_t w_buf[64];
             char a_buf[64];
-            int len = is_wide ? uint_to_str(val_u, w_buf, base)
-                              : uint_to_wstr(val_u, a_buf, base);
+            int len = is_wide ? uint_to_str(val_u, w_buf, base) : uint_to_wstr(val_u, a_buf, base);
 
             int prefix_len = (c == 'x' || c == 'X' || c == 'o') ? 2 : 0;
-            int pad =
-                (width > (len + prefix_len)) ? (width - (len + prefix_len)) : 0;
+            int pad = (width > (len + prefix_len)) ? (width - (len + prefix_len)) : 0;
 
             if (!r_width && !pad_zero)
                 while (pad-- > 0)
@@ -197,8 +190,7 @@ static int print_formatted(void *dest, size_t size, const void *format,
                     PUSH_CHAR('0');
 
             for (int j = 0; j < len; j++)
-                PUSH_CHAR(is_wide ? w_buf[j]
-                                  : (uint32_t)(unsigned char)a_buf[j]);
+                PUSH_CHAR(is_wide ? w_buf[j] : (uint32_t)(unsigned char)a_buf[j]);
             if (r_width)
                 while (pad-- > 0)
                     PUSH_CHAR(' ');
@@ -210,8 +202,7 @@ static int print_formatted(void *dest, size_t size, const void *format,
             int p = (precision >= 0) ? precision : 6;
             uint32_t w_buf[64];
             char a_buf[64];
-            int len = is_wide ? double_to_wstr(val_f, w_buf, p)
-                              : double_to_str(val_f, a_buf, p);
+            int len = is_wide ? double_to_wstr(val_f, w_buf, p) : double_to_str(val_f, a_buf, p);
             int pad = (width > len) ? (width - len) : 0;
 
             if (!r_width && !pad_zero)
@@ -222,8 +213,7 @@ static int print_formatted(void *dest, size_t size, const void *format,
                     PUSH_CHAR('0');
 
             for (int j = 0; j < len; j++)
-                PUSH_CHAR(is_wide ? w_buf[j]
-                                  : (uint32_t)(unsigned char)a_buf[j]);
+                PUSH_CHAR(is_wide ? w_buf[j] : (uint32_t)(unsigned char)a_buf[j]);
             if (r_width)
                 while (pad-- > 0)
                     PUSH_CHAR(' ');
@@ -276,8 +266,7 @@ static int print_formatted(void *dest, size_t size, const void *format,
             uintptr_t val_p = va_arg(args, uintptr_t);
             uint32_t w_buf[64];
             char a_buf[64];
-            int len = is_wide ? uint_to_str(val_p, w_buf, 16)
-                              : uint_to_wstr(val_p, a_buf, 16);
+            int len = is_wide ? uint_to_str(val_p, w_buf, 16) : uint_to_wstr(val_p, a_buf, 16);
             int pad = (width > len + 2) ? (width - (len + 2)) : 0;
 
             if (!r_width && !pad_zero)
@@ -290,8 +279,7 @@ static int print_formatted(void *dest, size_t size, const void *format,
                     PUSH_CHAR('0');
 
             for (int j = 0; j < len; j++)
-                PUSH_CHAR(is_wide ? w_buf[j]
-                                  : (uint32_t)(unsigned char)a_buf[j]);
+                PUSH_CHAR(is_wide ? w_buf[j] : (uint32_t)(unsigned char)a_buf[j]);
             if (r_width)
                 while (pad-- > 0)
                     PUSH_CHAR(' ');
@@ -332,8 +320,7 @@ int usnprintf(uint32_t *dest, const size_t size, const uint32_t *format, ...) {
     return res;
 }
 
-int uvsnprintf(uint32_t *dest, size_t size, const uint32_t *format,
-               va_list args) {
+int uvsnprintf(uint32_t *dest, size_t size, const uint32_t *format, va_list args) {
     return print_formatted(dest, size, format, args, true);
 }
 

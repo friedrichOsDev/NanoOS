@@ -53,9 +53,7 @@ static rtc_time_t rtc_read_hardware() {
         t2.day = cmos_read(RTC_REG_DAY);
         t2.month = cmos_read(RTC_REG_MONTH);
         t2.year = cmos_read(RTC_REG_YEAR);
-    } while (t1.second != t2.second || t1.minute != t2.minute ||
-             t1.hour != t2.hour || t1.day != t2.day || t1.month != t2.month ||
-             t1.year != t2.year);
+    } while (t1.second != t2.second || t1.minute != t2.minute || t1.hour != t2.hour || t1.day != t2.day || t1.month != t2.month || t1.year != t2.year);
 
     uint8_t status_b = cmos_read(RTC_REG_STATUS_B);
 
@@ -93,17 +91,14 @@ uint64_t rtc_to_unix(const rtc_time_t *t) {
     uint64_t doe = yoe * 365 + yoe / 4 - yoe / 100 + doy; // [0, 146096]
     int64_t days = era * 146097 + (int64_t)doe - 719468;
 
-    return (uint64_t)days * 86400ULL + t->hour * 3600ULL + t->minute * 60ULL +
-           t->second;
+    return (uint64_t)days * 86400ULL + t->hour * 3600ULL + t->minute * 60ULL + t->second;
 }
 
 void rtc_init() {
     boot_time = rtc_read_hardware();
     boot_epoch = rtc_to_unix(&boot_time);
 
-    serial_printf(COM1, "RTC: boot time: %04d-%02d-%02d %02d:%02d:%02d UTC\n",
-                  boot_time.year, boot_time.month, boot_time.day,
-                  boot_time.hour, boot_time.minute, boot_time.second);
+    serial_printf(COM1, "RTC: boot time: %04d-%02d-%02d %02d:%02d:%02d UTC\n", boot_time.year, boot_time.month, boot_time.day, boot_time.hour, boot_time.minute, boot_time.second);
     serial_printf(COM1, "RTC: boot epoch: %llu\n", boot_epoch);
 }
 
@@ -126,9 +121,8 @@ rtc_time_t time_get_now() {
     // Civil day algorithm from Unix epoch
     days += 719468;
     int64_t era = (days >= 0 ? days : days - 146096) / 146097;
-    uint32_t doe = (uint32_t)(days - era * 146097); // [0, 146096]
-    uint32_t yoe =
-        (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365; // [0, 399]
+    uint32_t doe = (uint32_t)(days - era * 146097);                       // [0, 146096]
+    uint32_t yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365; // [0, 399]
     int64_t y = (int64_t)yoe + era * 400;
     uint32_t doy = doe - (365 * yoe + yoe / 4 - yoe / 100); // [0, 365]
     uint32_t mp = (5 * doy + 2) / 153;                      // [0, 11]
