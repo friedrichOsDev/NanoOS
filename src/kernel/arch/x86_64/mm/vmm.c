@@ -1,6 +1,6 @@
 /**
  * @file vmm.c
- * @brief Virtual Memory Management
+ * @brief Implementierung der virtuellen Speicherverwaltung (4-Level Paging x86_64).
  * @author friedrichOsDev
  */
 
@@ -16,20 +16,30 @@
 #include <lib/string.h>
 #include <stdbool.h>
 
+/** @brief Physische Adresse der Kernel-PML4-Tabelle. */
 phys_addr_t kernel_pml4_phys = 0;
+
+/** @brief Virtuelle Adresse der Kernel-PML4-Tabelle. */
 virt_addr_t kernel_pml4 = 0;
+
+/** @brief Nächste freie virtuelle Adresse im reservierten MMIO-Bereich. */
 static virt_addr_t next_free_mmio_vaddr = MMIO_REGION_START;
 
+/** @brief Spinlock zur Absicherung von VMM-Paging-Operationen. */
 static spinlock_t vmm_lock = SPINLOCK_INIT;
+
+/** @brief Spinlock zur Absicherung der MMIO-Virtuelladressen-Allokation. */
 static spinlock_t mmio_lock = SPINLOCK_INIT;
 
 /**
- * Gets the next table in a table based on the given index and flags
- * @param current_table The table (lv4, lv3 or lv2) to get the next table (lv3,
- * lv2 or lv1) from
- * @param index The index in the table
- * @param flags The flags for the table
- * @return Returns the page_table_t structure of the table at the given index
+ * @brief Liefert die Untertabelle der nächsten Paging-Ebene für einen gegebenen Index.
+ *
+ * Allokiert eine neue physische Seite über das PMM, falls die Tabelle noch nicht existiert.
+ *
+ * @param current_table Zeiger auf die aktuelle Seitentabelle (PML4, PDPT oder PD).
+ * @param index Index innerhalb der Tabelle.
+ * @param flags Zugriffs-Flags für neu erstellte Tabelleneinträge.
+ * @return Zeiger (virtuelle Adresse) auf die Untertabelle der nächsten Ebene.
  */
 static page_table_t *vmm_get_next_table(page_table_t *current_table,
                                         size_t index, uint64_t flags) {
@@ -61,9 +71,10 @@ static page_table_t *vmm_get_next_table(page_table_t *current_table,
 }
 
 /**
- * Checks if a table is empty
- * @param table The table to check
- * @return Returns 1 if empty, 0 if not empty
+ * @brief Prüft, ob eine Seitentabelle vollständig leer ist.
+ *
+ * @param table Zeiger auf die zu prüfende Seitentabelle.
+ * @return `1` wenn keine gültigen Einträge (`PTE_PRESENT`) vorhanden sind, sonst `0`.
  */
 static int vmm_is_table_empty(page_table_t *table) {
     for (size_t i = 0; i < PT_MAX_ENTRIES; i++) {
@@ -75,21 +86,22 @@ static int vmm_is_table_empty(page_table_t *table) {
 }
 
 /**
- * Helper function to safely get a page table at a specific level
- * @param pml4 The PML4 table
- * @param pml4_idx Index in PML4 table
- * @param pdpt Pointer to PDPT pointer (output)
- * @param pdpt_idx Index in PDPT table
- * @param pd Pointer to PD pointer (output)
- * @param pd_idx Index in PD table
- * @param pt Pointer to PT pointer (output)
- * @param pt_idx Index in PT table
- * @return 1 if successful, 0 if any table is missing or invalid
+ * @brief Hilfsfunktion zur sicheren Traversierung der Paging-Hierarchie.
+ *
+ * @param pml4 Zeiger auf die PML4-Tabelle.
+ * @param pml4_idx Index in PML4.
+ * @param pdpt Ausgabezeiger auf die PDPT-Tabelle.
+ * @param pdpt_idx Index in PDPT.
+ * @param pd Ausgabezeiger auf die PD-Tabelle.
+ * @param pd_idx Index in PD.
+ * @param pt Ausgabezeiger auf die PT-Tabelle.
+ * @param pt_idx Index in PT.
+ * @return `1` bei erfolgreicher Traversierung bis zur PT-Ebene, `0` falls ein Pfad nicht vorhanden ist.
  */
 static int vmm_get_page_table_level(page_table_t *pml4, size_t pml4_idx, page_table_t **pdpt, size_t pdpt_idx, page_table_t **pd, size_t pd_idx, page_table_t **pt, size_t pt_idx) {
     (void)pt_idx;
 
-    // Validate PML4 entry
+    // PML4-Eintrag validieren
     if (!(pml4->entries[pml4_idx] & PTE_PRESENT)) {
         return 0;
     }
@@ -101,7 +113,7 @@ static int vmm_get_page_table_level(page_table_t *pml4, size_t pml4_idx, page_ta
 
     *pdpt = (page_table_t *)P2V(pdpt_phys);
 
-    // Validate PDPT entry
+    // PDPT-Eintrag validieren
     if (!((*pdpt)->entries[pdpt_idx] & PTE_PRESENT)) {
         return 0;
     }
@@ -113,7 +125,7 @@ static int vmm_get_page_table_level(page_table_t *pml4, size_t pml4_idx, page_ta
 
     *pd = (page_table_t *)P2V(pd_phys);
 
-    // Validate PD entry
+    // PD-Eintrag validieren
     if (!((*pd)->entries[pd_idx] & PTE_PRESENT)) {
         return 0;
     }
@@ -128,9 +140,6 @@ static int vmm_get_page_table_level(page_table_t *pml4, size_t pml4_idx, page_ta
     return 1;
 }
 
-/**
- * Initializes the VMM
- */
 void vmm_init() {
     kernel_pml4_phys = pmm_page_alloc();
     if (!kernel_pml4_phys) {
@@ -154,7 +163,7 @@ void vmm_init() {
         vmm_map_page(k_pml4, KERNEL_CORE_START + kernel_phys_start + offset, kernel_phys_start + offset, PTE_WRITABLE);
     }
 
-    // 16 MiB identity mapping
+    // 16 MiB Identity-Mapping für frühe Bootphase/Hardware
     for (uint64_t addr = 0; addr < 0x1000000; addr += PAGE_SIZE) {
         vmm_map_page(k_pml4, addr, addr, PTE_WRITABLE);
     }
@@ -177,13 +186,6 @@ void vmm_init() {
     serial_printf(COM1, "VMM: init done, final pml4 tables active\n");
 }
 
-/**
- * Maps a memory region to the MMIO_REGION
- * @param pml4 The pml4 table to make the changes to
- * @param paddr The physical start address of the MMIO region
- * @param size The size of the region
- * @return Returns the mapped virtual address
- */
 virt_addr_t vmm_map_mmio(page_table_t *pml4, phys_addr_t paddr, size_t size) {
     if (size == 0)
         return 0;
@@ -210,13 +212,6 @@ virt_addr_t vmm_map_mmio(page_table_t *pml4, phys_addr_t paddr, size_t size) {
     return assigned_vaddr + offset;
 }
 
-/**
- * Maps a physical page to a virtual page
- * @param pml4 The pml4 table to make the changes to
- * @param vaddr The address of the virtual page
- * @param paddr The address of the physical page
- * @param flags The flags for the mapping
- */
 void vmm_map_page(page_table_t *pml4, virt_addr_t vaddr, phys_addr_t paddr, uint64_t flags) {
     if (!IS_PAGE_ALIGNED(vaddr))
         panic("vmm map unaligned vaddr", vaddr);
@@ -265,11 +260,6 @@ void vmm_map_page(page_table_t *pml4, virt_addr_t vaddr, phys_addr_t paddr, uint
     spinlock_release_irqrestore(&vmm_lock, lock_flags);
 }
 
-/**
- * Unmaps a virtual page
- * @param pml4 The pml4 table to make the changes to
- * @param vaddr The address of the virtual page
- */
 void vmm_unmap_page(page_table_t *pml4, virt_addr_t vaddr) {
     if (vaddr == 0 || pml4 == NULL) {
         return;
@@ -289,17 +279,16 @@ void vmm_unmap_page(page_table_t *pml4, virt_addr_t vaddr) {
     size_t pd_idx = VMM_PD_INDEX(vaddr);
     size_t pt_idx = VMM_PT_INDEX(vaddr);
 
-    // Use helper function to safely traverse page tables
+    // Hilfsfunktion zur sicheren Traversierung der Tabellen nutzen
     page_table_t *pdpt = NULL;
     page_table_t *pd = NULL;
-    page_table_t *pt = NULL; // ln 297
+    page_table_t *pt = NULL;
 
     if (!vmm_get_page_table_level(pml4, pml4_idx, &pdpt, pdpt_idx, &pd, pd_idx, &pt, pt_idx)) {
         spinlock_release_irqrestore(&vmm_lock, lock_flags);
         return;
     }
 
-    // At this point we know all tables are valid
     if (!(pt->entries[pt_idx] & PTE_PRESENT)) {
         spinlock_release_irqrestore(&vmm_lock, lock_flags);
         return;
@@ -311,6 +300,7 @@ void vmm_unmap_page(page_table_t *pml4, virt_addr_t vaddr) {
         lapic_send_broadcast_tlb_ipi();
     }
 
+    // Kaskadierendes Freigeben ungenutzter Seitentabellen
     if (vmm_is_table_empty(pt)) {
         phys_addr_t pt_phys = PTE_GET_ADDR(pd->entries[pd_idx]);
         pd->entries[pd_idx] = 0;

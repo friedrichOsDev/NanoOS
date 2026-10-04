@@ -1,6 +1,6 @@
 /**
  * @file heap.c
- * @brief Kernel HEAP allocator
+ * @brief Implementierung des Kernel-Heap-Allocators.
  * @author friedrichOsDev
  */
 
@@ -12,13 +12,15 @@
 #include <core/sync.h>
 #include <lib/string.h>
 
+/** @brief Zeiger auf den ersten Block der doppelt verketteten Heap-Liste. */
 static heap_list_t *heap_list_head = NULL;
+
+/** @brief Virtuelle Endadresse des derzeit gemappten Heap-Bereichs. */
 static virt_addr_t heap_end_addr = 0;
+
+/** @brief Spinlock zur Absicherung von Heap-Operationen in Multithreading-/Interrupt-Kontexten. */
 static spinlock_t heap_lock = SPINLOCK_INIT;
 
-/**
- * Initializes the HEAP allocator
- */
 void heap_init() {
     phys_addr_t page1 = pmm_page_alloc();
     phys_addr_t page2 = pmm_page_alloc();
@@ -50,11 +52,6 @@ void heap_init() {
     serial_printf(COM1, "HEAP: done\n");
 }
 
-/**
- * Extends the HEAP if kmalloc cannot find a suitable block for size
- * @param size Required size for the extension
- * @return Returns the new free block
- */
 heap_list_t *heap_extend(size_t size) {
     size_t needed_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE;
     virt_addr_t extension_start = heap_end_addr;
@@ -89,6 +86,7 @@ heap_list_t *heap_extend(size_t size) {
     current->next = new_block;
     new_block->prev = current;
 
+    /* Verschmelze mit dem vorherigen Block, falls dieser ebenfalls frei ist */
     if (current->magic == HEAP_MAGIC_FREE) {
         current->size += new_block->size;
         current->payload_size = current->size - HEAP_HEADER_SIZE;
@@ -99,18 +97,13 @@ heap_list_t *heap_extend(size_t size) {
     return new_block;
 }
 
-/**
- * Allocates memory from kernel HEAP
- * @param size Size to allocate
- * @return The virtual address of the allocated memory
- */
 virt_addr_t kmalloc(size_t size) {
     if (size == 0)
         return 0;
 
     uint64_t flags = spinlock_acquire_irqsave(&heap_lock);
 
-    size = (size + 15) & ~15;
+    size = (size + 15) & ~15; /* 16-Byte-Ausrichtung */
     size_t total_required_size = size + HEAP_HEADER_SIZE;
 
     heap_list_t *current = heap_list_head;
@@ -141,6 +134,7 @@ virt_addr_t kmalloc(size_t size) {
         }
     }
 
+    /* Aufteilen des Blocks (Splitting), falls der verbleibende Rest groß genug ist */
     size_t min_split_size = HEAP_HEADER_SIZE + HEAP_MIN_PAYLOAD_SIZE;
     if (best_fit->size >= total_required_size + min_split_size) {
         heap_list_t *next_block = (heap_list_t *)((uintptr_t)best_fit + total_required_size);
@@ -165,11 +159,6 @@ virt_addr_t kmalloc(size_t size) {
     return (uintptr_t)best_fit + HEAP_HEADER_SIZE;
 }
 
-/**
- * Allocates memory from kernel HEAP and zeros it
- * @param size Size to allocate
- * @return The virtual address of the allocated and zeroed memory
- */
 virt_addr_t kzalloc(size_t size) {
     virt_addr_t addr = kmalloc(size);
     if (addr) {
@@ -178,10 +167,6 @@ virt_addr_t kzalloc(size_t size) {
     return addr;
 }
 
-/**
- * Frees allocated memory
- * @param addr The virtual address of allocated memory
- */
 void kfree(virt_addr_t addr) {
     if (!addr)
         return;
@@ -198,7 +183,7 @@ void kfree(virt_addr_t addr) {
     block->magic = HEAP_MAGIC_FREE;
     block->payload_size = block->size - HEAP_HEADER_SIZE;
 
-    // Coalesce Right (merge with next block if free)
+    // Coalesce Right (Verschmelzen mit rechtem Nachbarn)
     if (block->next && block->next->magic == HEAP_MAGIC_FREE) {
         block->size += block->next->size;
         block->payload_size = block->size - HEAP_HEADER_SIZE;
@@ -209,7 +194,7 @@ void kfree(virt_addr_t addr) {
         }
     }
 
-    // Coalesce Left (merge with previous block if free)
+    // Coalesce Left (Verschmelzen mit linkem Nachbarn)
     if (block->prev && block->prev->magic == HEAP_MAGIC_FREE) {
         block->prev->size += block->size;
         block->prev->payload_size = block->prev->size - HEAP_HEADER_SIZE;
@@ -223,9 +208,6 @@ void kfree(virt_addr_t addr) {
     spinlock_release_irqrestore(&heap_lock, flags);
 }
 
-/**
- * Dumps the current HEAP doubly-linked list and HEAP status
- */
 void heap_dump() {
     uint64_t flags = spinlock_acquire_irqsave(&heap_lock);
 
@@ -262,9 +244,7 @@ void heap_dump() {
     }
 
     serial_printf(COM1, "-------------------------------------------------------------------------------------------\n");
-    serial_printf(COM1, "Summary: %zu Blocks | Free: %zu Bytes | Used: %zu Bytes | "
-                        "Total: %zu Bytes\n",
-                  block_count, total_free, total_used, total_free + total_used);
+    serial_printf(COM1, "Summary: %zu Blocks | Free: %zu Bytes | Used: %zu Bytes | Total: %zu Bytes\n", block_count, total_free, total_used, total_free + total_used);
     serial_printf(COM1, "===========================================================================================\n\n");
 
     spinlock_release_irqrestore(&heap_lock, flags);
