@@ -205,12 +205,6 @@ void kernel_init_thread(void *arg) {
     for (int i = 0; i < 10; i++)
         thread_yield();
 
-    run_extended_stress_tests();
-
-    heap_dump();
-    for (int i = 0; i < 10; i++)
-        thread_yield();
-
     while (1) {
         thread_yield();
     }

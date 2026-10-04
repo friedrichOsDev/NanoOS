@@ -1,6 +1,6 @@
 /**
  * @file stress_test.c
- * @brief TMP testing file
+ * @brief NanoOS Integration & System Stress Test Suite
  */
 
 #include <arch/x86_64/mm/memdef.h>
@@ -31,16 +31,19 @@
 
 #define TEST_PASS(msg) serial_printf(COM1, "[PASS] %s\n", msg)
 
-/* Shared State for Multithreading Tests */
+/* Shared State for Multithreading & SMP Tests */
 static spinlock_t test_lock = SPINLOCK_INIT;
+static spinlock_t smp_stress_lock = SPINLOCK_INIT;
 static volatile uint64_t shared_counter = 0;
+static volatile uint64_t smp_concurrent_hits = 0;
 static volatile bool fpu_stress_success = true;
+static volatile bool expected_page_fault_triggered = false;
 
 /* =========================================================================
  * Phase 1: PMM, VMM & Heap Stress Tests
  * ========================================================================= */
 
-static bool test_memory_management() {
+static bool test_memory_management(void) {
     serial_printf(COM1, "\n--- [Phase 1] Memory Management Tests ---\n");
 
     /* 1.1 PMM Allocation & Free Test */
@@ -89,7 +92,7 @@ static bool test_memory_management() {
  * Phase 2: ACPI, APIC & HPET Tests
  * ========================================================================= */
 
-static bool test_timers_and_apic() {
+static bool test_timers_and_apic(void) {
     serial_printf(COM1, "\n--- [Phase 2] ACPI, APIC & Timer Tests ---\n");
 
     TEST_ASSERT(is_apic_initialized(), "APIC is not initialized");
@@ -144,7 +147,7 @@ static void thread_fpu_worker_b(void *arg) {
     thread_exit();
 }
 
-static bool test_scheduler_and_fpu() {
+static bool test_scheduler_and_fpu(void) {
     serial_printf(COM1, "\n--- [Phase 3] Scheduler, Spinlock & FPU Tests ---\n");
 
     shared_counter = 0;
@@ -176,7 +179,7 @@ static bool test_scheduler_and_fpu() {
  * Phase 4: SMP Multi-Core & IPI Tests
  * ========================================================================= */
 
-static bool test_smp_and_ipis() {
+static bool test_smp_and_ipis(void) {
     serial_printf(COM1, "\n--- [Phase 4] SMP & Inter-Processor Interrupts ---\n");
 
     cpu_local_t *current_cpu = smp_get_current_cpu();
@@ -199,53 +202,19 @@ static bool test_smp_and_ipis() {
 }
 
 /* =========================================================================
- * Kernel Stress Test Entry Point
- * ========================================================================= */
-
-void run_kernel_stress_test() {
-    serial_printf(COM1, "\n==================================================\n");
-    serial_printf(COM1, "       NanoOS Kernel Integration Stress Test      \n");
-    serial_printf(COM1, "==================================================\n");
-
-    bool all_passed = true;
-
-    all_passed &= test_memory_management();
-    all_passed &= test_timers_and_apic();
-    all_passed &= test_scheduler_and_fpu();
-    all_passed &= test_smp_and_ipis();
-
-    serial_printf(COM1, "\n--------------------------------------------------\n");
-    if (all_passed) {
-        serial_printf(COM1, " [SUCCESS] All Kernel Integration Tests Passed!\n");
-    } else {
-        serial_printf(COM1, " [FAILURE] One or more tests failed.\n");
-    }
-    serial_printf(COM1, "--------------------------------------------------\n\n");
-}
-
-/* =========================================================================
  * Phase 5: Exception Handling & Fault Injection Tests
  * ========================================================================= */
 
-static volatile bool expected_page_fault_triggered = false;
-
-/* Custom Exception Handler Hook für den Test */
-void test_page_fault_handler() {
+void test_page_fault_handler(void) {
     expected_page_fault_triggered = true;
 }
 
-static bool test_page_fault_isolation() {
+static bool test_page_fault_isolation(void) {
     serial_printf(COM1, "\n--- [Phase 5] Fault Injection & Exception Tests ---\n");
 
-    /* 5.1 Non-Present Page Allocation & Access Check */
     virt_addr_t unmapped_addr = 0xFFFF900000000000;
-
     serial_printf(COM1, "[INFO] Validating Page Fault Isolation on unmapped write...\n");
 
-    /*
-     * Hinweis: Wenn du den IDT Exception Handler für Vector 14 überschreibst,
-     * kannst du hier kontrolliert einen Fault abfangen.
-     */
     vmm_unmap_page((page_table_t *)kernel_pml4, unmapped_addr);
 
     TEST_PASS("Fault Handler Registry & Kernel Exception Recovery");
@@ -256,17 +225,16 @@ static bool test_page_fault_isolation() {
  * Phase 6: Framebuffer & MMIO Mapping Tests
  * ========================================================================= */
 
-static bool test_framebuffer_and_mmio() {
+static bool test_framebuffer_and_mmio(void) {
     serial_printf(COM1, "\n--- [Phase 6] MMIO & Framebuffer Stress Tests ---\n");
 
-    /* Map MMIO Region (z. B. LAPIC oder Framebuffer Physical Base) */
     phys_addr_t mmio_phys = 0xFEC00000; /* IOAPIC Physical Base */
     virt_addr_t mmio_virt = vmm_map_mmio((page_table_t *)kernel_pml4, mmio_phys, 0x1000);
 
     TEST_ASSERT(mmio_virt != 0, "MMIO Mapping failed");
     TEST_ASSERT(IS_PAGE_ALIGNED(mmio_virt), "MMIO Virtual Address not page aligned");
 
-    /* Verifikation: Memory-Mapped I/O Lesezugriff */
+    /* Memory-Mapped I/O read check */
     volatile uint32_t *ioapic_reg = (volatile uint32_t *)mmio_virt;
     uint32_t reg_val = *ioapic_reg;
     (void)reg_val;
@@ -281,9 +249,6 @@ static bool test_framebuffer_and_mmio() {
  * Phase 7: SMP Multicore Lock Contention & IPI Avalanche
  * ========================================================================= */
 
-static spinlock_t smp_stress_lock = SPINLOCK_INIT;
-static volatile uint64_t smp_concurrent_hits = 0;
-
 static void smp_lock_contention_worker(void *arg) {
     (void)arg;
     for (int i = 0; i < 50000; i++) {
@@ -294,12 +259,11 @@ static void smp_lock_contention_worker(void *arg) {
     thread_exit();
 }
 
-static bool test_smp_lock_contention() {
+static bool test_smp_lock_contention(void) {
     serial_printf(COM1, "\n--- [Phase 7] SMP Multi-Core Lock Contention ---\n");
 
     smp_concurrent_hits = 0;
 
-    /* Spawne Worker auf mehreren Cores */
     for (int i = 0; i < 4; i++) {
         thread_create(NULL, smp_lock_contention_worker, NULL, "smp_lock_worker");
     }
@@ -317,7 +281,7 @@ static bool test_smp_lock_contention() {
  * Phase 8: Scheduler Edge Cases & Thread Sleep Precision
  * ========================================================================= */
 
-static bool test_scheduler_edge_cases() {
+static bool test_scheduler_edge_cases(void) {
     serial_printf(COM1, "\n--- [Phase 8] Scheduler Precision & Edge-Cases ---\n");
 
     uint64_t start = hpet_uptime_ms();
@@ -332,20 +296,33 @@ static bool test_scheduler_edge_cases() {
 }
 
 /* =========================================================================
- * Ergänzung in run_kernel_stress_test()
+ * Kernel Stress Test Entry Point
  * ========================================================================= */
 
-void run_extended_stress_tests() {
+void run_kernel_stress_test(void) {
+    serial_printf(COM1, "\n==================================================\n");
+    serial_printf(COM1, "       NanoOS Kernel Integration Stress Test      \n");
+    serial_printf(COM1, "==================================================\n");
+
     bool all_passed = true;
 
+    /* Phase 1 - 4: Core Subsystems */
+    all_passed &= test_memory_management();
+    all_passed &= test_timers_and_apic();
+    all_passed &= test_scheduler_and_fpu();
+    all_passed &= test_smp_and_ipis();
+
+    /* Phase 5 - 8: Extended Stress & Edge-Cases */
     all_passed &= test_page_fault_isolation();
     all_passed &= test_framebuffer_and_mmio();
     all_passed &= test_smp_lock_contention();
     all_passed &= test_scheduler_edge_cases();
 
+    serial_printf(COM1, "\n------------------------------------------------------\n");
     if (all_passed) {
-        serial_printf(COM1, " [SUCCESS] Extended Integration Stress Tests Passed!\n");
+        serial_printf(COM1, " [SUCCESS] All Kernel Integration Stress Tests Passed!\n");
     } else {
-        serial_printf(COM1, " [FAILURE] Extended Stress Tests failed.\n");
+        serial_printf(COM1, " [FAILURE] One or more tests failed.\n");
     }
+    serial_printf(COM1, "------------------------------------------------------\n\n");
 }

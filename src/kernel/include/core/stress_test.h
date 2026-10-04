@@ -6,4 +6,3 @@
 #pragma once
 
 void run_kernel_stress_test();
-void run_extended_stress_tests();
