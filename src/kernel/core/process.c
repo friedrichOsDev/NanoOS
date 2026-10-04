@@ -1,6 +1,8 @@
 /**
  * @file process.c
- * @brief Process implementation
+ * @brief Implementierung der Prozessverwaltung und -registrierung.
+ * @details Bietet Funktionen zur Erstellung von Prozessen, Vergabe von eindeutigen
+ *          Thread-sicheren PIDs und Anfügen von Prozessen an die globale Prozessliste.
  * @author friedrichOsDev
  */
 
@@ -34,12 +36,12 @@ process_t *process_create(const char *name, page_table_t *pml4) {
         return NULL;
     }
 
-    // set PID thread-safe
+    // PID thread-sicher zuweisen
     uint64_t flags = spinlock_acquire_irqsave(&pid_lock);
     proc->pid = next_pid++;
     spinlock_release_irqrestore(&pid_lock, flags);
 
-    // set Name
+    // Name setzen
     if (name) {
         strncpy(proc->name, name, sizeof(proc->name) - 1);
     } else {
