@@ -1,6 +1,8 @@
 /**
  * @file init.c
- * @brief Kernel initialization
+ * @brief Hauptinitialisierungsroutine und Multiboot2-Parser des Kernels.
+ * @details Richtet die grundlegenden Architektur-Komponenten (GDT, IDT, PMM, VMM, Heap,
+ *          ACPI, APIC, HPET, RTC), das Multi-Core-Scheduling und die ersten Init-Threads ein.
  * @author friedrichOsDev
  */
 
@@ -40,9 +42,11 @@ phys_addr_t rsdp_phys_addr = 0;
 static rsdp_t rsdp_stable_copy;
 
 /**
- * Parses the MULTIBOOT2 info
- * @param magic The MULTIBOOT2 magic number
- * @param info_ptr The MULTIBOOT2 info address
+ * @brief Liest und verarbeitet die Multiboot2-Tags des Bootloaders.
+ * @details Extrahiert Kernel-Befehlszeile, Bootloader-Namen, geladene Module,
+ *          Speichermap, Framebuffer-Konfiguration und ACPI-RSDP-Zeiger.
+ * @param magic Die von GRUB/Multiboot übergebene Magic Number.
+ * @param info_ptr Physikalische Adresse der Multiboot-Tags.
  */
 static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
     if (magic != MULTIBOOT2_MAGIC) {
@@ -221,9 +225,8 @@ static void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
 }
 
 /**
- * Initializes the Kernel after first kernel_init function dies because the
- * scheduler was activated
- * @param arg Arguments given by the thread creator
+ * @brief Erster Kernel-Thread nach der Aktivierung des Schedulers.
+ * @param arg Nicht verwendeter Argumentzeiger.
  */
 void kernel_init_thread(void *arg) {
     (void)arg;
@@ -249,11 +252,6 @@ void kernel_init_thread(void *arg) {
     }
 }
 
-/**
- * Initializes the Kernel
- * @param magic The MULTIBOOT2 magic number given by GRUB
- * @param info_ptr The MULTIBOOT2 info address given by GRUB
- */
 void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     serial_init(COM1);
     serial_printf(COM1, "INIT: start\n");
@@ -296,13 +294,12 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
 
     serial_printf(COM1, "INIT: Multi-Core Scheduling running!\n");
 
-    thread_create_on_cpu(kernel_process, kernel_init_thread, NULL,
-                         "kernel_init", -1);
+    thread_create_on_cpu(kernel_process, kernel_init_thread, NULL, "kernel_init", -1);
 
     scheduler_enable();
     scheduler_thread_exit();
 
-    // unreachable
+    // Unerreichbarer Code (Fallback)
 
     while (1) {
         __asm__ __volatile__("hlt");
