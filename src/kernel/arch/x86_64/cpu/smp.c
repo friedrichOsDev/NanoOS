@@ -1,6 +1,9 @@
 /**
  * @file smp.c
- * @brief Symmetric Multiprocessing (SMP) Implementation
+ * @brief Implementierung des Symmetric Multiprocessing (SMP) Bootstrappings.
+ * @details Enthält Funktionen zur Erkennung von CPU-Kernen via ACPI MADT,
+ *          zum Starten der Application Processors (APs) mittels Trampoline-Code
+ *          und zur Initialisierung des Pro-CPU-Schedulings.
  * @author friedrichOsDev
  */
 
@@ -31,10 +34,16 @@ extern uint8_t stack_top[];
 cpu_local_t cpus[MAX_CPUS];
 size_t smp_cpu_count = 1;
 
+/** @brief Synchronisations-Flag für den Hochfahrprozess einzelner AP-Kerne. */
 static volatile bool ap_boot_flag = false;
 
+/**
+ * @brief Aktiviert und konfiguriert das Local APIC-Modul der aktuellen CPU.
+ * @details Schaltet das Bit 11 in der IA32_APIC_BASE MSR ein, konfiguriert DFR,
+ *          LDR, den Spurious Interrupt Vector Register (SIVR) sowie Task Priority (TPR).
+ */
 static void smp_enable_lapic(void) {
-    // activate LAPIC in MSR
+    // LAPIC im MSR aktivieren
     uint32_t low, high;
     __asm__ __volatile__("rdmsr" : "=a"(low), "=d"(high) : "c"(0x1B));
     low |= (1 << 11);
@@ -58,10 +67,12 @@ cpu_local_t *smp_get_current_cpu(void) {
 }
 
 /**
- * 64-Bit C entry for all Application Processors (APs)
+ * @brief Einstiegspunkt im 64-Bit Long Mode für hochgefahrene Application Processors (APs).
+ * @details Lädt GDT/IDT, initialisiert FPU/TSS/LAPIC, erstellt den Pro-CPU Idle-Thread
+ *          sowie den Haupt-Kontext-Thread, schaltet Interrupts ein und geht in die Scheduler-Schleife über.
  */
 void smp_ap_main(void) {
-    // load GDT & IDT
+    // GDT & IDT für den aktuellen Kern laden
     gdt_flush((uint64_t)&gdtp);
     idt_load((uint64_t)&idtp);
 
@@ -75,18 +86,18 @@ void smp_ap_main(void) {
 
     gdt_init_core(local_cpu->cpu_id, local_cpu->kernel_stack);
 
-    // initialize Local APIC of the AP
+    // Local APIC und Timer des APs initialisieren
     smp_enable_lapic();
     lapic_timer_start_ap();
 
-    // create different idle tasks for each core
+    // Eigenständigen Idle-Task für diesen CPU-Kern erstellen
     char idle_name[16];
     snprintf(idle_name, sizeof(idle_name), "idle_%d", local_cpu->cpu_id);
     local_cpu->idle_thread = thread_create_on_cpu(
         kernel_process, idle_task, NULL, idle_name, local_cpu->cpu_id);
     pop_next_ready_thread_for_cpu(local_cpu->cpu_id);
 
-    // Create a thread struct for the currently running AP context
+    // Thread-Struktur für den aktuell laufenden AP-Kontext anlegen
     thread_t *ap_main_thread = (thread_t *)kzalloc(sizeof(thread_t));
     ap_main_thread->tid = 1000 + local_cpu->cpu_id; // Dummy TID
     snprintf(ap_main_thread->name, sizeof(ap_main_thread->name), "idle_ap_%d",
@@ -107,10 +118,10 @@ void smp_ap_main(void) {
     serial_printf(COM1, "SMP: CPU Core %d (APIC ID %d) online and ready!\n",
                   local_cpu->cpu_id, local_cpu->lapic_id);
 
-    // enable interrupts
+    // Interrupts aktivieren
     __asm__ __volatile__("sti");
 
-    // start scheduler at the core
+    // Scheduler-Schleife für diesen Kern starten
     while (1) {
         scheduler_schedule();
         __asm__ __volatile__("hlt");
@@ -128,7 +139,7 @@ void smp_init(void) {
 
     uint32_t bsp_lapic_id = lapic_get_id();
 
-    // register BSP (Core 0)
+    // Bootstrap Processor (BSP / Kern 0) registrieren
     cpus[0].cpu_id = 0;
     cpus[0].lapic_id = bsp_lapic_id;
     cpus[0].kernel_stack = (uint64_t)stack_top;
@@ -137,7 +148,7 @@ void smp_init(void) {
     }
     cpus[0].online = true;
 
-    // search MADT for all cores
+    // MADT-Einträge parsen und alle weiteren AP-Kerne erfassen
     uint8_t *ptr = madt->entries;
     uint8_t *end = (uint8_t *)madt + madt->header.length;
 
@@ -145,7 +156,7 @@ void smp_init(void) {
         madt_entry_header_t *entry = (madt_entry_header_t *)ptr;
         if (entry->type == MADT_LAPIC_TYPE) {
             madt_lapic_entry_t *lapic = (madt_lapic_entry_t *)entry;
-            // Flags Bit 0 = Processor Enabled
+            // Bit 0 in Flags = Processor Enabled
             if ((lapic->flags & 1) && lapic->apic_id != bsp_lapic_id) {
                 if (smp_cpu_count < MAX_CPUS) {
                     cpus[smp_cpu_count].cpu_id = smp_cpu_count;
@@ -164,12 +175,12 @@ void smp_init(void) {
     if (smp_cpu_count == 1)
         return;
 
-    // copy smb trampoline
+    // Real-Mode Trampoline-Code auf 0x8000 kopieren
     size_t trampoline_size =
         (size_t)(smp_trampoline_end - smp_trampoline_start);
     memcpy((void *)P2V(0x8000), smp_trampoline_start, trampoline_size);
 
-    // start every core
+    // Alle erkannten AP-Kerne nacheinander hochfahren
     for (size_t i = 1; i < smp_cpu_count; i++) {
         uint32_t target_apic_id = cpus[i].lapic_id;
 
@@ -177,7 +188,7 @@ void smp_init(void) {
             continue;
         }
 
-        // allocate stack for the core
+        // Dedicated Kernel Stack für den Kern allozieren
         void *ap_stack = (void *)kzalloc(STACK_SIZE);
         if (!ap_stack)
             return;
@@ -188,34 +199,34 @@ void smp_init(void) {
         }
         cpus[i].kernel_stack = ap_stack_top;
 
-        // write the parameter (for each core different)
+        // Trampoline-Parameter im Real-Mode Speicherbereich (0x8000) eintragen
         uint64_t *trampoline_vars =
             (uint64_t *)P2V(0x8000 + ((uint64_t)&smp_trampoline_pml4 -
                                       (uint64_t)smp_trampoline_start));
 
-        trampoline_vars[0] = kernel_pml4_phys;      // smp_trampoline_pml4
-        trampoline_vars[1] = ap_stack_top;          // smp_trampoline_stack
-        trampoline_vars[2] = (uint64_t)smp_ap_main; // smp_trampoline_entry
+        trampoline_vars[0] = kernel_pml4_phys;      // Page Table
+        trampoline_vars[1] = ap_stack_top;          // Stack Pointer
+        trampoline_vars[2] = (uint64_t)smp_ap_main; // Target Entry
 
         ap_boot_flag = false;
 
         serial_printf(COM1, "SMP: booting Core %d (APIC ID %d)...\n", i,
                       target_apic_id);
 
-        // INIT-SIPI-SIPI
+        // Standard INIT-SIPI-SIPI Sequenz senden
         lapic_send_init(target_apic_id);
-        hpet_mdelay(10); // wait 10 ms
+        hpet_mdelay(10); // 10 ms warten
 
-        // Startup IPI witch Vektor 0x08 (phys: 0x08 * 4096 = 0x8000)
+        // Startup-IPI mit Vektor 0x08 senden (Adresse: 0x08 * 4096 = 0x8000)
         lapic_send_sipi(target_apic_id, 0x08);
-        hpet_udelay(200); // wait 200 us
+        hpet_udelay(200); // 200 µs warten
 
         if (!ap_boot_flag) {
             lapic_send_sipi(target_apic_id, 0x08);
             hpet_mdelay(10);
         }
 
-        // wait 50 ms for the core to be bootet
+        // Maximal 50 ms auf Rückmeldung des Kerns warten
         uint64_t timeout = 50;
         while (!ap_boot_flag && timeout > 0) {
             hpet_mdelay(1);
