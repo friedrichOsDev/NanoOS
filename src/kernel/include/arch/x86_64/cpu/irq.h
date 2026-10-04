@@ -1,11 +1,12 @@
 /**
  * @file irq.h
- * @brief IRQ Setup
+ * @brief Schnittstelle zur Initialisierung von Hardware-IRQs.
+ * @author friedrichOsDev
  */
 
 #pragma once
 
 /**
- * @brief Disables legacy PIC and registers initial hardware IRQ vectors in IDT
+ * @brief Deaktiviert den Legacy-PIC und registriert die ersten 16 Hardware-IRQ-Vektoren in der IDT.
  */
 void irq_init();

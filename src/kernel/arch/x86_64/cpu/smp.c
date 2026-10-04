@@ -70,7 +70,7 @@ cpu_local_t *smp_get_current_cpu() {
  * @details Lädt GDT/IDT, initialisiert FPU/TSS/LAPIC, erstellt den Pro-CPU Idle-Thread
  *          sowie den Haupt-Kontext-Thread, schaltet Interrupts ein und geht in die Scheduler-Schleife über.
  */
-void smp_ap_main() {
+static void smp_ap_main() {
     // GDT & IDT für den aktuellen Kern laden
     gdt_flush((uint64_t)&gdtp);
     idt_load((uint64_t)&idtp);

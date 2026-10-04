@@ -1,6 +1,7 @@
 /**
  * @file irq.c
- * @brief IRQ Setup
+ * @brief Einrichtung der Hardware-Interrupt-Lines (IRQs) in der IDT.
+ * @author friedrichOsDev
  */
 
 #include <arch/x86_64/cpu/gdt.h>
@@ -14,6 +15,7 @@
 void irq_init() {
     pic_disable();
 
+    /* Zuordnungstabelle der ersten 16 IRQ-Assembly-Stubs */
     static const uint64_t irq_table[16] = {
         (uint64_t)irq0, (uint64_t)irq1, (uint64_t)irq2, (uint64_t)irq3,
         (uint64_t)irq4, (uint64_t)irq5, (uint64_t)irq6, (uint64_t)irq7,
