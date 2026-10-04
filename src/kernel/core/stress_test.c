@@ -17,6 +17,7 @@
 #include <arch/x86_64/mm/pmm.h>
 #include <arch/x86_64/mm/vmm.h>
 #include <core/scheduler.h>
+#include <core/stress_test.h>
 #include <core/sync.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -393,6 +394,9 @@ void run_kernel_stress_test(void) {
     all_passed &= test_framebuffer_and_mmio();
     all_passed &= test_smp_lock_contention();
     all_passed &= test_scheduler_edge_cases();
+
+    /* Phase 9: Aggressive Libm & SSE/FPU Stress Suite */
+    all_passed &= run_math_lib_stress_test();
 
     serial_printf(COM1, "\n------------------------------------------------------\n");
     if (all_passed) {

@@ -14,3 +14,10 @@
  * und gibt die Testergebnisse sequentiell über die serielle Schnittstelle (COM1) aus.
  */
 void run_kernel_stress_test();
+
+/**
+ * @brief Führt die Math-Test-Suite aus.
+ *
+ * Diese Funktion durchläuft alle Math-Tests
+ */
+bool run_math_lib_stress_test(void);
