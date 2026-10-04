@@ -1,6 +1,6 @@
 /**
  * @file sync.c
- * @brief Spinlock / Mutex implementation
+ * @brief Implementierung der Primitiven für Spinlocks und Mutexes.
  * @author friedrichOsDev
  */
 
@@ -8,6 +8,10 @@
 #include <core/sync.h>
 #include <core/thread.h>
 
+/**
+ * @brief Liest das aktuelle RFLAGS-Register aus und deaktiviert Interrupts per CLI-Instruktion.
+ * @return Der Wert des RFLAGS-Registers vor dem Aufruf von CLI.
+ */
 static inline uint64_t read_rflags_and_cli() {
     uint64_t rflags;
     __asm__ __volatile__("pushfq\n\t"
@@ -19,6 +23,10 @@ static inline uint64_t read_rflags_and_cli() {
     return rflags;
 }
 
+/**
+ * @brief Stellt den im RFLAGS-Register gespeicherten Zustand (inkl. Interrupt-Flag) wieder her.
+ * @param rflags Zu wiederherstellender RFLAGS-Wert.
+ */
 static inline void restore_rflags(uint64_t rflags) {
     __asm__ __volatile__("pushq %0\n\t"
                          "popfq"
