@@ -1,6 +1,6 @@
 # META
 NAME = "NanoOS"
-VERSION = "0.0.2"
+VERSION = 0.0.2
 
 # Compilers
 TARGET = x86_64-elf

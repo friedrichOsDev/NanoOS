@@ -7,6 +7,7 @@
 #include <core/scheduler.h>
 #include <core/sync.h>
 #include <core/thread.h>
+#include <stdbool.h>
 
 /**
  * @brief Liest das aktuelle RFLAGS-Register aus und deaktiviert Interrupts per CLI-Instruktion.
@@ -60,6 +61,8 @@ void spinlock_release_irqrestore(spinlock_t *lock, uint64_t rflags) {
 }
 
 void mutex_lock(mutex_t *mux) {
+    if (!mux)
+        return;
     uint64_t flags = spinlock_acquire_irqsave(&mux->lock);
 
     if (!mux->locked) {
@@ -93,6 +96,8 @@ void mutex_lock(mutex_t *mux) {
 }
 
 void mutex_unlock(mutex_t *mux) {
+    if (!mux)
+        return;
     uint64_t flags = spinlock_acquire_irqsave(&mux->lock);
 
     if (mux->wait_queue != NULL) {
@@ -108,4 +113,20 @@ void mutex_unlock(mutex_t *mux) {
     }
 
     spinlock_release_irqrestore(&mux->lock, flags);
+}
+
+bool mutex_trylock(mutex_t *mux) {
+    if (!mux)
+        return false;
+
+    uint64_t flags = spinlock_acquire_irqsave(&mux->lock);
+
+    if (!mux->locked) {
+        mux->locked = true;
+        spinlock_release_irqrestore(&mux->lock, flags);
+        return true;
+    }
+
+    spinlock_release_irqrestore(&mux->lock, flags);
+    return false;
 }

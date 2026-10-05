@@ -91,3 +91,13 @@ void mutex_lock(mutex_t *mux);
  * @param mux Zeiger auf das Mutex.
  */
 void mutex_unlock(mutex_t *mux);
+
+/**
+ * @brief Versucht ein Mutex zusperren.
+ *
+ * @note Wenn das Mutex frei war, dann ist es jetzt gesperrt.
+ *
+ * @param mux Zeiger auf das Mutex.
+ * @return true, wenn das Mutex frei war, false andernfalls.
+ */
+bool mutex_trylock(mutex_t *mux);
