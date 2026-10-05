@@ -27,6 +27,7 @@
 #include <core/scheduler.h>
 #include <core/taskmgr.h>
 #include <core/thread.h>
+#include <drivers/video/framebuffer/framebuffer.h>
 #include <lib/string.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -196,8 +197,12 @@ void kernel_init_thread(void *arg) {
 
     serial_printf(COM1, "INIT: kernel_init_thread started\n");
 
+    fb_init();
+    fb_enable_rendering();
+
     while (1) {
-        thread_yield();
+        serial_printf(COM1, "FPS: %d\n", fb_get_current_fps());
+        thread_sleep_ms(500);
     }
 }
 
