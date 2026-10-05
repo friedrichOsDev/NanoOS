@@ -1,13 +1,13 @@
 /**
- * @file pci.h
- * @brief PCIe / PCI MMCONFIG Subsystem & Driver Framework.
+ * @file pci.c
+ * @brief Implementierung des PCIe / PCI MMCONFIG Subsystems und Driver Frameworks.
  * @author friedrichOsDev
  */
 
-#include <core/sync.h>
 #include <arch/x86_64/drivers/pci.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/heap.h>
+#include <core/sync.h>
 #include <lib/string.h>
 
 static pci_device_t *device_list_head = NULL;
@@ -16,6 +16,11 @@ static spinlock_t pci_lock = SPINLOCK_INIT;
 
 /**
  * @brief Berechnet die virtuelle Adresse des Konfigurationsraums für ein PCI-Gerät via ECAM (MCFG).
+ * @param bus PCI Busnummer.
+ * @param dev PCI Gerätenummer.
+ * @param func PCI Funktionsnummer.
+ * @param offset Byte-Offset innerhalb des Konfigurationsraums.
+ * @return Virtuelle Adresse des Registers oder 0, falls der Bus nicht im MCFG vorhanden ist.
  */
 static virt_addr_t pci_get_ecam_addr(uint8_t bus, uint8_t dev, uint8_t func, uint16_t offset) {
     for (size_t i = 0; i < mcfg_info.count; i++) {
@@ -30,44 +35,52 @@ static virt_addr_t pci_get_ecam_addr(uint8_t bus, uint8_t dev, uint8_t func, uin
 }
 
 uint8_t pci_read8(pci_device_t *dev, uint16_t offset) {
-    if (!dev || !dev->config_space_virt) return 0xFF;
+    if (!dev || !dev->config_space_virt)
+        return 0xFF;
     return *(volatile uint8_t *)(dev->config_space_virt + offset);
 }
 
 uint16_t pci_read16(pci_device_t *dev, uint16_t offset) {
-    if (!dev || !dev->config_space_virt) return 0xFFFF;
+    if (!dev || !dev->config_space_virt)
+        return 0xFFFF;
     return *(volatile uint16_t *)(dev->config_space_virt + offset);
 }
 
 uint32_t pci_read32(pci_device_t *dev, uint16_t offset) {
-    if (!dev || !dev->config_space_virt) return 0xFFFFFFFF;
+    if (!dev || !dev->config_space_virt)
+        return 0xFFFFFFFF;
     return *(volatile uint32_t *)(dev->config_space_virt + offset);
 }
 
 void pci_write8(pci_device_t *dev, uint16_t offset, uint8_t val) {
-    if (!dev || !dev->config_space_virt) return;
+    if (!dev || !dev->config_space_virt)
+        return;
     *(volatile uint8_t *)(dev->config_space_virt + offset) = val;
 }
 
 void pci_write16(pci_device_t *dev, uint16_t offset, uint16_t val) {
-    if (!dev || !dev->config_space_virt) return;
+    if (!dev || !dev->config_space_virt)
+        return;
     *(volatile uint16_t *)(dev->config_space_virt + offset) = val;
 }
 
 void pci_write32(pci_device_t *dev, uint16_t offset, uint32_t val) {
-    if (!dev || !dev->config_space_virt) return;
+    if (!dev || !dev->config_space_virt)
+        return;
     *(volatile uint32_t *)(dev->config_space_virt + offset) = val;
 }
 
 /**
- * @brief Liest BARs aus und bestimmt Speicheradresse, Typ (32/64-Bit, MMIO/IO) und Größe.
+ * @brief Liest die BARs (Base Address Registers) aus und ermittelt Speicheradresse, Typ und Größe.
+ * @param dev Zeiger auf das zu verarbeitende PCI-Gerät.
  */
 static void pci_parse_bars(pci_device_t *dev) {
     for (int i = 0; i < 6; i++) {
         uint16_t bar_offset = 0x10 + (i * 4);
         uint32_t bar_low = pci_read32(dev, bar_offset);
 
-        if (!bar_low) continue;
+        if (!bar_low)
+            continue;
 
         bool is_io = (bar_low & 0x01) != 0;
         dev->is_mmio_bar[i] = !is_io;
@@ -110,17 +123,20 @@ static void pci_parse_bars(pci_device_t *dev) {
 
             dev->bar[i] = full_bar;
 
-            if (is_64) i++; // Nächste BAR wird von den oberen 32 Bit belegt
+            if (is_64)
+                i++; // Nächste BAR wird von den oberen 32 Bit belegt
         }
     }
 }
 
 /**
- * @brief Parst die Capability Linked List im Konfigurationsraum (MSI/MSI-X Offsets).
+ * @brief Parst die Capability Linked List im Konfigurationsraum (Suchen von MSI/MSI-X Offsets).
+ * @param dev Zeiger auf das zu verarbeitende PCI-Gerät.
  */
 static void pci_parse_capabilities(pci_device_t *dev) {
     uint16_t status = pci_read16(dev, 0x06);
-    if (!(status & (1 << 4))) return; // Bit 4: Capabilities List implementiert?
+    if (!(status & (1 << 4)))
+        return; // Bit 4: Capabilities List implementiert?
 
     uint8_t cap_ptr = pci_read8(dev, 0x34) & ~0x03;
 
@@ -134,32 +150,42 @@ static void pci_parse_capabilities(pci_device_t *dev) {
             dev->msix_cap_offset = cap_ptr;
         }
 
-        if (next_ptr == cap_ptr) break;
+        if (next_ptr == cap_ptr)
+            break;
         cap_ptr = next_ptr;
     }
 }
 
+/**
+ * @brief Prüft ein einzelnes PCI-Gerät an der angegebenen Adresse und fügt es bei Validität hinzu.
+ * @param bus Busnummer.
+ * @param dev Gerätenummer.
+ * @param func Funktionsnummer.
+ */
 static void pci_probe_device(uint8_t bus, uint8_t dev, uint8_t func) {
     virt_addr_t ecam = pci_get_ecam_addr(bus, dev, func, 0);
-    if (!ecam) return;
+    if (!ecam)
+        return;
 
     volatile uint16_t *vendor_ptr = (volatile uint16_t *)ecam;
-    if (*vendor_ptr == 0xFFFF) return;
+    if (*vendor_ptr == 0xFFFF)
+        return;
 
     pci_device_t *device = (pci_device_t *)kzalloc(sizeof(pci_device_t));
-    if (!device) return;
+    if (!device)
+        return;
 
     device->bus = bus;
     device->device = dev;
     device->function = func;
     device->config_space_virt = ecam;
 
-    device->vendor_id   = pci_read16(device, 0x00);
-    device->device_id   = pci_read16(device, 0x02);
+    device->vendor_id = pci_read16(device, 0x00);
+    device->device_id = pci_read16(device, 0x02);
     device->revision_id = pci_read8(device, 0x08);
-    device->prog_if     = pci_read8(device, 0x09);
-    device->subclass    = pci_read8(device, 0x0A);
-    device->class_code  = pci_read8(device, 0x0B);
+    device->prog_if = pci_read8(device, 0x09);
+    device->subclass = pci_read8(device, 0x0A);
+    device->class_code = pci_read8(device, 0x0B);
 
     pci_parse_bars(device);
     pci_parse_capabilities(device);
@@ -185,9 +211,11 @@ void pci_init() {
         for (uint32_t bus = entry->start_bus; bus <= entry->end_bus; bus++) {
             for (uint8_t dev = 0; dev < 32; dev++) {
                 virt_addr_t base_ecam = pci_get_ecam_addr(bus, dev, 0, 0);
-                if (!base_ecam) continue;
+                if (!base_ecam)
+                    continue;
 
-                if (*(volatile uint16_t *)base_ecam == 0xFFFF) continue;
+                if (*(volatile uint16_t *)base_ecam == 0xFFFF)
+                    continue;
 
                 uint8_t header_type = *(volatile uint8_t *)(base_ecam + 0x0E);
                 bool is_multi_function = (header_type & 0x80) != 0;
@@ -205,16 +233,24 @@ pci_device_t *pci_get_devices() {
     return device_list_head;
 }
 
+/**
+ * @brief Gleicht einen spezifischen Treiber mit allen bekannten PCI-Geräten ab.
+ * @param driver Zeiger auf den abzugleichenden Treiber.
+ */
 static void pci_match_driver(pci_driver_t *driver) {
     uint64_t flags = spinlock_acquire_irqsave(&pci_lock);
     pci_device_t *dev = device_list_head;
     while (dev) {
         bool match = true;
 
-        if (driver->vendor_id != 0xFFFF && driver->vendor_id != dev->vendor_id) match = false;
-        if (driver->device_id != 0xFFFF && driver->device_id != dev->device_id) match = false;
-        if (driver->class_code != 0xFF && driver->class_code != dev->class_code) match = false;
-        if (driver->subclass != 0xFF && driver->subclass != dev->subclass) match = false;
+        if (driver->vendor_id != 0xFFFF && driver->vendor_id != dev->vendor_id)
+            match = false;
+        if (driver->device_id != 0xFFFF && driver->device_id != dev->device_id)
+            match = false;
+        if (driver->class_code != 0xFF && driver->class_code != dev->class_code)
+            match = false;
+        if (driver->subclass != 0xFF && driver->subclass != dev->subclass)
+            match = false;
 
         if (match && driver->probe) {
             if (driver->probe(dev)) {
@@ -227,7 +263,8 @@ static void pci_match_driver(pci_driver_t *driver) {
 }
 
 void pci_register_driver(pci_driver_t *driver) {
-    if (!driver) return;
+    if (!driver)
+        return;
 
     uint64_t flags = spinlock_acquire_irqsave(&pci_lock);
     driver->next = driver_list_head;
@@ -238,7 +275,8 @@ void pci_register_driver(pci_driver_t *driver) {
 }
 
 bool pci_enable_msi(pci_device_t *dev, uint8_t vector, uint8_t lapic_id) {
-    if (!dev || dev->msi_cap_offset == 0) return false;
+    if (!dev || dev->msi_cap_offset == 0)
+        return false;
 
     uint8_t cap = dev->msi_cap_offset;
     uint16_t msg_ctrl = pci_read16(dev, cap + 0x02);
