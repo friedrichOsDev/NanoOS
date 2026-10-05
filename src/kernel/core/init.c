@@ -17,6 +17,7 @@
 #include <arch/x86_64/cpu/irq.h>
 #include <arch/x86_64/cpu/rtc.h>
 #include <arch/x86_64/cpu/smp.h>
+#include <arch/x86_64/drivers/pci.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/heap.h>
 #include <arch/x86_64/mm/pmm.h>
@@ -237,6 +238,8 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     apic_init();
     hpet_init();
     rtc_init();
+
+    pci_init();
 
     lapic_timer_calibrate_and_start(1000);
 

@@ -238,22 +238,22 @@ void layer_draw_end(layer_t *layer);
 /**
  * @brief Initialisiert den Framebuffer-Treiber, allokiert den Backbuffer und startet den Renderer-Thread.
  */
-void fb_init(void);
+void fb_init();
 
 /**
  * @brief Stoppt das Rendering und gibt die Framebuffer-Ressourcen frei.
  */
-void fb_deinit(void);
+void fb_deinit();
 
 /**
  * @brief Aktiviert den Rendering-Prozess des Compositors.
  */
-void fb_enable_rendering(void);
+void fb_enable_rendering();
 
 /**
  * @brief Pausiert den Rendering-Prozess des Compositors.
  */
-void fb_disable_rendering(void);
+void fb_disable_rendering();
 
 /**
  * @brief Setzt die Ziel-Framerate (FPS) für das Render-System.
@@ -265,13 +265,13 @@ void fb_set_target_fps(uint64_t fps);
  * @brief Liefert die aktuell gemessenen Frames pro Sekunde (FPS).
  * @return Aktuelle Framerate.
  */
-uint64_t fb_get_current_fps(void);
+uint64_t fb_get_current_fps();
 
 /**
  * @brief Ruft die globale Bildschirmbreite in Pixeln ab.
  * @return Breite des Framebuffers.
  */
-static inline uint64_t fb_get_width(void) {
+static inline uint64_t fb_get_width() {
     return kernel_fb_info.fb_width;
 }
 
@@ -279,7 +279,7 @@ static inline uint64_t fb_get_width(void) {
  * @brief Ruft die globale Bildschirmhöhe in Pixeln ab.
  * @return Höhe des Framebuffers.
  */
-static inline uint64_t fb_get_height(void) {
+static inline uint64_t fb_get_height() {
     return kernel_fb_info.fb_height;
 }
 
@@ -287,6 +287,6 @@ static inline uint64_t fb_get_height(void) {
  * @brief Ruft die Gesamtabmessung des Bildschirms ab.
  * @return `rect_size_t` mit Breite und Höhe des Framebuffers.
  */
-static inline rect_size_t fb_get_size(void) {
+static inline rect_size_t fb_get_size() {
     return (rect_size_t){.width = fb_get_width(), .height = fb_get_height()};
 }

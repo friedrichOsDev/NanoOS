@@ -13,6 +13,7 @@
 #define FADT_SIGNATURE "FACP"
 #define MADT_SIGNATURE "APIC"
 #define HPET_SIGNATURE "HPET"
+#define MCFG_SIGNATURE "MCFG"
 
 #define MADT_LAPIC_TYPE 0
 #define MADT_IOAPIC_TYPE 1
@@ -21,6 +22,8 @@
 #define MADT_LAPIC_NMI_TYPE 4
 #define MADT_LAPIC_ADDRESS_OVERRIDE_TYPE 5
 #define MADT_LX2APIC_TYPE 9
+
+#define MAX_MCFG_ENTRIES 8
 
 /**
  * @struct rsdp_t
@@ -252,6 +255,45 @@ typedef struct {
     uint8_t page_protection_oem;   /**< Page Protection Flags. */
 } __attribute__((packed)) hpet_t;
 
+/**
+ * @struct mcfg_entry_t
+ * @brief MCFG Tabelle Eintrag.
+ */
+typedef struct {
+    uint64_t base_address;
+    uint16_t pci_segment_group;
+    uint8_t start_bus_number;
+    uint8_t end_bus_number;
+    uint32_t reserved;
+} __attribute__((packed)) mcfg_entry_t;
+
+/**
+ * @struct mcfg_t
+ * @brief MCFG Tabelle.
+ */
+typedef struct {
+    acpi_sdt_header_t header;
+    uint64_t reserved;
+    mcfg_entry_t entries[];
+} __attribute__((packed)) mcfg_t;
+
+/**
+ * @struct mcfg_entry_runtime_t
+ * @brief Runtime-Struktur für MCFG-Einträge inklusive gemappter virtueller Adresse.
+ */
+typedef struct {
+    uint64_t phys_base;
+    virt_addr_t virt_base;
+    uint16_t pci_segment;
+    uint8_t start_bus;
+    uint8_t end_bus;
+} mcfg_entry_runtime_t;
+
+typedef struct {
+    mcfg_entry_runtime_t *entries;
+    size_t count;
+} mcfg_info_t;
+
 extern rsdp_t *rsdp;
 extern rsdt_t *rsdt;
 extern xsdt_t *xsdt;
@@ -260,6 +302,8 @@ extern acpi_sdt_header_t *dsdt;
 extern madt_t *madt;
 extern madt_parsed_t madt_parsed;
 extern hpet_t *hpet;
+extern mcfg_t *mcfg;
+extern mcfg_info_t mcfg_info;
 
 /**
  * @brief Initialisiert das ACPI-Subsystem.

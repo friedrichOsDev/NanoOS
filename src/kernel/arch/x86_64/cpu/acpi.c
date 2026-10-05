@@ -4,8 +4,10 @@
  * @author friedrichOsDev
  */
 
+#include "arch/x86_64/mm/memdef.h"
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/drivers/serial.h>
+#include <arch/x86_64/mm/heap.h>
 #include <arch/x86_64/mm/vmm.h>
 #include <lib/io.h>
 #include <lib/string.h>
@@ -19,6 +21,8 @@ acpi_sdt_header_t *dsdt = NULL;
 madt_t *madt = NULL;
 madt_parsed_t madt_parsed;
 hpet_t *hpet = NULL;
+mcfg_t *mcfg = NULL;
+mcfg_info_t mcfg_info;
 
 /**
  * @brief Überprüft die Prüfsummen der RSDP-Struktur.
@@ -151,7 +155,7 @@ static void acpi_parse_madt(madt_t *target_madt) {
 /**
  * @brief Registriert eine einzelne ACPI-Tabelle anhand ihrer Signatur.
  *
- * Verifiziert die Prüfsumme der Tabelle und speichert relevante Zeiger (FADT, DSDT, MADT, HPET).
+ * Verifiziert die Prüfsumme der Tabelle und speichert relevante Zeiger (FADT, DSDT, MADT, HPET, MCFG).
  *
  * @param phys_header Physische Adresse der zu registrierenden Tabelle.
  */
@@ -181,6 +185,44 @@ static void acpi_register_table(acpi_sdt_header_t *phys_header) {
     } else if (memcmp(header->signature, HPET_SIGNATURE, 4) == 0) {
         hpet = (hpet_t *)header;
         serial_printf(COM1, "ACPI: HPET loaded at %llx\n", (uint64_t)hpet);
+    } else if (memcmp(header->signature, MCFG_SIGNATURE, 4) == 0) {
+        mcfg = (mcfg_t *)header;
+        serial_printf(COM1, "ACPI: MCFG loaded at %llx\n", (uint64_t)mcfg);
+
+        size_t header_size = sizeof(acpi_sdt_header_t) + sizeof(uint64_t);
+        if (mcfg->header.length > header_size) {
+            mcfg_info.count = (mcfg->header.length - header_size) / sizeof(mcfg_entry_t);
+        } else {
+            mcfg_info.count = 0;
+        }
+
+        if (mcfg_info.count > 0) {
+            mcfg_info.entries = (mcfg_entry_runtime_t *)kzalloc(mcfg_info.count * sizeof(mcfg_entry_runtime_t));
+
+            if (mcfg_info.entries == NULL) {
+                serial_printf(COM1, "ACPI: Error, failed to allocate memory for mcfg_info.entries\n");
+                mcfg_info.count = 0;
+                return;
+            }
+
+            for (size_t i = 0; i < mcfg_info.count; i++) {
+                uint8_t start_bus = mcfg->entries[i].start_bus_number;
+                uint8_t end_bus = mcfg->entries[i].end_bus_number;
+
+                // 1 MB pro Bus (32 Devs * 8 Funcs * 4096 Bytes ECAM Space)
+                size_t bus_count = (size_t)(end_bus - start_bus + 1);
+                size_t mmio_size = bus_count * 1024 * 1024;
+
+                mcfg_info.entries[i].phys_base = mcfg->entries[i].base_address;
+                mcfg_info.entries[i].virt_base = vmm_map_mmio((page_table_t *)kernel_pml4, mcfg->entries[i].base_address, mmio_size);
+                mcfg_info.entries[i].pci_segment = mcfg->entries[i].pci_segment_group;
+                mcfg_info.entries[i].start_bus = start_bus;
+                mcfg_info.entries[i].end_bus = end_bus;
+
+                serial_printf(COM1, "ACPI: MCFG[%zu] Seg %u, Bus %u-%u -> Phys: %llx, Virt: %llx\n", i, mcfg_info.entries[i].pci_segment, start_bus, end_bus, mcfg_info.entries[i].phys_base, mcfg_info.entries[i].virt_base);
+            }
+            serial_printf(COM1, "ACPI: Registered %d MCFG entries dynamically.\n", mcfg_info.count);
+        }
     }
 }
 
