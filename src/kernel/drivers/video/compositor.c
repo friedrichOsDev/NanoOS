@@ -1,6 +1,6 @@
 /**
- * @file framebuffer.c
- * @brief Thread-sichere Implementation des Framebuffer-Treibers.
+ * @file compositor.c
+ * @brief Thread-sichere Implementation des Compositors und Render-Loop.
  * @author friedrichOsDev
  */
 
@@ -8,25 +8,25 @@
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/heap.h>
 #include <arch/x86_64/mm/memdef.h>
-#include <core/init.h>
 #include <core/scheduler.h>
 #include <core/sync.h>
 #include <core/thread.h>
-#include <drivers/video/framebuffer/framebuffer.h>
+#include <drivers/video/compositor.h>
+#include <drivers/video/video.h>
 #include <lib/math/math.h>
 #include <lib/string.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-/* Globaler Status & Synchronisation */
-static bool framebuffer_initialized = false;
+static bool compositor_initialized = false;
 static bool rendering_enabled = false;
 static uint8_t *backbuffer = NULL;
 static uint64_t fb_size = 0;
+static video_mode_t active_mode = {0};
 static layer_t *layer_head = NULL;
 
-static mutex_t framebuffer_mutex;
+static mutex_t compositor_mutex;
 static spinlock_t layer_list_lock = SPINLOCK_INIT;
 static spinlock_t state_lock = SPINLOCK_INIT;
 
@@ -63,7 +63,7 @@ static inline color_t unpack_color(uint32_t packed_color) {
  * @param fg Vordergrundfarbe mit Transparenzwert.
  * @return Das berechnete Blending-Ergebnis.
  */
-static color_t fb_blend_color(color_t bg, color_t fg) {
+static color_t blend_color(color_t bg, color_t fg) {
     if (fg.a == 255)
         return fg;
     if (fg.a == 0)
@@ -120,7 +120,7 @@ static inline void canvas_draw_hline(canvas_t *canvas, int64_t x1, int64_t x2, i
     } else if (color.a > 0) {
         for (int64_t x = x1; x <= x2; x++) {
             color_t bg = unpack_color(row[x]);
-            row[x] = pack_color(fb_blend_color(bg, color));
+            row[x] = pack_color(blend_color(bg, color));
         }
     }
 }
@@ -168,7 +168,7 @@ void canvas_draw_pixel(canvas_t *canvas, point_t pos, color_t color) {
     uint64_t pixels_per_row = canvas->pitch / 4;
     uint64_t offset = (pos.y * pixels_per_row) + pos.x;
     color_t bg_color = unpack_color(*(uint32_t *)(canvas->buffer + offset));
-    *(uint32_t *)(canvas->buffer + offset) = pack_color(fb_blend_color(bg_color, color));
+    *(uint32_t *)(canvas->buffer + offset) = pack_color(blend_color(bg_color, color));
 }
 
 void canvas_draw_triangle(canvas_t *canvas, point_t v1, point_t v2, point_t v3, color_t color, bool filled, uint64_t border_size) {
@@ -451,7 +451,7 @@ void layer_draw_end(layer_t *layer) {
  * @brief Compositing eines einzelnen Layers in den Backbuffer.
  * @param layer Zu blittender Layer.
  */
-static void fb_composite_layer(layer_t *layer) {
+static void composite_layer(layer_t *layer) {
     if (!layer)
         return;
 
@@ -464,8 +464,8 @@ static void fb_composite_layer(layer_t *layer) {
     }
 
     canvas_t *layer_canvas = &layer->canvas;
-    uint64_t screen_width = fb_get_width();
-    uint64_t screen_height = fb_get_height();
+    uint64_t screen_width = active_mode.width;
+    uint64_t screen_height = active_mode.height;
 
     int64_t start_x = (layer->pos.x < 0) ? -layer->pos.x : 0;
     int64_t start_y = (layer->pos.y < 0) ? -layer->pos.y : 0;
@@ -476,12 +476,12 @@ static void fb_composite_layer(layer_t *layer) {
     if (start_x < end_x && start_y < end_y) {
         for (int64_t ly = start_y; ly < end_y; ly++) {
             int64_t dest_y = layer->pos.y + ly;
-            color_t *dest_row = (color_t *)(backbuffer + (dest_y * kernel_fb_info.fb_pitch));
+            color_t *dest_row = (color_t *)(backbuffer + (dest_y * active_mode.pitch));
             color_t *src_row = (color_t *)((uint8_t *)layer_canvas->buffer + (ly * layer_canvas->pitch));
 
             for (int64_t lx = start_x; lx < end_x; lx++) {
                 int64_t dest_x = layer->pos.x + lx;
-                dest_row[dest_x] = fb_blend_color(dest_row[dest_x], src_row[lx]);
+                dest_row[dest_x] = blend_color(dest_row[dest_x], src_row[lx]);
             }
         }
     }
@@ -492,7 +492,7 @@ static void fb_composite_layer(layer_t *layer) {
 /**
  * @brief Blittet alle sichtbaren Layer der Reihe nach (nach Z-Index) in den Backbuffer.
  */
-static void fb_compose() {
+static void compositor_compose() {
     uint64_t sflags = spinlock_acquire_irqsave(&state_lock);
     bool enabled = rendering_enabled;
     spinlock_release_irqrestore(&state_lock, sflags);
@@ -502,8 +502,8 @@ static void fb_compose() {
 
     canvas_t backbuffer_canvas = {
         .buffer = (uint32_t *)backbuffer,
-        .size = (rect_size_t){fb_get_width(), fb_get_height()},
-        .pitch = kernel_fb_info.fb_pitch};
+        .size = (rect_size_t){active_mode.width, active_mode.height},
+        .pitch = active_mode.pitch};
     canvas_clear(&backbuffer_canvas, COLOR_BLACK);
 
     uint64_t rflags = spinlock_acquire_irqsave(&layer_list_lock);
@@ -513,7 +513,7 @@ static void fb_compose() {
         layer_t *next = current->next;
         spinlock_release_irqrestore(&layer_list_lock, rflags);
 
-        fb_composite_layer(current);
+        composite_layer(current);
 
         rflags = spinlock_acquire_irqsave(&layer_list_lock);
         current = next;
@@ -524,19 +524,17 @@ static void fb_compose() {
 /**
  * @brief Kopiert den fertig gemischten Backbuffer in den physischen Video-Speicher (Frontbuffer).
  */
-static void fb_swap() {
-    mutex_lock(&framebuffer_mutex);
-    uint8_t *src = backbuffer;
-    uint8_t *dest = (uint8_t *)kernel_fb_info.fb_addr;
-    memcpy(dest, src, fb_size);
-    mutex_unlock(&framebuffer_mutex);
+static void compositor_swap() {
+    mutex_lock(&compositor_mutex);
+    video_flush(backbuffer, fb_size);
+    mutex_unlock(&compositor_mutex);
 }
 
 /**
  * @brief Kernel-Thread für die kontinuierliche Framerate-Steuerung und das Rendering.
  * @param arg Ungenutzter Argument-Zeiger.
  */
-void framebuffer_thread(void *arg) {
+void compositor_thread(void *arg) {
     (void)arg;
 
     uint64_t last_fps_update = hpet_uptime_ms();
@@ -553,7 +551,7 @@ void framebuffer_thread(void *arg) {
         last_frame_start = frame_start;
 
         uint64_t sflags = spinlock_acquire_irqsave(&state_lock);
-        bool initialized = framebuffer_initialized;
+        bool initialized = compositor_initialized;
         double current_target_time = target_frame_time_ms;
         spinlock_release_irqrestore(&state_lock, sflags);
 
@@ -561,8 +559,8 @@ void framebuffer_thread(void *arg) {
             thread_exit();
         }
 
-        fb_compose();
-        fb_swap();
+        compositor_compose();
+        compositor_swap();
 
         frame_count++;
 
@@ -587,15 +585,20 @@ void framebuffer_thread(void *arg) {
     }
 }
 
-void fb_init() {
+void compositor_init() {
+    if (!video_get_mode(&active_mode)) {
+        serial_printf(COM1, "COMPOSITOR: Aktueller Modus konnte vom Video-HAL nicht gelesen werden!\n");
+        return;
+    }
+
     uint64_t sflags = spinlock_acquire_irqsave(&state_lock);
     target_frame_time_ms = (double)1000 / (double)target_fps;
     spinlock_release_irqrestore(&state_lock, sflags);
 
-    fb_size = kernel_fb_info.fb_height * kernel_fb_info.fb_pitch;
+    fb_size = active_mode.height * active_mode.pitch;
     serial_printf(COM1, "FB: Size is %d bytes\n", fb_size);
 
-    mutex_init(&framebuffer_mutex, "fb_hardware_lock");
+    mutex_init(&compositor_mutex, "fb_hardware_lock");
 
     backbuffer = (uint8_t *)kzalloc(fb_size);
     if (!backbuffer) {
@@ -604,15 +607,15 @@ void fb_init() {
     }
 
     sflags = spinlock_acquire_irqsave(&state_lock);
-    framebuffer_initialized = true;
+    compositor_initialized = true;
     spinlock_release_irqrestore(&state_lock, sflags);
 
-    thread_create(NULL, framebuffer_thread, NULL, "framebuffer_thread");
+    thread_create(NULL, compositor_thread, NULL, "compositor_thread");
 }
 
-void fb_deinit() {
+void compositor_deinit() {
     uint64_t sflags = spinlock_acquire_irqsave(&state_lock);
-    framebuffer_initialized = false;
+    compositor_initialized = false;
     spinlock_release_irqrestore(&state_lock, sflags);
 
     if (backbuffer) {
@@ -621,19 +624,19 @@ void fb_deinit() {
     }
 }
 
-void fb_enable_rendering() {
+void compositor_enable_rendering() {
     uint64_t sflags = spinlock_acquire_irqsave(&state_lock);
     rendering_enabled = true;
     spinlock_release_irqrestore(&state_lock, sflags);
 }
 
-void fb_disable_rendering() {
+void compositor_disable_rendering() {
     uint64_t sflags = spinlock_acquire_irqsave(&state_lock);
     rendering_enabled = false;
     spinlock_release_irqrestore(&state_lock, sflags);
 }
 
-void fb_set_target_fps(uint64_t fps) {
+void compositor_set_target_fps(uint64_t fps) {
     if (fps == 0)
         return;
     uint64_t sflags = spinlock_acquire_irqsave(&state_lock);
@@ -642,9 +645,21 @@ void fb_set_target_fps(uint64_t fps) {
     spinlock_release_irqrestore(&state_lock, sflags);
 }
 
-uint64_t fb_get_current_fps() {
+uint64_t compositor_get_current_fps() {
     uint64_t sflags = spinlock_acquire_irqsave(&state_lock);
     uint64_t fps = current_fps;
     spinlock_release_irqrestore(&state_lock, sflags);
     return fps;
+}
+
+uint64_t compositor_get_width() {
+    return active_mode.width;
+}
+
+uint64_t compositor_get_height() {
+    return active_mode.height;
+}
+
+rect_size_t compositor_get_size() {
+    return (rect_size_t){.width = active_mode.width, .height = active_mode.height};
 }

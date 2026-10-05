@@ -1,13 +1,13 @@
 /**
- * @file framebuffer.h
- * @brief Schnittstelle für den Framebuffer Treiber.
+ * @file compositor.h
+ * @brief Schnittstelle für den Compositor und Software-Renderer.
  * @author friedrichOsDev
  */
 
 #pragma once
 
-#include <core/init.h>
 #include <core/sync.h>
+#include <drivers/video/video.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -233,60 +233,54 @@ void layer_draw_begin(layer_t *layer);
  */
 void layer_draw_end(layer_t *layer);
 
-/* --- Core Framebuffer Driver API --- */
+/* --- Core Compositor API --- */
 
 /**
- * @brief Initialisiert den Framebuffer-Treiber, allokiert den Backbuffer und startet den Renderer-Thread.
+ * @brief Initialisiert den Compositor, fordert Modusdaten vom HAL an und startet den Render-Thread.
  */
-void fb_init();
+void compositor_init();
 
 /**
- * @brief Stoppt das Rendering und gibt die Framebuffer-Ressourcen frei.
+ * @brief Stoppt den Compositor und gibt alle allokierten Ressourcen frei.
  */
-void fb_deinit();
+void compositor_deinit();
 
 /**
- * @brief Aktiviert den Rendering-Prozess des Compositors.
+ * @brief Aktiviert den Zeichenprozess und das Blitting im Render-Loop.
  */
-void fb_enable_rendering();
+void compositor_enable_rendering();
 
 /**
- * @brief Pausiert den Rendering-Prozess des Compositors.
+ * @brief Pausiert die Compositor-Ausgabe auf dem Bildschirm.
  */
-void fb_disable_rendering();
+void compositor_disable_rendering();
 
 /**
- * @brief Setzt die Ziel-Framerate (FPS) für das Render-System.
- * @param fps Bildwiederholrate in Bildern pro Sekunde.
+ * @brief Setzt die Ziel-Framerate für den Compositor-Render-Loop.
+ * @param fps Bildwiederholrate in Bildern pro Sekunde (z. B. 60).
  */
-void fb_set_target_fps(uint64_t fps);
+void compositor_set_target_fps(uint64_t fps);
 
 /**
- * @brief Liefert die aktuell gemessenen Frames pro Sekunde (FPS).
- * @return Aktuelle Framerate.
+ * @brief Ruft die aktuell gemessene Render-Framerate ab.
+ * @return Aktuelle FPS-Anzahl.
  */
-uint64_t fb_get_current_fps();
+uint64_t compositor_get_current_fps();
 
 /**
- * @brief Ruft die globale Bildschirmbreite in Pixeln ab.
- * @return Breite des Framebuffers.
+ * @brief Gibt die Breite des aktiven Bildschirmmodus zurück.
+ * @return Breite in Pixeln.
  */
-static inline uint64_t fb_get_width() {
-    return kernel_fb_info.fb_width;
-}
+uint64_t compositor_get_width();
 
 /**
- * @brief Ruft die globale Bildschirmhöhe in Pixeln ab.
- * @return Höhe des Framebuffers.
+ * @brief Gibt die Höhe des aktiven Bildschirmmodus zurück.
+ * @return Höhe in Pixeln.
  */
-static inline uint64_t fb_get_height() {
-    return kernel_fb_info.fb_height;
-}
+uint64_t compositor_get_height();
 
 /**
- * @brief Ruft die Gesamtabmessung des Bildschirms ab.
- * @return `rect_size_t` mit Breite und Höhe des Framebuffers.
+ * @brief Gibt die Abmessungen des aktiven Bildschirms als `rect_size_t` zurück.
+ * @return `rect_size_t` mit Breite und Höhe des Displays.
  */
-static inline rect_size_t fb_get_size() {
-    return (rect_size_t){.width = fb_get_width(), .height = fb_get_height()};
-}
+rect_size_t compositor_get_size();
