@@ -5,23 +5,24 @@
  */
 
 #include <arch/x86_64/cpu/hpet.h>
-#include <arch/x86_64/mm/memdef.h>
-#include <core/scheduler.h>
-#include <arch/x86_64/mm/heap.h>
-#include <core/thread.h>
-#include <core/sync.h>
 #include <arch/x86_64/drivers/serial.h>
+#include <arch/x86_64/mm/heap.h>
+#include <arch/x86_64/mm/memdef.h>
 #include <core/init.h>
+#include <core/scheduler.h>
+#include <core/sync.h>
+#include <core/thread.h>
 #include <drivers/video/framebuffer/framebuffer.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <lib/string.h>
 #include <lib/math/math.h>
+#include <lib/string.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
+/* Globaler Status & Synchronisation */
 static bool framebuffer_initialized = false;
 static bool rendering_enabled = false;
-static uint8_t * backbuffer = NULL;
+static uint8_t *backbuffer = NULL;
 static uint64_t fb_size = 0;
 static layer_t *layer_head = NULL;
 
@@ -32,24 +33,41 @@ static spinlock_t state_lock = SPINLOCK_INIT;
 static uint64_t target_fps = 60;
 static double target_frame_time_ms = 0;
 static uint64_t current_fps = 0;
-double dt = 0; 
+double dt = 0;
 
+/**
+ * @brief Wandelt eine `color_t`-Struktur in einen gepackten 32-Bit-Farbwert um.
+ * @param color Quellfarbe.
+ * @return 32-Bit Unsigned Integer im RGBA-Format.
+ */
 static inline uint32_t pack_color(color_t color) {
     return ((uint32_t)color.b) | ((uint32_t)color.g << 8) | ((uint32_t)color.r << 16) | ((uint32_t)color.a << 24);
 }
 
+/**
+ * @brief Entpackt einen 32-Bit-Farbwert in eine `color_t`-Struktur.
+ * @param packed_color Gepackter 32-Bit RGBA-Farbwert.
+ * @return Entpackte `color_t`-Struktur.
+ */
 static inline color_t unpack_color(uint32_t packed_color) {
     return (color_t){
-        .b = (packed_color & 0xFF), 
-        .g = ((packed_color >> 8) & 0xFF), 
-        .r = ((packed_color >> 16) & 0xFF), 
-        .a = ((packed_color >> 24) & 0xFF)
-    };
+        .b = (packed_color & 0xFF),
+        .g = ((packed_color >> 8) & 0xFF),
+        .r = ((packed_color >> 16) & 0xFF),
+        .a = ((packed_color >> 24) & 0xFF)};
 }
 
+/**
+ * @brief Blendet zwei Farben unter Berücksichtigung des Alpha-Kanals des Vordergrunds.
+ * @param bg Hintergrundfarbe.
+ * @param fg Vordergrundfarbe mit Transparenzwert.
+ * @return Das berechnete Blending-Ergebnis.
+ */
 static color_t fb_blend_color(color_t bg, color_t fg) {
-    if (fg.a == 255) return fg;
-    if (fg.a == 0)   return bg;
+    if (fg.a == 255)
+        return fg;
+    if (fg.a == 0)
+        return bg;
 
     uint32_t alpha = fg.a;
     uint32_t inv_alpha = 255 - alpha;
@@ -68,14 +86,30 @@ static color_t fb_blend_color(color_t bg, color_t fg) {
     return result;
 }
 
+/**
+ * @brief Zeichnet eine schnelle horizontale Linie auf ein Canvas.
+ * @param canvas Ziel-Canvas.
+ * @param x1 Start-X-Koordinate.
+ * @param x2 End-X-Koordinate.
+ * @param y Y-Koordinate der Linie.
+ * @param color Zeichenfarbe.
+ */
 static inline void canvas_draw_hline(canvas_t *canvas, int64_t x1, int64_t x2, int64_t y, color_t color) {
-    if (!canvas || !canvas->buffer || y < 0 || (uint64_t)y >= canvas->size.height) return;
+    if (!canvas || !canvas->buffer || y < 0 || (uint64_t)y >= canvas->size.height)
+        return;
 
-    if (x1 > x2) { int64_t t = x1; x1 = x2; x2 = t; }
-    if (x2 < 0 || x1 >= (int64_t)canvas->size.width) return;
+    if (x1 > x2) {
+        int64_t t = x1;
+        x1 = x2;
+        x2 = t;
+    }
+    if (x2 < 0 || x1 >= (int64_t)canvas->size.width)
+        return;
 
-    if (x1 < 0) x1 = 0;
-    if (x2 >= (int64_t)canvas->size.width) x2 = (int64_t)canvas->size.width - 1;
+    if (x1 < 0)
+        x1 = 0;
+    if (x2 >= (int64_t)canvas->size.width)
+        x2 = (int64_t)canvas->size.width - 1;
 
     uint64_t stride = canvas->pitch / 4;
     uint32_t *row = canvas->buffer + (y * stride);
@@ -93,7 +127,8 @@ static inline void canvas_draw_hline(canvas_t *canvas, int64_t x1, int64_t x2, i
 
 canvas_t *canvas_create(rect_size_t size) {
     canvas_t *canvas = (canvas_t *)kzalloc(sizeof(canvas_t));
-    if (!canvas) return NULL;
+    if (!canvas)
+        return NULL;
 
     canvas->size = size;
     canvas->pitch = size.width * 4;
@@ -108,13 +143,16 @@ canvas_t *canvas_create(rect_size_t size) {
 }
 
 void canvas_destroy(canvas_t *canvas) {
-    if (!canvas) return;
-    if (canvas->buffer) kfree((virt_addr_t)(canvas->buffer));
+    if (!canvas)
+        return;
+    if (canvas->buffer)
+        kfree((virt_addr_t)(canvas->buffer));
     kfree((virt_addr_t)canvas);
 }
 
 void canvas_clear(canvas_t *canvas, color_t color) {
-    if (!canvas || !canvas->buffer) return;
+    if (!canvas || !canvas->buffer)
+        return;
     uint32_t color_val = pack_color(color);
     uint64_t count = canvas->size.width * canvas->size.height;
     void *dest = canvas->buffer;
@@ -122,8 +160,8 @@ void canvas_clear(canvas_t *canvas, color_t color) {
 }
 
 void canvas_draw_pixel(canvas_t *canvas, point_t pos, color_t color) {
-    if (!canvas || !canvas->buffer || 
-        pos.x < 0 || (uint64_t)pos.x >= canvas->size.width || 
+    if (!canvas || !canvas->buffer ||
+        pos.x < 0 || (uint64_t)pos.x >= canvas->size.width ||
         pos.y < 0 || (uint64_t)pos.y >= canvas->size.height) {
         return;
     }
@@ -134,7 +172,8 @@ void canvas_draw_pixel(canvas_t *canvas, point_t pos, color_t color) {
 }
 
 void canvas_draw_triangle(canvas_t *canvas, point_t v1, point_t v2, point_t v3, color_t color, bool filled, uint64_t border_size) {
-    if (!canvas) return;
+    if (!canvas)
+        return;
 
     if (!filled) {
         canvas_draw_line(canvas, v1, v2, color, border_size);
@@ -143,11 +182,25 @@ void canvas_draw_triangle(canvas_t *canvas, point_t v1, point_t v2, point_t v3, 
         return;
     }
 
-    if (v1.y > v2.y) { point_t t = v1; v1 = v2; v2 = t; }
-    if (v1.y > v3.y) { point_t t = v1; v1 = v3; v3 = t; }
-    if (v2.y > v3.y) { point_t t = v2; v2 = v3; v3 = t; }
+    /* Sortierung der Eckpunkte nach Y-Koordinate */
+    if (v1.y > v2.y) {
+        point_t t = v1;
+        v1 = v2;
+        v2 = t;
+    }
+    if (v1.y > v3.y) {
+        point_t t = v1;
+        v1 = v3;
+        v3 = t;
+    }
+    if (v2.y > v3.y) {
+        point_t t = v2;
+        v2 = v3;
+        v3 = t;
+    }
 
-    if (v1.y == v3.y) return;
+    if (v1.y == v3.y)
+        return;
 
     int64_t dy13 = v3.y - v1.y;
     int64_t dy12 = v2.y - v1.y;
@@ -160,13 +213,16 @@ void canvas_draw_triangle(canvas_t *canvas, point_t v1, point_t v2, point_t v3, 
     int64_t cur_x1 = v1.x << 16;
     int64_t cur_x2 = v1.x << 16;
 
+    /* Oberes Teildreieck rastern */
     for (int64_t y = v1.y; y < v2.y; y++) {
         canvas_draw_hline(canvas, cur_x1 >> 16, cur_x2 >> 16, y, color);
         cur_x1 += dx13;
         cur_x2 += dx12;
     }
 
-    if (dy12 == 0) cur_x2 = v2.x << 16;
+    /* Unteres Teildreieck rastern */
+    if (dy12 == 0)
+        cur_x2 = v2.x << 16;
     for (int64_t y = v2.y; y <= v3.y; y++) {
         canvas_draw_hline(canvas, cur_x1 >> 16, cur_x2 >> 16, y, color);
         cur_x1 += dx13;
@@ -175,20 +231,24 @@ void canvas_draw_triangle(canvas_t *canvas, point_t v1, point_t v2, point_t v3, 
 }
 
 void canvas_draw_rectangle(canvas_t *canvas, point_t pos, rect_size_t size, color_t color, bool filled, uint64_t border_size) {
-    if (!canvas || size.width == 0 || size.height == 0) return;
+    if (!canvas || size.width == 0 || size.height == 0)
+        return;
 
     if (filled) {
         for (uint64_t y = 0; y < size.height; y++) {
             canvas_draw_hline(canvas, pos.x, pos.x + (int64_t)size.width - 1, pos.y + (int64_t)y, color);
         }
     } else {
-        if (border_size == 0) return;
+        if (border_size == 0)
+            return;
         uint64_t max_b = (border_size > size.height / 2) ? size.height / 2 : border_size;
 
+        /* Obere und untere Kante */
         for (uint64_t b = 0; b < max_b; b++) {
             canvas_draw_hline(canvas, pos.x, pos.x + (int64_t)size.width - 1, pos.y + (int64_t)b, color);
             canvas_draw_hline(canvas, pos.x, pos.x + (int64_t)size.width - 1, pos.y + (int64_t)size.height - 1 - (int64_t)b, color);
         }
+        /* Linke und rechte Kante */
         for (int64_t y = pos.y + max_b; y <= pos.y + (int64_t)size.height - 1 - (int64_t)max_b; y++) {
             canvas_draw_hline(canvas, pos.x, pos.x + (int64_t)max_b - 1, y, color);
             canvas_draw_hline(canvas, pos.x + (int64_t)size.width - (int64_t)max_b, pos.x + (int64_t)size.width - 1, y, color);
@@ -197,7 +257,8 @@ void canvas_draw_rectangle(canvas_t *canvas, point_t pos, rect_size_t size, colo
 }
 
 void canvas_draw_line(canvas_t *canvas, point_t start, point_t end, color_t color, uint64_t thickness) {
-    if (!canvas || thickness == 0) return;
+    if (!canvas || thickness == 0)
+        return;
 
     int64_t dx = (end.x > start.x) ? (end.x - start.x) : (start.x - end.x);
     int64_t dy = (end.y > start.y) ? (end.y - start.y) : (start.y - end.y);
@@ -216,15 +277,23 @@ void canvas_draw_line(canvas_t *canvas, point_t start, point_t end, color_t colo
             }
         }
 
-        if (start.x == end.x && start.y == end.y) break;
+        if (start.x == end.x && start.y == end.y)
+            break;
         int64_t e2 = 2 * err;
-        if (e2 > -dy) { err -= dy; start.x += sx; }
-        if (e2 <  dx) { err += dx; start.y += sy; }
+        if (e2 > -dy) {
+            err -= dy;
+            start.x += sx;
+        }
+        if (e2 < dx) {
+            err += dx;
+            start.y += sy;
+        }
     }
 }
 
 void canvas_draw_circle(canvas_t *canvas, point_t center, uint64_t radius, color_t color, bool filled, uint64_t border_size) {
-    if (!canvas || radius == 0) return;
+    if (!canvas || radius == 0)
+        return;
 
     int64_t r_outer = (int64_t)radius;
     int64_t r_inner = (filled || border_size >= radius) ? 0 : (r_outer - (int64_t)border_size);
@@ -234,7 +303,8 @@ void canvas_draw_circle(canvas_t *canvas, point_t center, uint64_t radius, color
 
     for (int64_t y = -r_outer; y <= r_outer; y++) {
         int64_t y_sq = y * y;
-        if (y_sq > r_outer_sq) continue;
+        if (y_sq > r_outer_sq)
+            continue;
 
         int64_t x_outer = (int64_t)sqrt(r_outer_sq - y_sq);
 
@@ -248,6 +318,10 @@ void canvas_draw_circle(canvas_t *canvas, point_t center, uint64_t radius, color
     }
 }
 
+/**
+ * @brief Fügt einen Layer aufsteigend nach dessen Z-Index in die globale verkettete Liste ein.
+ * @param layer einzufügender Layer.
+ */
 static void insert_layer_ordered(layer_t *layer) {
     uint64_t rflags = spinlock_acquire_irqsave(&layer_list_lock);
     layer_t **indirect = &layer_head;
@@ -261,6 +335,10 @@ static void insert_layer_ordered(layer_t *layer) {
     spinlock_release_irqrestore(&layer_list_lock, rflags);
 }
 
+/**
+ * @brief Entfernt einen Layer sicher aus der globalen verketteten Liste.
+ * @param layer zu entfernender Layer.
+ */
 static void remove_layer_ordered(layer_t *layer) {
     uint64_t rflags = spinlock_acquire_irqsave(&layer_list_lock);
     layer_t **indirect = &layer_head;
@@ -278,8 +356,9 @@ static void remove_layer_ordered(layer_t *layer) {
 
 layer_t *layer_create(rect_size_t size, int32_t z_index) {
     layer_t *layer = (layer_t *)kzalloc(sizeof(layer_t));
-    if (!layer) return NULL;
-    
+    if (!layer)
+        return NULL;
+
     canvas_t *c = canvas_create(size);
     if (!c) {
         kfree((virt_addr_t)layer);
@@ -299,9 +378,10 @@ layer_t *layer_create(rect_size_t size, int32_t z_index) {
 }
 
 void layer_destroy(layer_t *layer) {
-    if (!layer) return;
+    if (!layer)
+        return;
     remove_layer_ordered(layer);
-    
+
     // Sicherstellen, dass das Layer nicht während eines aktiven Blits freigegeben wird
     mutex_lock(&layer->lock);
     if (layer->canvas.buffer) {
@@ -314,37 +394,42 @@ void layer_destroy(layer_t *layer) {
 }
 
 void layer_set_position(layer_t *layer, point_t pos) {
-    if (!layer) return;
+    if (!layer)
+        return;
     mutex_lock(&layer->lock);
     layer->pos = pos;
     mutex_unlock(&layer->lock);
 }
 
 void layer_set_size(layer_t *layer, rect_size_t size) {
-    if (!layer) return;
+    if (!layer)
+        return;
     mutex_lock(&layer->lock);
-    
+
     // Reallokieren des Buffers mit Schutz
     uint32_t *new_buffer = (uint32_t *)kzalloc(size.height * size.width * 4);
     if (new_buffer) {
-        if (layer->canvas.buffer) kfree((virt_addr_t)layer->canvas.buffer);
+        if (layer->canvas.buffer)
+            kfree((virt_addr_t)layer->canvas.buffer);
         layer->canvas.buffer = new_buffer;
         layer->canvas.size = size;
         layer->canvas.pitch = size.width * 4;
     }
-    
+
     mutex_unlock(&layer->lock);
 }
 
 void layer_set_visible(layer_t *layer, bool visible) {
-    if (!layer) return;
+    if (!layer)
+        return;
     mutex_lock(&layer->lock);
     layer->visible = visible;
     mutex_unlock(&layer->lock);
 }
 
 void layer_set_zindex(layer_t *layer, int32_t z_index) {
-    if (!layer) return;
+    if (!layer)
+        return;
     remove_layer_ordered(layer);
     mutex_lock(&layer->lock);
     layer->z_index = z_index;
@@ -353,17 +438,25 @@ void layer_set_zindex(layer_t *layer, int32_t z_index) {
 }
 
 void layer_draw_begin(layer_t *layer) {
-    if (layer) mutex_lock(&layer->lock);
+    if (layer)
+        mutex_lock(&layer->lock);
 }
 
 void layer_draw_end(layer_t *layer) {
-    if (layer) mutex_unlock(&layer->lock);
+    if (layer)
+        mutex_unlock(&layer->lock);
 }
 
+/**
+ * @brief Compositing eines einzelnen Layers in den Backbuffer.
+ * @param layer Zu blittender Layer.
+ */
 static void fb_composite_layer(layer_t *layer) {
-    if (!layer) return;
+    if (!layer)
+        return;
 
-    if (!mutex_trylock(&layer->lock)) return;
+    if (!mutex_trylock(&layer->lock))
+        return;
 
     if (!layer->visible || !layer->canvas.buffer) {
         mutex_unlock(&layer->lock);
@@ -384,7 +477,7 @@ static void fb_composite_layer(layer_t *layer) {
         for (int64_t ly = start_y; ly < end_y; ly++) {
             int64_t dest_y = layer->pos.y + ly;
             color_t *dest_row = (color_t *)(backbuffer + (dest_y * kernel_fb_info.fb_pitch));
-            color_t *src_row  = (color_t *)((uint8_t *)layer_canvas->buffer + (ly * layer_canvas->pitch));
+            color_t *src_row = (color_t *)((uint8_t *)layer_canvas->buffer + (ly * layer_canvas->pitch));
 
             for (int64_t lx = start_x; lx < end_x; lx++) {
                 int64_t dest_x = layer->pos.x + lx;
@@ -396,18 +489,21 @@ static void fb_composite_layer(layer_t *layer) {
     mutex_unlock(&layer->lock);
 }
 
+/**
+ * @brief Blittet alle sichtbaren Layer der Reihe nach (nach Z-Index) in den Backbuffer.
+ */
 static void fb_compose() {
     uint64_t sflags = spinlock_acquire_irqsave(&state_lock);
     bool enabled = rendering_enabled;
     spinlock_release_irqrestore(&state_lock, sflags);
 
-    if (!enabled || !backbuffer) return;
+    if (!enabled || !backbuffer)
+        return;
 
     canvas_t backbuffer_canvas = {
         .buffer = (uint32_t *)backbuffer,
         .size = (rect_size_t){fb_get_width(), fb_get_height()},
-        .pitch = kernel_fb_info.fb_pitch
-    };
+        .pitch = kernel_fb_info.fb_pitch};
     canvas_clear(&backbuffer_canvas, COLOR_BLACK);
 
     uint64_t rflags = spinlock_acquire_irqsave(&layer_list_lock);
@@ -425,6 +521,9 @@ static void fb_compose() {
     spinlock_release_irqrestore(&layer_list_lock, rflags);
 }
 
+/**
+ * @brief Kopiert den fertig gemischten Backbuffer in den physischen Video-Speicher (Frontbuffer).
+ */
 static void fb_swap() {
     mutex_lock(&framebuffer_mutex);
     uint8_t *src = backbuffer;
@@ -433,6 +532,10 @@ static void fb_swap() {
     mutex_unlock(&framebuffer_mutex);
 }
 
+/**
+ * @brief Kernel-Thread für die kontinuierliche Framerate-Steuerung und das Rendering.
+ * @param arg Ungenutzter Argument-Zeiger.
+ */
 void framebuffer_thread(void *arg) {
     (void)arg;
 
@@ -444,7 +547,8 @@ void framebuffer_thread(void *arg) {
         uint64_t frame_start = hpet_uptime_ms();
 
         uint64_t frame_delta_ms = frame_start - last_frame_start;
-        if (frame_delta_ms == 0) frame_delta_ms = 1;
+        if (frame_delta_ms == 0)
+            frame_delta_ms = 1;
         dt = (double)frame_delta_ms / 1000.0;
         last_frame_start = frame_start;
 
@@ -530,7 +634,8 @@ void fb_disable_rendering() {
 }
 
 void fb_set_target_fps(uint64_t fps) {
-    if (fps == 0) return;
+    if (fps == 0)
+        return;
     uint64_t sflags = spinlock_acquire_irqsave(&state_lock);
     target_fps = fps;
     target_frame_time_ms = (double)1000 / (double)fps;
