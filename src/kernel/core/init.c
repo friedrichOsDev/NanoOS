@@ -28,9 +28,6 @@
 #include <core/scheduler.h>
 #include <core/taskmgr.h>
 #include <core/thread.h>
-#include <drivers/video/compositor.h>
-#include <drivers/video/fb/fb_driver.h>
-#include <drivers/video/video.h>
 #include <lib/string.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -200,15 +197,8 @@ void kernel_init_thread(void *arg) {
 
     serial_printf(COM1, "INIT: kernel_init_thread started\n");
 
-    generic_fb_driver_register();
-    video_init();
-
-    compositor_init();
-    compositor_enable_rendering();
-
     while (1) {
-        serial_printf(COM1, "FPS: %d\n", compositor_get_current_fps());
-        thread_sleep_ms(500);
+        thread_yield();
     }
 }
 
