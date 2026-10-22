@@ -1,4 +1,4 @@
-#include <lib/math/math.h>
+#include <lib/math.h>
 
 float nanf(const char *s) {
     (void)s;

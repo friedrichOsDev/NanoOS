@@ -6,8 +6,8 @@
  */
 
 #include "exp2f_data.h"
-#include <lib/math/libm.h>
-#include <lib/math/math.h>
+#include "libm.h"
+#include <lib/math.h>
 #include <stdint.h>
 
 /*

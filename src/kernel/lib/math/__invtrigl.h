@@ -1,7 +1,7 @@
 #ifndef __INVTRIGL_H
 #define __INVTRIGL_H
 
-#include <lib/math/libm.h>
+#include "libm.h"
 
 /* shared by acosl, asinl and atan2l */
 #define pio2_hi __pio2_hi

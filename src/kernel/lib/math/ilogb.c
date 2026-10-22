@@ -1,4 +1,4 @@
-#include <lib/math/libm.h>
+#include "libm.h"
 #include <limits.h>
 
 int ilogb(double x) {

@@ -1,4 +1,4 @@
-#include <lib/math/math.h>
+#include <lib/math.h>
 
 double fabs(double x) {
     double t;

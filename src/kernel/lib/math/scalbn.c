@@ -1,4 +1,4 @@
-#include <lib/math/math.h>
+#include <lib/math.h>
 #include <stdint.h>
 
 double scalbn(double x, int n) {

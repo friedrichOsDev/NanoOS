@@ -1,6 +1,6 @@
 #define _GNU_SOURCE
-#include <lib/math/libm.h>
-#include <lib/math/math.h>
+#include "libm.h"
+#include <lib/math.h>
 #include <stdint.h>
 
 double exp10(double x) {

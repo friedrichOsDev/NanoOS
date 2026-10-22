@@ -1,4 +1,4 @@
-#include <lib/math/libm.h>
+#include "libm.h"
 
 #if LDBL_MANT_DIG == 53 && LDBL_MAX_EXP == 1024
 double nexttoward(double x, long double y) { return nextafter(x, y); }

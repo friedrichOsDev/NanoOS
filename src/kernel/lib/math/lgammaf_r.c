@@ -13,7 +13,7 @@
  * ====================================================
  */
 
-#include <lib/math/libm.h>
+#include "libm.h"
 
 static const float pi = 3.1415927410e+00, /* 0x40490fdb */
     a0 = 7.7215664089e-02,                /* 0x3d9e233f */

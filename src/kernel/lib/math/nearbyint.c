@@ -1,4 +1,4 @@
-#include <lib/math/math.h>
+#include <lib/math.h>
 
 /* nearbyint is the same as rint, but it must not raise the inexact exception */
 

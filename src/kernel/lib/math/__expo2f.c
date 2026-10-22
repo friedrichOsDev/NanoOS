@@ -1,4 +1,4 @@
-#include <lib/math/libm.h>
+#include "libm.h"
 
 /* k is such that k*ln2 has minimal relative error and x - kln2 > log(FLT_MIN)
  */

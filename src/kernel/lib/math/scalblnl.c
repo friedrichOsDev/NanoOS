@@ -1,5 +1,5 @@
 #include <float.h>
-#include <lib/math/math.h>
+#include <lib/math.h>
 #include <limits.h>
 
 #if LDBL_MANT_DIG == 53 && LDBL_MAX_EXP == 1024

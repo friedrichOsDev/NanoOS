@@ -15,7 +15,7 @@
  */
 
 #define _GNU_SOURCE
-#include <lib/math/libm.h>
+#include "libm.h"
 
 /* Small multiples of pi/2 rounded to double precision. */
 static const double s1pio2 = 1 * M_PI_2, /* 0x3FF921FB, 0x54442D18 */

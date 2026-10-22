@@ -1,4 +1,4 @@
-#include <lib/math/libm.h>
+#include "libm.h"
 
 float nextafterf(float x, float y) {
     union {

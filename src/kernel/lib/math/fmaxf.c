@@ -1,4 +1,4 @@
-#include <lib/math/math.h>
+#include <lib/math.h>
 
 float fmaxf(float x, float y) {
     if (isnan(x))

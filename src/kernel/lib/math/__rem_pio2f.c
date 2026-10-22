@@ -20,7 +20,7 @@
  * use __rem_pio2_large() for large x
  */
 
-#include <lib/math/libm.h>
+#include "libm.h"
 
 #if FLT_EVAL_METHOD == 0 || FLT_EVAL_METHOD == 1
 #define EPS DBL_EPSILON

@@ -1,4 +1,4 @@
-#include <lib/math/libm.h>
+#include "libm.h"
 
 double trunc(double x) {
     union {

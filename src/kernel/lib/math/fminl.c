@@ -1,5 +1,5 @@
 #include <float.h>
-#include <lib/math/math.h>
+#include <lib/math.h>
 
 #if LDBL_MANT_DIG == 53 && LDBL_MAX_EXP == 1024
 long double fminl(long double x, long double y) { return fmin(x, y); }

@@ -1,4 +1,4 @@
-#include <lib/math/math.h>
+#include <lib/math.h>
 
 long double rintl(long double x) {
     __asm__("frndint" : "+t"(x));

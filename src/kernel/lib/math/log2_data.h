@@ -5,7 +5,7 @@
 #ifndef _LOG2_DATA_H
 #define _LOG2_DATA_H
 
-#include <lib/math/libm.h>
+#include "libm.h"
 
 #define LOG2_TABLE_BITS 6
 #define LOG2_POLY_ORDER 7

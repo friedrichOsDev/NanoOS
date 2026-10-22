@@ -1,7 +1,7 @@
 #ifndef _SQRT_DATA_H
 #define _SQRT_DATA_H
 
-#include <lib/math/libm.h>
+#include "libm.h"
 #include <stdint.h>
 
 /* if x in [1,2): i = (int)(64*x);

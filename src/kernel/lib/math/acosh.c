@@ -1,4 +1,4 @@
-#include <lib/math/libm.h>
+#include "libm.h"
 
 #if FLT_EVAL_METHOD == 2
 #undef sqrt

@@ -1,4 +1,4 @@
-#include <lib/math/math.h>
+#include <lib/math.h>
 #include <stdint.h>
 
 float copysignf(float x, float y) {

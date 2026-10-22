@@ -13,7 +13,7 @@
  * See comments in log10.c.
  */
 
-#include <lib/math/math.h>
+#include <lib/math.h>
 #include <stdint.h>
 
 static const float ivln10hi = 4.3432617188e-01, /* 0x3ede6000 */

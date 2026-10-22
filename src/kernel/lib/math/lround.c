@@ -1,3 +1,3 @@
-#include <lib/math/math.h>
+#include <lib/math.h>
 
 long lround(double x) { return round(x); }

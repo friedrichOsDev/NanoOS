@@ -3,7 +3,9 @@
 #include <limits.h>
 
 /* Floating-point constants */
+#undef NAN
 #define NAN __builtin_nanf("")
+#undef INFINITY
 #define INFINITY __builtin_inff()
 
 #define HUGE_VALF INFINITY
@@ -367,3 +369,67 @@ float significandf(float);
 #define fabsf(x) __builtin_fabsf(x)
 #define sqrt(x) __builtin_sqrt(x)
 #define sqrtf(x) __builtin_sqrtf(x)
+
+// GENERIC API
+
+#define MATH_1ARG(fn, x) _Generic((x), \
+    float: fn##f(x),                   \
+    double: fn(x),                     \
+    long double: fn##l(x))
+
+#define MATH_2ARG(fn, x, y) _Generic((x) + (y), \
+    float: fn##f(x, y),                         \
+    double: fn(x, y),                           \
+    long double: fn##l(x, y))
+
+#define math_acos(x) MATH_1ARG(acos, x)
+#define math_asin(x) MATH_1ARG(asin, x)
+#define math_atan(x) MATH_1ARG(atan, x)
+#define math_atan2(y, x) MATH_2ARG(atan2, y, x)
+#define math_cos(x) MATH_1ARG(cos, x)
+#define math_sin(x) MATH_1ARG(sin, x)
+#define math_tan(x) MATH_1ARG(tan, x)
+#define math_sincos(x, s, c) _Generic((x), \
+    float: sincosf(x, s, c),               \
+    double: sincos(x, s, c),               \
+    long double: sincosl(x, s, c))
+#define math_acosh(x) MATH_1ARG(acosh, x)
+#define math_asinh(x) MATH_1ARG(asinh, x)
+#define math_atanh(x) MATH_1ARG(atanh, x)
+#define math_cosh(x) MATH_1ARG(cosh, x)
+#define math_sinh(x) MATH_1ARG(sinh, x)
+#define math_tanh(x) MATH_1ARG(tanh, x)
+#define math_exp(x) MATH_1ARG(exp, x)
+#define math_exp2(x) MATH_1ARG(exp2, x)
+#define math_exp10(x) MATH_1ARG(exp10, x)
+#define math_expm1(x) MATH_1ARG(expm1, x)
+#define math_log(x) MATH_1ARG(log, x)
+#define math_log1p(x) MATH_1ARG(log1p, x)
+#define math_log10(x) MATH_1ARG(log10, x)
+#define math_log2(x) MATH_1ARG(log2, x)
+#define math_logb(x) MATH_1ARG(logb, x)
+#define math_pow(base, exp) MATH_2ARG(pow, base, exp)
+#define math_sqrt(x) MATH_1ARG(sqrt, x)
+#define math_cbrt(x) MATH_1ARG(cbrt, x)
+#define math_hypot(x, y) MATH_2ARG(hypot, x, y)
+#define math_fabs(x) MATH_1ARG(fabs, x)
+#define math_ceil(x) MATH_1ARG(ceil, x)
+#define math_floor(x) MATH_1ARG(floor, x)
+#define math_trunc(x) MATH_1ARG(trunc, x)
+#define math_round(x) MATH_1ARG(round, x)
+#define math_rint(x) MATH_1ARG(rint, x)
+#define math_nearbyint(x) MATH_1ARG(nearbyint, x)
+#define math_fmod(x, y) MATH_2ARG(fmod, x, y)
+#define math_remainder(x, y) MATH_2ARG(remainder, x, y)
+#define math_copysign(x, y) MATH_2ARG(copysign, x, y)
+#define math_nextafter(x, y) MATH_2ARG(nextafter, x, y)
+#define math_fmax(x, y) MATH_2ARG(fmax, x, y)
+#define math_fmin(x, y) MATH_2ARG(fmin, x, y)
+#define math_fdim(x, y) MATH_2ARG(fdim, x, y)
+#define math_fma(x, y, z) _Generic((x), \
+    float: fmaf(x, y, z),               \
+    double: fma(x, y, z),               \
+    long double: fmal(x, y, z))
+#define math_erf(x) MATH_1ARG(erf, x)
+#define math_lgamma(x) MATH_1ARG(lgamma, x)
+#define math_tgamma(x) MATH_1ARG(tgamma, x)

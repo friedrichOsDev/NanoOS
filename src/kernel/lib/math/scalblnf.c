@@ -1,4 +1,4 @@
-#include <lib/math/math.h>
+#include <lib/math.h>
 #include <limits.h>
 
 float scalblnf(float x, long n) {

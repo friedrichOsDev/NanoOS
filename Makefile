@@ -43,13 +43,13 @@ DEBUG_S_OBJECTS   = $(patsubst $(KERNEL_DIR)/%.s,$(BUILD_DIR)/debug/%.o,$(S_SOUR
 DEBUG_OBJECTS     = $(DEBUG_C_OBJECTS) $(DEBUG_ASM_OBJECTS) $(DEBUG_S_OBJECTS)
 
 # Default flags (Release)
-CFLAGS = -ffreestanding -m64 -O1 -Wall -Wextra -Werror \
+CFLAGS = -ffreestanding -std=c23 -m64 -O1 -Wall -Wextra -Werror \
          -fno-stack-protector -fno-builtin -fno-strict-aliasing \
          -mcmodel=kernel -mno-red-zone -mno-mmx -nostdlib \
          $(INCLUDE_FLAGS)
 
 # Default flags (Debug)
-DEBUG_CFLAGS = -ffreestanding -m64 -O0 -g -Wall -Wextra -Werror \
+DEBUG_CFLAGS = -ffreestanding -std=c23 -m64 -O0 -g -Wall -Wextra -Werror \
                -fno-stack-protector -fno-builtin -fno-strict-aliasing \
                -mcmodel=kernel -mno-red-zone -mno-mmx -nostdlib \
                $(INCLUDE_FLAGS)

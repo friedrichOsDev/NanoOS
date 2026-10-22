@@ -1,4 +1,4 @@
-#include <lib/math/math.h>
+#include <lib/math.h>
 
 long double remquol(long double x, long double y, int *quo) {
     signed char *cx = (void *)&x, *cy = (void *)&y;

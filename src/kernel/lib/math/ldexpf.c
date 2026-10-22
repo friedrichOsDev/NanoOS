@@ -1,3 +1,3 @@
-#include <lib/math/math.h>
+#include <lib/math.h>
 
 float ldexpf(float x, int n) { return scalbnf(x, n); }

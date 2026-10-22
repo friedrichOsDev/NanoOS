@@ -1,5 +1,5 @@
 #include <float.h>
-#include <lib/math/math.h>
+#include <lib/math.h>
 #include <stdint.h>
 
 #if FLT_EVAL_METHOD > 1U && LDBL_MANT_DIG == 64

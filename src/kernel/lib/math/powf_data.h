@@ -6,7 +6,7 @@
 #define _POWF_DATA_H
 
 #include "exp2f_data.h"
-#include <lib/math/libm.h>
+#include "libm.h"
 
 #define POWF_LOG2_TABLE_BITS 4
 #define POWF_LOG2_POLY_ORDER 5

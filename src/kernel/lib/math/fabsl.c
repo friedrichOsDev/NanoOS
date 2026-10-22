@@ -1,4 +1,4 @@
-#include <lib/math/math.h>
+#include <lib/math.h>
 
 long double fabsl(long double x) {
     __asm__("fabs" : "+t"(x));

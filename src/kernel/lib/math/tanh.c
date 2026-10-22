@@ -1,4 +1,4 @@
-#include <lib/math/libm.h>
+#include "libm.h"
 
 /* tanh(x) = (exp(x) - exp(-x))/(exp(x) + exp(-x))
  *         = (exp(2*x) - 1)/(exp(2*x) - 1 + 2)

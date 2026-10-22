@@ -1,4 +1,4 @@
-#include <lib/math/libm.h>
+#include "libm.h"
 
 float fmaf(float x, float y, float z) {
     return (x * y) + z;

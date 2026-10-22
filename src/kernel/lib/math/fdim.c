@@ -1,4 +1,4 @@
-#include <lib/math/math.h>
+#include <lib/math.h>
 
 double fdim(double x, double y) {
     if (isnan(x))

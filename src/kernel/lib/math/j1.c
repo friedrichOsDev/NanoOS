@@ -54,7 +54,7 @@
  *         by method mentioned above.
  */
 
-#include <lib/math/libm.h>
+#include "libm.h"
 
 static double pone(double), qone(double);
 

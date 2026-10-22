@@ -5,7 +5,7 @@
 #ifndef _LOG2F_DATA_H
 #define _LOG2F_DATA_H
 
-#include <lib/math/libm.h>
+#include "libm.h"
 
 #define LOG2F_TABLE_BITS 4
 #define LOG2F_POLY_ORDER 4

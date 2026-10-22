@@ -33,7 +33,7 @@
  * Function needed: sqrt
  */
 
-#include <lib/math/libm.h>
+#include "libm.h"
 
 static const double pio2_hi =
                         1.57079632679489655800e+00, /* 0x3FF921FB, 0x54442D18 */

@@ -6,8 +6,8 @@
  */
 
 #include "exp_data.h"
-#include <lib/math/libm.h>
-#include <lib/math/math.h>
+#include "libm.h"
+#include <lib/math.h>
 #include <stdint.h>
 
 #define N (1 << EXP_TABLE_BITS)

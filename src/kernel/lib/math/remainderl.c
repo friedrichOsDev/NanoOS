@@ -1,4 +1,4 @@
-#include <lib/math/math.h>
+#include <lib/math.h>
 
 long double remainderl(long double x, long double y) {
     unsigned short fpsr;

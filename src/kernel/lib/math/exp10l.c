@@ -1,7 +1,7 @@
 #define _GNU_SOURCE
+#include "libm.h"
 #include <float.h>
-#include <lib/math/libm.h>
-#include <lib/math/math.h>
+#include <lib/math.h>
 
 #if LDBL_MANT_DIG == 53 && LDBL_MAX_EXP == 1024
 long double exp10l(long double x) { return exp10(x); }

@@ -5,7 +5,7 @@
 #ifndef _EXP_DATA_H
 #define _EXP_DATA_H
 
-#include <lib/math/libm.h>
+#include "libm.h"
 #include <stdint.h>
 
 #define EXP_TABLE_BITS 7

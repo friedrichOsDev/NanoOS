@@ -1,5 +1,5 @@
-#include <lib/math/libm.h>
-#include <lib/math/math.h>
+#include "libm.h"
+#include <lib/math.h>
 
 float remainderf(float x, float y) {
     int q;

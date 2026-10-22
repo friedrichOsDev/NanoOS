@@ -1,3 +1,3 @@
-#include <lib/math/math.h>
+#include <lib/math.h>
 
 long long llroundl(long double x) { return roundl(x); }

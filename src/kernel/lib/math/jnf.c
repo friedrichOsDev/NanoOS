@@ -14,7 +14,7 @@
  */
 
 #define _GNU_SOURCE
-#include <lib/math/libm.h>
+#include "libm.h"
 
 float jnf(int n, float x) {
     uint32_t ix;

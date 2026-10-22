@@ -1,7 +1,7 @@
 #pragma once
 
 #include <float.h>
-#include <lib/math/math.h>
+#include <lib/math.h>
 #include <stdint.h>
 
 // Musl Internal attribute symbol override

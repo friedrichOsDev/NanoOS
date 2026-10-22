@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "libm.h"
 #include "log_data.h"
-#include <lib/math/libm.h>
-#include <lib/math/math.h>
+#include <lib/math.h>
 #include <stdint.h>
 
 #define T __log_data.tab
