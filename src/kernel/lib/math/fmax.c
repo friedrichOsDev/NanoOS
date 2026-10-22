@@ -1,4 +1,4 @@
-#include <lib/math.h>
+#include <pch.h>
 
 double fmax(double x, double y) {
     if (isnan(x))

@@ -17,8 +17,7 @@
  * Return cube root of x
  */
 
-#include <lib/math.h>
-#include <stdint.h>
+#include <pch.h>
 
 static const unsigned
     B1 = 709958130, /* B1 = (127-127.0/3-0.03306235651)*2**23 */

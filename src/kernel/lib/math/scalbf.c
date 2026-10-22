@@ -14,7 +14,7 @@
  */
 
 #define _GNU_SOURCE
-#include <lib/math.h>
+#include <pch.h>
 
 float scalbf(float x, float fn) {
     if (isnan(x) || isnan(fn))

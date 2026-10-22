@@ -1,8 +1,6 @@
 #pragma once
 
-#include <float.h>
-#include <lib/math.h>
-#include <stdint.h>
+#include <pch.h>
 
 // Musl Internal attribute symbol override
 #define hidden

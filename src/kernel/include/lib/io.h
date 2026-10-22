@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <pch.h>
 
 /**
  * @brief Schreibt ein Byte (8 Bit) an einen I/O-Port.

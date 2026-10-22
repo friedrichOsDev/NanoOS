@@ -5,7 +5,7 @@
  */
 
 #include <lib/convert.h>
-#include <stdbool.h>
+#include <pch.h>
 
 /**
  * @brief Interne Hilfsfunktion zur Umwandlung einer Zahl in einen String.

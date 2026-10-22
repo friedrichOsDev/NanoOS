@@ -8,8 +8,7 @@
 #include "exp_data.h"
 #include "libm.h"
 #include "pow_data.h"
-#include <lib/math.h>
-#include <stdint.h>
+#include <pch.h>
 
 /*
 Worst-case error: 0.54 ULP (~= ulperr_exp + 1024*Ln2*relerr_log*2^53)

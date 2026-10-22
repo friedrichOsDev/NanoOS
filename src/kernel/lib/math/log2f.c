@@ -7,8 +7,7 @@
 
 #include "libm.h"
 #include "log2f_data.h"
-#include <lib/math.h>
-#include <stdint.h>
+#include <pch.h>
 
 /*
 LOG2F_TABLE_BITS = 4

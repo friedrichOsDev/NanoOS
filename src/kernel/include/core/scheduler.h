@@ -9,7 +9,7 @@
 #pragma once
 
 #include <core/thread.h>
-#include <stdint.h>
+#include <pch.h>
 
 /**
  * @brief Initialisiert das Scheduler-Subsystem für den Bootstrap Processor (BSP).

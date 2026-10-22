@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <pch.h>
 
 /**
  * @brief Repräsentiert die Register eines einzelnen HPET-Timers / Comparators.

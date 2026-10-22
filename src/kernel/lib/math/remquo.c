@@ -1,5 +1,4 @@
-#include <lib/math.h>
-#include <stdint.h>
+#include <pch.h>
 
 double remquo(double x, double y, int *quo) {
     union {

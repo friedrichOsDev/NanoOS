@@ -1,4 +1,4 @@
 #define _GNU_SOURCE
-#include <lib/math.h>
+#include <pch.h>
 
 int finite(double x) { return isfinite(x); }

@@ -1,4 +1,4 @@
-#include <lib/math.h>
+#include <pch.h>
 
 float fminf(float x, float y) {
     if (isnan(x))

@@ -14,7 +14,7 @@
 #include <core/panic.h>
 #include <core/sync.h>
 #include <lib/string.h>
-#include <stdbool.h>
+#include <pch.h>
 
 /** @brief Physische Adresse der Kernel-PML4-Tabelle. */
 phys_addr_t kernel_pml4_phys = 0;

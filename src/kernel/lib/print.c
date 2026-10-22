@@ -6,7 +6,7 @@
 
 #include <lib/convert.h>
 #include <lib/print.h>
-#include <stdbool.h>
+#include <pch.h>
 
 /**
  * @brief Interne Kernfunktion zur Verarbeitung und Formatierung von Zeichenketten.

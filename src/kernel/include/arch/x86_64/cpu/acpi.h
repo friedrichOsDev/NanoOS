@@ -7,7 +7,7 @@
 #pragma once
 
 #include <arch/x86_64/mm/memdef.h>
-#include <stdint.h>
+#include <pch.h>
 
 #define RSDP_SIGNATURE "RSD PTR "
 #define FADT_SIGNATURE "FACP"

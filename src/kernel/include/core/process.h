@@ -10,8 +10,7 @@
 
 #include <arch/x86_64/mm/memdef.h>
 #include <core/sync.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <pch.h>
 
 struct thread;
 

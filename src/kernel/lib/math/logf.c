@@ -7,8 +7,7 @@
 
 #include "libm.h"
 #include "logf_data.h"
-#include <lib/math.h>
-#include <stdint.h>
+#include <pch.h>
 
 /*
 LOGF_TABLE_BITS = 4

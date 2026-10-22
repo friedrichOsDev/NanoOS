@@ -1,5 +1,5 @@
-#include <lib/math.h>
 #include <limits.h>
+#include <pch.h>
 
 float scalblnf(float x, long n) {
     if (n > INT_MAX)

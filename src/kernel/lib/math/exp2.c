@@ -7,8 +7,7 @@
 
 #include "exp_data.h"
 #include "libm.h"
-#include <lib/math.h>
-#include <stdint.h>
+#include <pch.h>
 
 #define N (1 << EXP_TABLE_BITS)
 #define Shift __exp_data.exp2_shift

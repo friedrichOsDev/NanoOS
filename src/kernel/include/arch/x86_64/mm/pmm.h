@@ -7,7 +7,7 @@
 #pragma once
 
 #include <arch/x86_64/mm/memdef.h>
-#include <stdint.h>
+#include <pch.h>
 
 /**
  * @struct pmm_state_t

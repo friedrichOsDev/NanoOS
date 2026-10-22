@@ -15,8 +15,7 @@
  * Return cube root of x
  */
 
-#include <lib/math.h>
-#include <stdint.h>
+#include <pch.h>
 
 static const uint32_t
     B1 = 715094163, /* B1 = (1023-1023/3-0.03306235651)*2**20 */

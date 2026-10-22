@@ -6,7 +6,7 @@
 #define _EXP_DATA_H
 
 #include "libm.h"
-#include <stdint.h>
+#include <pch.h>
 
 #define EXP_TABLE_BITS 7
 #define EXP_POLY_ORDER 5

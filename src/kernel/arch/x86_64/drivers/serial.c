@@ -10,9 +10,7 @@
 #include <core/sync.h>
 #include <lib/io.h>
 #include <lib/print.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdint.h>
+#include <pch.h>
 
 #define SERIAL_LSR_THR_EMPTY 0x20
 

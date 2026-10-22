@@ -7,9 +7,7 @@
 #pragma once
 
 #include <arch/x86_64/cpu/smp.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <pch.h>
 
 /* GDT Segment Selektoren */
 #define GDT_SEL_NULL 0x00      /**< Null-Deskriptor */

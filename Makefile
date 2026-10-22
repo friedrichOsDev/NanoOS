@@ -17,6 +17,7 @@ BUILD_DIR = build
 ISO_DIR = iso
 GRUB_DIR = grub
 KERNEL_DIR = $(SRC_DIR)/kernel
+INCLUDE_DIR = $(KERNEL_DIR)/include
 
 # Files
 KERNEL_ELF   = $(BUILD_DIR)/kernel.elf
@@ -25,8 +26,8 @@ ISO_IMAGE    = $(BUILD_DIR)/nanoos.iso
 ISO_DEBUG    = $(BUILD_DIR)/nanoos-debug.iso
 LINKER       = $(KERNEL_DIR)/arch/x86_64/linker.ld
 
-ALL_INCLUDE_DIRS = $(sort $(dir $(call rwildcard,$(KERNEL_DIR)/include,*/)))
-INCLUDE_FLAGS = -Isrc/kernel/include $(foreach dir,$(ALL_INCLUDE_DIRS),-I$(dir))
+ALL_INCLUDE_DIRS = $(sort $(dir $(call rwildcard,$(INCLUDE_DIR),*/)))
+INCLUDE_FLAGS = -I$(INCLUDE_DIR) $(foreach dir,$(ALL_INCLUDE_DIRS),-I$(dir))
 
 C_SOURCES   = $(call rwildcard,$(KERNEL_DIR),*.c)
 ASM_SOURCES = $(call rwildcard,$(KERNEL_DIR),*.asm)
@@ -42,35 +43,96 @@ DEBUG_ASM_OBJECTS = $(patsubst $(KERNEL_DIR)/%.asm,$(BUILD_DIR)/debug/%.o,$(ASM_
 DEBUG_S_OBJECTS   = $(patsubst $(KERNEL_DIR)/%.s,$(BUILD_DIR)/debug/%.o,$(S_SOURCES))
 DEBUG_OBJECTS     = $(DEBUG_C_OBJECTS) $(DEBUG_ASM_OBJECTS) $(DEBUG_S_OBJECTS)
 
-# Default flags (Release)
-CFLAGS = -ffreestanding -std=c23 -m64 -O1 -Wall -Wextra -Werror \
-         -fno-stack-protector -fno-builtin -fno-strict-aliasing \
-         -mcmodel=kernel -mno-red-zone -mno-mmx -nostdlib \
-         $(INCLUDE_FLAGS)
+# Precompiled Header
+PCH_SRC         = $(INCLUDE_DIR)/pch.h
+PCH_REL         = $(BUILD_DIR)/release/pch.h.gch
+PCH_DBG         = $(BUILD_DIR)/debug/pch.h.gch
 
-# Default flags (Debug)
-DEBUG_CFLAGS = -ffreestanding -std=c23 -m64 -O0 -g -Wall -Wextra -Werror \
-               -fno-stack-protector -fno-builtin -fno-strict-aliasing \
-               -mcmodel=kernel -mno-red-zone -mno-mmx -nostdlib \
-               $(INCLUDE_FLAGS)
+# COMPILER-WARNUNGEN & KERNEL-FLAGS
+# --- Basis ---
+WARN_BASE  = -std=c23 -Wall -Wextra -Werror #  -Wpedantic
+
+# --- Typen & Konvertierungen ---
+WARN_TYPES = -Wconversion -Wsign-conversion -Warith-conversion \
+             -Wcast-qual -Wcast-align=strict -Wbad-function-cast \
+             -Wdouble-promotion -Wfloat-equal -Wpointer-arith \
+             -Wwrite-strings -Wenum-conversion -Wunsuffixed-float-constants
+
+# --- Deklarationen & Präprozessor ---
+WARN_DECL  = -Wshadow -Wmissing-prototypes -Wmissing-declarations \
+             -Wredundant-decls -Wnested-externs -Wundef -Wunused-macros \
+             -Wunused-const-variable=2 -Wmissing-include-dirs -Wdate-time
+
+# --- Kontrollfluss ---
+WARN_FLOW  = -Wswitch-enum -Wswitch-default -Wimplicit-fallthrough=5 \
+             -Wlogical-op -Wduplicated-cond -Wduplicated-branches \
+             -Wjump-misses-init -Wnull-dereference -Wstrict-overflow=2 \
+             -Wtrampolines
+
+# --- Speicher & Stack (16-KiB-Kernelstacks!) ---
+WARN_MEM   = -Warray-bounds=2 -Wstringop-overflow=4 -Wstringop-truncation \
+             -Wvla -Walloca -Walloc-zero -Wstack-usage=4096 \
+             -Wframe-larger-than=4096 -Wpacked -Wattribute-alias=2
+
+# --- Format (printf-artige Funktionen) ---
+WARN_FMT   = -Wformat=2 -Wformat-signedness -Wformat-overflow=2 \
+             -Wformat-truncation=2
+
+# --- Codegenerierung (Kernel-spezifisch) ---
+CG_FLAGS   = -fno-omit-frame-pointer -fno-delete-null-pointer-checks \
+             -fwrapv -fno-common -fno-pic -fno-pie -fcf-protection=none \
+             -fno-asynchronous-unwind-tables
+
+KERNEL_CORE_FLAGS = -ffreestanding -m64 -mcmodel=kernel -mno-red-zone -mno-mmx \
+                    -fno-stack-protector -fno-builtin -fno-strict-aliasing -nostdlib
+
+# Precompiled Header
+PCH_SRC         = $(INCLUDE_DIR)/pch.h
+PCH_REL         = $(BUILD_DIR)/release/pch.h.gch
+PCH_DBG         = $(BUILD_DIR)/debug/pch.h.gch
+
+# Compiler Flags (Release and Debug)
+CFLAGS       = $(KERNEL_CORE_FLAGS) -O1 $(WARN_BASE) \
+               $(WARN_FMT) $(CG_FLAGS) $(INCLUDE_FLAGS)
+
+DEBUG_CFLAGS = $(KERNEL_CORE_FLAGS) -O0 -g -DKERNEL_DEBUG_BUILD $(WARN_BASE) \
+               $(WARN_FMT) \
+			   $(CG_FLAGS) $(INCLUDE_FLAGS)
+
+# Static Analysis: make analyze flags
+ANALYZE_FLAGS = -fanalyzer -fanalyzer-checker=taint
 
 LDFLAGS = -m elf_x86_64 -T $(LINKER)
 
 # Targets
-.PHONY: all clean iso iso-debug debug release run run-debug gdb
+.PHONY: all clean iso iso-debug debug release run run-debug gdb analyze
 
 all: iso
+
+# --- Static Analysis ---
+analyze:
+	@echo " [ANALYZE] Running static analysis with GCC Analyzer..."
+	@for file in $(C_SOURCES); do \
+		echo " Analysing $$file..."; \
+		$(CC) $(CFLAGS) $(ANALYZE_FLAGS) -fsyntax-only $$file || exit 1; \
+	done
 
 # --- Kernel (Release) ---
 release: $(KERNEL_ELF)
 
-$(KERNEL_ELF): $(OBJECTS)
+$(KERNEL_ELF): $(PCH_REL) $(OBJECTS)
 	@mkdir -p $(BUILD_DIR)
 	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
 
-$(BUILD_DIR)/release/%.o: $(KERNEL_DIR)/%.c
+# PCH GCH (Release)
+$(PCH_REL): $(PCH_SRC)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	@echo " [PCH] Compiling Precompiled Header (Release)..."
+	$(CC) $(CFLAGS) -x c-header $< -o $@
+
+$(BUILD_DIR)/release/%.o: $(KERNEL_DIR)/%.c $(PCH_REL)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -include $(PCH_SRC) -c $< -o $@
 
 $(BUILD_DIR)/release/%.o: $(KERNEL_DIR)/%.asm
 	@mkdir -p $(dir $@)
@@ -78,35 +140,41 @@ $(BUILD_DIR)/release/%.o: $(KERNEL_DIR)/%.asm
 
 $(BUILD_DIR)/release/%.o: $(KERNEL_DIR)/%.s
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -include $(PCH_SRC) -c $< -o $@
 
 # --- Kernel (Debug) ---
 debug: $(KERNEL_DEBUG)
 
-$(KERNEL_DEBUG): $(DEBUG_OBJECTS)
+$(KERNEL_DEBUG): $(PCH_DBG) $(DEBUG_OBJECTS)
 	@mkdir -p $(BUILD_DIR)
 	$(LD) $(LDFLAGS) -o $@ $(DEBUG_OBJECTS)
 
-$(BUILD_DIR)/debug/%.o: $(KERNEL_DIR)/%.c
+# PCH GCH (Debug)
+$(PCH_DBG): $(PCH_SRC)
 	@mkdir -p $(dir $@)
-	$(CC) $(DEBUG_CFLAGS) -c $< -o $@
+	@echo " [PCH] Compiling Precompiled Header (Debug)..."
+	$(CC) $(DEBUG_CFLAGS) -x c-header $< -o $@
+
+$(BUILD_DIR)/debug/%.o: $(KERNEL_DIR)/%.c $(PCH_DBG)
+	@mkdir -p $(dir $@)
+	$(CC) $(DEBUG_CFLAGS) -include $(PCH_SRC) -c $< -o $@
 
 $(BUILD_DIR)/debug/%.o: $(KERNEL_DIR)/%.asm
 	@mkdir -p $(dir $@)
 	$(NASM) -g -F dwarf -f elf64 $< -o $@
 
-$(BUILD_DIR)/debug/%.o: $(KERNEL_DIR)/%.s
+$(BUILD_DIR)/debug/%.o: $(KERNEL_DIR)/%.s $(PCH_DBG)
 	@mkdir -p $(dir $@)
-	$(CC) $(DEBUG_CFLAGS) -c $< -o $@
+	$(CC) $(DEBUG_CFLAGS) -include $(PCH_SRC) -c $< -o $@
 
 # --- ISOs ---
-iso: $(KERNEL_ELF)
+iso: release
 	mkdir -p $(ISO_DIR)/boot/grub
 	cp $(KERNEL_ELF) $(ISO_DIR)/boot/kernel.elf
 	cp $(GRUB_DIR)/grub.cfg $(ISO_DIR)/boot/grub/
 	grub-mkrescue -o $(ISO_IMAGE) $(ISO_DIR)
 
-iso-debug: $(KERNEL_DEBUG)
+iso-debug: debug
 	mkdir -p $(ISO_DIR)/boot/grub
 	cp $(KERNEL_DEBUG) $(ISO_DIR)/boot/kernel.elf
 	cp $(GRUB_DIR)/grub.cfg $(ISO_DIR)/boot/grub/
@@ -129,7 +197,6 @@ run: iso
 		-D qemu.log \
 		-serial file:serial.log
 
-
 # --- Run with debug ---
 run-debug: iso-debug
 	qemu-system-x86_64 \
@@ -140,7 +207,7 @@ run-debug: iso-debug
 		-m 8G \
 		-vga virtio \
 		-display gtk,gl=off,zoom-to-fit=off \
-		-cdrom $(ISO_IMAGE) \
+		-cdrom $(ISO_DEBUG) \
 		-no-reboot \
 		-no-shutdown \
 		-d int,cpu_reset \

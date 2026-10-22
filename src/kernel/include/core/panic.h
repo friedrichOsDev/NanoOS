@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <pch.h>
 
 /**
  * @brief Löst eine Kernel Panic aus und versetzt das System in einen sicheren Halt-Zustand.

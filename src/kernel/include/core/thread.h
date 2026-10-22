@@ -8,8 +8,7 @@
 
 #include <core/process.h>
 #include <core/sync.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <pch.h>
 
 /** @brief Größe des Kernel-Stacks pro Thread (16 KiB). */
 #define STACK_SIZE (16 * 1024)

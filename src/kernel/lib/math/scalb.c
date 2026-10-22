@@ -16,7 +16,7 @@
  */
 
 #define _GNU_SOURCE
-#include <lib/math.h>
+#include <pch.h>
 
 double scalb(double x, double fn) {
     if (isnan(x) || isnan(fn))

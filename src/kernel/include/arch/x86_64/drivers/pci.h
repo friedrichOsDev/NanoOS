@@ -8,8 +8,7 @@
 
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/mm/memdef.h>
-#include <stdbool.h>
-#include <stdint.h>
+#include <pch.h>
 
 /** @brief PCI-Geräteklasse: Unklassifiziert */
 #define PCI_CLASS_UNCLASSIFIED 0x00

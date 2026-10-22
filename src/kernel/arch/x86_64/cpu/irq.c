@@ -10,7 +10,7 @@
 #include <arch/x86_64/cpu/irq.h>
 #include <arch/x86_64/cpu/pic.h>
 #include <arch/x86_64/drivers/serial.h>
-#include <stdint.h>
+#include <pch.h>
 
 void irq_init() {
     pic_disable();

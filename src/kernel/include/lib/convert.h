@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <pch.h>
 
 /**
  * @brief Konvertiert einen vorzeichenlosen 64-Bit-Ganzzahlwert in einen 32-Bit-String (UTF-32/UCS-4).

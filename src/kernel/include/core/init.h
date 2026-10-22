@@ -9,7 +9,7 @@
 #pragma once
 
 #include <arch/x86_64/boot/multiboot2.h>
-#include <stdint.h>
+#include <pch.h>
 
 extern uint8_t kernel_start[];
 extern uint8_t kernel_end[];

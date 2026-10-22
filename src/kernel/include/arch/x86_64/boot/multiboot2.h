@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <pch.h>
 
 /** @brief Magische Zahl im EAX-Register, die einen Multiboot2-konformen Bootloader anzeigt. */
 #define MULTIBOOT2_MAGIC 0x36D76289

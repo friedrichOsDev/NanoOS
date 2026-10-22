@@ -7,7 +7,7 @@
 #include <core/scheduler.h>
 #include <core/sync.h>
 #include <core/thread.h>
-#include <stdbool.h>
+#include <pch.h>
 
 /**
  * @brief Liest das aktuelle RFLAGS-Register aus und deaktiviert Interrupts per CLI-Instruktion.

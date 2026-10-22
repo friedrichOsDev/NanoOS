@@ -9,9 +9,7 @@
 #pragma once
 
 #include <core/thread.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <pch.h>
 
 /** @brief Maximale Anzahl von CPU-Kernen, die das System unterstützt. */
 #define MAX_CPUS 64

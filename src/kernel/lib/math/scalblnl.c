@@ -1,6 +1,5 @@
-#include <float.h>
-#include <lib/math.h>
 #include <limits.h>
+#include <pch.h>
 
 #if LDBL_MANT_DIG == 53 && LDBL_MAX_EXP == 1024
 long double scalblnl(long double x, long n) { return scalbln(x, n); }

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <pch.h>
 
 /**
  * @brief Registerzustand der CPU, der beim Auftreten eines Interrupts auf dem Stack gesichert wird.

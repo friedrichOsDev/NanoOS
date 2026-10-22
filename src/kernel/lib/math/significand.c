@@ -1,4 +1,4 @@
 #define _GNU_SOURCE
-#include <lib/math.h>
+#include <pch.h>
 
 double significand(double x) { return scalbn(x, -ilogb(x)); }

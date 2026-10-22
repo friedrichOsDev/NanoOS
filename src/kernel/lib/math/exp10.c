@@ -1,7 +1,6 @@
 #define _GNU_SOURCE
 #include "libm.h"
-#include <lib/math.h>
-#include <stdint.h>
+#include <pch.h>
 
 double exp10(double x) {
     static const double p10[] = {

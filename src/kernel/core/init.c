@@ -29,8 +29,7 @@
 #include <core/taskmgr.h>
 #include <core/thread.h>
 #include <lib/string.h>
-#include <stdbool.h>
-#include <stddef.h>
+#include <pch.h>
 
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;

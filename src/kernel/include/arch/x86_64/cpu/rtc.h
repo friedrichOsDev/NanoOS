@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <pch.h>
 
 /** @brief I/O-Port zur Auswahl des CMOS-Registers */
 #define CMOS_ADDR 0x70

@@ -7,7 +7,7 @@
 #pragma once
 
 #include <arch/x86_64/mm/memdef.h>
-#include <stddef.h>
+#include <pch.h>
 
 /**
  * @brief Initialisiert den Kernel-Heap-Allocator.

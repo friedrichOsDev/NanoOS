@@ -6,8 +6,7 @@
 
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
+#include <pch.h>
 
 /* =========================================================================
  * Allgemeine Page-Definitionen

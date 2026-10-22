@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <pch.h>
 
 /** @brief Gesamtanzahl der IDT-Einträge (0-255). */
 #define IDT_ENTRIES 256

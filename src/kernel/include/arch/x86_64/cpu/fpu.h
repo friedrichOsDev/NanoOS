@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <pch.h>
 
 /**
  * @brief Initialisiert die FPU (Floating Point Unit) und SSE auf dem aktuellen Prozessorkern.

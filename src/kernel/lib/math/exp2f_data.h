@@ -6,7 +6,7 @@
 #define _EXP2F_DATA_H
 
 #include "libm.h"
-#include <stdint.h>
+#include <pch.h>
 
 /* Shared between expf, exp2f and powf.  */
 #define EXP2F_TABLE_BITS 5

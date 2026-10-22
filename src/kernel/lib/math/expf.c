@@ -7,8 +7,7 @@
 
 #include "exp2f_data.h"
 #include "libm.h"
-#include <lib/math.h>
-#include <stdint.h>
+#include <pch.h>
 
 /*
 EXP2F_TABLE_BITS = 5

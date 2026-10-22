@@ -4,7 +4,7 @@
  * @author friedrichOsDev
  */
 
-#include <stdint.h>
+#include <pch.h>
 
 /**
  * @brief Startadresse des Trampoline-Codes im Speicher.

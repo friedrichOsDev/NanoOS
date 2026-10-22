@@ -6,9 +6,7 @@
 
 #pragma once
 
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <pch.h>
 
 /**
  * @brief Formatiert einen String in ein 32-Bit-Ziel-Array (UTF-32/UCS-4) mit variabler Argumentliste.

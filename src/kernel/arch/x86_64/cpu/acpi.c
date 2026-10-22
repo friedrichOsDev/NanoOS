@@ -11,7 +11,7 @@
 #include <arch/x86_64/mm/vmm.h>
 #include <lib/io.h>
 #include <lib/string.h>
-#include <stdbool.h>
+#include <pch.h>
 
 rsdp_t *rsdp = NULL;
 rsdt_t *rsdt = NULL;

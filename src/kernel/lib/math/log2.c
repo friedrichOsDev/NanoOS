@@ -7,8 +7,7 @@
 
 #include "libm.h"
 #include "log2_data.h"
-#include <lib/math.h>
-#include <stdint.h>
+#include <pch.h>
 
 #define T __log2_data.tab
 #define T2 __log2_data.tab2

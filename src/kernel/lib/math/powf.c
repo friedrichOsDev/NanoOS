@@ -6,8 +6,7 @@
 #include "exp2f_data.h"
 #include "libm.h"
 #include "powf_data.h"
-#include <lib/math.h>
-#include <stdint.h>
+#include <pch.h>
 
 /*
 POWF_LOG2_POLY_ORDER = 5

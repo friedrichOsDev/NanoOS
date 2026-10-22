@@ -1,5 +1,5 @@
 #include "__invtrigl.h"
-#include <float.h>
+#include <pch.h>
 
 #if LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384
 static const long double

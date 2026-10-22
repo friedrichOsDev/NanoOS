@@ -1,5 +1,5 @@
 #include "libm.h"
-#include <lib/math.h>
+#include <pch.h>
 
 #undef signgam
 

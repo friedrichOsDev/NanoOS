@@ -14,7 +14,7 @@
 #include <core/scheduler.h>
 #include <core/thread.h>
 #include <lib/string.h>
-#include <stddef.h>
+#include <pch.h>
 
 /** @brief Globaler Zähler für die Vergabe eindeutiger Thread-IDs (TID). */
 static uint64_t next_tid = 1;

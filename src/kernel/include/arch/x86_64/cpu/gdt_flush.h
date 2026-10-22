@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <pch.h>
 
 /**
  * @brief Lädt die Global Descriptor Table (GDT) und aktualisiert die Segmentregister.

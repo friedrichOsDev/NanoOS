@@ -18,7 +18,7 @@
 #include <core/scheduler.h>
 #include <core/thread.h>
 #include <lib/string.h>
-#include <stdbool.h>
+#include <pch.h>
 
 static thread_t *ready_queue_head = NULL;
 static thread_t *ready_queue_tail = NULL;
