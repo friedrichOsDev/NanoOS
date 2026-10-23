@@ -26,7 +26,7 @@ static virt_addr_t pci_get_ecam_addr(uint8_t bus, uint8_t dev, uint8_t func, uin
     for (size_t i = 0; i < mcfg_info.count; i++) {
         mcfg_entry_runtime_t *entry = &mcfg_info.entries[i];
         if (bus >= entry->start_bus && bus <= entry->end_bus) {
-            uint64_t relative_bus = bus - entry->start_bus;
+            uint64_t relative_bus = (uint64_t)(bus - entry->start_bus);
             uint64_t dev_offset = ((relative_bus << 20) | ((uint64_t)dev << 15) | ((uint64_t)func << 12) | (offset & 0xFFF));
             return entry->virt_base + dev_offset;
         }
@@ -76,7 +76,7 @@ void pci_write32(pci_device_t *dev, uint16_t offset, uint32_t val) {
  */
 static void pci_parse_bars(pci_device_t *dev) {
     for (int i = 0; i < 6; i++) {
-        uint16_t bar_offset = 0x10 + (i * 4);
+        uint16_t bar_offset = (uint16_t)(0x10 + (i * 4));
         uint32_t bar_low = pci_read32(dev, bar_offset);
 
         if (!bar_low)
@@ -86,14 +86,14 @@ static void pci_parse_bars(pci_device_t *dev) {
         dev->is_mmio_bar[i] = !is_io;
 
         if (is_io) {
-            dev->bar[i] = bar_low & ~0x3;
+            dev->bar[i] = bar_low & ~0x3U;
             dev->is_64bit_bar[i] = false;
 
             pci_write32(dev, bar_offset, 0xFFFFFFFF);
             uint32_t size_mask = pci_read32(dev, bar_offset);
             pci_write32(dev, bar_offset, bar_low);
 
-            dev->bar_size[i] = ~(size_mask & ~0x3) + 1;
+            dev->bar_size[i] = ~(size_mask & ~0x3U) + 1;
         } else {
             bool is_64 = ((bar_low >> 1) & 0x03) == 0x02;
             dev->is_64bit_bar[i] = is_64;
@@ -101,15 +101,15 @@ static void pci_parse_bars(pci_device_t *dev) {
             uint64_t full_bar = bar_low & ~0x0FULL;
 
             if (is_64 && i < 5) {
-                uint32_t bar_high = pci_read32(dev, bar_offset + 4);
+                uint32_t bar_high = pci_read32(dev, (uint16_t)(bar_offset + 4));
                 full_bar |= ((uint64_t)bar_high << 32);
 
                 pci_write32(dev, bar_offset, 0xFFFFFFFF);
-                pci_write32(dev, bar_offset + 4, 0xFFFFFFFF);
+                pci_write32(dev, (uint16_t)(bar_offset + 4), 0xFFFFFFFF);
                 uint32_t mask_low = pci_read32(dev, bar_offset);
-                uint32_t mask_high = pci_read32(dev, bar_offset + 4);
+                uint32_t mask_high = pci_read32(dev, (uint16_t)(bar_offset + 4));
                 pci_write32(dev, bar_offset, bar_low);
-                pci_write32(dev, bar_offset + 4, bar_high);
+                pci_write32(dev, (uint16_t)(bar_offset + 4), bar_high);
 
                 uint64_t mask = ((uint64_t)mask_high << 32) | (mask_low & ~0x0FULL);
                 dev->bar_size[i] = ~mask + 1;
@@ -138,11 +138,11 @@ static void pci_parse_capabilities(pci_device_t *dev) {
     if (!(status & (1 << 4)))
         return; // Bit 4: Capabilities List implementiert?
 
-    uint8_t cap_ptr = pci_read8(dev, 0x34) & ~0x03;
+    uint8_t cap_ptr = (uint8_t)(pci_read8(dev, 0x34) & ~0x03U);
 
     while (cap_ptr >= 0x40 && cap_ptr < 0xFF) {
         uint8_t cap_id = pci_read8(dev, cap_ptr);
-        uint8_t next_ptr = pci_read8(dev, cap_ptr + 1) & ~0x03;
+        uint8_t next_ptr = (uint8_t)(pci_read8(dev, (uint16_t)(cap_ptr + 1)) & ~0x03U);
 
         if (cap_id == PCI_CAP_ID_MSI) {
             dev->msi_cap_offset = cap_ptr;
@@ -210,7 +210,7 @@ void pci_init() {
         mcfg_entry_runtime_t *entry = &mcfg_info.entries[i];
         for (uint32_t bus = entry->start_bus; bus <= entry->end_bus; bus++) {
             for (uint8_t dev = 0; dev < 32; dev++) {
-                virt_addr_t base_ecam = pci_get_ecam_addr(bus, dev, 0, 0);
+                virt_addr_t base_ecam = pci_get_ecam_addr((uint8_t)bus, dev, 0, 0);
                 if (!base_ecam)
                     continue;
 
@@ -222,7 +222,7 @@ void pci_init() {
 
                 uint8_t max_func = is_multi_function ? 8 : 1;
                 for (uint8_t func = 0; func < max_func; func++) {
-                    pci_probe_device(bus, dev, func);
+                    pci_probe_device((uint8_t)bus, dev, func);
                 }
             }
         }
@@ -279,20 +279,20 @@ bool pci_enable_msi(pci_device_t *dev, uint8_t vector, uint8_t lapic_id) {
         return false;
 
     uint8_t cap = dev->msi_cap_offset;
-    uint16_t msg_ctrl = pci_read16(dev, cap + 0x02);
+    uint16_t msg_ctrl = pci_read16(dev, (uint16_t)(cap + 0x02));
     bool is_64bit = (msg_ctrl & (1 << 7)) != 0;
 
     // x86 MSI Address Layout: 0xFEE00000 | (Destination ID << 12)
     uint32_t msg_addr_low = 0xFEE00000 | ((uint32_t)lapic_id << 12);
     uint32_t msg_data = vector; // Delivery mode 000 (Fixed), Edge triggered
 
-    pci_write32(dev, cap + 0x04, msg_addr_low);
+    pci_write32(dev, (uint16_t)(cap + 0x04), msg_addr_low);
 
     if (is_64bit) {
-        pci_write32(dev, cap + 0x08, 0x00000000); // Address High
-        pci_write16(dev, cap + 0x0C, msg_data);
+        pci_write32(dev, (uint16_t)(cap + 0x08), 0x00000000); // Address High
+        pci_write16(dev, (uint16_t)(cap + 0x0C), (uint16_t)msg_data);
     } else {
-        pci_write16(dev, cap + 0x08, msg_data);
+        pci_write16(dev, (uint16_t)(cap + 0x08), (uint16_t)msg_data);
     }
 
     // Command/Bus Master aktivieren
@@ -301,7 +301,7 @@ bool pci_enable_msi(pci_device_t *dev, uint8_t vector, uint8_t lapic_id) {
 
     // Enable-Bit im Message Control Register setzen
     msg_ctrl |= (1 << 0);
-    pci_write16(dev, cap + 0x02, msg_ctrl);
+    pci_write16(dev, (uint16_t)(cap + 0x02), msg_ctrl);
 
     serial_printf(COM1, "PCI: Enabled MSI on [%02x:%02x.%d] -> Vector %u, LAPIC %u\n", dev->bus, dev->device, dev->function, vector, lapic_id);
 

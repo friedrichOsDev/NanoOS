@@ -9,6 +9,8 @@
 #include <arch/x86_64/drivers/serial.h>
 #include <core/panic.h>
 
+extern uint8_t stack_top[];
+
 /** @brief Globales GDT-Array für alle Segmente und TSS-Einträge aller Kerne */
 struct gdt_entry gdt[GDT_ENTRIES];
 
@@ -57,13 +59,14 @@ static void tss_init_core(size_t cpu_id, uintptr_t kernel_stack) {
     tss->ist1 = (uint64_t)df_stack_top;
 
     /* I/O-Permission-Bitmap sperren (Offset = Größe der Struktur) */
-    tss->iomap_base = sizeof(struct tss_entry);
+    tss->iomap_base = (uint16_t)sizeof(struct tss_entry);
 
     serial_printf(COM1, "TSS Core %zu: RSP0 = %p, IST1 = %p\n", cpu_id, (void *)tss->rsp0, (void *)tss->ist1);
 }
 
 void gdt_init() {
-    gdtp.limit = (sizeof(struct gdt_entry) * GDT_ENTRIES) - 1;
+    // KORRIGIERT: Expliziter Cast der Limit-Berechnung auf uint16_t
+    gdtp.limit = (uint16_t)((sizeof(struct gdt_entry) * GDT_ENTRIES) - 1);
     gdtp.base = (uint64_t)&gdt;
 
     /* Slot 0: Null-Deskriptor */
@@ -86,7 +89,6 @@ void gdt_init() {
     serial_printf(COM1, "GDT: Flushed successfully\n");
 
     /* Bootstrap Processor (CPU 0) initialisieren */
-    extern uint8_t stack_top[];
     gdt_init_core(0, (uintptr_t)stack_top);
 }
 
@@ -100,14 +102,14 @@ void gdt_init_core(size_t cpu_id, uintptr_t kernel_stack) {
     tss_init_core(cpu_id, kernel_stack);
 
     /* 2. TSS-Deskriptor in der GDT registrieren (belegt 2 aufeinanderfolgende Slots) */
-    int gdt_index = GDT_FIRST_TSS_INDEX + (cpu_id * 2);
-    gdt_set_tss_gate(gdt_index, (uintptr_t)&tss_cores[cpu_id], sizeof(struct tss_entry) - 1);
+    size_t gdt_index = (size_t)GDT_FIRST_TSS_INDEX + (cpu_id * 2);
+    gdt_set_tss_gate((int)gdt_index, (uintptr_t)&tss_cores[cpu_id], (uint32_t)(sizeof(struct tss_entry) - 1));
 
     /* 3. Task Register (TR) mit `ltr` laden */
-    uint16_t tss_selector = gdt_index * 8;
+    uint16_t tss_selector = (uint16_t)(gdt_index * 8);
     tss_load(tss_selector);
 
-    serial_printf(COM1, "GDT Core %zu: Loaded TSS Selector %02x (Index %d)\n", cpu_id, tss_selector, gdt_index);
+    serial_printf(COM1, "GDT Core %zu: Loaded TSS Selector %02x (Index %zu)\n", cpu_id, tss_selector, gdt_index);
 }
 
 void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran) {
@@ -115,12 +117,12 @@ void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_
         return;
     }
 
-    gdt[num].base_low = (base & 0xFFFF);
-    gdt[num].base_middle = (base >> 16) & 0xFF;
-    gdt[num].base_high = (base >> 24) & 0xFF;
+    gdt[num].base_low = (uint16_t)(base & 0xFFFF);
+    gdt[num].base_middle = (uint8_t)((base >> 16) & 0xFF);
+    gdt[num].base_high = (uint8_t)((base >> 24) & 0xFF);
 
-    gdt[num].limit_low = (limit & 0xFFFF);
-    gdt[num].granularity = ((limit >> 16) & 0x0F) | (gran & 0xF0);
+    gdt[num].limit_low = (uint16_t)(limit & 0xFFFF);
+    gdt[num].granularity = (uint8_t)(((limit >> 16) & 0x0F) | (gran & 0xF0));
     gdt[num].access = access;
 }
 
@@ -130,12 +132,12 @@ void gdt_set_tss_gate(int num, uintptr_t base, uint32_t limit) {
     }
 
     /* Unterer 8-Byte Eintrag (Standard-System-Deskriptor) */
-    gdt[num].limit_low = (limit & 0xFFFF);
-    gdt[num].base_low = (base & 0xFFFF);
-    gdt[num].base_middle = (base >> 16) & 0xFF;
+    gdt[num].limit_low = (uint16_t)(limit & 0xFFFF);
+    gdt[num].base_low = (uint16_t)(base & 0xFFFF);
+    gdt[num].base_middle = (uint8_t)((base >> 16) & 0xFF);
     gdt[num].access = 0x89; /* Present | System | TSS (Available) */
-    gdt[num].granularity = (limit >> 16) & 0x0F;
-    gdt[num].base_high = (base >> 24) & 0xFF;
+    gdt[num].granularity = (uint8_t)((limit >> 16) & 0x0F);
+    gdt[num].base_high = (uint8_t)((base >> 24) & 0xFF);
 
     /* Oberer 8-Byte Eintrag (Obere 32 Bits der Basisadresse) */
     struct gdt_tss_entry_high *high = (struct gdt_tss_entry_high *)&gdt[num + 1];

@@ -24,6 +24,6 @@ void irq_init() {
 
     serial_printf(COM1, "IRQ: setting IRQ entries\n");
     for (uint8_t i = 0; i < 16; i++) {
-        idt_set_gate(32 + i, irq_table[i], GDT_SEL_KERN_CODE, 0, IDT_GATE_INTERRUPT);
+        idt_set_gate((uint8_t)(32 + i), irq_table[i], GDT_SEL_KERN_CODE, 0, IDT_GATE_INTERRUPT);
     }
 }

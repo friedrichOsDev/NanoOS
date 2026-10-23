@@ -48,37 +48,33 @@ PCH_SRC         = $(INCLUDE_DIR)/pch.h
 PCH_REL         = $(BUILD_DIR)/release/pch.h.gch
 PCH_DBG         = $(BUILD_DIR)/debug/pch.h.gch
 
-# COMPILER-WARNUNGEN & KERNEL-FLAGS
-# --- Basis ---
-WARN_BASE  = -std=c23 -Wall -Wextra -Werror #  -Wpedantic
+# COMPILER-WARNS & KERNEL-FLAGS
+WARN_BASE  = -std=c23 -Wall -Wextra -Werror -Wpedantic
 
-# --- Typen & Konvertierungen ---
 WARN_TYPES = -Wconversion -Wsign-conversion -Warith-conversion \
-             -Wcast-qual -Wcast-align=strict -Wbad-function-cast \
              -Wdouble-promotion -Wfloat-equal -Wpointer-arith \
-             -Wwrite-strings -Wenum-conversion -Wunsuffixed-float-constants
+             -Wwrite-strings -Wenum-conversion
 
-# --- Deklarationen & Präprozessor ---
 WARN_DECL  = -Wshadow -Wmissing-prototypes -Wmissing-declarations \
              -Wredundant-decls -Wnested-externs -Wundef -Wunused-macros \
              -Wunused-const-variable=2 -Wmissing-include-dirs -Wdate-time
 
-# --- Kontrollfluss ---
 WARN_FLOW  = -Wswitch-enum -Wswitch-default -Wimplicit-fallthrough=5 \
              -Wlogical-op -Wduplicated-cond -Wduplicated-branches \
              -Wjump-misses-init -Wnull-dereference -Wstrict-overflow=2 \
              -Wtrampolines
 
-# --- Speicher & Stack (16-KiB-Kernelstacks!) ---
 WARN_MEM   = -Warray-bounds=2 -Wstringop-overflow=4 -Wstringop-truncation \
              -Wvla -Walloca -Walloc-zero -Wstack-usage=4096 \
-             -Wframe-larger-than=4096 -Wpacked -Wattribute-alias=2
+             -Wframe-larger-than=4096 -Wattribute-alias=2
 
-# --- Format (printf-artige Funktionen) ---
 WARN_FMT   = -Wformat=2 -Wformat-signedness -Wformat-overflow=2 \
              -Wformat-truncation=2
 
-# --- Codegenerierung (Kernel-spezifisch) ---
+NOWARN_MATH = -Wno-float-conversion -Wno-conversion -Wno-sign-conversion \
+			  -Wno-float-equal -Wno-switch-default -Wno-double-promotion \
+			  -Wno-duplicated-branches -Wno-implicit-fallthrough
+
 CG_FLAGS   = -fno-omit-frame-pointer -fno-delete-null-pointer-checks \
              -fwrapv -fno-common -fno-pic -fno-pie -fcf-protection=none \
              -fno-asynchronous-unwind-tables
@@ -93,10 +89,10 @@ PCH_DBG         = $(BUILD_DIR)/debug/pch.h.gch
 
 # Compiler Flags (Release and Debug)
 CFLAGS       = $(KERNEL_CORE_FLAGS) -O1 $(WARN_BASE) \
-               $(WARN_FMT) $(CG_FLAGS) $(INCLUDE_FLAGS)
+               $(WARN_MEM) $(WARN_FLOW) $(WARN_TYPES) $(WARN_DECL) $(WARN_FMT) $(CG_FLAGS) $(INCLUDE_FLAGS)
 
 DEBUG_CFLAGS = $(KERNEL_CORE_FLAGS) -O0 -g -DKERNEL_DEBUG_BUILD $(WARN_BASE) \
-               $(WARN_FMT) \
+               $(WARN_MEM) $(WARN_FLOW) $(WARN_TYPES) $(WARN_DECL) $(WARN_FMT) \
 			   $(CG_FLAGS) $(INCLUDE_FLAGS)
 
 # Static Analysis: make analyze flags
@@ -113,8 +109,13 @@ all: iso
 analyze:
 	@echo " [ANALYZE] Running static analysis with GCC Analyzer..."
 	@for file in $(C_SOURCES); do \
-		echo " Analysing $$file..."; \
-		$(CC) $(CFLAGS) $(ANALYZE_FLAGS) -fsyntax-only $$file || exit 1; \
+		echo " Analysing $$file"; \
+		case "$$file" in \
+			*src/kernel/lib/math/*) \
+				$(CC) $(CFLAGS) $(NOWARN_MATH) $(ANALYZE_FLAGS) -fsyntax-only $$file || exit 1 ;; \
+			*) \
+				$(CC) $(CFLAGS) $(ANALYZE_FLAGS) -fsyntax-only $$file || exit 1 ;; \
+		esac; \
 	done
 
 # --- Kernel (Release) ---
@@ -129,6 +130,10 @@ $(PCH_REL): $(PCH_SRC)
 	@mkdir -p $(dir $@)
 	@echo " [PCH] Compiling Precompiled Header (Release)..."
 	$(CC) $(CFLAGS) -x c-header $< -o $@
+
+$(BUILD_DIR)/release/lib/math/%.o: $(KERNEL_DIR)/lib/math/%.c $(PCH_REL)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(NOWARN_MATH) -include $(PCH_SRC) -c $< -o $@
 
 $(BUILD_DIR)/release/%.o: $(KERNEL_DIR)/%.c $(PCH_REL)
 	@mkdir -p $(dir $@)
@@ -154,6 +159,10 @@ $(PCH_DBG): $(PCH_SRC)
 	@mkdir -p $(dir $@)
 	@echo " [PCH] Compiling Precompiled Header (Debug)..."
 	$(CC) $(DEBUG_CFLAGS) -x c-header $< -o $@
+
+$(BUILD_DIR)/debug/lib/math/%.o: $(KERNEL_DIR)/lib/math/%.c $(PCH_DBG)
+	@mkdir -p $(dir $@)
+	$(CC) $(DEBUG_CFLAGS) $(NOWARN_MATH) -include $(PCH_SRC) -c $< -o $@
 
 $(BUILD_DIR)/debug/%.o: $(KERNEL_DIR)/%.c $(PCH_DBG)
 	@mkdir -p $(dir $@)

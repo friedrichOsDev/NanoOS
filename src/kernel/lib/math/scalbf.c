@@ -13,7 +13,6 @@
  * ====================================================
  */
 
-#define _GNU_SOURCE
 #include <pch.h>
 
 float scalbf(float x, float fn) {

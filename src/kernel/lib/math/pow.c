@@ -107,7 +107,7 @@ static inline double_t log_inline(uint64_t ix, double_t *tail) {
 #define C3 __exp_data.poly[6 - EXP_POLY_ORDER]
 #define C4 __exp_data.poly[7 - EXP_POLY_ORDER]
 #define C5 __exp_data.poly[8 - EXP_POLY_ORDER]
-#define C6 __exp_data.poly[9 - EXP_POLY_ORDER]
+// #define C6 __exp_data.poly[9 - EXP_POLY_ORDER]
 
 /* Handle cases that may overflow or underflow when computing the result that
    is scale*(1+TMP) without intermediate rounding.  The bit representation of

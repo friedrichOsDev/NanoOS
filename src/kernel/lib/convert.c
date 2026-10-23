@@ -16,7 +16,7 @@
  * @param is_wide `true` für 32-Bit-Zeichen (uint32_t*), `false` für ASCII (char*).
  * @return Länge des erzeugten Strings.
  */
-static int uint_to_str_internal(void *buffer, uint64_t value, int base, bool is_wide) {
+static int uint_to_str_internal(void *buffer, uint64_t value, unsigned int base, bool is_wide) {
     char temp_buf[66];
     int idx = 0;
 
@@ -56,11 +56,11 @@ static int uint_to_str_internal(void *buffer, uint64_t value, int base, bool is_
     return len;
 }
 
-int uint_to_str(uint64_t value, uint32_t *buffer, int base) {
+int uint_to_str(uint64_t value, uint32_t *buffer, unsigned int base) {
     return uint_to_str_internal(buffer, value, base, true);
 }
 
-int uint_to_wstr(uint64_t value, char *buffer, int base) {
+int uint_to_wstr(uint64_t value, char *buffer, unsigned int base) {
     return uint_to_str_internal(buffer, value, base, false);
 }
 
@@ -105,15 +105,27 @@ int double_to_str(double value, char *buf, int prec) {
     uint64_t ipart = (uint64_t)value;
     double fpart = value - (double)ipart;
 
+    double mult = 1.0;
+    for (int i = 0; i < prec; i++)
+        mult *= 10.0;
+
+    uint64_t fdigits = 0;
+    if (prec > 0) {
+        fdigits = (uint64_t)(fpart * mult + 0.5);
+        if (fdigits >= (uint64_t)mult) {
+            ipart++;
+            fdigits -= (uint64_t)mult;
+        }
+    } else {
+        if (fpart >= 0.5) {
+            ipart++;
+        }
+    }
+
     idx += uint_to_wstr(ipart, buf + idx, 10);
 
     if (prec > 0) {
         buf[idx++] = '.';
-
-        double mult = 1.0;
-        for (int i = 0; i < prec; i++)
-            mult *= 10.0;
-        uint64_t fdigits = (uint64_t)(fpart * mult + 0.5);
 
         char fbuf[16];
         int flen = uint_to_wstr(fdigits, fbuf, 10);

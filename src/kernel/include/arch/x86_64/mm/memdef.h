@@ -22,7 +22,7 @@
 typedef uint64_t phys_addr_t;
 
 /** @brief Typdefinition für virtuelle Speicheradressen. */
-typedef uint64_t virt_addr_t;
+typedef uintptr_t virt_addr_t;
 
 /* =========================================================================
  * Alignment-Hilfsmakros

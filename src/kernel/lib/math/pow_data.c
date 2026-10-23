@@ -7,7 +7,7 @@
 
 #include "pow_data.h"
 
-#define N (1 << POW_LOG_TABLE_BITS)
+// #define N (1 << POW_LOG_TABLE_BITS)
 
 const struct pow_log_data __pow_log_data = {
     .ln2hi = 0x1.62e42fefa3800p-1,

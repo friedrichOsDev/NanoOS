@@ -16,4 +16,4 @@
  *
  * @param proc_list Zeiger auf den Kopf der globalen Prozessliste (`process_t`).
  */
-void ps_dump(process_t *proc_list);
+void ps_dump();

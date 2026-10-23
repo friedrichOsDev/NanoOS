@@ -43,7 +43,7 @@ static int rtc_is_updating() { return cmos_read(RTC_REG_STATUS_A) & 0x80; }
  * @return Binärer Wert.
  */
 static inline uint8_t bcd_to_bin(uint8_t bcd) {
-    return ((bcd >> 4) * 10) + (bcd & 0x0F);
+    return (uint8_t)(((bcd >> 4) * 10) + (bcd & 0x0F));
 }
 
 /**
@@ -94,10 +94,10 @@ static rtc_time_t rtc_read_hardware() {
 
     /* Handhabung des 12-Stunden-Formats */
     if (!(status_b & 0x02) && (t1.hour & 0x80)) {
-        t1.hour = ((t1.hour & 0x7F) + 12) % 24;
+        t1.hour = (uint8_t)(((t1.hour & 0x7F) + 12) % 24);
     }
 
-    t1.year += 2000; // Ausgegangen von Jahren zwischen 2000 und 2099
+    t1.year = (uint16_t)(t1.year + 2000); // Ausgegangen von Jahren zwischen 2000 und 2099
     return t1;
 }
 
@@ -111,12 +111,15 @@ uint64_t rtc_to_unix(const rtc_time_t *t) {
     }
 
     int64_t era = (y >= 0 ? y : y - 399) / 400;
-    uint64_t yoe = (uint64_t)(y - era * 400);             // Intervall [0, 399]
-    uint64_t doy = (153 * (m - 3) + 2) / 5 + t->day - 1;  // Intervall [0, 365]
-    uint64_t doe = yoe * 365 + yoe / 4 - yoe / 100 + doy; // Intervall [0, 146096]
-    int64_t days = era * 146097 + (int64_t)doe - 719468;
+    int64_t yoe = y - era * 400;                                 // Intervall [0, 399]
+    int64_t doy = (153 * (m - 3) + 2) / 5 + (int64_t)t->day - 1; // Intervall [0, 365]
+    int64_t doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;         // Intervall [0, 146096]
+    int64_t days = era * 146097 + doe - 719468;
 
-    return (uint64_t)days * 86400ULL + t->hour * 3600ULL + t->minute * 60ULL + t->second;
+    return (uint64_t)days * 86400ULL +
+           (uint64_t)t->hour * 3600ULL +
+           (uint64_t)t->minute * 60ULL +
+           (uint64_t)t->second;
 }
 
 void rtc_init() {
@@ -135,13 +138,13 @@ rtc_time_t time_get_now() {
     uint64_t now_epoch = time_get_unix();
     rtc_time_t t;
 
-    int64_t days = now_epoch / 86400ULL;
-    uint32_t rem_secs = now_epoch % 86400ULL;
+    int64_t days = (int64_t)(now_epoch / 86400ULL);
+    uint32_t rem_secs = (uint32_t)(now_epoch % 86400ULL);
 
-    t.hour = rem_secs / 3600;
+    t.hour = (uint8_t)(rem_secs / 3600);
     rem_secs %= 3600;
-    t.minute = rem_secs / 60;
-    t.second = rem_secs % 60;
+    t.minute = (uint8_t)(rem_secs / 60);
+    t.second = (uint8_t)(rem_secs % 60);
 
     /* Zivil-Kalender-Algorithmus zur Ermittlung des Datums aus den Vergangenen Tagen seit Epoche */
     days += 719468;
@@ -152,9 +155,9 @@ rtc_time_t time_get_now() {
     uint32_t doy = doe - (365 * yoe + yoe / 4 - yoe / 100); // Intervall [0, 365]
     uint32_t mp = (5 * doy + 2) / 153;                      // Intervall [0, 11]
 
-    t.day = doy - (153 * mp + 2) / 5 + 1;
-    t.month = mp < 10 ? mp + 3 : mp - 9;
-    t.year = y + (t.month <= 2);
+    t.day = (uint8_t)(doy - (153 * mp + 2) / 5 + 1);
+    t.month = (uint8_t)(mp < 10 ? mp + 3 : mp - 9);
+    t.year = (uint16_t)(y + (t.month <= 2));
 
     return t;
 }

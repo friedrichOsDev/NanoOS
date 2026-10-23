@@ -92,8 +92,8 @@ static void smp_ap_main() {
     // Eigenständigen Idle-Task für diesen CPU-Kern erstellen
     char idle_name[16];
     snprintf(idle_name, sizeof(idle_name), "idle_%d", local_cpu->cpu_id);
-    local_cpu->idle_thread = thread_create_on_cpu(kernel_process, idle_task, NULL, idle_name, local_cpu->cpu_id);
-    pop_next_ready_thread_for_cpu(local_cpu->cpu_id);
+    local_cpu->idle_thread = thread_create_on_cpu(kernel_process, idle_task, NULL, idle_name, (int)local_cpu->cpu_id);
+    pop_next_ready_thread_for_cpu((int)local_cpu->cpu_id);
 
     // Thread-Struktur für den aktuell laufenden AP-Kontext anlegen
     thread_t *ap_main_thread = (thread_t *)kzalloc(sizeof(thread_t));
@@ -102,7 +102,7 @@ static void smp_ap_main() {
     ap_main_thread->state = THREAD_RUNNING;
     ap_main_thread->process = kernel_process;
     ap_main_thread->time_slice = DEFAULT_TIME_SLICE;
-    ap_main_thread->cpu_affinity = local_cpu->cpu_id;
+    ap_main_thread->cpu_affinity = (int)local_cpu->cpu_id;
     fpu_state_init(ap_main_thread->fpu_state);
 
     ap_main_thread->kernel_stack_top = local_cpu->kernel_stack;
@@ -154,7 +154,7 @@ void smp_init() {
             // Bit 0 in Flags = Processor Enabled
             if ((lapic->flags & 1) && lapic->apic_id != bsp_lapic_id) {
                 if (smp_cpu_count < MAX_CPUS) {
-                    cpus[smp_cpu_count].cpu_id = smp_cpu_count;
+                    cpus[smp_cpu_count].cpu_id = (uint32_t)smp_cpu_count;
                     cpus[smp_cpu_count].lapic_id = lapic->apic_id;
                     cpus[smp_cpu_count].kernel_stack = 0;
                     cpus[smp_cpu_count].online = false;

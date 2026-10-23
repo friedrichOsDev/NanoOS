@@ -22,17 +22,17 @@ static spinlock_t serial_lock = SPINLOCK_INIT;
  * @return true, wenn das Register bereit für neue Daten ist, sonst false.
  */
 static bool serial_is_transmit_empty(uint16_t port) {
-    return inb(port + 5) & SERIAL_LSR_THR_EMPTY;
+    return inb((uint16_t)(port + 5)) & SERIAL_LSR_THR_EMPTY;
 }
 
 void serial_init(uint16_t port) {
-    outb(port + 1, 0x00); // Interrupts deaktivieren
-    outb(port + 3, 0x80); // DLAB aktivieren (Baudraten-Divisor setzen)
-    outb(port + 0, 0x01); // Divisor Low Byte (115200 Baud)
-    outb(port + 1, 0x00); // Divisor High Byte
-    outb(port + 3, 0x03); // 8 Bits, keine Parität, 1 Stoppbit (8N1)
-    outb(port + 2, 0xC7); // FIFO aktivieren, Puffer leeren, 14-Byte Schwelle
-    outb(port + 4, 0x0B); // IRQs aktivieren, RTS/DSR Pins setzen
+    outb((uint16_t)(port + 1), 0x00); // Interrupts deaktivieren
+    outb((uint16_t)(port + 3), 0x80); // DLAB aktivieren (Baudraten-Divisor setzen)
+    outb((uint16_t)(port + 0), 0x01); // Divisor Low Byte (115200 Baud)
+    outb((uint16_t)(port + 1), 0x00); // Divisor High Byte
+    outb((uint16_t)(port + 3), 0x03); // 8 Bits, keine Parität, 1 Stoppbit (8N1)
+    outb((uint16_t)(port + 2), 0xC7); // FIFO aktivieren, Puffer leeren, 14-Byte Schwelle
+    outb((uint16_t)(port + 4), 0x0B); // IRQs aktivieren, RTS/DSR Pins setzen
 }
 
 void serial_putc(uint16_t port, char c) {
@@ -42,7 +42,7 @@ void serial_putc(uint16_t port, char c) {
             return;
         }
     }
-    outb(port, c);
+    outb(port, (uint8_t)c);
 }
 
 void serial_puts(uint16_t port, const char *str) {

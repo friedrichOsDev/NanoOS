@@ -7,5 +7,6 @@
         "strings": "off"
     },
     "editor.quickSuggestionsDelay": 0,
-    "editor.inlayHints.enabled": "on"
+    "editor.inlayHints.enabled": "on",
+    "files.insertFinalNewline": true
 }

@@ -56,7 +56,7 @@ void idt_init() {
 void idt_set_gate(uint8_t num, uint64_t base, uint16_t selector, uint8_t ist, uint8_t flags) {
     idt[num].base_low = base & 0xFFFF;
     idt[num].base_mid = (base >> 16) & 0xFFFF;
-    idt[num].base_high = (base >> 32) & 0xFFFFFFFF;
+    idt[num].base_high = (uint32_t)((base >> 32) & 0xFFFFFFFF);
 
     idt[num].selector = selector;
     idt[num].ist = ist & 0x07;

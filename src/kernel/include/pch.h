@@ -2,6 +2,7 @@
 
 // FREESTANDING COMPILER HEADER
 #include <float.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>

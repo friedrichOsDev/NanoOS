@@ -64,7 +64,7 @@ static int print_formatted(void *dest, size_t size, const void *format, va_list 
 
         int width = 0;
         while (c >= '0' && c <= '9') {
-            width = width * 10 + (c - '0');
+            width = width * 10 + (int)(c - '0');
             c = GET_CHAR();
             fmt_idx++;
         }
@@ -75,14 +75,18 @@ static int print_formatted(void *dest, size_t size, const void *format, va_list 
             fmt_idx++;
             precision = 0;
             while (c >= '0' && c <= '9') {
-                precision = precision * 10 + (c - '0');
+                precision = precision * 10 + (int)(c - '0');
                 c = GET_CHAR();
                 fmt_idx++;
             }
         }
 
-        int length_mod = 0; // 0=default, 1=l, 2=ll, 3=z, 4=h, 5=hh
-        if (c == 'l') {
+        int length_mod = 0; // 0=default, 1=l, 2=ll, 3=z, 4=h, 5=hh, 6=L
+        if (c == 'L') {
+            length_mod = 6;
+            c = GET_CHAR();
+            fmt_idx++;
+        } else if (c == 'l') {
             length_mod = 1;
             c = GET_CHAR();
             fmt_idx++;
@@ -113,7 +117,7 @@ static int print_formatted(void *dest, size_t size, const void *format, va_list 
             if (length_mod == 2 || length_mod == 1)
                 val_d = va_arg(args, long);
             else if (length_mod == 3)
-                val_d = va_arg(args, size_t);
+                val_d = (int64_t)va_arg(args, size_t);
             else if (length_mod == 4)
                 val_d = (int16_t)va_arg(args, int);
             else if (length_mod == 5)
@@ -131,7 +135,7 @@ static int print_formatted(void *dest, size_t size, const void *format, va_list 
 
             uint32_t w_buf[64];
             char a_buf[64];
-            int len = is_wide ? uint_to_str(abs_val, w_buf, 10) : uint_to_wstr(abs_val, a_buf, 10);
+            int len = (int)(is_wide ? uint_to_str(abs_val, w_buf, 10) : uint_to_wstr(abs_val, a_buf, 10));
             int pad = (width > len) ? (width - len) : 0;
 
             if (!r_width && !pad_zero)
@@ -165,10 +169,10 @@ static int print_formatted(void *dest, size_t size, const void *format, va_list 
             else
                 val_u = va_arg(args, unsigned int);
 
-            int base = (c == 'u') ? 10 : ((c == 'o') ? 8 : 16);
+            unsigned int base = (c == 'u') ? 10 : ((c == 'o') ? 8 : 16);
             uint32_t w_buf[64];
             char a_buf[64];
-            int len = is_wide ? uint_to_str(val_u, w_buf, base) : uint_to_wstr(val_u, a_buf, base);
+            int len = (int)(is_wide ? uint_to_str(val_u, w_buf, base) : uint_to_wstr(val_u, a_buf, base));
 
             int prefix_len = (c == 'x' || c == 'X' || c == 'o') ? 2 : 0;
             int pad = (width > (len + prefix_len)) ? (width - (len + prefix_len)) : 0;
@@ -198,11 +202,17 @@ static int print_formatted(void *dest, size_t size, const void *format, va_list 
         }
 
         case 'f': {
-            double val_f = va_arg(args, double);
+            double val_f;
+            if (length_mod == 6) {
+                val_f = (double)va_arg(args, long double);
+            } else {
+                val_f = va_arg(args, double);
+            }
+
             int p = (precision >= 0) ? precision : 6;
             uint32_t w_buf[64];
             char a_buf[64];
-            int len = is_wide ? double_to_wstr(val_f, w_buf, p) : double_to_str(val_f, a_buf, p);
+            int len = (int)(is_wide ? double_to_wstr(val_f, w_buf, p) : double_to_str(val_f, a_buf, p));
             int pad = (width > len) ? (width - len) : 0;
 
             if (!r_width && !pad_zero)
@@ -266,7 +276,7 @@ static int print_formatted(void *dest, size_t size, const void *format, va_list 
             uintptr_t val_p = va_arg(args, uintptr_t);
             uint32_t w_buf[64];
             char a_buf[64];
-            int len = is_wide ? uint_to_str(val_p, w_buf, 16) : uint_to_wstr(val_p, a_buf, 16);
+            int len = (int)(is_wide ? uint_to_str(val_p, w_buf, 16) : uint_to_wstr(val_p, a_buf, 16));
             int pad = (width > len + 2) ? (width - (len + 2)) : 0;
 
             if (!r_width && !pad_zero)

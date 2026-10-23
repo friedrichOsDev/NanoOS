@@ -16,7 +16,7 @@
  * @param base Basis der Zahlendarstellung (z. B. 10 für Dezimal, 16 für Hexadezimal, 8 für Oktal, 2 für Binär).
  * @return Länge des erzeugten Strings (ohne Nullterminator).
  */
-int uint_to_str(uint64_t value, uint32_t *buffer, int base);
+int uint_to_str(uint64_t value, uint32_t *buffer, unsigned int base);
 
 /**
  * @brief Konvertiert einen vorzeichenlosen 64-Bit-Ganzzahlwert in einen Standard-ASCII-String.
@@ -26,7 +26,7 @@ int uint_to_str(uint64_t value, uint32_t *buffer, int base);
  * @param base Basis der Zahlendarstellung (z. B. 10 für Dezimal, 16 für Hexadezimal).
  * @return Länge des erzeugten Strings (ohne Nullterminator).
  */
-int uint_to_wstr(uint64_t value, char *buffer, int base);
+int uint_to_wstr(uint64_t value, char *buffer, unsigned int base);
 
 /**
  * @brief Konvertiert eine Gleitkommazahl (double) in einen ASCII-String.

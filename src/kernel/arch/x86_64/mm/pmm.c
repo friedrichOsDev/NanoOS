@@ -44,7 +44,7 @@ static void lock_pages(phys_addr_t start, uint64_t count) {
         uint8_t bit_idx = page % 8;
 
         if ((pmm_state.bitmap[byte_idx] & (1 << bit_idx)) == 0) {
-            pmm_state.bitmap[byte_idx] |= (1 << bit_idx);
+            pmm_state.bitmap[byte_idx] = (uint8_t)(pmm_state.bitmap[byte_idx] | (1U << bit_idx));
             pmm_state.used_pages++;
             if (pmm_state.free_pages > 0)
                 pmm_state.free_pages--;
@@ -79,7 +79,7 @@ static void unlock_pages(phys_addr_t start, uint64_t count) {
         uint8_t bit_idx = page % 8;
 
         if ((pmm_state.bitmap[byte_idx] & (1 << bit_idx)) != 0) {
-            pmm_state.bitmap[byte_idx] &= ~(1 << bit_idx);
+            pmm_state.bitmap[byte_idx] = (uint8_t)(pmm_state.bitmap[byte_idx] & ~(1U << bit_idx));
             if (pmm_state.used_pages > 0)
                 pmm_state.used_pages--;
             pmm_state.free_pages++;
@@ -162,7 +162,7 @@ phys_addr_t pmm_page_alloc() {
             uint64_t inverted = ~bitmap64[i];
             int bit_idx = __builtin_ctzll(inverted);
 
-            uint64_t page_idx = (i * 64) + bit_idx;
+            uint64_t page_idx = (i * 64) + (uint64_t)bit_idx;
 
             if (page_idx >= pmm_state.total_pages) {
                 spinlock_release_irqrestore(&pmm_lock, flags);

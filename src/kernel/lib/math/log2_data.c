@@ -7,7 +7,7 @@
 
 #include "log2_data.h"
 
-#define N (1 << LOG2_TABLE_BITS)
+// #define N (1 << LOG2_TABLE_BITS)
 
 const struct log2_data __log2_data = {
     // First coefficient: 0x1.71547652b82fe1777d0ffda0d24p0

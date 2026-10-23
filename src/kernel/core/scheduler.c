@@ -32,6 +32,7 @@ static bool scheduler_enabled = false;
 /**
  * @brief Gibt den Scheduler-Lock nach der Initialisierung frei.
  */
+void scheduler_release_initial_lock(); // prevent -Wmissing-prototypes
 void scheduler_release_initial_lock() { spinlock_release(&sched_lock); }
 
 void idle_task(void *arg) {
@@ -214,7 +215,7 @@ void scheduler_schedule() {
         my_cpu->thread_to_enqueue = NULL;
     }
 
-    thread_t *next = pop_next_ready_thread_for_cpu(my_cpu->cpu_id);
+    thread_t *next = pop_next_ready_thread_for_cpu((int)my_cpu->cpu_id);
     if (!next) {
         if (prev && prev->state == THREAD_RUNNING) {
             prev->time_slice = DEFAULT_TIME_SLICE;

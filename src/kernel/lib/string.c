@@ -136,7 +136,7 @@ size_t strlen(const char *str) {
 
     for (; ((uintptr_t)char_ptr & 7) != 0; ++char_ptr) {
         if (*char_ptr == '\0')
-            return char_ptr - str;
+            return (size_t)(char_ptr - str);
     }
 
     longword_ptr = (const uint64_t *)char_ptr;
@@ -148,21 +148,21 @@ size_t strlen(const char *str) {
         if (((longword - magic_bits) & ~longword & hole_bits) != 0) {
             const char *cp = (const char *)(longword_ptr - 1);
             if (cp[0] == 0)
-                return cp - str;
+                return (size_t)(cp - str);
             if (cp[1] == 0)
-                return cp - str + 1;
+                return (size_t)(cp - str + 1);
             if (cp[2] == 0)
-                return cp - str + 2;
+                return (size_t)(cp - str + 2);
             if (cp[3] == 0)
-                return cp - str + 3;
+                return (size_t)(cp - str + 3);
             if (cp[4] == 0)
-                return cp - str + 4;
+                return (size_t)(cp - str + 4);
             if (cp[5] == 0)
-                return cp - str + 5;
+                return (size_t)(cp - str + 5);
             if (cp[6] == 0)
-                return cp - str + 6;
+                return (size_t)(cp - str + 6);
             if (cp[7] == 0)
-                return cp - str + 7;
+                return (size_t)(cp - str + 7);
         }
     }
 }
@@ -234,16 +234,16 @@ size_t u32_strlen(const uint32_t *str) {
     const uint32_t *s = str;
     while (((uintptr_t)s & 7) != 0) {
         if (*s == 0)
-            return s - str;
+            return (size_t)(s - str);
         s++;
     }
     const uint64_t *l = (const uint64_t *)s;
     for (;;) {
         uint64_t val = *l;
         if ((val & 0xFFFFFFFF) == 0)
-            return (const uint32_t *)l - str;
+            return (size_t)((const uint32_t *)l - str);
         if ((val >> 32) == 0)
-            return (const uint32_t *)l - str + 1;
+            return (size_t)((const uint32_t *)l - str + 1);
         l++;
     }
 }

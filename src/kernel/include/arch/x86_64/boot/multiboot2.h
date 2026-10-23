@@ -150,8 +150,8 @@ typedef struct {
     uint16_t reserved;           /**< Reserviert */
     union {
         struct {
-            uint16_t framebuffer_palette_num_colors;                   /**< Anzahl Farben bei palettenbasiertem Modus */
-            multiboot_tag_framebuffer_palette_t framebuffer_palette[]; /**< Farbpalette */
+            uint16_t framebuffer_palette_num_colors;                    /**< Anzahl Farben bei palettenbasiertem Modus */
+            multiboot_tag_framebuffer_palette_t framebuffer_palette[1]; /**< Farbpalette */
         };
         struct {
             uint8_t framebuffer_red_field_position;   /**< Rot-Bit-Shift */

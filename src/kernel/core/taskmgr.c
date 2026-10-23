@@ -40,7 +40,7 @@ static const char *thread_state_to_string(thread_state_t state) {
     }
 }
 
-void ps_dump(process_t *proc_list) {
+void ps_dump() {
     uint64_t list_flags = spinlock_acquire_irqsave(&proc_list_lock);
 
     serial_printf(COM1, "\n============================= TASK MANAGER ==============================\n");

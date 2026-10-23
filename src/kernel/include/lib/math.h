@@ -36,6 +36,14 @@
 #define M_SQRT2 1.41421356237309504880
 #define M_SQRT1_2 0.70710678118654752440
 
+static inline float deg_to_radf(float deg) { return deg * ((float)M_PI / 180.0f); }
+static inline double deg_to_rad(double deg) { return deg * (M_PI / 180.0); }
+static inline long double deg_to_radl(long double deg) { return deg * (M_PI / 180.0L); }
+
+static inline float rad_to_degf(float rad) { return rad * (180.0f / (float)M_PI); }
+static inline double rad_to_deg(double rad) { return rad * (180.0 / M_PI); }
+static inline long double rad_to_degl(long double rad) { return rad * (180.0L / M_PI); }
+
 /* Standard C99 / C11 Floating-Point Types for x86_64 */
 typedef float float_t;
 typedef double double_t;
@@ -328,6 +336,9 @@ long double fmal(long double, long double, long double);
 double erf(double);
 float erff(float);
 long double erfl(long double);
+double erfc(double);
+float erfcf(float);
+long double erfcl(long double);
 
 double lgamma(double);
 float lgammaf(float);
@@ -389,10 +400,10 @@ float significandf(float);
 #define math_cos(x) MATH_1ARG(cos, x)
 #define math_sin(x) MATH_1ARG(sin, x)
 #define math_tan(x) MATH_1ARG(tan, x)
-#define math_sincos(x, s, c) _Generic((x), \
-    float: sincosf(x, s, c),               \
-    double: sincos(x, s, c),               \
-    long double: sincosl(x, s, c))
+#define math_sincos(x, s, c) _Generic((x),           \
+    float: sincosf(x, (float *)(s), (float *)(c)),   \
+    double: sincos(x, (double *)(s), (double *)(c)), \
+    long double: sincosl(x, (long double *)(s), (long double *)(c)))
 #define math_acosh(x) MATH_1ARG(acosh, x)
 #define math_asinh(x) MATH_1ARG(asinh, x)
 #define math_atanh(x) MATH_1ARG(atanh, x)
@@ -431,5 +442,8 @@ float significandf(float);
     double: fma(x, y, z),               \
     long double: fmal(x, y, z))
 #define math_erf(x) MATH_1ARG(erf, x)
+#define math_erfc(x) MATH_1ARG(erfc, x)
 #define math_lgamma(x) MATH_1ARG(lgamma, x)
 #define math_tgamma(x) MATH_1ARG(tgamma, x)
+#define math_deg_to_rad(x) MATH_1ARG(deg_to_rad, x)
+#define math_rad_to_deg(x) MATH_1ARG(rad_to_deg, x)

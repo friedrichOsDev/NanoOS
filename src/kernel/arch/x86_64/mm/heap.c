@@ -103,7 +103,7 @@ virt_addr_t kmalloc(size_t size) {
 
     uint64_t flags = spinlock_acquire_irqsave(&heap_lock);
 
-    size = (size + 15) & ~15; /* 16-Byte-Ausrichtung */
+    size = (size + 15U) & ~15U; /* 16-Byte-Ausrichtung */
     size_t total_required_size = size + HEAP_HEADER_SIZE;
 
     heap_list_t *current = heap_list_head;

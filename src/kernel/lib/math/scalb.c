@@ -15,7 +15,6 @@
  * should use scalbn() instead.
  */
 
-#define _GNU_SOURCE
 #include <pch.h>
 
 double scalb(double x, double fn) {

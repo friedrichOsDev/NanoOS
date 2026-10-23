@@ -7,7 +7,7 @@
 
 #include "log_data.h"
 
-#define N (1 << LOG_TABLE_BITS)
+// #define N (1 << LOG_TABLE_BITS)
 
 const struct log_data __log_data = {
     .ln2hi = 0x1.62e42fefa3800p-1,

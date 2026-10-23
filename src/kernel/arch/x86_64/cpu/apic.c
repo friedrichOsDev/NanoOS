@@ -99,7 +99,7 @@ void apic_init() {
     uint64_t apic_base_msr = ((uint64_t)high << 32) | low;
     apic_base_msr |= IA32_APIC_BASE_MSR_ENABLE;
     low = apic_base_msr & 0xFFFFFFFF;
-    high = apic_base_msr >> 32;
+    high = (uint32_t)(apic_base_msr >> 32);
     __asm__ __volatile__("wrmsr" ::"a"(low), "d"(high), "c"(IA32_APIC_BASE_MSR));
 
     // 2. Logical Destination und Destination Format Register setzen

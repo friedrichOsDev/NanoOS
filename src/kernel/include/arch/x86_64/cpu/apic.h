@@ -148,6 +148,6 @@ extern bool apic_initialized;
  * @brief Prüft, ob das APIC-Subsystem bereits initialisiert wurde.
  * @return `true` wenn initialisiert, sonst `false`.
  */
-static inline bool is_apic_initialized() {
+inline bool is_apic_initialized() {
     return apic_initialized;
 }

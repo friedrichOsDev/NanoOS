@@ -5,6 +5,13 @@
 // Musl Internal attribute symbol override
 #define hidden
 
+#ifndef TOINT_INTRINSICS
+#define TOINT_INTRINSICS 0
+#endif
+#ifndef __FP_FAST_FMA
+#define __FP_FAST_FMA 0
+#endif
+
 // Hardware representation for x86_64 (Standard 80-bit Extended Precision /
 // Little Endian)
 union ldshape {
@@ -196,6 +203,7 @@ hidden long double __p1evll(long double, const long double *, int);
 
 hidden double __lgamma_r(double, int *);
 hidden float __lgammaf_r(float, int *);
+long double __lgammal_r(long double, int *);
 
 /* Error handling stubs */
 hidden float __math_xflowf(uint32_t, float);

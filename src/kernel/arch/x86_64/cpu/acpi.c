@@ -40,7 +40,7 @@ static bool acpi_verify_rsdp_checksum(rsdp_t *target_rsdp) {
     uint8_t *bytes = (uint8_t *)target_rsdp;
     uint8_t sum = 0;
     for (size_t i = 0; i < 20; i++) {
-        sum += bytes[i];
+        sum = (uint8_t)(sum + bytes[i]);
     }
 
     if (sum != 0) {
@@ -51,7 +51,7 @@ static bool acpi_verify_rsdp_checksum(rsdp_t *target_rsdp) {
     if (target_rsdp->revision >= 2) {
         uint8_t ext_sum = 0;
         for (size_t i = 0; i < target_rsdp->length; i++) {
-            ext_sum += bytes[i];
+            ext_sum = (uint8_t)(ext_sum + bytes[i]);
         }
         if (ext_sum != 0) {
             serial_printf(COM1, "ACPI: RSDP extended checksum invalid\n");
@@ -73,7 +73,7 @@ static bool acpi_verify_sdt_checksum(acpi_sdt_header_t *header) {
     uint8_t sum = 0;
     uint8_t *bytes = (uint8_t *)header;
     for (uint32_t i = 0; i < header->length; i++) {
-        sum += bytes[i];
+        sum = (uint8_t)(sum + bytes[i]);
     }
     return sum == 0;
 }
@@ -244,7 +244,7 @@ void acpi_init(phys_addr_t rsdp_phys) {
     // Falls Revision >= 2 und xsdt_address gesetzt ist, präferiert 64-Bit XSDT nutzen
     if (rsdp->revision >= 2 && rsdp->xsdt_address != 0) {
         xsdt = (xsdt_t *)P2V(rsdp->xsdt_address);
-        if (acpi_verify_sdt_checksum(&xsdt->header)) {
+        if (acpi_verify_sdt_checksum((acpi_sdt_header_t *)xsdt)) {
             serial_printf(COM1, "ACPI: Use 64-Bit XSDT at %llx\n", (uint64_t)xsdt);
             size_t entries = (xsdt->header.length - sizeof(acpi_sdt_header_t)) / sizeof(uint64_t);
             for (size_t i = 0; i < entries; i++) {
@@ -310,9 +310,9 @@ void acpi_power_off() {
     if (found) {
         serial_printf(COM1, "ACPI: Found _S5 package, SLP_TYPa: %x, SLP_TYPb: %x\n", SLP_TYPa, SLP_TYPb);
 
-        outw(fadt->pm1a_cnt_blk, SLP_TYPa | (1 << 13)); // Bit 13: "Sleep Enable" (SLP_EN)
+        outw((uint16_t)fadt->pm1a_cnt_blk, (uint16_t)(SLP_TYPa | (1 << 13))); // Bit 13: "Sleep Enable" (SLP_EN)
         if (fadt->pm1b_cnt_blk) {
-            outw(fadt->pm1b_cnt_blk, SLP_TYPb | (1 << 13));
+            outw((uint16_t)fadt->pm1b_cnt_blk, (uint16_t)(SLP_TYPb | (1 << 13)));
         }
     } else {
         serial_printf(COM1, "ACPI: _S5 package not found in DSDT\n");

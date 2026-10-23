@@ -1,4 +1,4 @@
-#include "libm.h"
+#include "libm.h" // IWYU pragma: keep
 
 // FIXME: macro in math.h
 int __signbitf(float x) {

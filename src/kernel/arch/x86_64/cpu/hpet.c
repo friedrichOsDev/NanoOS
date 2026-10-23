@@ -15,7 +15,7 @@ uint64_t hpet_ticks_per_us = 0;
 uint64_t hpet_ticks_per_ms = 0;
 uint64_t hpet_frequency_hz = 0;
 
-void hpet_init() {
+void hpet_init(void) {
     if (!hpet) {
         panic("FATAL: System requires HPET, but none was found in ACPI tables.", 0);
     }
@@ -25,7 +25,7 @@ void hpet_init() {
         serial_printf(COM1, "HPET: warning HPET isn't in MMIO space\n");
     }
 
-    hpet_regs = (volatile hpet_registers_t *)vmm_map_mmio((page_table_t *)kernel_pml4, hpet_phys_addr, 1);
+    hpet_regs = (volatile hpet_registers_t *)(void *)vmm_map_mmio((page_table_t *)kernel_pml4, hpet_phys_addr, 1);
     serial_printf(COM1, "HPET: MMIO mapped to virtual address: %llx\n", (virt_addr_t)hpet_regs);
 
     if (!hpet_regs) {
@@ -33,7 +33,7 @@ void hpet_init() {
     }
 
     /* 1. Berechne Frequenz basierend auf der Tick-Periode in Femtosekunden */
-    uint32_t tick_period_fs = hpet_regs->general_capabilities >> 32;
+    uint32_t tick_period_fs = (uint32_t)(hpet_regs->general_capabilities >> 32);
     if (tick_period_fs == 0) {
         panic("FATAL: tick period is 0!", 0);
     }
@@ -48,7 +48,7 @@ void hpet_init() {
     hpet_regs->main_counter_value = 0;
 
     /* 3. Alle Timer-Interrupts deaktivieren (HPET wird nur als frei laufender Timer genutzt) */
-    uint32_t num_timers = ((hpet_regs->general_capabilities >> 8) & 0x1F) + 1;
+    uint32_t num_timers = (uint32_t)(((hpet_regs->general_capabilities >> 8) & 0x1F) + 1);
     for (uint32_t i = 0; i < num_timers; i++) {
         hpet_regs->timers[i].configuration_and_capability &= ~(1ULL << 2); // Deaktiviert Timer-IRQ
     }
@@ -56,7 +56,7 @@ void hpet_init() {
     /* 4. Hauptzähler starten */
     hpet_regs->general_configuration |= 1ULL;
 
-    serial_printf(COM1, "HPET: free-running counter started (%d timers disabled)\n", num_timers);
+    serial_printf(COM1, "HPET: free-running counter started (%u timers disabled)\n", num_timers);
 }
 
 uint64_t hpet_read_counter() {
