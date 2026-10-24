@@ -4,6 +4,7 @@
  * @author friedrichOsDev
  */
 
+#include <arch/x86_64/boot/multiboot2.h>
 #include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/pmm.h>
 #include <core/init.h>

@@ -4,6 +4,7 @@
  * @author friedrichOsDev
  */
 
+#include <arch/x86_64/boot/multiboot2.h>
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/idt.h>
