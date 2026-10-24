@@ -4,9 +4,9 @@
  * @author friedrichOsDev
  */
 
+#include <arch/arch.h>
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/cpu/hpet.h>
-#include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
 
@@ -22,11 +22,11 @@ void hpet_init(void) {
 
     uint64_t hpet_phys_addr = hpet->base_address.address;
     if (hpet->base_address.address_space_id != 0) {
-        serial_printf(COM1, "HPET: warning HPET isn't in MMIO space\n");
+        serial_printf("HPET: warning HPET isn't in MMIO space\n");
     }
 
     hpet_regs = (volatile hpet_registers_t *)(void *)vmm_map_mmio((page_table_t *)kernel_pml4, hpet_phys_addr, 1);
-    serial_printf(COM1, "HPET: MMIO mapped to virtual address: %llx\n", (virt_addr_t)hpet_regs);
+    serial_printf("HPET: MMIO mapped to virtual address: %llx\n", (virt_addr_t)hpet_regs);
 
     if (!hpet_regs) {
         panic("FATAL: Error failed to map HPET registers.", 0);
@@ -41,7 +41,7 @@ void hpet_init(void) {
     hpet_ticks_per_us = 1000000000ULL / tick_period_fs;
     hpet_ticks_per_ms = 1000000000000ULL / tick_period_fs;
     hpet_frequency_hz = 1000000000000000ULL / tick_period_fs;
-    serial_printf(COM1, "HPET: tick period: %u fs, frequency: %llu Hz, ticks/ms: %llu\n", tick_period_fs, hpet_frequency_hz, hpet_ticks_per_ms);
+    serial_printf("HPET: tick period: %u fs, frequency: %llu Hz, ticks/ms: %llu\n", tick_period_fs, hpet_frequency_hz, hpet_ticks_per_ms);
 
     /* 2. Zähler vorübergehend stoppen und auf 0 zurücksetzen */
     hpet_regs->general_configuration &= ~3ULL; // Stoppt Hauptzähler und deaktiviert Legacy-Routing
@@ -56,7 +56,7 @@ void hpet_init(void) {
     /* 4. Hauptzähler starten */
     hpet_regs->general_configuration |= 1ULL;
 
-    serial_printf(COM1, "HPET: free-running counter started (%u timers disabled)\n", num_timers);
+    serial_printf("HPET: free-running counter started (%u timers disabled)\n", num_timers);
 }
 
 uint64_t hpet_read_counter() {

@@ -1,6 +1,6 @@
+#include <arch/arch.h>
 #include <arch/x86_64/boot/multiboot2.h>
 #include <arch/x86_64/cpu/acpi.h>
-#include <arch/x86_64/drivers/serial.h>
 #include <core/init.h>
 #include <core/panic.h>
 #include <lib/string.h>
@@ -38,7 +38,7 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
 
     while ((uint8_t *)tag < end_addr && tag->type != MULTIBOOT_TAG_TYPE_END) {
         if (tag->size == 0) {
-            serial_printf(COM1, "MULTIBOOT2: Corrupt tag with size 0\n");
+            serial_printf("MULTIBOOT2: Corrupt tag with size 0\n");
             break;
         }
 
@@ -47,14 +47,14 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
             multiboot_tag_cmdline_t *cmdline = (multiboot_tag_cmdline_t *)tag;
             strncpy(kernel_cmdline, cmdline->string, sizeof(kernel_cmdline) - 1);
             kernel_cmdline[sizeof(kernel_cmdline) - 1] = '\0';
-            serial_printf(COM1, "MULTIBOOT2: cmdline=%s\n", kernel_cmdline);
+            serial_printf("MULTIBOOT2: cmdline=%s\n", kernel_cmdline);
             break;
         }
         case MULTIBOOT_TAG_TYPE_BOOT_LOADER: {
             multiboot_tag_boot_loader_t *boot_loader = (multiboot_tag_boot_loader_t *)tag;
             strncpy(kernel_bootloader_name, boot_loader->string, sizeof(kernel_bootloader_name) - 1);
             kernel_bootloader_name[sizeof(kernel_bootloader_name) - 1] = '\0';
-            serial_printf(COM1, "MULTIBOOT2: bootloader=%s\n", kernel_bootloader_name);
+            serial_printf("MULTIBOOT2: bootloader=%s\n", kernel_bootloader_name);
             break;
         }
         case MULTIBOOT_TAG_TYPE_MODULE: {
@@ -65,9 +65,9 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
                 entry->mod_end = module->mod_end;
                 strncpy(entry->cmdline, module->cmdline, sizeof(entry->cmdline) - 1);
                 entry->cmdline[sizeof(entry->cmdline) - 1] = '\0';
-                serial_printf(COM1, "MULTIBOOT2: module at [%x - %x] cmd=%s\n", entry->mod_start, entry->mod_end, entry->cmdline);
+                serial_printf("MULTIBOOT2: module at [%x - %x] cmd=%s\n", entry->mod_start, entry->mod_end, entry->cmdline);
             } else {
-                serial_printf(COM1, "MULTIBOOT2: warning, max modules reached\n");
+                serial_printf("MULTIBOOT2: warning, max modules reached\n");
             }
             break;
         }
@@ -83,7 +83,7 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
                     kernel_mmap.entries[kernel_mmap.entry_count].type = (mmap_type_t)entry->type;
                     kernel_mmap.entry_count++;
                 }
-                serial_printf(COM1, "MULTIBOOT2: mregion: base=%llx, len=%llx, type=%d\n", entry->base_addr, entry->length, entry->type);
+                serial_printf("MULTIBOOT2: mregion: base=%llx, len=%llx, type=%d\n", entry->base_addr, entry->length, entry->type);
             }
             break;
         }
@@ -97,7 +97,7 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
             kernel_fb_info.fb_bpp = framebuffer->framebuffer_bpp;
 
             serial_printf(
-                COM1, "MULTIBOOT2: framebuffer: %dx%dx%d at %llx, type=%d\n",
+                "MULTIBOOT2: framebuffer: %dx%dx%d at %llx, type=%d\n",
                 framebuffer->framebuffer_width, framebuffer->framebuffer_height,
                 framebuffer->framebuffer_bpp, framebuffer->framebuffer_addr,
                 framebuffer->framebuffer_type);
@@ -111,7 +111,7 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
             multiboot_tag_old_acpi_t *old = (multiboot_tag_old_acpi_t *)tag;
             rsdp_phys_addr = (phys_addr_t)old->rsdp;
             memcpy(&rsdp_stable_copy, (void *)P2V(rsdp_phys_addr), 20);
-            serial_printf(COM1, "MULTIBOOT2: ACPI Old (v1.0) RSDP physical found at %llx\n", rsdp_phys_addr);
+            serial_printf("MULTIBOOT2: ACPI Old (v1.0) RSDP physical found at %llx\n", rsdp_phys_addr);
             break;
         }
         case MULTIBOOT_TAG_TYPE_ACPI_NEW: {
@@ -122,14 +122,14 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
             if (rsdp_size > sizeof(rsdp_t))
                 rsdp_size = sizeof(rsdp_t);
             memcpy(&rsdp_stable_copy, temp_rsdp, rsdp_size);
-            serial_printf(COM1, "MULTIBOOT2: ACPI New (v2.0+) RSDP physical found at %llx\n", rsdp_phys_addr);
+            serial_printf("MULTIBOOT2: ACPI New (v2.0+) RSDP physical found at %llx\n", rsdp_phys_addr);
             break;
         }
 
         case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO: {
             multiboot_tag_basic_meminfo_t *meminfo = (multiboot_tag_basic_meminfo_t *)tag;
 
-            serial_printf(COM1, "MULTIBOOT2: mem_lower=%u KB, mem_upper=%u KB (%u MB)\n", meminfo->mem_lower, meminfo->mem_upper, meminfo->mem_upper / 1024);
+            serial_printf("MULTIBOOT2: mem_lower=%u KB, mem_upper=%u KB (%u MB)\n", meminfo->mem_lower, meminfo->mem_upper, meminfo->mem_upper / 1024);
             break;
         }
 
@@ -138,11 +138,11 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
             uintptr_t actual_phys_addr = (uintptr_t)load_base->load_base_addr;
             uintptr_t expected_phys_addr = KERNEL_START_PHYS;
 
-            serial_printf(COM1, "MULTIBOOT2: load_base_addr=%lx (linked at %lx)\n", actual_phys_addr, expected_phys_addr);
+            serial_printf("MULTIBOOT2: load_base_addr=%lx (linked at %lx)\n", actual_phys_addr, expected_phys_addr);
 
             if (actual_phys_addr != expected_phys_addr) {
                 intptr_t offset = (intptr_t)actual_phys_addr - (intptr_t)expected_phys_addr;
-                serial_printf(COM1, "MULTIBOOT2: ERROR: Kernel was relocated! Offset: %lx\n", offset);
+                serial_printf("MULTIBOOT2: ERROR: Kernel was relocated! Offset: %lx\n", offset);
                 panic("Kernel relocation mismatch", (uint64_t)offset);
             }
             break;
@@ -154,7 +154,7 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
             break;
 
         default: {
-            serial_printf(COM1, "MULTIBOOT2: unknown type %d\n", tag->type);
+            serial_printf("MULTIBOOT2: unknown type %d\n", tag->type);
             break;
         }
         }

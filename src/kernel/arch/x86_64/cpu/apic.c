@@ -4,11 +4,11 @@
  * @author friedrichOsDev
  */
 
+#include <arch/arch.h>
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/hpet.h>
 #include <arch/x86_64/cpu/pic.h>
-#include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
 #include <core/sync.h>
@@ -68,22 +68,22 @@ static uint32_t ioapic_read(uint32_t reg) {
 
 void apic_init() {
     pic_disable();
-    serial_printf(COM1, "APIC: 8259 PIC disabled\n");
+    serial_printf("APIC: 8259 PIC disabled\n");
 
     uint64_t lapic_phys = madt->local_apic_address;
     if (madt_parsed.lapic_override_count > 0 && madt_parsed.lapic_overrides != NULL) {
         lapic_phys = madt_parsed.lapic_overrides[0].local_apic_address;
-        serial_printf(COM1, "APIC: LAPIC address overridden by ACPI table\n");
+        serial_printf("APIC: LAPIC address overridden by ACPI table\n");
     }
 
     uint64_t ioapic_phys = IOAPIC_DEFAULT_PHYS;
     if (madt_parsed.ioapic_count > 0 && madt_parsed.ioapics != NULL) {
         ioapic_phys = madt_parsed.ioapics[0].ioapic_address;
     } else {
-        serial_printf(COM1, "APIC: using fallback IOAPIC address (Phys: %x)\n", ioapic_phys);
+        serial_printf("APIC: using fallback IOAPIC address (Phys: %x)\n", ioapic_phys);
     }
 
-    serial_printf(COM1, "APIC: Mapping LAPIC (Phys: %x) & IOAPIC (Phys: %x)\n", lapic_phys, ioapic_phys);
+    serial_printf("APIC: Mapping LAPIC (Phys: %x) & IOAPIC (Phys: %x)\n", lapic_phys, ioapic_phys);
     lapic_base = (volatile uint8_t *)vmm_map_mmio((page_table_t *)kernel_pml4, lapic_phys, 1);
     ioapic_base = (volatile uint8_t *)vmm_map_mmio((page_table_t *)kernel_pml4, ioapic_phys, 1);
 
@@ -120,7 +120,7 @@ void apic_init() {
         ioapic_write(IOAPIC_REG_RED_TABLE(i) + 1, 0);
     }
 
-    serial_printf(COM1, "APIC: LAPIC initialized and enabled. BSP ID: %x\n", lapic_read(LAPIC_REG_ID) >> 24);
+    serial_printf("APIC: LAPIC initialized and enabled. BSP ID: %x\n", lapic_read(LAPIC_REG_ID) >> 24);
 
     apic_initialized = true;
 }
@@ -261,8 +261,8 @@ void lapic_timer_calibrate_and_start(uint32_t target_hz) {
 
     lapic_timer_calibrated_initcnt = init_count;
 
-    serial_printf(COM1, "LAPIC TIMER: calibrated on CPU %d: %llu ticks/s, "
-                        "init_count=%u for %u Hz\n",
+    serial_printf("LAPIC TIMER: calibrated on CPU %d: %llu ticks/s, "
+                  "init_count=%u for %u Hz\n",
                   lapic_get_id(), ticks_per_second, init_count, target_hz);
 
     // 6. Periodischen Timer mit dem kalibrierten Wert starten
@@ -273,7 +273,7 @@ void lapic_timer_calibrate_and_start(uint32_t target_hz) {
 
 void lapic_timer_start_ap() {
     if (lapic_timer_calibrated_initcnt == 0) {
-        serial_printf(COM1, "LAPIC TIMER: error - not calibrated yet!\n");
+        serial_printf("LAPIC TIMER: error - not calibrated yet!\n");
         return;
     }
 
@@ -281,5 +281,5 @@ void lapic_timer_start_ap() {
     lapic_write(LAPIC_REG_TIMER_LVT, LAPIC_TIMER_PERIODIC | LAPIC_TIMER_VECTOR);
     lapic_write(LAPIC_REG_TIMER_INITCNT, lapic_timer_calibrated_initcnt);
 
-    serial_printf(COM1, "LAPIC TIMER: started on CPU %d (init_count=%u, %u Hz)\n", lapic_get_id(), lapic_timer_calibrated_initcnt, lapic_timer_target_hz);
+    serial_printf("LAPIC TIMER: started on CPU %d (init_count=%u, %u Hz)\n", lapic_get_id(), lapic_timer_calibrated_initcnt, lapic_timer_target_hz);
 }

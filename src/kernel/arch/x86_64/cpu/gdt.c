@@ -4,9 +4,9 @@
  * @author friedrichOsDev
  */
 
+#include <arch/arch.h>
 #include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/gdt_flush.h>
-#include <arch/x86_64/drivers/serial.h>
 #include <core/panic.h>
 
 extern uint8_t stack_top[];
@@ -61,7 +61,7 @@ static void tss_init_core(size_t cpu_id, uintptr_t kernel_stack) {
     /* I/O-Permission-Bitmap sperren (Offset = Größe der Struktur) */
     tss->iomap_base = (uint16_t)sizeof(struct tss_entry);
 
-    serial_printf(COM1, "TSS Core %zu: RSP0 = %p, IST1 = %p\n", cpu_id, (void *)tss->rsp0, (void *)tss->ist1);
+    serial_printf("TSS Core %zu: RSP0 = %p, IST1 = %p\n", cpu_id, (void *)tss->rsp0, (void *)tss->ist1);
 }
 
 void gdt_init() {
@@ -86,7 +86,7 @@ void gdt_init() {
 
     /* GDT neu laden und Segment-Register aktualisieren */
     gdt_flush((uint64_t)&gdtp);
-    serial_printf(COM1, "GDT: Flushed successfully\n");
+    serial_printf("GDT: Flushed successfully\n");
 
     /* Bootstrap Processor (CPU 0) initialisieren */
     gdt_init_core(0, (uintptr_t)stack_top);
@@ -94,7 +94,7 @@ void gdt_init() {
 
 void gdt_init_core(size_t cpu_id, uintptr_t kernel_stack) {
     if (cpu_id >= MAX_CPUS) {
-        serial_printf(COM1, "GDT Core %zu: OOB cpu_id!\n", cpu_id);
+        serial_printf("GDT Core %zu: OOB cpu_id!\n", cpu_id);
         return;
     }
 
@@ -109,7 +109,7 @@ void gdt_init_core(size_t cpu_id, uintptr_t kernel_stack) {
     uint16_t tss_selector = (uint16_t)(gdt_index * 8);
     tss_load(tss_selector);
 
-    serial_printf(COM1, "GDT Core %zu: Loaded TSS Selector %02x (Index %zu)\n", cpu_id, tss_selector, gdt_index);
+    serial_printf("GDT Core %zu: Loaded TSS Selector %02x (Index %zu)\n", cpu_id, tss_selector, gdt_index);
 }
 
 void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran) {

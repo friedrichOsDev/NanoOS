@@ -6,7 +6,7 @@
  * @author friedrichOsDev
  */
 
-#include <arch/x86_64/drivers/serial.h>
+#include <arch/arch.h>
 #include <arch/x86_64/mm/heap.h>
 #include <arch/x86_64/mm/memdef.h>
 #include <arch/x86_64/mm/vmm.h>
@@ -27,7 +27,7 @@ void process_init() {
         panic("Process: Failed to initialize kernel process!", 0);
     }
 
-    serial_printf(COM1, "Process: Initialized successfully (Kernel PID: %d)\n", kernel_process->pid);
+    serial_printf("Process: Initialized successfully (Kernel PID: %d)\n", kernel_process->pid);
 }
 
 process_t *process_create(const char *name, page_table_t *pml4) {
@@ -50,7 +50,7 @@ process_t *process_create(const char *name, page_table_t *pml4) {
 
     proc->pml4 = pml4;
     proc->cr3 = V2P((virt_addr_t)pml4);
-    serial_printf(COM1, "Process: pml4: %llx, cr3: %llx\n", (virt_addr_t)proc->pml4, (phys_addr_t)proc->cr3);
+    serial_printf("Process: pml4: %llx, cr3: %llx\n", (virt_addr_t)proc->pml4, (phys_addr_t)proc->cr3);
 
     spinlock_init(&proc->lock);
 

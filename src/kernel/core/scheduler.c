@@ -6,12 +6,12 @@
  * @author friedrichOsDev
  */
 
+#include <arch/arch.h>
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/context.h>
 #include <arch/x86_64/cpu/fpu.h>
 #include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/smp.h>
-#include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/heap.h>
 #include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
@@ -129,7 +129,7 @@ static void cleanup_dead_threads() {
     while (curr) {
         thread_t *next = curr->next;
 
-        serial_printf(COM1, "Cleaning up dead thread %p with name %s\n", curr, curr->name);
+        serial_printf("Cleaning up dead thread %p with name %s\n", curr, curr->name);
 
         if (curr->process) {
             uint64_t pflags = spinlock_acquire_irqsave(&curr->process->lock);
@@ -156,7 +156,7 @@ static void cleanup_dead_threads() {
 }
 
 void scheduler_init() {
-    serial_printf(COM1, "SCHED: initializing scheduler...\n");
+    serial_printf("SCHED: initializing scheduler...\n");
 
     process_init();
 
@@ -188,7 +188,7 @@ void scheduler_init() {
     cpus[0].idle_thread = thread_create_on_cpu(kernel_process, idle_task, NULL, "idle_0", 0);
     pop_next_ready_thread_for_cpu(0); // Idle-Task aus der Warteschlange entfernen
 
-    serial_printf(COM1, "SCHED: scheduler initialized for BSP.\n");
+    serial_printf("SCHED: scheduler initialized for BSP.\n");
 }
 
 void scheduler_enable() { scheduler_enabled = true; }
@@ -203,7 +203,7 @@ void scheduler_schedule() {
 
     cpu_local_t *my_cpu = smp_get_current_cpu();
     if (!my_cpu) {
-        serial_printf(COM1, "SCHED: scheduler enabled but no CPU found.\n");
+        serial_printf("SCHED: scheduler enabled but no CPU found.\n");
         spinlock_release_irqrestore(&sched_lock, flags);
         return;
     }

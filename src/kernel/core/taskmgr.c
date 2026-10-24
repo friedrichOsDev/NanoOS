@@ -4,8 +4,8 @@
  * @author friedrichOsDev
  */
 
+#include <arch/arch.h>
 #include <arch/x86_64/cpu/smp.h>
-#include <arch/x86_64/drivers/serial.h>
 #include <core/process.h>
 #include <core/taskmgr.h>
 #include <core/thread.h>
@@ -43,9 +43,9 @@ static const char *thread_state_to_string(thread_state_t state) {
 void ps_dump() {
     uint64_t list_flags = spinlock_acquire_irqsave(&proc_list_lock);
 
-    serial_printf(COM1, "\n============================= TASK MANAGER ==============================\n");
-    serial_printf(COM1, "%-6s %-20s %-6s %-20s %-10s %-6s\n", "PID", "PROCESS", "TID", "THREAD NAME", "STATE", "CORE");
-    serial_printf(COM1, "-------------------------------------------------------------------------\n");
+    serial_printf("\n============================= TASK MANAGER ==============================\n");
+    serial_printf("%-6s %-20s %-6s %-20s %-10s %-6s\n", "PID", "PROCESS", "TID", "THREAD NAME", "STATE", "CORE");
+    serial_printf("-------------------------------------------------------------------------\n");
 
     for (process_t *p = proc_list; p != NULL; p = p->next) {
         uint64_t pflags = spinlock_acquire_irqsave(&p->lock);
@@ -58,30 +58,30 @@ void ps_dump() {
                 snprintf(core_str, sizeof(core_str), "%d", t->cpu_affinity);
             }
 
-            serial_printf(COM1, "%-6d %-20s %-6d %-20s %-10s %-6s\n", p->pid, p->name, t->tid, t->name, thread_state_to_string(t->state), core_str);
+            serial_printf("%-6d %-20s %-6d %-20s %-10s %-6s\n", p->pid, p->name, t->tid, t->name, thread_state_to_string(t->state), core_str);
         }
 
         spinlock_release_irqrestore(&p->lock, pflags);
     }
 
-    serial_printf(COM1, "-------------------------------------------------------------------------\n");
-    serial_printf(COM1, "%-11s %-15s %-27s %-17s\n", "CPU CORE", "ACTIVE TID", "ACTIVE THREAD", "STATUS");
-    serial_printf(COM1, "-------------------------------------------------------------------------\n");
+    serial_printf("-------------------------------------------------------------------------\n");
+    serial_printf("%-11s %-15s %-27s %-17s\n", "CPU CORE", "ACTIVE TID", "ACTIVE THREAD", "STATUS");
+    serial_printf("-------------------------------------------------------------------------\n");
 
     for (size_t i = 0; i < smp_cpu_count; i++) {
         if (cpus[i].online) {
             thread_t *curr_t = cpus[i].current_thread;
             if (curr_t) {
-                serial_printf(COM1, "%-11d %-15d %-27s %-17s\n", cpus[i].cpu_id, curr_t->tid, curr_t->name, "ONLINE");
+                serial_printf("%-11d %-15d %-27s %-17s\n", cpus[i].cpu_id, curr_t->tid, curr_t->name, "ONLINE");
             } else {
-                serial_printf(COM1, "%-11d %-15s %-27s %-17s\n", cpus[i].cpu_id, "-", "none", "ONLINE");
+                serial_printf("%-11d %-15s %-27s %-17s\n", cpus[i].cpu_id, "-", "none", "ONLINE");
             }
         } else {
-            serial_printf(COM1, "%-11d %-15s %-27s %-17s\n", cpus[i].cpu_id, "-", "-", "OFFLINE");
+            serial_printf("%-11d %-15s %-27s %-17s\n", cpus[i].cpu_id, "-", "-", "OFFLINE");
         }
     }
 
-    serial_printf(COM1, "=========================================================================\n\n");
+    serial_printf("=========================================================================\n\n");
 
     spinlock_release_irqrestore(&proc_list_lock, list_flags);
 }

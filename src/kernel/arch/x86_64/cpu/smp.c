@@ -7,6 +7,7 @@
  * @author friedrichOsDev
  */
 
+#include <arch/arch.h>
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/fpu.h>
@@ -16,7 +17,6 @@
 #include <arch/x86_64/cpu/idt.h>
 #include <arch/x86_64/cpu/smp.h>
 #include <arch/x86_64/cpu/smp_trampoline.h>
-#include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/heap.h>
 #include <arch/x86_64/mm/memdef.h>
 #include <arch/x86_64/mm/vmm.h>
@@ -112,7 +112,7 @@ static void smp_ap_main() {
     local_cpu->online = true;
     ap_boot_flag = true;
 
-    serial_printf(COM1, "SMP: CPU Core %d (APIC ID %d) online and ready!\n", local_cpu->cpu_id, local_cpu->lapic_id);
+    serial_printf("SMP: CPU Core %d (APIC ID %d) online and ready!\n", local_cpu->cpu_id, local_cpu->lapic_id);
 
     // Interrupts aktivieren
     __asm__ __volatile__("sti");
@@ -125,10 +125,10 @@ static void smp_ap_main() {
 }
 
 void smp_init() {
-    serial_printf(COM1, "SMP: scanning MADT for CPU cores...\n");
+    serial_printf("SMP: scanning MADT for CPU cores...\n");
 
     if (!madt) {
-        serial_printf(COM1, "SMP: no MADT table found, staying in single-core mode\n");
+        serial_printf("SMP: no MADT table found, staying in single-core mode\n");
         return;
     }
 
@@ -165,7 +165,7 @@ void smp_init() {
         ptr += entry->length;
     }
 
-    serial_printf(COM1, "SMP: detected %d CPU core(s) in system\n", smp_cpu_count);
+    serial_printf("SMP: detected %d CPU core(s) in system\n", smp_cpu_count);
     if (smp_cpu_count == 1)
         return;
 
@@ -201,7 +201,7 @@ void smp_init() {
 
         ap_boot_flag = false;
 
-        serial_printf(COM1, "SMP: booting Core %d (APIC ID %d)...\n", i, target_apic_id);
+        serial_printf("SMP: booting Core %d (APIC ID %d)...\n", i, target_apic_id);
 
         // Standard INIT-SIPI-SIPI Sequenz senden
         lapic_send_init(target_apic_id);
@@ -224,12 +224,12 @@ void smp_init() {
         }
 
         if (cpus[i].online) {
-            serial_printf(COM1, "SMP: Core %d successfully initialized!\n", i);
+            serial_printf("SMP: Core %d successfully initialized!\n", i);
         } else {
-            serial_printf(COM1, "SMP: warning Core %d failed to boot (timeout)!\n", i);
+            serial_printf("SMP: warning Core %d failed to boot (timeout)!\n", i);
             kfree((virt_addr_t)ap_stack);
         }
     }
 
-    serial_printf(COM1, "SMP: all available cores started.\n");
+    serial_printf("SMP: all available cores started.\n");
 }

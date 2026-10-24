@@ -8,7 +8,7 @@
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/idt.h>
-#include <arch/x86_64/drivers/serial.h>
+#include <arch/arch.h>
 #include <arch/x86_64/mm/pmm.h>
 #include <arch/x86_64/mm/vmm.h>
 #include <core/init.h>
@@ -151,12 +151,12 @@ void vmm_init() {
     memset(k_pml4, 0, PAGE_SIZE);
 
     uint64_t max_phys_ram = pmm_state.total_pages * PAGE_SIZE;
-    serial_printf(COM1, "VMM: create direct mapping for %lld MiB of physical RAM\n", max_phys_ram / 1024 / 1024);
+    serial_printf("VMM: create direct mapping for %lld MiB of physical RAM\n", max_phys_ram / 1024 / 1024);
     for (uint64_t phys = 0; phys < max_phys_ram; phys += PAGE_SIZE) {
         vmm_map_page(k_pml4, P2V(phys), phys, PTE_WRITABLE);
     }
 
-    serial_printf(COM1, "VMM: map kernel + bitmap\n");
+    serial_printf("VMM: map kernel + bitmap\n");
     phys_addr_t kernel_phys_start = KERNEL_START_PHYS;
     uint64_t kernel_size = ALIGN_UP(KERNEL_END_PHYS - kernel_phys_start);
     uint64_t total_higher_half_size = kernel_size + pmm_state.bitmap_size + 0x100000;
@@ -173,7 +173,7 @@ void vmm_init() {
 
     vmm_unmap_page(k_pml4, 0x0);
 
-    serial_printf(COM1, "VMM: map framebuffer via active paging\n");
+    serial_printf("VMM: map framebuffer via active paging\n");
     if (kernel_fb_info.fb_addr) {
         uint64_t fb_size = kernel_fb_info.fb_height * kernel_fb_info.fb_pitch;
         virt_addr_t fb_vaddr = vmm_map_mmio(k_pml4, kernel_fb_info.fb_addr, fb_size);
@@ -184,7 +184,7 @@ void vmm_init() {
     }
 
     kernel_pml4 = P2V(kernel_pml4_phys);
-    serial_printf(COM1, "VMM: init done, final pml4 tables active\n");
+    serial_printf("VMM: init done, final pml4 tables active\n");
 }
 
 virt_addr_t vmm_map_mmio(page_table_t *pml4, phys_addr_t paddr, size_t size) {
@@ -266,7 +266,7 @@ void vmm_unmap_page(page_table_t *pml4, virt_addr_t vaddr) {
         return;
     }
     if (!pml4) {
-        serial_printf(COM1, "VMM ERROR: vmm_unmap_page called with NULL pml4!\n");
+        serial_printf("VMM ERROR: vmm_unmap_page called with NULL pml4!\n");
         return;
     }
 

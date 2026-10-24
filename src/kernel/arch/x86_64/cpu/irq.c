@@ -4,12 +4,12 @@
  * @author friedrichOsDev
  */
 
+#include <arch/arch.h>
 #include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/idt.h>
 #include <arch/x86_64/cpu/interrupts.h>
 #include <arch/x86_64/cpu/irq.h>
 #include <arch/x86_64/cpu/pic.h>
-#include <arch/x86_64/drivers/serial.h>
 #include <pch.h>
 
 void irq_init() {
@@ -22,7 +22,7 @@ void irq_init() {
         (uint64_t)irq8, (uint64_t)irq9, (uint64_t)irq10, (uint64_t)irq11,
         (uint64_t)irq12, (uint64_t)irq13, (uint64_t)irq14, (uint64_t)irq15};
 
-    serial_printf(COM1, "IRQ: setting IRQ entries\n");
+    serial_printf("IRQ: setting IRQ entries\n");
     for (uint8_t i = 0; i < 16; i++) {
         idt_set_gate((uint8_t)(32 + i), irq_table[i], GDT_SEL_KERN_CODE, 0, IDT_GATE_INTERRUPT);
     }

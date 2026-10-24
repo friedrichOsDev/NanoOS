@@ -6,26 +6,22 @@
  * @author friedrichOsDev
  */
 
-#include <arch/x86_64/drivers/serial.h>
+#include "serial.h"
 #include <core/sync.h>
 #include <lib/io.h>
 #include <lib/print.h>
 #include <pch.h>
-
-#define SERIAL_LSR_THR_EMPTY 0x20
+#include <arch/arch.h>
 
 static spinlock_t serial_lock = SPINLOCK_INIT;
+static uint16_t port;
 
-/**
- * @brief Prüft, ob der Sende-Puffer (Transmit Holding Register) des UARTs leer ist.
- * @param port I/O-Port-Adresse des COM-Ports.
- * @return true, wenn das Register bereit für neue Daten ist, sonst false.
- */
-static bool serial_is_transmit_empty(uint16_t port) {
+static bool serial_is_transmit_empty() {
     return inb((uint16_t)(port + 5)) & SERIAL_LSR_THR_EMPTY;
 }
 
-void serial_init(uint16_t port) {
+void serial_init() {
+    port = COM1;
     outb((uint16_t)(port + 1), 0x00); // Interrupts deaktivieren
     outb((uint16_t)(port + 3), 0x80); // DLAB aktivieren (Baudraten-Divisor setzen)
     outb((uint16_t)(port + 0), 0x01); // Divisor Low Byte (115200 Baud)
@@ -35,9 +31,9 @@ void serial_init(uint16_t port) {
     outb((uint16_t)(port + 4), 0x0B); // IRQs aktivieren, RTS/DSR Pins setzen
 }
 
-void serial_putc(uint16_t port, char c) {
+void serial_putc(char c) {
     uint32_t timeout = 100000;
-    while (serial_is_transmit_empty(port) == 0) {
+    while (serial_is_transmit_empty() == 0) {
         if (--timeout == 0) {
             return;
         }
@@ -45,19 +41,18 @@ void serial_putc(uint16_t port, char c) {
     outb(port, (uint8_t)c);
 }
 
-void serial_puts(uint16_t port, const char *str) {
+void serial_puts(const char *str) {
     while (*str) {
         if (*str == '\n') {
-            serial_putc(port, '\r');
+            serial_putc('\r');
         }
-        serial_putc(port, *str++);
+        serial_putc(*str++);
     }
 }
 
-void serial_printf(uint16_t port, const char *format, ...) {
+void serial_printf(const char *format, ...) {
     char buffer[SERIAL_BUFFER_MAX_SIZE];
 
-    // Spinlock akquirieren und Interrupts sichern (Thread- & Interrupt-Sicherheit)
     uint64_t flags = spinlock_acquire_irqsave(&serial_lock);
 
     va_list args;
@@ -66,9 +61,8 @@ void serial_printf(uint16_t port, const char *format, ...) {
     va_end(args);
 
     if (res > 0) {
-        serial_puts(port, buffer);
+        serial_puts(buffer);
     }
 
-    // Spinlock freigeben und vorherigen Interrupt-Status wiederherstellen
     spinlock_release_irqrestore(&serial_lock, flags);
 }

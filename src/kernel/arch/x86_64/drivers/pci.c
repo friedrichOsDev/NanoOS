@@ -4,8 +4,8 @@
  * @author friedrichOsDev
  */
 
+#include <arch/arch.h>
 #include <arch/x86_64/drivers/pci.h>
-#include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/heap.h>
 #include <core/sync.h>
 #include <lib/string.h>
@@ -195,16 +195,16 @@ static void pci_probe_device(uint8_t bus, uint8_t dev, uint8_t func) {
     device_list_head = device;
     spinlock_release_irqrestore(&pci_lock, flags);
 
-    serial_printf(COM1, "PCI: Device [%02x:%02x.%d] %04x:%04x (Class %02x, Sub %02x)\n", bus, dev, func, device->vendor_id, device->device_id, device->class_code, device->subclass);
+    serial_printf("PCI: Device [%02x:%02x.%d] %04x:%04x (Class %02x, Sub %02x)\n", bus, dev, func, device->vendor_id, device->device_id, device->class_code, device->subclass);
 }
 
 void pci_init() {
     if (mcfg_info.count == 0 || !mcfg_info.entries) {
-        serial_printf(COM1, "PCI: No MCFG entries available\n");
+        serial_printf("PCI: No MCFG entries available\n");
         return;
     }
 
-    serial_printf(COM1, "PCI: Initializing ECAM bus scan via MCFG...\n");
+    serial_printf("PCI: Initializing ECAM bus scan via MCFG...\n");
 
     for (size_t i = 0; i < mcfg_info.count; i++) {
         mcfg_entry_runtime_t *entry = &mcfg_info.entries[i];
@@ -254,7 +254,7 @@ static void pci_match_driver(pci_driver_t *driver) {
 
         if (match && driver->probe) {
             if (driver->probe(dev)) {
-                serial_printf(COM1, "PCI: Driver '%s' bound to [%02x:%02x.%d]\n", driver->name, dev->bus, dev->device, dev->function);
+                serial_printf("PCI: Driver '%s' bound to [%02x:%02x.%d]\n", driver->name, dev->bus, dev->device, dev->function);
             }
         }
         dev = dev->next;
@@ -303,7 +303,7 @@ bool pci_enable_msi(pci_device_t *dev, uint8_t vector, uint8_t lapic_id) {
     msg_ctrl |= (1 << 0);
     pci_write16(dev, (uint16_t)(cap + 0x02), msg_ctrl);
 
-    serial_printf(COM1, "PCI: Enabled MSI on [%02x:%02x.%d] -> Vector %u, LAPIC %u\n", dev->bus, dev->device, dev->function, vector, lapic_id);
+    serial_printf("PCI: Enabled MSI on [%02x:%02x.%d] -> Vector %u, LAPIC %u\n", dev->bus, dev->device, dev->function, vector, lapic_id);
 
     return true;
 }

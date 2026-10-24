@@ -4,8 +4,8 @@
  * @author friedrichOsDev
  */
 
+#include <arch/arch.h>
 #include <arch/x86_64/boot/multiboot2.h>
-#include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/pmm.h>
 #include <core/init.h>
 #include <core/panic.h>
@@ -105,7 +105,7 @@ static void mmap_parse() {
 
     uint64_t total_pages = max_usable_addr / PAGE_SIZE;
     uint64_t bitmap_size = total_pages / 8;
-    serial_printf(COM1, "PMM: max_addr=%llx, bitmap_size=%llx\n", max_usable_addr, bitmap_size);
+    serial_printf("PMM: max_addr=%llx, bitmap_size=%llx\n", max_usable_addr, bitmap_size);
 
     pmm_state.bitmap = (uint8_t *)KERNEL_END_PHYS;
     pmm_state.bitmap_size = bitmap_size;
@@ -146,7 +146,7 @@ void pmm_init() {
     // lock below 1M
     lock_pages(0, 256);
 
-    serial_printf(COM1, "PMM: used_pages=%llx, free_pages=%llx\n", pmm_state.used_pages, pmm_state.free_pages);
+    serial_printf("PMM: used_pages=%llx, free_pages=%llx\n", pmm_state.used_pages, pmm_state.free_pages);
 }
 
 phys_addr_t pmm_page_alloc() {

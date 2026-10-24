@@ -4,11 +4,11 @@
  * @author friedrichOsDev
  */
 
+#include <arch/arch.h>
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/idt.h>
 #include <arch/x86_64/cpu/interrupts.h>
-#include <arch/x86_64/drivers/serial.h>
 
 /** @brief Das globale IDT-Array für 256 Interrupt-Vektoren. */
 struct idt_entry idt[IDT_ENTRIES];
@@ -31,7 +31,7 @@ void idt_init() {
         (uint64_t)isr24, (uint64_t)isr25, (uint64_t)isr26, (uint64_t)isr27,
         (uint64_t)isr28, (uint64_t)isr29, (uint64_t)isr30, (uint64_t)isr31};
 
-    serial_printf(COM1, "IDT: clearing all 256 entries\n");
+    serial_printf("IDT: clearing all 256 entries\n");
     for (int i = 0; i < IDT_ENTRIES; i++) {
         idt_set_gate((uint8_t)i, 0, 0, 0, 0);
     }
@@ -49,7 +49,7 @@ void idt_init() {
     idt_set_gate(IPI_TLB_SHOOTDOWN_VECTOR, (uint64_t)ipi_tlb_shootdown_stub, GDT_SEL_KERN_CODE, 0, IDT_GATE_INTERRUPT);
     idt_set_gate(LAPIC_TIMER_VECTOR, (uint64_t)lapic_timer_stub, GDT_SEL_KERN_CODE, 0, IDT_GATE_INTERRUPT);
 
-    serial_printf(COM1, "IDT: loading IDTR\n");
+    serial_printf("IDT: loading IDTR\n");
     idt_load((uint64_t)&idtp);
 }
 

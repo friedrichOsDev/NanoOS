@@ -4,10 +4,10 @@
  * @author friedrichOsDev
  */
 
+#include <arch/arch.h>
 #include <arch/x86_64/cpu/context.h>
 #include <arch/x86_64/cpu/fpu.h>
 #include <arch/x86_64/cpu/smp.h>
-#include <arch/x86_64/drivers/serial.h>
 #include <arch/x86_64/mm/heap.h>
 #include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
@@ -24,7 +24,7 @@ static spinlock_t tid_lock = SPINLOCK_INIT;
 
 thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg, const char *name, int cpu_affinity) {
     if (cpu_affinity >= 0 && (size_t)cpu_affinity >= smp_cpu_count) {
-        serial_printf(COM1, "Thread: Cannot create process on an non exisiting core %d\n", cpu_affinity);
+        serial_printf("Thread: Cannot create process on an non exisiting core %d\n", cpu_affinity);
         return NULL;
     }
 
@@ -90,7 +90,7 @@ thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
 
     scheduler_add_thread(thread);
 
-    serial_printf(COM1, "Thread: Created new thread, Proc: %s, Core: %d, Name: %s\n", thread->process->name, cpu_affinity, name);
+    serial_printf("Thread: Created new thread, Proc: %s, Core: %d, Name: %s\n", thread->process->name, cpu_affinity, name);
 
     return thread;
 }

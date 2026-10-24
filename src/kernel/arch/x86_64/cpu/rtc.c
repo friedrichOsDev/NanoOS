@@ -4,9 +4,9 @@
  * @author friedrichOsDev
  */
 
+#include <arch/arch.h>
 #include <arch/x86_64/cpu/hpet.h>
 #include <arch/x86_64/cpu/rtc.h>
-#include <arch/x86_64/drivers/serial.h>
 #include <core/sync.h>
 #include <lib/io.h>
 
@@ -126,8 +126,8 @@ void rtc_init() {
     boot_time = rtc_read_hardware();
     boot_epoch = rtc_to_unix(&boot_time);
 
-    serial_printf(COM1, "RTC: boot time: %04d-%02d-%02d %02d:%02d:%02d UTC\n", boot_time.year, boot_time.month, boot_time.day, boot_time.hour, boot_time.minute, boot_time.second);
-    serial_printf(COM1, "RTC: boot epoch: %llu\n", boot_epoch);
+    serial_printf("RTC: boot time: %04d-%02d-%02d %02d:%02d:%02d UTC\n", boot_time.year, boot_time.month, boot_time.day, boot_time.hour, boot_time.minute, boot_time.second);
+    serial_printf("RTC: boot epoch: %llu\n", boot_epoch);
 }
 
 rtc_time_t rtc_get_boot_time() { return boot_time; }
