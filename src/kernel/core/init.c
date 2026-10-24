@@ -11,7 +11,6 @@
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/fpu.h>
-#include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/handler.h>
 #include <arch/x86_64/cpu/hpet.h>
 #include <arch/x86_64/cpu/idt.h>

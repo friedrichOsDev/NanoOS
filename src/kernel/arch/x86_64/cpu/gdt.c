@@ -4,12 +4,10 @@
  * @author friedrichOsDev
  */
 
+#include "gdt.h"
+#include "gdt_sym.h"
 #include <arch/arch.h>
-#include <arch/x86_64/cpu/gdt.h>
-#include <arch/x86_64/cpu/gdt_flush.h>
 #include <core/panic.h>
-
-extern uint8_t stack_top[];
 
 /** @brief Globales GDT-Array für alle Segmente und TSS-Einträge aller Kerne */
 struct gdt_entry gdt[GDT_ENTRIES];
@@ -89,7 +87,7 @@ void gdt_init() {
     serial_printf("GDT: Flushed successfully\n");
 
     /* Bootstrap Processor (CPU 0) initialisieren */
-    gdt_init_core(0, (uintptr_t)stack_top);
+    gdt_init_core(0, (uintptr_t)kernel_stack_top);
 }
 
 void gdt_init_core(size_t cpu_id, uintptr_t kernel_stack) {
@@ -143,4 +141,8 @@ void gdt_set_tss_gate(int num, uintptr_t base, uint32_t limit) {
     struct gdt_tss_entry_high *high = (struct gdt_tss_entry_high *)&gdt[num + 1];
     high->base_upper = (uint32_t)(base >> 32);
     high->reserved = 0;
+}
+
+void gdt_set_tss_kernel_stack(size_t cpu_id, uint64_t stack_top) {
+    tss_cores[cpu_id].rsp0 = stack_top;
 }

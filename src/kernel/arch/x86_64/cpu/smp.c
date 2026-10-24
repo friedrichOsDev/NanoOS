@@ -7,12 +7,12 @@
  * @author friedrichOsDev
  */
 
+#include "gdt.h"
+#include "gdt_sym.h"
 #include <arch/arch.h>
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/fpu.h>
-#include <arch/x86_64/cpu/gdt.h>
-#include <arch/x86_64/cpu/gdt_flush.h>
 #include <arch/x86_64/cpu/hpet.h>
 #include <arch/x86_64/cpu/idt.h>
 #include <arch/x86_64/cpu/smp.h>
@@ -28,8 +28,6 @@
 extern phys_addr_t kernel_pml4_phys;
 extern struct gdt_ptr gdtp;
 extern struct idt_ptr idtp;
-
-extern uint8_t stack_top[];
 
 cpu_local_t cpus[MAX_CPUS];
 size_t smp_cpu_count = 1;
@@ -137,9 +135,9 @@ void smp_init() {
     // Bootstrap Processor (BSP / Kern 0) registrieren
     cpus[0].cpu_id = 0;
     cpus[0].lapic_id = bsp_lapic_id;
-    cpus[0].kernel_stack = (uint64_t)stack_top;
-    if ((uint64_t)stack_top % 16 != 0) {
-        panic("SMP: BSP stack_top not 16-byte aligned (SSE/FPU)", (uint64_t)stack_top % 16);
+    cpus[0].kernel_stack = (uint64_t)kernel_stack_top;
+    if ((uint64_t)kernel_stack_top % 16 != 0) {
+        panic("SMP: BSP kernel_stack_top not 16-byte aligned (SSE/FPU)", (uint64_t)kernel_stack_top % 16);
     }
     cpus[0].online = true;
 

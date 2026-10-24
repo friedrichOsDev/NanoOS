@@ -4,8 +4,8 @@
  * @author friedrichOsDev
  */
 
+#include "gdt.h"
 #include <arch/arch.h>
-#include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/idt.h>
 #include <arch/x86_64/cpu/interrupts.h>
 #include <arch/x86_64/cpu/irq.h>

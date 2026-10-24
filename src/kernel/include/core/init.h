@@ -10,11 +10,6 @@
 
 #include <pch.h>
 
-extern uint8_t kernel_start[];
-extern uint8_t kernel_end[];
-extern uint8_t kernel_start_phys[];
-extern uint8_t kernel_end_phys[];
-
 #define KERNEL_START (uintptr_t) kernel_start
 #define KERNEL_END (uintptr_t) kernel_end
 #define KERNEL_START_PHYS (uintptr_t) kernel_start_phys

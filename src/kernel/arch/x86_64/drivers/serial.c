@@ -7,11 +7,11 @@
  */
 
 #include "serial.h"
+#include <arch/arch.h>
 #include <core/sync.h>
 #include <lib/io.h>
 #include <lib/print.h>
 #include <pch.h>
-#include <arch/arch.h>
 
 static spinlock_t serial_lock = SPINLOCK_INIT;
 static uint16_t port;

@@ -10,7 +10,6 @@
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/context.h>
 #include <arch/x86_64/cpu/fpu.h>
-#include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/smp.h>
 #include <arch/x86_64/mm/heap.h>
 #include <arch/x86_64/mm/vmm.h>
@@ -241,7 +240,7 @@ void scheduler_schedule() {
         next->time_slice = DEFAULT_TIME_SLICE;
         if (my_cpu) {
             my_cpu->current_thread = next;
-            tss_cores[my_cpu->cpu_id].rsp0 = next->kernel_stack_top;
+            gdt_set_tss_kernel_stack(my_cpu->cpu_id, next->kernel_stack_top);
         }
 
         if (prev && prev->process != next->process && next->process) {

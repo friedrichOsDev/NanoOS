@@ -32,7 +32,8 @@ typedef struct {
 /**
  * @brief Initialisierungs-Makro für statische Spinlocks.
  */
-#define SPINLOCK_INIT { .lock = 0 }
+#define SPINLOCK_INIT \
+    { .lock = 0 }
 
 /**
  * @brief Initialisiert einen Spinlock-Zustand inline.

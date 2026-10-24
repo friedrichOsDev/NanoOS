@@ -4,11 +4,10 @@
  * @author friedrichOsDev
  */
 
+#include <arch/arch.h>
 #include <arch/x86_64/boot/multiboot2.h>
 #include <arch/x86_64/cpu/apic.h>
-#include <arch/x86_64/cpu/gdt.h>
 #include <arch/x86_64/cpu/idt.h>
-#include <arch/arch.h>
 #include <arch/x86_64/mm/pmm.h>
 #include <arch/x86_64/mm/vmm.h>
 #include <core/init.h>

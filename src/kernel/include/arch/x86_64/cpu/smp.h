@@ -11,9 +11,6 @@
 #include <core/thread.h>
 #include <pch.h>
 
-/** @brief Maximale Anzahl von CPU-Kernen, die das System unterstützt. */
-#define MAX_CPUS 64
-
 /**
  * @struct cpu_local
  * @brief Pro-CPU Speicherkontext zur Speicherung lokaler Kern-Zustände.

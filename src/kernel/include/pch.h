@@ -12,4 +12,6 @@
 #include <lib/math.h>
 
 // OWN KERNEL HEADERS
+#include <kernel/sys_def.h>
+#include <kernel/sys_sym.h>
 #include <kernel/types.h>

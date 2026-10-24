@@ -10,7 +10,7 @@
 
         global _entry
         global stack_bottom
-        global stack_top
+        global kernel_stack_top
 
         extern kernel_init
         extern multiboot_magic
@@ -25,7 +25,7 @@
 ; ==============================================================================
 _entry:
 ; 0. Stack-Pointer aufsetzen & Frame-Pointer zurücksetzen
-        mov rsp, stack_top
+        mov rsp, kernel_stack_top
         xor rbp, rbp                   ; Null-Framepointer für Stack-Tracing
 
 ; 1. BSS-Sektion löschen (Quadword-aligned + verbleibende Bytes)
@@ -65,6 +65,6 @@ _entry:
         section .bss
         align 16
 
-stack_bottom:
+kernel_stack_bottom:
         resb 16384                     ; 16 KB Kernel-Stack-Speicher
-stack_top:
+kernel_stack_top:

@@ -1,12 +1,5 @@
-/**
- * @file gdt.h
- * @brief Schnittstelle für die Global Descriptor Table (GDT) und das Task State Segment (TSS).
- * @author friedrichOsDev
- */
-
 #pragma once
 
-#include <arch/x86_64/cpu/smp.h>
 #include <pch.h>
 
 /* GDT Segment Selektoren */
@@ -81,36 +74,3 @@ struct tss_entry {
     uint16_t reserved3;  /**< Reserviert */
     uint16_t iomap_base; /**< Offset zur I/O-Berechtigungs-Bitmap ab Beginn des TSS */
 } __attribute__((packed));
-
-/** @brief Array der TSS-Strukturen für jeden Prozessorkern */
-extern struct tss_entry tss_cores[MAX_CPUS];
-
-/**
- * @brief Globales Initialisieren der GDT und des BSP-Kerns.
- */
-void gdt_init();
-
-/**
- * @brief Initialisiert die TSS- und GDT-Einträge für einen spezifischen Prozessorkern.
- * @param cpu_id Die ID des Prozessorkerns.
- * @param kernel_stack Basisadresse/Top des Kernel-Stacks für diesen Kern.
- */
-void gdt_init_core(size_t cpu_id, uintptr_t kernel_stack);
-
-/**
- * @brief Konfiguriert einen Standard-8-Byte-GDT-Eintrag (Gate).
- * @param num Index in der GDT.
- * @param base 32-Bit Basisadresse.
- * @param limit 20-Bit Segment-Limit.
- * @param access Access-Byte (Zugriffsrechte).
- * @param gran Granularitäts-Flags.
- */
-void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);
-
-/**
- * @brief Konfiguriert ein 16-Byte-TSS-Gate in der GDT für den 64-Bit Long Mode.
- * @param num Index des ersten Eintrags (belegt zwei aufeinanderfolgende Slots).
- * @param base 64-Bit Basisadresse der TSS-Struktur.
- * @param limit Größe der TSS-Struktur minus 1.
- */
-void gdt_set_tss_gate(int num, uintptr_t base, uint32_t limit);
