@@ -18,12 +18,6 @@
 /** @brief Bitmaske zum Isolieren der Seitenadresse. */
 #define PAGE_MASK 0xFFFFFFFFFFFFF000ULL
 
-/** @brief Typdefinition für physische Speicheradressen. */
-typedef uint64_t phys_addr_t;
-
-/** @brief Typdefinition für virtuelle Speicheradressen. */
-typedef uintptr_t virt_addr_t;
-
 /* =========================================================================
  * Alignment-Hilfsmakros
  * ========================================================================= */

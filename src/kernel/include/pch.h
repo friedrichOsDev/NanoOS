@@ -10,3 +10,6 @@
 
 // MUSL LIBM (math)
 #include <lib/math.h>
+
+// OWN KERNEL HEADERS
+#include <kernel/types.h>

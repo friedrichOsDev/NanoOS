@@ -21,7 +21,6 @@ CompileFlags:
     - "-Wconversion"
     - "-Wsign-conversion"
     - "-Warith-conversion"
-    - "-Wdouble-promotion"
     - "-Wfloat-equal"
     - "-Wpointer-arith"
     - "-Wwrite-strings"
