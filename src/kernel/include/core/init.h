@@ -10,11 +10,6 @@
 
 #include <pch.h>
 
-#define KERNEL_START (uintptr_t) kernel_start
-#define KERNEL_END (uintptr_t) kernel_end
-#define KERNEL_START_PHYS (uintptr_t) kernel_start_phys
-#define KERNEL_END_PHYS (uintptr_t) kernel_end_phys
-
 /**
  * @brief Haupt-Einstiegspunkt des Kernels nach dem Bootloader-Übergang.
  * @param magic Multiboot2 Magic Number (muss 0x36d76289 entsprechen).

@@ -6,9 +6,9 @@
 
 #include <arch/arch.h>
 #include <arch/x86_64/drivers/pci.h>
-#include <arch/x86_64/mm/heap.h>
 #include <core/sync.h>
 #include <lib/string.h>
+#include <mm/heap.h>
 
 static pci_device_t *device_list_head = NULL;
 static pci_driver_t *driver_list_head = NULL;

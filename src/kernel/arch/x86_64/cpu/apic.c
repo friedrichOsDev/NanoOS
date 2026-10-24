@@ -9,9 +9,9 @@
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/hpet.h>
 #include <arch/x86_64/cpu/pic.h>
-#include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
 #include <core/sync.h>
+#include <mm/vmm.h>
 
 /** @brief Virtuelle Basisadresse des Local APIC MMIO-Bereichs */
 static volatile uint8_t *lapic_base = NULL;

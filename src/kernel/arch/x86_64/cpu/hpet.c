@@ -7,8 +7,8 @@
 #include <arch/arch.h>
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/cpu/hpet.h>
-#include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
+#include <mm/vmm.h>
 
 volatile hpet_registers_t *hpet_regs = NULL;
 uint64_t hpet_ticks_per_us = 0;

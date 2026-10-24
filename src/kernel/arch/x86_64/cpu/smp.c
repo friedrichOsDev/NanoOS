@@ -7,8 +7,8 @@
  * @author friedrichOsDev
  */
 
-#include "gdt.h"
-#include "gdt_sym.h"
+#include "../gdt/gdt.h"
+#include "../gdt/gdt_sym.h"
 #include <arch/arch.h>
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/cpu/apic.h>
@@ -17,13 +17,13 @@
 #include <arch/x86_64/cpu/idt.h>
 #include <arch/x86_64/cpu/smp.h>
 #include <arch/x86_64/cpu/smp_trampoline.h>
-#include <arch/x86_64/mm/heap.h>
-#include <arch/x86_64/mm/memdef.h>
-#include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
 #include <core/scheduler.h>
 #include <lib/print.h>
 #include <lib/string.h>
+#include <mm/heap.h>
+#include <mm/memdef.h>
+#include <mm/vmm.h>
 
 extern phys_addr_t kernel_pml4_phys;
 extern struct gdt_ptr gdtp;

@@ -5,12 +5,12 @@
  */
 
 #include <arch/arch.h>
-#include <arch/x86_64/mm/heap.h>
-#include <arch/x86_64/mm/pmm.h>
-#include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
 #include <core/sync.h>
 #include <lib/string.h>
+#include <mm/heap.h>
+#include <mm/pmm.h>
+#include <mm/vmm.h>
 
 /** @brief Zeiger auf den ersten Block der doppelt verketteten Heap-Liste. */
 static heap_list_t *heap_list_head = NULL;

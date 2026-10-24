@@ -4,13 +4,13 @@
  * @author friedrichOsDev
  */
 
-#include "arch/x86_64/mm/memdef.h"
 #include <arch/arch.h>
 #include <arch/x86_64/cpu/acpi.h>
-#include <arch/x86_64/mm/heap.h>
-#include <arch/x86_64/mm/vmm.h>
 #include <lib/io.h>
 #include <lib/string.h>
+#include <mm/heap.h>
+#include <mm/memdef.h>
+#include <mm/vmm.h>
 #include <pch.h>
 
 rsdp_t *rsdp = NULL;

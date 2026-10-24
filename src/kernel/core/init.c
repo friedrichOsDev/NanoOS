@@ -19,9 +19,6 @@
 #include <arch/x86_64/cpu/rtc.h>
 #include <arch/x86_64/cpu/smp.h>
 #include <arch/x86_64/drivers/pci.h>
-#include <arch/x86_64/mm/heap.h>
-#include <arch/x86_64/mm/pmm.h>
-#include <arch/x86_64/mm/vmm.h>
 #include <core/init.h>
 #include <core/panic.h>
 #include <core/process.h>
@@ -29,6 +26,9 @@
 #include <core/taskmgr.h>
 #include <core/thread.h>
 #include <lib/string.h>
+#include <mm/heap.h>
+#include <mm/pmm.h>
+#include <mm/vmm.h>
 #include <pch.h>
 
 /**

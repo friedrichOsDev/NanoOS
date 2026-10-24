@@ -11,12 +11,12 @@
 #include <arch/x86_64/cpu/context.h>
 #include <arch/x86_64/cpu/fpu.h>
 #include <arch/x86_64/cpu/smp.h>
-#include <arch/x86_64/mm/heap.h>
-#include <arch/x86_64/mm/vmm.h>
 #include <core/panic.h>
 #include <core/scheduler.h>
 #include <core/thread.h>
 #include <lib/string.h>
+#include <mm/heap.h>
+#include <mm/vmm.h>
 #include <pch.h>
 
 static thread_t *ready_queue_head = NULL;

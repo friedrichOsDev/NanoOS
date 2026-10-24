@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <arch/x86_64/mm/memdef.h>
+#include <mm/memdef.h>
 #include <pch.h>
 
 /** @brief Virtuelle Adresse der globalen Kernel-PML4-Seitentabelle. */

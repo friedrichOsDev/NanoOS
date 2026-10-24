@@ -4,7 +4,7 @@
  * @author friedrichOsDev
  */
 
-#include "gdt.h"
+#include "../gdt/gdt.h"
 #include <arch/arch.h>
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/idt.h>

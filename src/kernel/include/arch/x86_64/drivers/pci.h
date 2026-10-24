@@ -7,7 +7,7 @@
 #pragma once
 
 #include <arch/x86_64/cpu/acpi.h>
-#include <arch/x86_64/mm/memdef.h>
+#include <mm/memdef.h>
 #include <pch.h>
 
 /** @brief PCI-Geräteklasse: Unklassifiziert */
