@@ -2,6 +2,11 @@
 
 #include <pch.h>
 
+inline void arch_sti() { ASM_CODE("sti"); }
+inline void arch_cli() { ASM_CODE("cli"); }
+inline void arch_hlt() { ASM_CODE("hlt"); }
+inline void arch_pause() { ASM_CODE("pause"); }
+
 // serial port on x86_64
 void serial_init();
 void serial_putc(char_ascii c);

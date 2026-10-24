@@ -17,5 +17,5 @@ void panic(const char *message, uint64_t error_code) {
     lapic_send_broadcast_stop_ipi();
     serial_printf("KERNEL PANIC: %s (Error code %llx)\n", message, error_code);
     while (1)
-        __asm__ __volatile__("hlt");
+        arch_hlt();
 }

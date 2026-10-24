@@ -70,7 +70,7 @@ void hpet_udelay(uint64_t microseconds) {
         panic("FATAL: Error failed to map HPET registers.", 0);
     uint64_t target = hpet_regs->main_counter_value + (microseconds * hpet_ticks_per_us);
     while (hpet_regs->main_counter_value < target) {
-        __asm__ __volatile__("pause");
+        ASM_CODE("pause");
     }
 }
 
@@ -79,7 +79,7 @@ void hpet_mdelay(uint64_t milliseconds) {
         panic("FATAL: Error failed to map HPET registers.", 0);
     uint64_t target = hpet_regs->main_counter_value + (milliseconds * hpet_ticks_per_ms);
     while (hpet_regs->main_counter_value < target) {
-        __asm__ __volatile__("pause");
+        ASM_CODE("pause");
     }
 }
 

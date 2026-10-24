@@ -17,16 +17,16 @@ void *memset(void *dest, uint8_t value, size_t count) {
     size_t bytes = count % 8;
 
     if (qwords > 0) {
-        __asm__ __volatile__("cld; rep stosq"
-                             : "+D"(d), "+c"(qwords)
-                             : "a"(val64)
-                             : "memory");
+        ASM_CODE("cld; rep stosq"
+                 : "+D"(d), "+c"(qwords)
+                 : "a"(val64)
+                 : "memory");
     }
     if (bytes > 0) {
-        __asm__ __volatile__("rep stosb"
-                             : "+D"(d), "+c"(bytes)
-                             : "a"(value)
-                             : "memory");
+        ASM_CODE("rep stosb"
+                 : "+D"(d), "+c"(bytes)
+                 : "a"(value)
+                 : "memory");
     }
     return dest;
 }
@@ -38,32 +38,32 @@ void *memcpy(void *dest, const void *src, size_t count) {
     size_t bytes = count % 8;
 
     if (qwords > 0) {
-        __asm__ __volatile__("cld; rep movsq"
-                             : "+D"(d), "+S"(s), "+c"(qwords)
-                             :
-                             : "memory");
+        ASM_CODE("cld; rep movsq"
+                 : "+D"(d), "+S"(s), "+c"(qwords)
+                 :
+                 : "memory");
     }
     if (bytes > 0) {
-        __asm__ __volatile__("rep movsb"
-                             : "+D"(d), "+S"(s), "+c"(bytes)
-                             :
-                             : "memory");
+        ASM_CODE("rep movsb"
+                 : "+D"(d), "+S"(s), "+c"(bytes)
+                 :
+                 : "memory");
     }
     return dest;
 }
 
 void memset32(void *dest, uint32_t value, size_t count) {
-    __asm__ __volatile__("cld; rep stosl"
-                         : "+D"(dest), "+c"(count)
-                         : "a"(value)
-                         : "memory");
+    ASM_CODE("cld; rep stosl"
+             : "+D"(dest), "+c"(count)
+             : "a"(value)
+             : "memory");
 }
 
 void memset64(void *dest, uint64_t value, size_t count) {
-    __asm__ __volatile__("cld; rep stosq"
-                         : "+D"(dest), "+c"(count)
-                         : "a"(value)
-                         : "memory");
+    ASM_CODE("cld; rep stosq"
+             : "+D"(dest), "+c"(count)
+             : "a"(value)
+             : "memory");
 }
 
 int memcmp(const void *ptr1, const void *ptr2, size_t count) {
@@ -110,20 +110,20 @@ void *memmove(void *dest, const void *src, size_t count) {
         if (bytes > 0) {
             d -= bytes;
             s -= bytes;
-            __asm__ __volatile__("std; rep movsb"
-                                 : "+D"(d), "+S"(s), "+c"(bytes)
-                                 :
-                                 : "memory");
-            __asm__ __volatile__("cld" ::: "memory");
+            ASM_CODE("std; rep movsb"
+                     : "+D"(d), "+S"(s), "+c"(bytes)
+                     :
+                     : "memory");
+            ASM_CODE("cld" ::: "memory");
         }
         if (qwords > 0) {
             d -= (qwords * 8) - 7;
             s -= (qwords * 8) - 7;
-            __asm__ __volatile__("std; rep movsq"
-                                 : "+D"(d), "+S"(s), "+c"(qwords)
-                                 :
-                                 : "memory");
-            __asm__ __volatile__("cld" ::: "memory");
+            ASM_CODE("std; rep movsq"
+                     : "+D"(d), "+S"(s), "+c"(qwords)
+                     :
+                     : "memory");
+            ASM_CODE("cld" ::: "memory");
         }
     }
     return dest;

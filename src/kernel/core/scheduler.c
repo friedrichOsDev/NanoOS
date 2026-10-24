@@ -37,7 +37,8 @@ void scheduler_release_initial_lock() { spinlock_release(&sched_lock); }
 void idle_task(void *arg) {
     (void)arg;
     while (1) {
-        __asm__ __volatile__("sti; hlt");
+        arch_sti();
+        arch_hlt();
     }
 }
 
@@ -174,7 +175,7 @@ void scheduler_init() {
     fpu_state_init(main_thread->fpu_state);
 
     uint64_t current_rsp;
-    __asm__ __volatile__("mov %%rsp, %0" : "=r"(current_rsp));
+    ASM_CODE("mov %%rsp, %0" : "=r"(current_rsp));
     main_thread->kernel_stack_top = current_rsp;
 
     uint64_t pflags = spinlock_acquire_irqsave(&kernel_process->lock);
@@ -244,8 +245,8 @@ void scheduler_schedule() {
         }
 
         if (prev && prev->process != next->process && next->process) {
-            __asm__ __volatile__("mov %0, %%cr3" ::"r"(next->process->cr3)
-                                 : "memory");
+            ASM_CODE("mov %0, %%cr3" ::"r"(next->process->cr3)
+                     : "memory");
         }
     }
 
@@ -350,6 +351,6 @@ void scheduler_thread_exit() {
 
     scheduler_schedule();
     while (1) {
-        __asm__ __volatile__("hlt");
+        arch_hlt();
     }
 }

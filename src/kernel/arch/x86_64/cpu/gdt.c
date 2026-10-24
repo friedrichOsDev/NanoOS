@@ -1,35 +1,13 @@
-/**
- * @file gdt.c
- * @brief Implementierung der GDT- und TSS-Einrichtung.
- * @author friedrichOsDev
- */
-
 #include "gdt.h"
 #include "gdt_sym.h"
 #include <arch/arch.h>
 #include <core/panic.h>
 
-/** @brief Globales GDT-Array für alle Segmente und TSS-Einträge aller Kerne */
 struct gdt_entry gdt[GDT_ENTRIES];
-
-/** @brief Pointer-Struktur für das `lgdt`-Assembly-Kommando */
 struct gdt_ptr gdtp;
-
-/** @brief Per-CPU TSS-Strukturen */
 struct tss_entry tss_cores[MAX_CPUS];
-
-/** @brief Dedizierte Stacks für Double Fault Exceptions (IST1), 16-Byte-ausgerichtet */
 static uint8_t double_fault_stacks[MAX_CPUS][16384] __attribute__((aligned(16)));
 
-/**
- * @brief Initialisiert die TSS-Struktur für einen bestimmten Prozessorkern.
- *
- * Verifiziert die 16-Byte-Ausrichtung der Stacks (RSP0 und IST1) für SSE/FPU-Kompatibilität,
- * nullt die Struktur und setzt das Offset für die I/O-Bitmap auf die Größe des TSS (deaktiviert).
- *
- * @param cpu_id Die ID des Prozessorkerns.
- * @param kernel_stack Basisadresse des Kernel-Stacks.
- */
 static void tss_init_core(size_t cpu_id, uintptr_t kernel_stack) {
     if (cpu_id >= MAX_CPUS) {
         return;
@@ -63,7 +41,6 @@ static void tss_init_core(size_t cpu_id, uintptr_t kernel_stack) {
 }
 
 void gdt_init() {
-    // KORRIGIERT: Expliziter Cast der Limit-Berechnung auf uint16_t
     gdtp.limit = (uint16_t)((sizeof(struct gdt_entry) * GDT_ENTRIES) - 1);
     gdtp.base = (uint64_t)&gdt;
 

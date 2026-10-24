@@ -92,8 +92,8 @@ void isr_handler(struct registers *regs) {
 
     /* Steuerregister auslesen */
     uint64_t cr2, cr3;
-    __asm__ __volatile__("mov %%cr2, %0" : "=r"(cr2));
-    __asm__ __volatile__("mov %%cr3, %0" : "=r"(cr3));
+    ASM_CODE("mov %%cr2, %0" : "=r"(cr2));
+    ASM_CODE("mov %%cr3, %0" : "=r"(cr3));
 
     if (regs->int_no == 14) {
         serial_printf("Faulting Address (CR2): %016llx\n", cr2);
@@ -136,9 +136,9 @@ void reschedule_ipi_handler(struct registers *regs) {
 void stop_ipi_handler(struct registers *regs) {
     (void)regs;
     lapic_eoi();
-    __asm__ __volatile__("cli");
+    ASM_CODE("cli");
     while (1) {
-        __asm__ __volatile__("hlt");
+        ASM_CODE("hlt");
     }
 }
 
@@ -146,7 +146,7 @@ void tlb_shootdown_ipi_handler(struct registers *regs) {
     (void)regs;
     lapic_eoi();
     uint64_t cr3;
-    __asm__ __volatile__("mov %%cr3, %0; mov %0, %%cr3" : "=r"(cr3)::"memory");
+    ASM_CODE("mov %%cr3, %0; mov %0, %%cr3" : "=r"(cr3)::"memory");
 }
 
 void lapic_timer_handler(struct registers *regs) {

@@ -95,12 +95,12 @@ void apic_init() {
 #define IA32_APIC_BASE_MSR 0x1B
 #define IA32_APIC_BASE_MSR_ENABLE 0x800
     uint32_t low, high;
-    __asm__ __volatile__("rdmsr" : "=a"(low), "=d"(high) : "c"(IA32_APIC_BASE_MSR));
+    ASM_CODE("rdmsr" : "=a"(low), "=d"(high) : "c"(IA32_APIC_BASE_MSR));
     uint64_t apic_base_msr = ((uint64_t)high << 32) | low;
     apic_base_msr |= IA32_APIC_BASE_MSR_ENABLE;
     low = apic_base_msr & 0xFFFFFFFF;
     high = (uint32_t)(apic_base_msr >> 32);
-    __asm__ __volatile__("wrmsr" ::"a"(low), "d"(high), "c"(IA32_APIC_BASE_MSR));
+    ASM_CODE("wrmsr" ::"a"(low), "d"(high), "c"(IA32_APIC_BASE_MSR));
 
     // 2. Logical Destination und Destination Format Register setzen
     lapic_write(LAPIC_REG_DFR, 0xFFFFFFFF);                                           // Flat Mode
@@ -195,7 +195,7 @@ void lapic_send_broadcast_reschedule_ipi() {
     uint64_t flags = spinlock_acquire_irqsave(&icr_lock);
 
     while (lapic_read(LAPIC_REG_ICR_LOW) & (1 << 12)) {
-        __asm__ __volatile__("pause");
+        ASM_CODE("pause");
     }
     // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vektor = 0xFD
     lapic_write(LAPIC_REG_ICR_HIGH, 0);
@@ -211,7 +211,7 @@ void lapic_send_broadcast_stop_ipi() {
     uint64_t flags = spinlock_acquire_irqsave(&icr_lock);
 
     while (lapic_read(LAPIC_REG_ICR_LOW) & (1 << 12)) {
-        __asm__ __volatile__("pause");
+        ASM_CODE("pause");
     }
 
     // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vektor = 0xFC
@@ -228,7 +228,7 @@ void lapic_send_broadcast_tlb_ipi() {
     uint64_t flags = spinlock_acquire_irqsave(&icr_lock);
 
     while (lapic_read(LAPIC_REG_ICR_LOW) & (1 << 12)) {
-        __asm__ __volatile__("pause");
+        ASM_CODE("pause");
     }
 
     // Shorthand = 3 (All Excluding Self), Delivery Mode = Fixed (0), Vektor = 0xFB

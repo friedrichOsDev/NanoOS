@@ -4,6 +4,7 @@
  * @author friedrichOsDev
  */
 
+#include <arch/arch.h>
 #include <core/scheduler.h>
 #include <core/sync.h>
 #include <core/thread.h>
@@ -15,12 +16,12 @@
  */
 static inline uint64_t read_rflags_and_cli() {
     uint64_t rflags;
-    __asm__ __volatile__("pushfq\n\t"
-                         "pop %0\n\t"
-                         "cli"
-                         : "=r"(rflags)
-                         :
-                         : "memory");
+    ASM_CODE("pushfq\n\t"
+             "pop %0\n\t"
+             "cli"
+             : "=r"(rflags)
+             :
+             : "memory");
     return rflags;
 }
 
@@ -29,18 +30,18 @@ static inline uint64_t read_rflags_and_cli() {
  * @param rflags Zu wiederherstellender RFLAGS-Wert.
  */
 static inline void restore_rflags(uint64_t rflags) {
-    __asm__ __volatile__("pushq %0\n\t"
-                         "popfq"
-                         :
-                         : "r"(rflags)
-                         : "memory", "cc");
+    ASM_CODE("pushq %0\n\t"
+             "popfq"
+             :
+             : "r"(rflags)
+             : "memory", "cc");
 }
 
 void spinlock_acquire(spinlock_t *lock) {
     uint32_t expected = 1;
     while (__atomic_exchange_n(&(lock->lock), expected, __ATOMIC_ACQUIRE)) {
         while (__atomic_load_n(&(lock->lock), __ATOMIC_RELAXED)) {
-            __asm__ __volatile__("pause");
+            arch_pause();
         }
     }
 }

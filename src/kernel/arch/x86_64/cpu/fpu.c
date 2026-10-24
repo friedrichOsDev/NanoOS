@@ -11,18 +11,18 @@
 void cpu_fpu_init() {
     uint64_t cr0, cr4;
 
-    __asm__ __volatile__("mov %%cr0, %0" : "=r"(cr0));
+    ASM_CODE("mov %%cr0, %0" : "=r"(cr0));
     cr0 &= ~(1U << 2); // Clear EM (Emulation)
     cr0 |= (1U << 1);  // Set MP (Monitor Coprocessor)
     cr0 &= ~(1U << 3); // Clear TS (Task Switched)
-    __asm__ __volatile__("mov %0, %%cr0" ::"r"(cr0));
+    ASM_CODE("mov %0, %%cr0" ::"r"(cr0));
 
-    __asm__ __volatile__("mov %%cr4, %0" : "=r"(cr4));
+    ASM_CODE("mov %%cr4, %0" : "=r"(cr4));
     cr4 |= (1U << 9);  // Enable FXSAVE/FXRSTOR & SSE
     cr4 |= (1U << 10); // Enable Unmasked SSE Exceptions
-    __asm__ __volatile__("mov %0, %%cr4" ::"r"(cr4));
+    ASM_CODE("mov %0, %%cr4" ::"r"(cr4));
 
-    __asm__ __volatile__("fninit");
+    ASM_CODE("fninit");
 }
 
 void fpu_state_init(void *fpu_buf) {

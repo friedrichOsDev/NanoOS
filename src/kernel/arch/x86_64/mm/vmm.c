@@ -168,7 +168,7 @@ void vmm_init() {
         vmm_map_page(k_pml4, addr, addr, PTE_WRITABLE);
     }
 
-    __asm__ __volatile__("mov %0, %%cr3" ::"r"(kernel_pml4_phys) : "memory");
+    ASM_CODE("mov %0, %%cr3" ::"r"(kernel_pml4_phys) : "memory");
 
     vmm_unmap_page(k_pml4, 0x0);
 
@@ -252,7 +252,7 @@ void vmm_map_page(page_table_t *pml4, virt_addr_t vaddr, phys_addr_t paddr, uint
 
     pt->entries[pt_idx] = (paddr & PAGE_MASK) | PTE_PRESENT | flags;
 
-    __asm__ __volatile__("invlpg (%0)" ::"r"(vaddr) : "memory");
+    ASM_CODE("invlpg (%0)" ::"r"(vaddr) : "memory");
     if (apic_initialized) {
         lapic_send_broadcast_tlb_ipi();
     }
@@ -295,7 +295,7 @@ void vmm_unmap_page(page_table_t *pml4, virt_addr_t vaddr) {
     }
 
     pt->entries[pt_idx] = 0;
-    __asm__ __volatile__("invlpg (%0)" ::"r"(vaddr) : "memory");
+    ASM_CODE("invlpg (%0)" ::"r"(vaddr) : "memory");
     if (apic_initialized) {
         lapic_send_broadcast_tlb_ipi();
     }

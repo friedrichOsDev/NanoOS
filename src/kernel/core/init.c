@@ -163,6 +163,6 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     // Unerreichbarer Code (Fallback)
 
     while (1) {
-        __asm__ __volatile__("hlt");
+        arch_hlt();
     }
 }

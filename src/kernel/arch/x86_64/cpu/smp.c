@@ -43,9 +43,9 @@ static volatile bool ap_boot_flag = false;
 static void smp_enable_lapic() {
     // LAPIC im MSR aktivieren
     uint32_t low, high;
-    __asm__ __volatile__("rdmsr" : "=a"(low), "=d"(high) : "c"(0x1B));
+    ASM_CODE("rdmsr" : "=a"(low), "=d"(high) : "c"(0x1B));
     low |= (1 << 11);
-    __asm__ __volatile__("wrmsr" : : "a"(low), "d"(high), "c"(0x1B));
+    ASM_CODE("wrmsr" : : "a"(low), "d"(high), "c"(0x1B));
 
     lapic_write(LAPIC_REG_DFR, 0xFFFFFFFF);
     lapic_write(LAPIC_REG_LDR, (lapic_read(LAPIC_REG_LDR) & 0x00FFFFFF) | (1 << 24));
@@ -113,12 +113,12 @@ static void smp_ap_main() {
     serial_printf("SMP: CPU Core %d (APIC ID %d) online and ready!\n", local_cpu->cpu_id, local_cpu->lapic_id);
 
     // Interrupts aktivieren
-    __asm__ __volatile__("sti");
+    ASM_CODE("sti");
 
     // Scheduler-Schleife für diesen Kern starten
     while (1) {
         scheduler_schedule();
-        __asm__ __volatile__("hlt");
+        ASM_CODE("hlt");
     }
 }
 
