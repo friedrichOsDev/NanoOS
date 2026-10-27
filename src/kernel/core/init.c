@@ -7,14 +7,12 @@
  */
 
 #include <arch/arch.h>
-#include <arch/x86_64/boot/multiboot2.h>
+#include <boot/multiboot2.h>
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/fpu.h>
 #include <arch/x86_64/cpu/handler.h>
 #include <arch/x86_64/cpu/hpet.h>
-#include <arch/x86_64/cpu/idt.h>
-#include <arch/x86_64/cpu/interrupts.h>
 #include <arch/x86_64/cpu/irq.h>
 #include <arch/x86_64/cpu/rtc.h>
 #include <arch/x86_64/cpu/smp.h>
@@ -122,7 +120,7 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
 
     cpu_fpu_init();
 
-    idt_enable();
+    arch_sti(); // idt enable (turn on interrupts)
 
     serial_printf("MULTIBOOT2: magic=%x\n", magic);
     serial_printf("MULTIBOOT2: info_ptr=%x\n", info_ptr);

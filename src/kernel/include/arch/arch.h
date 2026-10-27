@@ -19,3 +19,7 @@ void gdt_init_core(size_t cpu_id, uintptr_t kernel_stack);
 void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);
 void gdt_set_tss_gate(int num, uintptr_t base, uint32_t limit);
 void gdt_set_tss_kernel_stack(size_t cpu_id, uint64_t stack_top);
+
+// idt on x86_64
+void idt_init();
+void idt_set_gate(uint8_t num, uint64_t base, uint16_t selector, uint8_t ist, uint8_t flags);

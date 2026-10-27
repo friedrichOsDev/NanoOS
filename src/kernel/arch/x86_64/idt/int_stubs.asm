@@ -171,16 +171,6 @@ idt_load:
         lidt [rdi]
         ret
 
-; void idt_enable()
-idt_enable:
-        sti
-        ret
-
-; void idt_disable()
-idt_disable:
-        cli
-        ret
-
 ; Stub für Spurious Interrupts (ignoriert den Interrupt)
 spurious_handler_stub:
         iretq

@@ -5,7 +5,7 @@
  */
 
 #include <arch/arch.h>
-#include <arch/x86_64/boot/multiboot2.h>
+#include <boot/multiboot2.h>
 #include <core/init.h>
 #include <core/panic.h>
 #include <core/sync.h>

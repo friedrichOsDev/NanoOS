@@ -7,14 +7,13 @@
  * @author friedrichOsDev
  */
 
-#include "../gdt/gdt.h"
 #include "../gdt/gdt_sym.h"
+#include "../idt/int_sym.h"
 #include <arch/arch.h>
 #include <arch/x86_64/cpu/acpi.h>
 #include <arch/x86_64/cpu/apic.h>
 #include <arch/x86_64/cpu/fpu.h>
 #include <arch/x86_64/cpu/hpet.h>
-#include <arch/x86_64/cpu/idt.h>
 #include <arch/x86_64/cpu/smp.h>
 #include <arch/x86_64/cpu/smp_trampoline.h>
 #include <core/panic.h>

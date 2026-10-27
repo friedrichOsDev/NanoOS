@@ -9,11 +9,10 @@
 
 #include <arch/arch.h>
 #include <arch/x86_64/cpu/apic.h>
-#include <arch/x86_64/cpu/interrupts.h>
 #include <core/panic.h>
 
 void panic(const char *message, uint64_t error_code) {
-    idt_disable();
+    arch_cli(); // idt disable (turn off interrupts)
     lapic_send_broadcast_stop_ipi();
     serial_printf("KERNEL PANIC: %s (Error code %llx)\n", message, error_code);
     while (1)

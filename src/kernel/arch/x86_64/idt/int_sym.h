@@ -6,16 +6,6 @@
 
 #pragma once
 
-/**
- * @brief Aktiviert Hardware-Interrupts global (`sti`).
- */
-extern void idt_enable();
-
-/**
- * @brief Deaktiviert Hardware-Interrupts global (`cli`).
- */
-extern void idt_disable();
-
 /* ==============================================================================
  * CPU-Ausnahmen & ISR-Stubs (Vektoren 0 bis 31)
  * ============================================================================== */
@@ -73,3 +63,24 @@ extern void irq12(); /**< IRQ 12: PS/2-Maus */
 extern void irq13(); /**< IRQ 13: Koprozessor / FPU Exception */
 extern void irq14(); /**< IRQ 14: Primärer ATA/IDE-Kanal */
 extern void irq15(); /**< IRQ 15: Sekundärer ATA/IDE-Kanal */
+
+/**
+ * @brief Lädt die IDT-Adresse und das Limit mittels `lidt`-Assemblerbefehl in das IDTR-Register.
+ * @param idt_ptr Virtuelle Adresse der `idt_ptr`-Struktur.
+ */
+extern void idt_load(uint64_t idt_ptr);
+
+/** @brief Assembly-Stub zur Behandlung von Spurious Interrupts. */
+extern void spurious_handler_stub();
+
+/** @brief Assembly-Stub zur Behandlung von Reschedule-IPIs. */
+extern void ipi_reschedule_stub();
+
+/** @brief Assembly-Stub zur Behandlung von Stop-IPIs. */
+extern void ipi_stop_stub();
+
+/** @brief Assembly-Stub zur Behandlung von TLB-Shootdown-IPIs. */
+extern void ipi_tlb_shootdown_stub();
+
+/** @brief Assembly-Stub zur Behandlung des LAPIC Timer-Interrupts. */
+extern void lapic_timer_stub();

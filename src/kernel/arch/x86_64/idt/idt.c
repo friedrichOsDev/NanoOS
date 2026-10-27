@@ -7,8 +7,8 @@
 #include "../gdt/gdt.h"
 #include <arch/arch.h>
 #include <arch/x86_64/cpu/apic.h>
-#include <arch/x86_64/cpu/idt.h>
-#include <arch/x86_64/cpu/interrupts.h>
+#include "idt.h"
+#include "int_sym.h"
 
 /** @brief Das globale IDT-Array für 256 Interrupt-Vektoren. */
 struct idt_entry idt[IDT_ENTRIES];

@@ -1,5 +1,5 @@
 #include <arch/arch.h>
-#include <arch/x86_64/boot/multiboot2.h>
+#include <boot/multiboot2.h>
 #include <arch/x86_64/cpu/acpi.h>
 #include <core/init.h>
 #include <core/panic.h>

@@ -6,8 +6,8 @@
 
 #include "../gdt/gdt.h"
 #include <arch/arch.h>
-#include <arch/x86_64/cpu/idt.h>
-#include <arch/x86_64/cpu/interrupts.h>
+#include "../idt/idt.h"
+#include "../idt/int_sym.h"
 #include <arch/x86_64/cpu/irq.h>
 #include <arch/x86_64/cpu/pic.h>
 #include <pch.h>
