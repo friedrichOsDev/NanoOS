@@ -302,3 +302,7 @@ void arch_tlb_flush_local(virt_addr_t vaddr) {
 void arch_tlb_shootdown() {
     lapic_send_broadcast_tlb_ipi();
 }
+
+bool is_apic_initialized() {
+    return apic_initialized;
+}

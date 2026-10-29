@@ -14,9 +14,11 @@
 
 /** @brief Standard-Seitengröße (4 KiB). */
 #define PAGE_SIZE 0x1000
+#define HUGE_PAGE_SIZE 0x200000
 
 /** @brief Bitmaske zum Isolieren der Seitenadresse. */
 #define PAGE_MASK 0xFFFFFFFFFFFFF000ULL
+#define HUGE_PAGE_MASK 0xFFFFFFFFFFE00000ULL
 
 /* =========================================================================
  * Alignment-Hilfsmakros

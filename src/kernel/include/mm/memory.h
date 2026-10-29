@@ -29,7 +29,7 @@ virt_addr_t vmm_map_mmio(vmm_space_t *sp, phys_addr_t paddr, size_t size);
 void vmm_map_page(vmm_space_t *sp, virt_addr_t vaddr, phys_addr_t paddr, uint64_t flags);
 void vmm_unmap_page(vmm_space_t *sp, virt_addr_t vaddr);
 vmm_space_t *vmm_kernel_space();
-vmm_space_t *vmm_space_create();             /* NULL bei OOM */
+vmm_space_t vmm_space_create();
 void vmm_space_destroy(vmm_space_t *sp);
 void vmm_space_activate(vmm_space_t *sp);    /* lädt CR3 */
 

@@ -8,7 +8,6 @@
 #include "../mm/mem_def.h"
 #include <arch/arch.h>
 #include <boot/multiboot2.h>
-#include <core/init.h>
 #include <kernel/panic.h>
 #include <kernel/sync.h>
 #include <lib/util/mem.h>
@@ -193,4 +192,16 @@ void pmm_page_free(phys_addr_t addr) {
     uint64_t flags = spinlock_acquire_irqsave(&pmm_lock);
     unlock_pages(addr, 1);
     spinlock_release_irqrestore(&pmm_lock, flags);
+}
+
+uint64_t pmm_get_total_pages() {
+    return pmm_state.total_pages;
+}
+
+uint64_t pmm_get_used_pages() {
+    return pmm_state.used_pages;
+}
+
+uint64_t pmm_get_free_pages() {
+    return pmm_state.free_pages;
 }
