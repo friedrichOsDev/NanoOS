@@ -1,19 +1,24 @@
+#include "../acpi/acpi.h"
+#include "../mm/mem_def.h"
+#include "_multiboot2.h"
 #include <arch/arch.h>
 #include <boot/multiboot2.h>
-#include <arch/x86_64/cpu/acpi.h>
 #include <core/init.h>
-#include <core/panic.h>
-#include <lib/string.h>
+#include <kernel/panic.h>
+#include <lib/util/mem.h>
+#include <lib/util/str.h>
 #include <pch.h>
 
+// externs
 mmap_t kernel_mmap;
 fb_info_t kernel_fb_info;
-multiboot_info_t *kernel_multiboot_info;
 char kernel_cmdline[256];
 char kernel_bootloader_name[64];
 boot_modules_t kernel_modules;
 phys_addr_t rsdp_phys_addr = 0;
+
 static rsdp_t rsdp_stable_copy;
+static multiboot_info_t *kernel_multiboot_info;
 
 /**
  * @brief Liest und verarbeitet die Multiboot2-Tags des Bootloaders.
@@ -24,9 +29,9 @@ static rsdp_t rsdp_stable_copy;
  */
 void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
     if (magic != MULTIBOOT2_MAGIC) {
-        panic("bad multiboot2 magic", magic);
+        panic();
     } else if (!info_ptr) {
-        panic("bad multiboot2 info_ptr", info_ptr);
+        panic();
     }
 
     kernel_multiboot_info = (multiboot_info_t *)info_ptr;
@@ -103,7 +108,7 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
                 framebuffer->framebuffer_type);
 
             if (framebuffer->framebuffer_type == 2)
-                panic("Unsupported framebuffer type: EGA text mode is not supported", framebuffer->framebuffer_type);
+                panic();
 
             break;
         }
@@ -143,7 +148,7 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
             if (actual_phys_addr != expected_phys_addr) {
                 intptr_t offset = (intptr_t)actual_phys_addr - (intptr_t)expected_phys_addr;
                 serial_printf("MULTIBOOT2: ERROR: Kernel was relocated! Offset: %lx\n", offset);
-                panic("Kernel relocation mismatch", (uint64_t)offset);
+                panic();
             }
             break;
         }

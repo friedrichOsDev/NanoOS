@@ -7,12 +7,10 @@
  */
 
 #include <arch/arch.h>
-#include <core/panic.h>
 #include <core/process.h>
-#include <lib/string.h>
-#include <mm/heap.h>
-#include <mm/memdef.h>
-#include <mm/vmm.h>
+#include <kernel/panic.h>
+#include <lib/util/str.h>
+#include <mm/memory.h>
 
 process_t *kernel_process = NULL;
 process_t *proc_list = NULL;
@@ -22,15 +20,15 @@ static spinlock_t pid_lock = SPINLOCK_INIT;
 static spinlock_t proc_list_lock = SPINLOCK_INIT;
 
 void process_init() {
-    kernel_process = process_create("kernel", (page_table_t *)kernel_pml4);
+    kernel_process = process_create("kernel", vmm_kernel_space());
     if (!kernel_process) {
-        panic("Process: Failed to initialize kernel process!", 0);
+        panic();
     }
 
     serial_printf("Process: Initialized successfully (Kernel PID: %d)\n", kernel_process->pid);
 }
 
-process_t *process_create(const char *name, page_table_t *pml4) {
+process_t *process_create(const char *name, vmm_space_t *sp) {
     process_t *proc = (process_t *)kzalloc(sizeof(process_t));
     if (!proc) {
         return NULL;
@@ -48,9 +46,8 @@ process_t *process_create(const char *name, page_table_t *pml4) {
         strncpy(proc->name, "unnamed", sizeof(proc->name) - 1);
     }
 
-    proc->pml4 = pml4;
-    proc->cr3 = V2P((virt_addr_t)pml4);
-    serial_printf("Process: pml4: %llx, cr3: %llx\n", (virt_addr_t)proc->pml4, (phys_addr_t)proc->cr3);
+    proc->vmm_space = sp;
+    serial_printf("Process: pml4: %llx, cr3: %llx\n", (virt_addr_t)proc->vmm_space->pml4, (phys_addr_t)proc->vmm_space->pml4_phys);
 
     spinlock_init(&proc->lock);
 

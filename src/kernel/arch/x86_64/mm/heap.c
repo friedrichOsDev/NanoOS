@@ -4,16 +4,15 @@
  * @author friedrichOsDev
  */
 
+#include "heap.h"
 #include <arch/arch.h>
-#include <core/panic.h>
-#include <core/sync.h>
-#include <lib/string.h>
-#include <mm/heap.h>
-#include <mm/pmm.h>
-#include <mm/vmm.h>
+#include <kernel/panic.h>
+#include <kernel/sync.h>
+#include <lib/util/mem.h>
+#include <mm/memory.h>
 
 /** @brief Zeiger auf den ersten Block der doppelt verketteten Heap-Liste. */
-static heap_list_t *heap_list_head = NULL;
+static heap_node_t *heap_list_head = NULL;
 
 /** @brief Virtuelle Endadresse des derzeit gemappten Heap-Bereichs. */
 static virt_addr_t heap_end_addr = 0;
@@ -27,18 +26,18 @@ void heap_init() {
     phys_addr_t page3 = pmm_page_alloc();
     phys_addr_t page4 = pmm_page_alloc();
     if (!page1 || !page2 || !page3 || !page4) {
-        panic("heap initial page allocation failed", 0);
+        panic();
     }
 
-    vmm_map_page((page_table_t *)kernel_pml4, KERNEL_HEAP_START, page1, PTE_WRITABLE);
-    vmm_map_page((page_table_t *)kernel_pml4, KERNEL_HEAP_START + PAGE_SIZE, page2, PTE_WRITABLE);
-    vmm_map_page((page_table_t *)kernel_pml4, KERNEL_HEAP_START + PAGE_SIZE * 2, page3, PTE_WRITABLE);
-    vmm_map_page((page_table_t *)kernel_pml4, KERNEL_HEAP_START + PAGE_SIZE * 3, page4, PTE_WRITABLE);
+    vmm_map_page(vmm_kernel_space(), KERNEL_HEAP_START, page1, PTE_WRITABLE);
+    vmm_map_page(vmm_kernel_space(), KERNEL_HEAP_START + PAGE_SIZE, page2, PTE_WRITABLE);
+    vmm_map_page(vmm_kernel_space(), KERNEL_HEAP_START + PAGE_SIZE * 2, page3, PTE_WRITABLE);
+    vmm_map_page(vmm_kernel_space(), KERNEL_HEAP_START + PAGE_SIZE * 3, page4, PTE_WRITABLE);
 
     memset((void *)KERNEL_HEAP_START, 0, PAGE_SIZE * 4);
 
     size_t initial_size = PAGE_SIZE * 4;
-    heap_list_t *initial_block = (heap_list_t *)KERNEL_HEAP_START;
+    heap_node_t *initial_block = (heap_node_t *)KERNEL_HEAP_START;
     initial_block->magic = HEAP_MAGIC_FREE;
     initial_block->size = initial_size;
     initial_block->payload_size = initial_size - HEAP_HEADER_SIZE;
@@ -52,24 +51,24 @@ void heap_init() {
     serial_printf("HEAP: done\n");
 }
 
-heap_list_t *heap_extend(size_t size) {
+heap_node_t *heap_extend(size_t size) {
     size_t needed_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE;
     virt_addr_t extension_start = heap_end_addr;
 
     for (size_t i = 0; i < needed_pages; i++) {
         phys_addr_t phys_page = pmm_page_alloc();
         if (!phys_page) {
-            panic("heap out of physical memory during extension", 0);
+            panic();
         }
 
-        vmm_map_page((page_table_t *)kernel_pml4, extension_start + (i * PAGE_SIZE), phys_page, PTE_WRITABLE);
+        vmm_map_page(vmm_kernel_space(), extension_start + (i * PAGE_SIZE), phys_page, PTE_WRITABLE);
     }
 
     size_t extended_bytes = needed_pages * PAGE_SIZE;
 
     memset((void *)extension_start, 0, extended_bytes);
 
-    heap_list_t *new_block = (heap_list_t *)extension_start;
+    heap_node_t *new_block = (heap_node_t *)extension_start;
     new_block->magic = HEAP_MAGIC_FREE;
     new_block->size = extended_bytes;
     new_block->payload_size = extended_bytes - HEAP_HEADER_SIZE;
@@ -78,7 +77,7 @@ heap_list_t *heap_extend(size_t size) {
 
     heap_end_addr += extended_bytes;
 
-    heap_list_t *current = heap_list_head;
+    heap_node_t *current = heap_list_head;
     while (current->next != NULL) {
         current = current->next;
     }
@@ -106,8 +105,8 @@ virt_addr_t kmalloc(size_t size) {
     size = (size + 15U) & ~15U; /* 16-Byte-Ausrichtung */
     size_t total_required_size = size + HEAP_HEADER_SIZE;
 
-    heap_list_t *current = heap_list_head;
-    heap_list_t *best_fit = NULL;
+    heap_node_t *current = heap_list_head;
+    heap_node_t *best_fit = NULL;
     size_t min_suitable_size = (size_t)-1; // Max size_t Value
 
     // Best-Fit
@@ -130,14 +129,14 @@ virt_addr_t kmalloc(size_t size) {
         best_fit = heap_extend(total_required_size);
         if (!best_fit) {
             spinlock_release_irqrestore(&heap_lock, flags);
-            panic("heap dynamic extension failed", size);
+            panic();
         }
     }
 
     /* Aufteilen des Blocks (Splitting), falls der verbleibende Rest groß genug ist */
     size_t min_split_size = HEAP_HEADER_SIZE + HEAP_MIN_PAYLOAD_SIZE;
     if (best_fit->size >= total_required_size + min_split_size) {
-        heap_list_t *next_block = (heap_list_t *)((uintptr_t)best_fit + total_required_size);
+        heap_node_t *next_block = (heap_node_t *)((uintptr_t)best_fit + total_required_size);
         next_block->magic = HEAP_MAGIC_FREE;
         next_block->size = best_fit->size - total_required_size;
         next_block->payload_size = next_block->size - HEAP_HEADER_SIZE;
@@ -173,7 +172,7 @@ void kfree(virt_addr_t addr) {
 
     uint64_t flags = spinlock_acquire_irqsave(&heap_lock);
 
-    heap_list_t *block = (heap_list_t *)(addr - HEAP_HEADER_SIZE);
+    heap_node_t *block = (heap_node_t *)(addr - HEAP_HEADER_SIZE);
 
     if (block->magic != HEAP_MAGIC_USED) {
         serial_printf("HEAP: Attempted kfree on invalid/already freed block at %llx!\n", addr);
@@ -215,7 +214,7 @@ void heap_dump() {
     serial_printf("%-18s %-8s %-12s %-12s %-18s %-18s\n", "HEADER ADDR", "STATUS", "BLOCK SIZE", "PAYLOAD SZ", "PREV BLOCK", "NEXT BLOCK");
     serial_printf("-------------------------------------------------------------------------------------------\n");
 
-    heap_list_t *current = heap_list_head;
+    heap_node_t *current = heap_list_head;
     size_t block_count = 0;
     size_t total_free = 0;
     size_t total_used = 0;

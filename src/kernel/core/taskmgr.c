@@ -5,7 +5,7 @@
  */
 
 #include <arch/arch.h>
-#include <arch/x86_64/cpu/smp.h>
+
 #include <core/process.h>
 #include <core/taskmgr.h>
 #include <core/thread.h>
@@ -68,16 +68,16 @@ void ps_dump() {
     serial_printf("%-11s %-15s %-27s %-17s\n", "CPU CORE", "ACTIVE TID", "ACTIVE THREAD", "STATUS");
     serial_printf("-------------------------------------------------------------------------\n");
 
-    for (size_t i = 0; i < smp_cpu_count; i++) {
-        if (cpus[i].online) {
-            thread_t *curr_t = cpus[i].current_thread;
+    for (uint32_t i = 0; i < smp_get_cpu_count(); i++) {
+        if (smp_get_cpu_by_id(i)->online) {
+            thread_t *curr_t = smp_get_cpu_by_id(i)->current_thread;
             if (curr_t) {
-                serial_printf("%-11d %-15d %-27s %-17s\n", cpus[i].cpu_id, curr_t->tid, curr_t->name, "ONLINE");
+                serial_printf("%-11d %-15d %-27s %-17s\n", smp_get_cpu_by_id(i)->cpu_id, curr_t->tid, curr_t->name, "ONLINE");
             } else {
-                serial_printf("%-11d %-15s %-27s %-17s\n", cpus[i].cpu_id, "-", "none", "ONLINE");
+                serial_printf("%-11d %-15s %-27s %-17s\n", smp_get_cpu_by_id(i)->cpu_id, "-", "none", "ONLINE");
             }
         } else {
-            serial_printf("%-11d %-15s %-27s %-17s\n", cpus[i].cpu_id, "-", "-", "OFFLINE");
+            serial_printf("%-11d %-15s %-27s %-17s\n", smp_get_cpu_by_id(i)->cpu_id, "-", "-", "OFFLINE");
         }
     }
 

@@ -15,3 +15,4 @@
 #include <kernel/sys_def.h>
 #include <kernel/sys_sym.h>
 #include <kernel/types.h>
+#include <lib/log.h>

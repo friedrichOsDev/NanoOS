@@ -7,7 +7,7 @@
 #pragma once
 
 #include <core/process.h>
-#include <core/sync.h>
+#include <kernel/sync.h>
 #include <pch.h>
 
 /** @brief Größe des Kernel-Stacks pro Thread (16 KiB). */

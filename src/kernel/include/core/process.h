@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <core/sync.h>
-#include <mm/memdef.h>
+#include <kernel/sync.h>
+#include <mm/memory.h>
 #include <pch.h>
 
 struct thread;
@@ -22,8 +22,7 @@ typedef struct process {
     uint64_t pid;  /**< Eindeutige Prozess-ID (PID) */
     char name[32]; /**< Name des Prozesses */
 
-    page_table_t *pml4; /**< Virtuelle Adresse der PML4-Seitentabelle */
-    phys_addr_t cr3;    /**< Physikalische Adresse der PML4-Seitentabelle (CR3-Registerwert) */
+    vmm_space_t *vmm_space; /**< Pointer zum Address-Bereich des Prozesses (incl: pml4, pml4_phys, lock) */
 
     struct thread *threads; /**< Zeiger auf die Liste der zugehörigen Threads */
     size_t thread_count;    /**< Anzahl der Threads im Prozess */
@@ -49,7 +48,7 @@ void process_init();
  * @param pml4 Zeiger auf die virtuelle Adresse der PML4-Seitentabelle.
  * @return Zeiger auf die neu erstellte `process_t`-Struktur oder NULL bei Speicherallokationsfehlern.
  */
-process_t *process_create(const char *name, page_table_t *pml4);
+process_t *process_create(const char *name, vmm_space_t *sp);
 
 /**
  * @brief Registriert einen bereits erstellten Prozess in der globalen Prozessliste.

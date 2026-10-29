@@ -5,15 +5,12 @@
  */
 
 #include <arch/arch.h>
-#include <arch/x86_64/cpu/context.h>
-#include <arch/x86_64/cpu/fpu.h>
-#include <arch/x86_64/cpu/smp.h>
-#include <core/panic.h>
+
 #include <core/scheduler.h>
 #include <core/thread.h>
-#include <lib/string.h>
-#include <mm/heap.h>
-#include <mm/vmm.h>
+#include <kernel/panic.h>
+#include <lib/util/str.h>
+#include <mm/memory.h>
 #include <pch.h>
 
 /** @brief Globaler Zähler für die Vergabe eindeutiger Thread-IDs (TID). */
@@ -23,13 +20,13 @@ static uint64_t next_tid = 1;
 static spinlock_t tid_lock = SPINLOCK_INIT;
 
 thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg, const char *name, int cpu_affinity) {
-    if (cpu_affinity >= 0 && (size_t)cpu_affinity >= smp_cpu_count) {
+    if (cpu_affinity >= 0 && (size_t)cpu_affinity >= smp_get_cpu_count()) {
         serial_printf("Thread: Cannot create process on an non exisiting core %d\n", cpu_affinity);
         return NULL;
     }
 
     if (cpu_affinity == -1) {
-        if (smp_cpu_count <= 1) {
+        if (smp_get_cpu_count() <= 1) {
             cpu_affinity = 0;
         }
     }
@@ -78,7 +75,7 @@ thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
 
     thread->rsp = (uint64_t)sp;
     if (thread->rsp % 16 != 8) {
-        panic("RSP new Thread not aligned", thread->rsp % 16);
+        panic();
     }
     thread->state = THREAD_READY;
 

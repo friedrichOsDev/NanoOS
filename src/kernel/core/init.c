@@ -7,26 +7,19 @@
  */
 
 #include <arch/arch.h>
+
 #include <boot/multiboot2.h>
-#include <arch/x86_64/cpu/acpi.h>
-#include <arch/x86_64/cpu/apic.h>
-#include <arch/x86_64/cpu/fpu.h>
-#include <arch/x86_64/cpu/handler.h>
-#include <arch/x86_64/cpu/hpet.h>
-#include <arch/x86_64/cpu/irq.h>
-#include <arch/x86_64/cpu/rtc.h>
-#include <arch/x86_64/cpu/smp.h>
-#include <arch/x86_64/drivers/pci.h>
 #include <core/init.h>
-#include <core/panic.h>
 #include <core/process.h>
 #include <core/scheduler.h>
 #include <core/taskmgr.h>
 #include <core/thread.h>
-#include <lib/string.h>
-#include <mm/heap.h>
-#include <mm/pmm.h>
-#include <mm/vmm.h>
+#include <drivers/pci.h>
+#include <drivers/rtc.h>
+#include <kernel/error.h>
+#include <kernel/panic.h>
+#include <lib/util/str.h>
+#include <mm/memory.h>
 #include <pch.h>
 
 /**
@@ -112,13 +105,15 @@ static void kernel_init_thread(void *arg) {
 
 void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     serial_init();
-    serial_printf("INIT: start\n");
-
+    log_debug("start");
     gdt_init();
+    log_debug("gdt");
     idt_init();
+    log_debug("idt");
     irq_init();
-
-    cpu_fpu_init();
+    log_debug("irq");
+    fpu_init();
+    log_debug("fpu");
 
     arch_sti(); // idt enable (turn on interrupts)
 
@@ -134,7 +129,7 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     phys_addr_t rsdp_phys_addr = get_rsdp_phys_addr();
     if (rsdp_phys_addr == 0) {
         serial_printf("ACPI: no RSDP address found in the MULTIBOOT2 info structure\n");
-        panic("Kernel can't start without ACPI", 0);
+        panic();
     }
 
     acpi_init(rsdp_phys_addr);
@@ -145,7 +140,7 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
 
     pci_init();
 
-    lapic_timer_calibrate_and_start(1000);
+    lapic_init(1000);
 
     scheduler_init();
 

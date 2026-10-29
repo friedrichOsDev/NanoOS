@@ -1,6 +1,6 @@
 #pragma once
 
-#include <limits.h>
+#include <pch.h>
 
 /* Floating-point constants */
 #undef NAN

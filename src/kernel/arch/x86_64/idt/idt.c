@@ -6,7 +6,7 @@
 
 #include "../gdt/gdt.h"
 #include <arch/arch.h>
-#include <arch/x86_64/cpu/apic.h>
+#include "../apic/apic.h"
 #include "idt.h"
 #include "int_sym.h"
 

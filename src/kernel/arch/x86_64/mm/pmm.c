@@ -4,13 +4,15 @@
  * @author friedrichOsDev
  */
 
+#include "pmm.h"
+#include "../mm/mem_def.h"
 #include <arch/arch.h>
 #include <boot/multiboot2.h>
 #include <core/init.h>
-#include <core/panic.h>
-#include <core/sync.h>
-#include <lib/string.h>
-#include <mm/pmm.h>
+#include <kernel/panic.h>
+#include <kernel/sync.h>
+#include <lib/util/mem.h>
+#include <mm/memory.h>
 
 /** @brief Globale PMM-Zustandsstruktur. */
 pmm_state_t pmm_state;
@@ -28,15 +30,15 @@ static spinlock_t pmm_lock = SPINLOCK_INIT;
  */
 static void lock_pages(phys_addr_t start, uint64_t count) {
     if (start > pmm_state.total_pages * PAGE_SIZE || !IS_PAGE_ALIGNED(start)) {
-        panic("pmm bad start", start);
+        panic();
     }
     if (count > pmm_state.total_pages || count == 0) {
-        panic("pmm bad count", count);
+        panic();
     }
 
     uint64_t start_page = start / PAGE_SIZE;
     if (start_page + count > pmm_state.total_pages) {
-        panic("pmm bad start_page", start_page);
+        panic();
     }
 
     for (uint64_t i = 0; i < count; i++) {
@@ -63,15 +65,15 @@ static void lock_pages(phys_addr_t start, uint64_t count) {
  */
 static void unlock_pages(phys_addr_t start, uint64_t count) {
     if (start > pmm_state.total_pages * PAGE_SIZE || !IS_PAGE_ALIGNED(start)) {
-        panic("pmm unlock bad start", start);
+        panic();
     }
     if (count > pmm_state.total_pages || count == 0) {
-        panic("pmm unlock bad count", count);
+        panic();
     }
 
     uint64_t start_page = start / PAGE_SIZE;
     if (start_page + count > pmm_state.total_pages) {
-        panic("pmm unlock bad start_page", start_page);
+        panic();
     }
 
     for (uint64_t i = 0; i < count; i++) {
@@ -119,8 +121,8 @@ static void mmap_parse() {
         if (kernel_mmap.entries[i].type == MMAP_USABLE) {
             mmap_entry_t entry = kernel_mmap.entries[i];
 
-            uint64_t aligned_base = ALIGN_UP(entry.base_addr);
-            uint64_t aligned_len = ALIGN_DOWN(entry.length);
+            uint64_t aligned_base = PAGE_ALIGN_UP(entry.base_addr);
+            uint64_t aligned_len = PAGE_ALIGN_DOWN(entry.length);
 
             if (aligned_len >= PAGE_SIZE) {
                 unlock_pages(aligned_base, aligned_len / PAGE_SIZE);
@@ -134,12 +136,12 @@ void pmm_init() {
 
     // lock kernel + bitmap
     uint64_t kernel_and_bitmap_size = KERNEL_END_PHYS + pmm_state.bitmap_size - KERNEL_START_PHYS;
-    lock_pages(KERNEL_START_PHYS, ALIGN_UP(kernel_and_bitmap_size) / PAGE_SIZE);
+    lock_pages(KERNEL_START_PHYS, PAGE_ALIGN_UP(kernel_and_bitmap_size) / PAGE_SIZE);
 
     // lock framebuffer
     if (kernel_fb_info.fb_addr) {
-        uint64_t fb_start_aligned = ALIGN_DOWN(kernel_fb_info.fb_addr);
-        uint64_t fb_end_aligned = ALIGN_UP(kernel_fb_info.fb_addr + (kernel_fb_info.fb_height * kernel_fb_info.fb_pitch));
+        uint64_t fb_start_aligned = PAGE_ALIGN_DOWN(kernel_fb_info.fb_addr);
+        uint64_t fb_end_aligned = PAGE_ALIGN_UP(kernel_fb_info.fb_addr + (kernel_fb_info.fb_height * kernel_fb_info.fb_pitch));
         lock_pages(fb_start_aligned, (fb_end_aligned - fb_start_aligned) / PAGE_SIZE);
     }
 
@@ -152,7 +154,7 @@ void pmm_init() {
 phys_addr_t pmm_page_alloc() {
     uint64_t flags = spinlock_acquire_irqsave(&pmm_lock);
     if (pmm_state.free_pages == 0) {
-        panic("pmm out of memory", 0);
+        panic();
     }
 
     uint64_t *bitmap64 = (uint64_t *)pmm_state.bitmap;
@@ -185,7 +187,7 @@ phys_addr_t pmm_page_alloc() {
 
 void pmm_page_free(phys_addr_t addr) {
     if (!IS_PAGE_ALIGNED(addr)) {
-        panic("pmm free unaligned page", addr);
+        panic();
     }
 
     uint64_t flags = spinlock_acquire_irqsave(&pmm_lock);

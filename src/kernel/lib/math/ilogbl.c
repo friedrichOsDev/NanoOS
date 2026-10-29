@@ -1,5 +1,5 @@
 #include "libm.h"
-#include <limits.h>
+#include <pch.h>
 
 #if LDBL_MANT_DIG == 53 && LDBL_MAX_EXP == 1024
 int ilogbl(long double x) { return ilogb(x); }

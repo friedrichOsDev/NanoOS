@@ -4,11 +4,13 @@
  * @author friedrichOsDev
  */
 
+#include "_pci.h"
 #include <arch/arch.h>
-#include <arch/x86_64/drivers/pci.h>
-#include <core/sync.h>
-#include <lib/string.h>
-#include <mm/heap.h>
+#include <kernel/sync.h>
+#include <drivers/pci.h>
+#include <lib/util/str.h>
+#include <mm/memory.h>
+#include "../acpi/acpi.h"
 
 static pci_device_t *device_list_head = NULL;
 static pci_driver_t *driver_list_head = NULL;

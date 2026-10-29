@@ -1,7 +1,7 @@
 #include "gdt.h"
 #include "gdt_sym.h"
 #include <arch/arch.h>
-#include <core/panic.h>
+#include <kernel/panic.h>
 
 struct gdt_entry gdt[GDT_ENTRIES];
 struct gdt_ptr gdtp;
@@ -23,14 +23,14 @@ static void tss_init_core(size_t cpu_id, uintptr_t kernel_stack) {
 
     /* Setze Kernel Stack Pointer (RSP0) für Ring 3 -> Ring 0 Wechsel */
     if (kernel_stack % 16 != 0) {
-        panic("GDT TSS: RSP0 (kernel_stack) not 16-byte aligned (SSE/FPU)", kernel_stack % 16);
+        panic();
     }
     tss->rsp0 = (uint64_t)kernel_stack;
 
     /* Setze IST1 Stack Pointer für den Double Fault Exception Handler */
     uintptr_t df_stack_top = (uintptr_t)&double_fault_stacks[cpu_id][sizeof(double_fault_stacks[cpu_id])];
     if (df_stack_top % 16 != 0) {
-        panic("GDT TSS: IST1 (df_stack_top) not 16-byte aligned (SSE/FPU)", df_stack_top % 16);
+        panic();
     }
     tss->ist1 = (uint64_t)df_stack_top;
 

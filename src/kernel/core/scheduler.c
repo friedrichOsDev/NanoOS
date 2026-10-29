@@ -7,16 +7,12 @@
  */
 
 #include <arch/arch.h>
-#include <arch/x86_64/cpu/apic.h>
-#include <arch/x86_64/cpu/context.h>
-#include <arch/x86_64/cpu/fpu.h>
-#include <arch/x86_64/cpu/smp.h>
-#include <core/panic.h>
+
 #include <core/scheduler.h>
 #include <core/thread.h>
-#include <lib/string.h>
-#include <mm/heap.h>
-#include <mm/vmm.h>
+#include <kernel/panic.h>
+#include <lib/util/str.h>
+#include <mm/memory.h>
 #include <pch.h>
 
 static thread_t *ready_queue_head = NULL;
@@ -81,8 +77,8 @@ static void scheduler_add_thread_locked(thread_t *thread) {
         thread->prev = NULL;
     }
 
-    if (smp_cpu_count > 1) {
-        lapic_send_broadcast_reschedule_ipi();
+    if (smp_get_cpu_count() > 1) {
+        arch_ipi_reschedule();
     }
 }
 
@@ -163,7 +159,7 @@ void scheduler_init() {
     // Haupt-Kernel-Thread erzeugen
     thread_t *main_thread = (thread_t *)kzalloc(sizeof(thread_t));
     if (!main_thread) {
-        panic("SCHED: Failed to allocate main thread structure", 0);
+        panic();
     }
 
     main_thread->tid = 0;
@@ -184,8 +180,8 @@ void scheduler_init() {
     kernel_process->thread_count++;
     spinlock_release_irqrestore(&kernel_process->lock, pflags);
 
-    cpus[0].current_thread = main_thread;
-    cpus[0].idle_thread = thread_create_on_cpu(kernel_process, idle_task, NULL, "idle_0", 0);
+    smp_get_cpu_by_id(0)->current_thread = main_thread;
+    smp_get_cpu_by_id(0)->idle_thread = thread_create_on_cpu(kernel_process, idle_task, NULL, "idle_0", 0);
     pop_next_ready_thread_for_cpu(0); // Idle-Task aus der Warteschlange entfernen
 
     serial_printf("SCHED: scheduler initialized for BSP.\n");
@@ -245,14 +241,14 @@ void scheduler_schedule() {
         }
 
         if (prev && prev->process != next->process && next->process) {
-            ASM_CODE("mov %0, %%cr3" ::"r"(next->process->cr3)
+            ASM_CODE("mov %0, %%cr3" ::"r"(next->process->vmm_space->pml4_phys)
                      : "memory");
         }
     }
 
     if (prev != next && prev != NULL) {
         if ((uintptr_t)next->fpu_state % 16 != 0) {
-            panic("SCHED: next->fpu_state not 16-byte aligned (fxrstor64 requires this)", (uintptr_t)next->fpu_state % 16);
+            panic();
         }
         switch_context(&prev->rsp, next->rsp, prev->fpu_state, next->fpu_state);
     }
