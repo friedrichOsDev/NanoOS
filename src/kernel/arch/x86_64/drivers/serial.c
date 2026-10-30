@@ -54,7 +54,7 @@ void serial_puts(const char *str) {
 void vserial_printf(const char *format, va_list args) {
     char buffer[SERIAL_BUFFER_MAX_SIZE];
 
-    uint64_t flags = spinlock_acquire_irqsave(&serial_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&serial_lock);
 
     int res = vsnprintf(buffer, sizeof(buffer), format, args);
 

@@ -18,4 +18,3 @@ typedef struct {
 
 /** @brief Globale Instanz des PMM-Status. */
 extern pmm_state_t pmm_state;
-

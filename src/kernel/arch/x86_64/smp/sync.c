@@ -5,10 +5,10 @@
  */
 
 #include <arch/arch.h>
-#include <core/scheduler.h>
-#include <core/thread.h>
 #include <kernel/sync.h>
 #include <pch.h>
+#include <sched/sched.h>
+#include <sched/thread.h>
 
 void spinlock_acquire(spinlock_t *lock) {
     uint32_t expected = 1;
@@ -45,7 +45,7 @@ void mutex_lock(mutex_t *mux) {
         return;
     }
 
-    thread_t *current = scheduler_get_current_thread();
+    thread_t *current = sched_get_current_thread();
     if (!current) {
         spinlock_release_irqrestore(&mux->lock, flags);
         return;
@@ -66,7 +66,7 @@ void mutex_lock(mutex_t *mux) {
 
     spinlock_release_irqrestore(&mux->lock, flags);
 
-    scheduler_schedule();
+    sched_schedule();
 }
 
 void mutex_unlock(mutex_t *mux) {
@@ -81,7 +81,7 @@ void mutex_unlock(mutex_t *mux) {
         waiter->next = NULL;
         waiter->state = THREAD_READY;
 
-        scheduler_add_thread(waiter);
+        sched_add_thread(waiter);
     } else {
         mux->locked = false;
     }

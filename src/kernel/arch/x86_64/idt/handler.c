@@ -5,12 +5,12 @@
  */
 
 #include "handler.h"
+#include "../apic/apic.h"
 #include <arch/arch.h>
-#include <core/scheduler.h>
 #include <kernel/panic.h>
 #include <kernel/sync.h>
 #include <pch.h>
-#include "../apic/apic.h"
+#include <sched/sched.h>
 
 static isr_handler_t isr_handlers[ISR_COUNT];
 static irq_handler_t irq_handlers[IRQ_COUNT];
@@ -33,7 +33,7 @@ void irq_install_handler(int irq, irq_handler_t handler) {
 }
 
 void isr_handler(struct registers *regs) {
-    uint64_t rf = spinlock_acquire_irqsave(&exception_print_lock);
+    irq_flags_t rf = spinlock_acquire_irqsave(&exception_print_lock);
     if (regs->int_no < ISR_COUNT) {
         serial_printf("\n=== EXCEPTION %lld (Error Code: %llx) ===\n", regs->int_no, regs->err_code);
     }
@@ -89,7 +89,7 @@ void irq_handler(struct registers *regs) {
 
 void reschedule_ipi_handler(struct registers *regs) {
     (void)regs;
-    scheduler_schedule();
+    sched_schedule();
     lapic_eoi();
 }
 
@@ -111,6 +111,6 @@ void tlb_shootdown_ipi_handler(struct registers *regs) {
 
 void lapic_timer_handler(struct registers *regs) {
     (void)regs;
-    scheduler_tick();
+    sched_tick();
     lapic_eoi();
 }

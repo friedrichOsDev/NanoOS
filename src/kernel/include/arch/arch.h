@@ -1,13 +1,16 @@
 #pragma once
 
 #include <pch.h>
-#include <core/thread.h>
+#include <sched/thread.h>
 
 inline void arch_sti() { ASM_CODE("sti"); }
 inline void arch_cli() { ASM_CODE("cli"); }
 inline void arch_hlt() { ASM_CODE("hlt"); }
 inline void arch_pause() { ASM_CODE("pause"); }
-inline void arch_idle() { arch_sti(); arch_hlt(); }
+inline void arch_idle() {
+    arch_sti();
+    arch_hlt();
+}
 
 // acpi on x86_64
 void acpi_init(phys_addr_t rsdp_phys);
@@ -88,4 +91,3 @@ cpu_local_t *smp_get_cpu_by_id(uint32_t cpu_id);
 // context switch symbols on x86_64
 extern void switch_context(uint64_t *prev_rsp_ptr, uint64_t next_rsp, void *prev_fpu_state, void *next_fpu_state);
 extern void thread_entry_stub();
-

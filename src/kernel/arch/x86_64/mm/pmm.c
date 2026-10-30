@@ -7,7 +7,7 @@
 #include "pmm.h"
 #include "../mm/mem_def.h"
 #include <arch/arch.h>
-#include <boot/multiboot2.h>
+#include <arch/multiboot2.h>
 #include <kernel/panic.h>
 #include <kernel/sync.h>
 #include <lib/util/mem.h>
@@ -151,7 +151,7 @@ void pmm_init() {
 }
 
 phys_addr_t pmm_page_alloc() {
-    uint64_t flags = spinlock_acquire_irqsave(&pmm_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&pmm_lock);
     if (pmm_state.free_pages == 0) {
         panic();
     }
@@ -189,7 +189,7 @@ void pmm_page_free(phys_addr_t addr) {
         panic();
     }
 
-    uint64_t flags = spinlock_acquire_irqsave(&pmm_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&pmm_lock);
     unlock_pages(addr, 1);
     spinlock_release_irqrestore(&pmm_lock, flags);
 }

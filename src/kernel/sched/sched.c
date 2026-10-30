@@ -7,13 +7,12 @@
  */
 
 #include <arch/arch.h>
-
-#include <core/scheduler.h>
-#include <core/thread.h>
 #include <kernel/panic.h>
 #include <lib/util/str.h>
 #include <mm/memory.h>
 #include <pch.h>
+#include <sched/sched.h>
+#include <sched/thread.h>
 
 static thread_t *ready_queue_head = NULL;
 static thread_t *ready_queue_tail = NULL;
@@ -33,21 +32,20 @@ void scheduler_release_initial_lock() { spinlock_release(&sched_lock); }
 void idle_task(void *arg) {
     (void)arg;
     while (1) {
-        arch_sti();
-        arch_hlt();
+        arch_idle();
     }
 }
 
-thread_t *scheduler_get_current_thread() {
+thread_t *sched_get_current_thread() {
     cpu_local_t *cpu = smp_get_current_cpu();
     return cpu ? cpu->current_thread : NULL;
 }
 
-uint64_t scheduler_get_ticks() { return system_ticks; }
+uint64_t sched_get_ticks() { return system_ticks; }
 
 void thread_set_affinity(thread_t *thread, int cpu_id) {
     if (thread) {
-        uint64_t flags = spinlock_acquire_irqsave(&sched_lock);
+        irq_flags_t flags = spinlock_acquire_irqsave(&sched_lock);
         thread->cpu_affinity = cpu_id;
         spinlock_release_irqrestore(&sched_lock, flags);
     }
@@ -82,8 +80,8 @@ static void scheduler_add_thread_locked(thread_t *thread) {
     }
 }
 
-void scheduler_add_thread(thread_t *thread) {
-    uint64_t flags = spinlock_acquire_irqsave(&sched_lock);
+void sched_add_thread(thread_t *thread) {
+    irq_flags_t flags = spinlock_acquire_irqsave(&sched_lock);
     scheduler_add_thread_locked(thread);
     spinlock_release_irqrestore(&sched_lock, flags);
 }
@@ -128,7 +126,7 @@ static void cleanup_dead_threads() {
         serial_printf("Cleaning up dead thread %p with name %s\n", curr, curr->name);
 
         if (curr->process) {
-            uint64_t pflags = spinlock_acquire_irqsave(&curr->process->lock);
+            irq_flags_t pflags = spinlock_acquire_irqsave(&curr->process->lock);
             thread_t **pp = &curr->process->threads;
             while (*pp) {
                 if (*pp == curr) {
@@ -151,16 +149,18 @@ static void cleanup_dead_threads() {
     }
 }
 
-void scheduler_init() {
+void sched_init() {
     serial_printf("SCHED: initializing scheduler...\n");
 
-    process_init();
+    proc_init();
 
     // Haupt-Kernel-Thread erzeugen
     thread_t *main_thread = (thread_t *)kzalloc(sizeof(thread_t));
     if (!main_thread) {
         panic();
     }
+
+    process_t *kernel_process = proc_get_kernel_proc();
 
     main_thread->tid = 0;
     strncpy(main_thread->name, "kmain", sizeof(main_thread->name) - 1);
@@ -174,7 +174,7 @@ void scheduler_init() {
     ASM_CODE("mov %%rsp, %0" : "=r"(current_rsp));
     main_thread->kernel_stack_top = current_rsp;
 
-    uint64_t pflags = spinlock_acquire_irqsave(&kernel_process->lock);
+    irq_flags_t pflags = spinlock_acquire_irqsave(&kernel_process->lock);
     main_thread->proc_next = kernel_process->threads;
     kernel_process->threads = main_thread;
     kernel_process->thread_count++;
@@ -187,13 +187,13 @@ void scheduler_init() {
     serial_printf("SCHED: scheduler initialized for BSP.\n");
 }
 
-void scheduler_enable() { scheduler_enabled = true; }
+void sched_enable() { scheduler_enabled = true; }
 
-void scheduler_schedule() {
+void sched_schedule() {
     if (!scheduler_enabled)
         return;
 
-    uint64_t flags = spinlock_acquire_irqsave(&sched_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&sched_lock);
 
     cleanup_dead_threads();
 
@@ -256,10 +256,10 @@ void scheduler_schedule() {
     spinlock_release_irqrestore(&sched_lock, flags);
 }
 
-void thread_yield() { scheduler_schedule(); }
+void thread_yield() { sched_schedule(); }
 
 void thread_sleep_ms(uint64_t ms) {
-    uint64_t flags = spinlock_acquire_irqsave(&sched_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&sched_lock);
 
     cpu_local_t *my_cpu = smp_get_current_cpu();
     thread_t *thread = my_cpu->current_thread;
@@ -276,14 +276,14 @@ void thread_sleep_ms(uint64_t ms) {
 
     spinlock_release_irqrestore(&sched_lock, flags);
 
-    scheduler_schedule();
+    sched_schedule();
 }
 
-void scheduler_tick() {
+void sched_tick() {
     if (!scheduler_enabled)
         return;
 
-    uint64_t flags = spinlock_acquire_irqsave(&sched_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&sched_lock);
 
     cpu_local_t *my_cpu = smp_get_current_cpu();
 
@@ -335,17 +335,17 @@ void scheduler_tick() {
     spinlock_release_irqrestore(&sched_lock, flags);
 
     if (need_reschedule) {
-        scheduler_schedule();
+        sched_schedule();
     }
 }
 
-void scheduler_thread_exit() {
-    uint64_t flags = spinlock_acquire_irqsave(&sched_lock);
+void thread_exit() {
+    irq_flags_t flags = spinlock_acquire_irqsave(&sched_lock);
     cpu_local_t *my_cpu = smp_get_current_cpu();
     my_cpu->current_thread->state = THREAD_DEAD;
     spinlock_release_irqrestore(&sched_lock, flags);
 
-    scheduler_schedule();
+    sched_schedule();
     while (1) {
         arch_hlt();
     }

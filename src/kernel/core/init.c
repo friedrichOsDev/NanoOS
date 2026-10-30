@@ -8,12 +8,8 @@
 
 #include <arch/arch.h>
 
-#include <boot/multiboot2.h>
-#include <core/init.h>
-#include <core/process.h>
-#include <core/scheduler.h>
+#include <arch/multiboot2.h>
 #include <core/taskmgr.h>
-#include <core/thread.h>
 #include <drivers/pci.h>
 #include <drivers/rtc.h>
 #include <kernel/error.h>
@@ -21,6 +17,12 @@
 #include <lib/util/str.h>
 #include <mm/memory.h>
 #include <pch.h>
+#include <sched/process.h>
+#include <sched/sched.h>
+#include <sched/thread.h>
+
+// first decl
+void kernel_init(const uint64_t magic, const uint64_t info_ptr);
 
 /**
  * @brief Erster Kernel-Thread nach der Aktivierung des Schedulers.
@@ -98,8 +100,14 @@ static void kernel_init_thread(void *arg) {
 
     // serial_printf("===============================================================\n\n");
 
+    int counter = 0;
+
     while (1) {
-        thread_yield();
+        serial_printf("DUMP #%d\n", counter);
+        heap_dump();
+        ps_dump();
+        thread_sleep_ms(500);
+        counter++;
     }
 }
 
@@ -142,16 +150,16 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
 
     lapic_init(1000);
 
-    scheduler_init();
+    sched_init();
 
     smp_init();
 
     serial_printf("INIT: Multi-Core Scheduling running!\n");
 
-    thread_create_on_cpu(kernel_process, kernel_init_thread, NULL, "kernel_init", -1);
+    thread_create_on_cpu(proc_get_kernel_proc(), kernel_init_thread, NULL, "kernel_init", -1);
 
-    scheduler_enable();
-    scheduler_thread_exit();
+    sched_enable();
+    thread_exit();
 
     // Unerreichbarer Code (Fallback)
 

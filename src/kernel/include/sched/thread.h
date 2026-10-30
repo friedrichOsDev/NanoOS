@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <core/process.h>
 #include <kernel/sync.h>
 #include <pch.h>
+#include <sched/process.h>
 
 /** @brief Größe des Kernel-Stacks pro Thread (16 KiB). */
 #define STACK_SIZE (16 * 1024)
@@ -84,8 +84,3 @@ thread_t *thread_create(process_t *proc, thread_entry_t entry, void *arg, const 
  * @return Zeiger auf die neu erstellte `thread_t`-Struktur oder `NULL` bei Fehler.
  */
 thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg, const char *name, int cpu_affinity);
-
-/**
- * @brief Beendet den aktuell ausführenden Thread und übergibt die Kontrolle an den Scheduler.
- */
-void thread_exit();

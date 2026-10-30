@@ -4,11 +4,11 @@
  * @author friedrichOsDev
  */
 
-#include "../gdt/gdt.h"
-#include <arch/arch.h>
-#include "../apic/apic.h"
 #include "idt.h"
+#include "../apic/apic.h"
+#include "../gdt/gdt.h"
 #include "int_sym.h"
+#include <arch/arch.h>
 
 /** @brief Das globale IDT-Array für 256 Interrupt-Vektoren. */
 struct idt_entry idt[IDT_ENTRIES];

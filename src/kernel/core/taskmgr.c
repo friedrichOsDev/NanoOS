@@ -6,10 +6,10 @@
 
 #include <arch/arch.h>
 
-#include <core/process.h>
 #include <core/taskmgr.h>
-#include <core/thread.h>
 #include <lib/print.h>
+#include <sched/process.h>
+#include <sched/thread.h>
 
 /**
  * @brief Spinlock zur Absicherung des Zugriffs auf die globale Prozessliste während der Ausgabe.
@@ -41,14 +41,14 @@ static const char *thread_state_to_string(thread_state_t state) {
 }
 
 void ps_dump() {
-    uint64_t list_flags = spinlock_acquire_irqsave(&proc_list_lock);
+    irq_flags_t list_flags = spinlock_acquire_irqsave(&proc_list_lock);
 
     serial_printf("\n============================= TASK MANAGER ==============================\n");
     serial_printf("%-6s %-20s %-6s %-20s %-10s %-6s\n", "PID", "PROCESS", "TID", "THREAD NAME", "STATE", "CORE");
     serial_printf("-------------------------------------------------------------------------\n");
 
-    for (process_t *p = proc_list; p != NULL; p = p->next) {
-        uint64_t pflags = spinlock_acquire_irqsave(&p->lock);
+    for (process_t *p = proc_get_list(); p != NULL; p = p->next) {
+        irq_flags_t pflags = spinlock_acquire_irqsave(&p->lock);
 
         for (thread_t *t = p->threads; t != NULL; t = t->proc_next) {
             char core_str[8];

@@ -7,20 +7,20 @@
  */
 
 #include <arch/arch.h>
-#include <core/process.h>
 #include <kernel/panic.h>
 #include <lib/util/str.h>
 #include <mm/memory.h>
+#include <sched/process.h>
 
-process_t *kernel_process = NULL;
-process_t *proc_list = NULL;
+static process_t *kernel_process = NULL;
+static process_t *proc_list = NULL;
 
 static uint64_t next_pid = 0;
 static spinlock_t pid_lock = SPINLOCK_INIT;
 static spinlock_t proc_list_lock = SPINLOCK_INIT;
 
-void process_init() {
-    kernel_process = process_create("kernel", vmm_kernel_space());
+void proc_init() {
+    kernel_process = proc_create("kernel", vmm_kernel_space());
     if (!kernel_process) {
         panic();
     }
@@ -28,14 +28,14 @@ void process_init() {
     serial_printf("Process: Initialized successfully (Kernel PID: %d)\n", kernel_process->pid);
 }
 
-process_t *process_create(const char *name, vmm_space_t *sp) {
+process_t *proc_create(const char *name, vmm_space_t *sp) {
     process_t *proc = (process_t *)kzalloc(sizeof(process_t));
     if (!proc) {
         return NULL;
     }
 
     // PID thread-sicher zuweisen
-    uint64_t flags = spinlock_acquire_irqsave(&pid_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&pid_lock);
     proc->pid = next_pid++;
     spinlock_release_irqrestore(&pid_lock, flags);
 
@@ -54,13 +54,13 @@ process_t *process_create(const char *name, vmm_space_t *sp) {
     proc->threads = NULL;
     proc->thread_count = 0;
 
-    process_register(proc);
+    proc_register(proc);
 
     return proc;
 }
 
-void process_register(process_t *proc) {
-    uint64_t flags = spinlock_acquire_irqsave(&proc_list_lock);
+void proc_register(process_t *proc) {
+    irq_flags_t flags = spinlock_acquire_irqsave(&proc_list_lock);
 
     proc->next = NULL;
     if (!proc_list) {
@@ -74,4 +74,12 @@ void process_register(process_t *proc) {
     }
 
     spinlock_release_irqrestore(&proc_list_lock, flags);
+}
+
+process_t *proc_get_kernel_proc() {
+    return kernel_process;
+}
+
+process_t *proc_get_list() {
+    return proc_list;
 }

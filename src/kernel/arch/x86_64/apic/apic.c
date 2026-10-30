@@ -36,7 +36,7 @@ uint32_t lapic_timer_target_hz = 0;
  * @param val Der zu schreibende 32-Bit-Wert.
  */
 static void ioapic_write(uint32_t reg, uint32_t val) {
-    uint64_t flags = spinlock_acquire_irqsave(&ioapic_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&ioapic_lock);
 
     volatile uint32_t *index_reg = (volatile uint32_t *)(ioapic_base + IOAPIC_REG_INDEX);
     volatile uint32_t *data_reg = (volatile uint32_t *)(ioapic_base + IOAPIC_REG_DATA);
@@ -53,7 +53,7 @@ static void ioapic_write(uint32_t reg, uint32_t val) {
  * @return Der ausgelesene 32-Bit-Wert.
  */
 static uint32_t ioapic_read(uint32_t reg) {
-    uint64_t flags = spinlock_acquire_irqsave(&ioapic_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&ioapic_lock);
 
     volatile uint32_t *index_reg = (volatile uint32_t *)(ioapic_base + IOAPIC_REG_INDEX);
     volatile uint32_t *data_reg = (volatile uint32_t *)(ioapic_base + IOAPIC_REG_DATA);
@@ -191,7 +191,7 @@ void lapic_send_broadcast_reschedule_ipi() {
     if (!lapic_base)
         return;
 
-    uint64_t flags = spinlock_acquire_irqsave(&icr_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&icr_lock);
 
     while (lapic_read(LAPIC_REG_ICR_LOW) & (1 << 12)) {
         arch_pause();
@@ -207,7 +207,7 @@ void lapic_send_broadcast_stop_ipi() {
     if (!lapic_base)
         return;
 
-    uint64_t flags = spinlock_acquire_irqsave(&icr_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&icr_lock);
 
     while (lapic_read(LAPIC_REG_ICR_LOW) & (1 << 12)) {
         arch_pause();
@@ -224,7 +224,7 @@ void lapic_send_broadcast_tlb_ipi() {
     if (!lapic_base)
         return;
 
-    uint64_t flags = spinlock_acquire_irqsave(&icr_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&icr_lock);
 
     while (lapic_read(LAPIC_REG_ICR_LOW) & (1 << 12)) {
         arch_pause();

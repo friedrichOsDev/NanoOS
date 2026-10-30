@@ -4,8 +4,8 @@
  * @author friedrichOsDev
  */
 
-#include <lib/util/str.h>
 #include <lib/util/mem.h>
+#include <lib/util/str.h>
 
 size_t strlen(const char *str) {
     const char *char_ptr = str;

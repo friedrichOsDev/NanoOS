@@ -14,11 +14,11 @@
 #include "../mm/mem_def.h"
 #include "smp_sym.h"
 #include <arch/arch.h>
-#include <core/scheduler.h>
 #include <kernel/panic.h>
 #include <lib/print.h>
 #include <lib/util/mem.h>
 #include <mm/memory.h>
+#include <sched/sched.h>
 
 extern struct gdt_ptr gdtp;
 extern struct idt_ptr idtp;
@@ -106,7 +106,7 @@ static void smp_ap_main() {
     // Eigenständigen Idle-Task für diesen CPU-Kern erstellen
     char idle_name[16];
     snprintf(idle_name, sizeof(idle_name), "idle_%d", local_cpu->cpu_id);
-    local_cpu->idle_thread = thread_create_on_cpu(kernel_process, idle_task, NULL, idle_name, (int)local_cpu->cpu_id);
+    local_cpu->idle_thread = thread_create_on_cpu(proc_get_kernel_proc(), idle_task, NULL, idle_name, (int)local_cpu->cpu_id);
     pop_next_ready_thread_for_cpu((int)local_cpu->cpu_id);
 
     // Thread-Struktur für den aktuell laufenden AP-Kontext anlegen
@@ -114,7 +114,7 @@ static void smp_ap_main() {
     ap_main_thread->tid = 1000 + local_cpu->cpu_id; // Dummy TID
     snprintf(ap_main_thread->name, sizeof(ap_main_thread->name), "idle_ap_%d", local_cpu->cpu_id);
     ap_main_thread->state = THREAD_RUNNING;
-    ap_main_thread->process = kernel_process;
+    ap_main_thread->process = proc_get_kernel_proc();
     ap_main_thread->time_slice = DEFAULT_TIME_SLICE;
     ap_main_thread->cpu_affinity = (int)local_cpu->cpu_id;
     fpu_state_init(ap_main_thread->fpu_state);
@@ -133,7 +133,7 @@ static void smp_ap_main() {
 
     // Scheduler-Schleife für diesen Kern starten
     while (1) {
-        scheduler_schedule();
+        sched_schedule();
         ASM_CODE("hlt");
     }
 }

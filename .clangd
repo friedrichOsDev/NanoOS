@@ -1,6 +1,7 @@
 CompileFlags:
   Compiler: /opt/cross/bin/x86_64-elf-gcc
   Add:
+    - "--target=x86_64-elf"
     - "-x"
     - "c"
     - "-ffreestanding"

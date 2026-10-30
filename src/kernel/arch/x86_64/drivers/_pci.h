@@ -1,7 +1,7 @@
 #pragma once
 
-#include <pch.h>
 #include <drivers/pci.h>
+#include <pch.h>
 
 /** @brief PCI-Geräteklasse: Unklassifiziert */
 #define PCI_CLASS_UNCLASSIFIED 0x00
@@ -115,4 +115,3 @@ void pci_write8(pci_device_t *dev, uint16_t offset, uint8_t val);
  * @return true bei erfolgreicher Konfiguration, sonst false.
  */
 bool pci_enable_msi(pci_device_t *dev, uint8_t vector, uint8_t lapic_id);
-

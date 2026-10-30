@@ -1,16 +1,15 @@
-#include <lib/log.h>
 #include <arch/arch.h>
+#include <lib/log.h>
 
 void k_log(log_level_t level, const char *format, ...) {
     const char *prefixes[] = {
         [LOG_LEVEL_TRACE] = "TRACE: ",
-        [LOG_LEVEL_INFO]  = "INFO: ",
-        [LOG_LEVEL_WARN]  = "WARN: ",
+        [LOG_LEVEL_INFO] = "INFO: ",
+        [LOG_LEVEL_WARN] = "WARN: ",
         [LOG_LEVEL_ERROR] = "ERROR: ",
         [LOG_LEVEL_PANIC] = "PANIC: ",
         [LOG_LEVEL_DEBUG] = "DEBUG: ",
-        [LOG_LEVEL_ASSERT] = "ASSERT: "
-    };
+        [LOG_LEVEL_ASSERT] = "ASSERT: "};
 
     va_list args;
     va_start(args, format);

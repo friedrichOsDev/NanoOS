@@ -4,13 +4,13 @@
  * @author friedrichOsDev
  */
 
+#include "../acpi/acpi.h"
 #include "_pci.h"
 #include <arch/arch.h>
-#include <kernel/sync.h>
 #include <drivers/pci.h>
+#include <kernel/sync.h>
 #include <lib/util/str.h>
 #include <mm/memory.h>
-#include "../acpi/acpi.h"
 
 static pci_device_t *device_list_head = NULL;
 static pci_driver_t *driver_list_head = NULL;
@@ -192,7 +192,7 @@ static void pci_probe_device(uint8_t bus, uint8_t dev, uint8_t func) {
     pci_parse_bars(device);
     pci_parse_capabilities(device);
 
-    uint64_t flags = spinlock_acquire_irqsave(&pci_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&pci_lock);
     device->next = device_list_head;
     device_list_head = device;
     spinlock_release_irqrestore(&pci_lock, flags);
@@ -240,7 +240,7 @@ pci_device_t *pci_get_devices() {
  * @param driver Zeiger auf den abzugleichenden Treiber.
  */
 static void pci_match_driver(pci_driver_t *driver) {
-    uint64_t flags = spinlock_acquire_irqsave(&pci_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&pci_lock);
     pci_device_t *dev = device_list_head;
     while (dev) {
         bool match = true;
@@ -268,7 +268,7 @@ void pci_register_driver(pci_driver_t *driver) {
     if (!driver)
         return;
 
-    uint64_t flags = spinlock_acquire_irqsave(&pci_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&pci_lock);
     driver->next = driver_list_head;
     driver_list_head = driver;
     spinlock_release_irqrestore(&pci_lock, flags);

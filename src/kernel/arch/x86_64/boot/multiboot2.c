@@ -2,8 +2,7 @@
 #include "../mm/mem_def.h"
 #include "_multiboot2.h"
 #include <arch/arch.h>
-#include <boot/multiboot2.h>
-#include <core/init.h>
+#include <arch/multiboot2.h>
 #include <kernel/panic.h>
 #include <lib/util/mem.h>
 #include <lib/util/str.h>

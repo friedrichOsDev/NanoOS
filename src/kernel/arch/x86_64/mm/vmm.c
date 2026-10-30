@@ -7,7 +7,7 @@
 #include "mem_def.h"
 #include "pmm.h"
 #include <arch/arch.h>
-#include <boot/multiboot2.h>
+#include <arch/multiboot2.h>
 #include <kernel/panic.h>
 #include <kernel/sync.h>
 #include <lib/util/mem.h>
@@ -135,9 +135,11 @@ void vmm_init() {
     memset(k_pml4, 0, PAGE_SIZE);
 
     uint64_t max_phys_ram = pmm_get_total_pages() * PAGE_SIZE;
-    serial_printf("VMM: create direct mapping for %lld MiB of physical RAM\n", max_phys_ram / 1024 / 1024);
-    for (uint64_t phys = 0; phys < max_phys_ram; phys += PAGE_SIZE) {
-        vmm_map_page(vmm_kernel_space(), P2V(phys), phys, PTE_WRITABLE);
+    uint64_t aligned_ram = (max_phys_ram + (uint64_t)HUGE_PAGE_SIZE - 1) & ~((uint64_t)HUGE_PAGE_SIZE - 1);
+
+    serial_printf("VMM: create direct mapping for %lld MiB of physical RAM (via 2 MiB Huge Pages)\n", aligned_ram / 1024 / 1024);
+    for (uint64_t phys = 0; phys < aligned_ram; phys += HUGE_PAGE_SIZE) {
+        vmm_map_page(vmm_kernel_space(), P2V(phys), phys, PTE_WRITABLE | PTE_HUGE);
     }
 
     serial_printf("VMM: map kernel + bitmap\n");
@@ -148,9 +150,10 @@ void vmm_init() {
         vmm_map_page(vmm_kernel_space(), KERNEL_CORE_START + kernel_phys_start + offset, kernel_phys_start + offset, PTE_WRITABLE);
     }
 
-    // 16 MiB Identity-Mapping für frühe Bootphase/Hardware
-    for (uint64_t addr = 0; addr < 0x1000000; addr += PAGE_SIZE) {
-        vmm_map_page(vmm_kernel_space(), addr, addr, PTE_WRITABLE);
+    // 16 MiB Identity-Mapping für frühe Bootphase/Hardware (perfekt mit 2 MiB Huge Pages)
+    serial_printf("VMM: map 16 MiB identity mapping via 2 MiB Huge Pages\n");
+    for (uint64_t addr = 0; addr < 0x1000000; addr += HUGE_PAGE_SIZE) {
+        vmm_map_page(vmm_kernel_space(), addr, addr, PTE_WRITABLE | PTE_HUGE);
     }
 
     vmm_space_activate(&kernel_space);
@@ -173,7 +176,6 @@ void vmm_init() {
         uint64_t huge_page_size = 0x200000; // 2 MiB
         uint64_t fb_size_aligned = (raw_size + huge_page_size - 1) & ~(huge_page_size - 1);
 
-        // Virtuelle Adresse im MMIO-Bereich reservieren (oder direkt zuweisen)
         virt_addr_t fb_vaddr = next_free_mmio_vaddr;
         next_free_mmio_vaddr += fb_size_aligned;
 
@@ -181,7 +183,6 @@ void vmm_init() {
             phys_addr_t paddr = kernel_fb_info.fb_addr + offset;
             virt_addr_t vaddr = fb_vaddr + offset;
 
-            // Flags for MMIO + PTE_HUGE
             uint64_t huge_flags = PTE_WRITABLE | PTE_PCD | PTE_PWT | PTE_HUGE;
 
             vmm_map_page(vmm_kernel_space(), vaddr, paddr, huge_flags);
@@ -201,7 +202,7 @@ virt_addr_t vmm_map_mmio(vmm_space_t *sp, phys_addr_t paddr, size_t size) {
     uint64_t offset = paddr - phys_start;
     size_t aligned_size = PAGE_ALIGN_UP(size + offset);
 
-    uint64_t flags = spinlock_acquire_irqsave(&(sp->lock));
+    irq_flags_t flags = spinlock_acquire_irqsave(&(sp->lock));
     if (next_free_mmio_vaddr + aligned_size > MMIO_REGION_END) {
         spinlock_release_irqrestore(&(sp->lock), flags);
         panic();
@@ -228,7 +229,7 @@ void vmm_map_page(vmm_space_t *sp, virt_addr_t vaddr, phys_addr_t paddr, uint64_
     else if (!IS_PAGE_ALIGNED(paddr))
         panic();
 
-    uint64_t lock_flags = spinlock_acquire_irqsave(&(sp->lock));
+    irq_flags_t lock_flags = spinlock_acquire_irqsave(&(sp->lock));
 
     size_t pml4_idx = VMM_PML4_INDEX(vaddr);
     size_t pdpt_idx = VMM_PDPT_INDEX(vaddr);
@@ -256,7 +257,7 @@ void vmm_map_page(vmm_space_t *sp, virt_addr_t vaddr, phys_addr_t paddr, uint64_
             panic();
         }
         pd->entries[pd_idx] = (paddr & HUGE_PAGE_MASK) | PTE_PRESENT | PTE_HUGE | flags;
-    } 
+    }
     // Case 2: Standard 4 KiB Page
     else {
         page_table_t *pt = vmm_get_next_table(pd, pd_idx, table_flags);
@@ -289,7 +290,7 @@ void vmm_unmap_page(vmm_space_t *sp, virt_addr_t vaddr) {
     if (!IS_PAGE_ALIGNED(vaddr))
         panic();
 
-    uint64_t lock_flags = spinlock_acquire_irqsave(&(sp->lock));
+    irq_flags_t lock_flags = spinlock_acquire_irqsave(&(sp->lock));
 
     size_t pml4_idx = VMM_PML4_INDEX(vaddr);
     size_t pdpt_idx = VMM_PDPT_INDEX(vaddr);
@@ -438,7 +439,7 @@ void vmm_space_destroy(vmm_space_t *sp) {
                 }
 
                 if (pd->entries[k] & PTE_HUGE) {
-                    continue; 
+                    continue;
                 }
 
                 phys_addr_t pt_phys = PTE_GET_ADDR(pd->entries[k]);

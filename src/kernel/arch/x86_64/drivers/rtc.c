@@ -23,7 +23,7 @@ static spinlock_t cmos_lock = SPINLOCK_INIT;
  * @return Wert aus dem CMOS-Register.
  */
 static uint8_t cmos_read(uint8_t reg) {
-    uint64_t flags = spinlock_acquire_irqsave(&cmos_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&cmos_lock);
     uint8_t nmi_bit = inb(CMOS_ADDR) & 0x80;
     outb(CMOS_ADDR, reg | nmi_bit);
     uint8_t val = inb(CMOS_DATA);

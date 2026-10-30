@@ -6,12 +6,12 @@
 
 #include <arch/arch.h>
 
-#include <core/scheduler.h>
-#include <core/thread.h>
 #include <kernel/panic.h>
 #include <lib/util/str.h>
 #include <mm/memory.h>
 #include <pch.h>
+#include <sched/sched.h>
+#include <sched/thread.h>
 
 /** @brief Globaler Zähler für die Vergabe eindeutiger Thread-IDs (TID). */
 static uint64_t next_tid = 1;
@@ -35,7 +35,7 @@ thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
     if (!thread)
         return NULL;
 
-    uint64_t flags = spinlock_acquire_irqsave(&tid_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&tid_lock);
     thread->tid = next_tid++;
     spinlock_release_irqrestore(&tid_lock, flags);
 
@@ -45,7 +45,7 @@ thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
         strncpy(thread->name, "unnamed", sizeof(thread->name) - 1);
     }
 
-    thread->process = proc ? proc : kernel_process;
+    thread->process = proc ? proc : proc_get_kernel_proc();
     thread->state = THREAD_EMBRYO;
     thread->time_slice = DEFAULT_TIME_SLICE;
     thread->cpu_affinity = cpu_affinity;
@@ -79,13 +79,13 @@ thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
     }
     thread->state = THREAD_READY;
 
-    uint64_t proc_flags = spinlock_acquire_irqsave(&thread->process->lock);
+    irq_flags_t proc_flags = spinlock_acquire_irqsave(&thread->process->lock);
     thread->proc_next = thread->process->threads;
     thread->process->threads = thread;
     thread->process->thread_count++;
     spinlock_release_irqrestore(&thread->process->lock, proc_flags);
 
-    scheduler_add_thread(thread);
+    sched_add_thread(thread);
 
     serial_printf("Thread: Created new thread, Proc: %s, Core: %d, Name: %s\n", thread->process->name, cpu_affinity, name);
 
@@ -95,5 +95,3 @@ thread_t *thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg,
 thread_t *thread_create(process_t *proc, thread_entry_t entry, void *arg, const char *name) {
     return thread_create_on_cpu(proc, entry, arg, name, -1);
 }
-
-void thread_exit() { scheduler_thread_exit(); }

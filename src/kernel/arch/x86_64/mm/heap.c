@@ -10,6 +10,7 @@
 #include <kernel/sync.h>
 #include <lib/util/mem.h>
 #include <mm/memory.h>
+#include <core/taskmgr.h>
 
 /** @brief Zeiger auf den ersten Block der doppelt verketteten Heap-Liste. */
 static heap_node_t *heap_list_head = NULL;
@@ -100,7 +101,7 @@ virt_addr_t kmalloc(size_t size) {
     if (size == 0)
         return 0;
 
-    uint64_t flags = spinlock_acquire_irqsave(&heap_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&heap_lock);
 
     size = (size + 15U) & ~15U; /* 16-Byte-Ausrichtung */
     size_t total_required_size = size + HEAP_HEADER_SIZE;
@@ -170,7 +171,7 @@ void kfree(virt_addr_t addr) {
     if (!addr)
         return;
 
-    uint64_t flags = spinlock_acquire_irqsave(&heap_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&heap_lock);
 
     heap_node_t *block = (heap_node_t *)(addr - HEAP_HEADER_SIZE);
 
@@ -208,7 +209,7 @@ void kfree(virt_addr_t addr) {
 }
 
 void heap_dump() {
-    uint64_t flags = spinlock_acquire_irqsave(&heap_lock);
+    irq_flags_t flags = spinlock_acquire_irqsave(&heap_lock);
 
     serial_printf("\n====================================== HEAP MANAGER =======================================\n");
     serial_printf("%-18s %-8s %-12s %-12s %-18s %-18s\n", "HEADER ADDR", "STATUS", "BLOCK SIZE", "PAYLOAD SZ", "PREV BLOCK", "NEXT BLOCK");

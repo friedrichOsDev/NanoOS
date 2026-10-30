@@ -25,5 +25,4 @@
  * @param size Benötigte Mindestgröße für die Erweiterung in Bytes.
  * @return Zeiger auf den neuen bzw. erweiterten freien Heap-Block (`heap_node_t*`).
  */
-heap_node_t *
-heap_extend(size_t size);
+heap_node_t *heap_extend(size_t size);

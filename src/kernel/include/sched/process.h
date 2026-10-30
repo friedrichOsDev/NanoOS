@@ -31,27 +31,8 @@ typedef struct process {
     struct process *next; /**< Zeiger auf den nächsten Prozess in der globalen Prozessliste */
 } process_t;
 
-/** @brief Globaler Zeiger auf den Kernel-Prozess. */
-extern process_t *kernel_process;
-
-/** @brief Globaler Zeiger auf den Anfang der Prozessliste. */
-extern process_t *proc_list;
-
-/**
- * @brief Initialisiert das Prozess-Subsystem und erstellt den initialen Kernel-Prozess.
- */
-void process_init();
-
-/**
- * @brief Erstellt einen neuen Prozess mit einem angegebenen Namen und einer Seitentabelle.
- * @param name Der Name des neuen Prozesses.
- * @param pml4 Zeiger auf die virtuelle Adresse der PML4-Seitentabelle.
- * @return Zeiger auf die neu erstellte `process_t`-Struktur oder NULL bei Speicherallokationsfehlern.
- */
-process_t *process_create(const char *name, vmm_space_t *sp);
-
-/**
- * @brief Registriert einen bereits erstellten Prozess in der globalen Prozessliste.
- * @param proc Zeiger auf den zu registrierenden Prozess.
- */
-void process_register(process_t *proc);
+void proc_init();
+process_t *proc_create(const char *name, vmm_space_t *sp);
+void proc_register(process_t *proc);
+process_t *proc_get_kernel_proc();
+process_t *proc_get_list();

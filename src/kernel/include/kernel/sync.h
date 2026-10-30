@@ -24,7 +24,7 @@ typedef struct {
  */
 typedef struct {
     spinlock_t lock;           /**< Interner Spinlock zum Schutz der Mutex-Struktur. */
-    struct thread *owner;           /**< Referenz auf den Thread, der den Mutex besitzt. */
+    struct thread *owner;      /**< Referenz auf den Thread, der den Mutex besitzt. */
     volatile bool locked;      /**< Sperr-Status des Mutex (true = belegt). */
     struct thread *wait_queue; /**< Zeiger auf die Liste der wartenden Threads. */
     const char *name;          /**< Name des Mutex für Debugging-Zwecke. */

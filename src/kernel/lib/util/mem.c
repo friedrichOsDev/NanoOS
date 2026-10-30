@@ -1,6 +1,5 @@
-#include <pch.h>
 #include <lib/util/mem.h>
-
+#include <pch.h>
 
 void *memset(void *dest, uint8_t value, size_t count) {
     uint64_t val64 = value;
@@ -124,4 +123,3 @@ void *memmove(void *dest, const void *src, size_t count) {
     }
     return dest;
 }
-
