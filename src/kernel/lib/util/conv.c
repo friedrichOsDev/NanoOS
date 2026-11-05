@@ -1,6 +1,6 @@
 /**
- * @file convert.c
- * @brief Konvertierungsfunktionen
+ * @file conv.c
+ * @brief Conversion functions implementation.
  * @author friedrichOsDev
  */
 
@@ -8,13 +8,13 @@
 #include <pch.h>
 
 /**
- * @brief Interne Hilfsfunktion zur Umwandlung einer Zahl in einen String.
+ * @brief Internal helper function to convert an integer to a string or wide string.
  *
- * @param buffer Zielpuffer (entweder `char*` oder `uint32_t*`).
- * @param value Der zu konvertierende Wert.
- * @param base Basis des Zahlensystems.
- * @param is_wide `true` für 32-Bit-Zeichen (uint32_t*), `false` für ASCII (char*).
- * @return Länge des erzeugten Strings.
+ * @param[out] buffer Target buffer (either `char*` or `uint32_t*`).
+ * @param[in] value The numeric value to convert.
+ * @param[in] base Base of the number system.
+ * @param[in] is_wide `true` for 32-bit wide characters (`uint32_t*`), `false` for ASCII (`char*`).
+ * @return Length of the generated string.
  */
 static int uint_to_str_internal(void *buffer, uint64_t value, unsigned int base, bool is_wide) {
     char temp_buf[66];
@@ -56,14 +56,38 @@ static int uint_to_str_internal(void *buffer, uint64_t value, unsigned int base,
     return len;
 }
 
+/**
+ * @brief Converts an unsigned 64-bit integer to a wide string (UTF-32).
+ *
+ * @param[in] value The numeric value to convert.
+ * @param[out] buffer Pointer to the destination wide character buffer (`uint32_t*`).
+ * @param[in] base Base of the number system.
+ * @return Length of the generated wide string.
+ */
 int uint_to_str(uint64_t value, uint32_t *buffer, unsigned int base) {
     return uint_to_str_internal(buffer, value, base, true);
 }
 
+/**
+ * @brief Converts an unsigned 64-bit integer to an ASCII string (`char*`).
+ *
+ * @param[in] value The numeric value to convert.
+ * @param[out] buffer Pointer to the destination string buffer (`char*`).
+ * @param[in] base Base of the number system.
+ * @return Length of the generated string.
+ */
 int uint_to_wstr(uint64_t value, char *buffer, unsigned int base) {
     return uint_to_str_internal(buffer, value, base, false);
 }
 
+/**
+ * @brief Converts a double-precision floating-point number to an ASCII string.
+ *
+ * @param[in] value The floating-point value to convert.
+ * @param[out] buf Pointer to the destination buffer.
+ * @param[in] prec Number of decimal places of precision.
+ * @return Length of the generated string.
+ */
 int double_to_str(double value, char *buf, int prec) {
     if (prec < 0)
         prec = 6;
@@ -142,6 +166,14 @@ int double_to_str(double value, char *buf, int prec) {
     return idx;
 }
 
+/**
+ * @brief Converts a double-precision floating-point number to a wide string (UTF-32).
+ *
+ * @param[in] value The floating-point value to convert.
+ * @param[out] buf Pointer to the destination wide character buffer.
+ * @param[in] prec Number of decimal places of precision.
+ * @return Length of the generated wide string.
+ */
 int double_to_wstr(double value, uint32_t *buf, int prec) {
     char cbuf[64];
     int len = double_to_str(value, cbuf, prec);

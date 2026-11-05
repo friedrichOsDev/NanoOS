@@ -1,6 +1,20 @@
+/**
+ * @file mem.c
+ * @brief Memory manipulation functions implementation.
+ * @author friedrichOsDev
+ */
+
 #include <lib/util/mem.h>
 #include <pch.h>
 
+/**
+ * @brief Fills a block of memory with a specific byte value.
+ *
+ * @param[out] dest Pointer to the memory area to fill.
+ * @param[in] value Byte value to set.
+ * @param[in] count Number of bytes to set.
+ * @return Pointer to the destination memory area.
+ */
 void *memset(void *dest, uint8_t value, size_t count) {
     uint64_t val64 = value;
     val64 |= (val64 << 8);
@@ -26,6 +40,14 @@ void *memset(void *dest, uint8_t value, size_t count) {
     return dest;
 }
 
+/**
+ * @brief Copies a block of memory from source to destination.
+ *
+ * @param[out] dest Pointer to the destination memory area.
+ * @param[in] src Pointer to the source memory area.
+ * @param[in] count Number of bytes to copy.
+ * @return Pointer to the destination memory area.
+ */
 void *memcpy(void *dest, const void *src, size_t count) {
     uint8_t *d = dest;
     const uint8_t *s = src;
@@ -47,6 +69,13 @@ void *memcpy(void *dest, const void *src, size_t count) {
     return dest;
 }
 
+/**
+ * @brief Fills a block of memory with 32-bit dwords.
+ *
+ * @param[out] dest Pointer to the memory area to fill.
+ * @param[in] value 32-bit value to set.
+ * @param[in] count Number of 32-bit dwords to set.
+ */
 void memset32(void *dest, uint32_t value, size_t count) {
     ASM_CODE("cld; rep stosl"
              : "+D"(dest), "+c"(count)
@@ -54,6 +83,13 @@ void memset32(void *dest, uint32_t value, size_t count) {
              : "memory");
 }
 
+/**
+ * @brief Fills a block of memory with 64-bit qwords.
+ *
+ * @param[out] dest Pointer to the memory area to fill.
+ * @param[in] value 64-bit value to set.
+ * @param[in] count Number of 64-bit qwords to set.
+ */
 void memset64(void *dest, uint64_t value, size_t count) {
     ASM_CODE("cld; rep stosq"
              : "+D"(dest), "+c"(count)
@@ -61,6 +97,14 @@ void memset64(void *dest, uint64_t value, size_t count) {
              : "memory");
 }
 
+/**
+ * @brief Compares two blocks of memory.
+ *
+ * @param[in] ptr1 Pointer to the first memory block.
+ * @param[in] ptr2 Pointer to the second memory block.
+ * @param[in] count Number of bytes to compare.
+ * @return Returns 0 if equal, < 0 if ptr1 < ptr2, > 0 if ptr1 > ptr2.
+ */
 int memcmp(const void *ptr1, const void *ptr2, size_t count) {
     const uint64_t *p1_64 = ptr1;
     const uint64_t *p2_64 = ptr2;
@@ -89,6 +133,14 @@ int memcmp(const void *ptr1, const void *ptr2, size_t count) {
     return 0;
 }
 
+/**
+ * @brief Copies a block of memory, handling overlapping regions safely.
+ *
+ * @param[out] dest Pointer to the destination memory area.
+ * @param[in] src Pointer to the source memory area.
+ * @param[in] count Number of bytes to copy.
+ * @return Pointer to the destination memory area.
+ */
 void *memmove(void *dest, const void *src, size_t count) {
     uint8_t *d = dest;
     const uint8_t *s = src;

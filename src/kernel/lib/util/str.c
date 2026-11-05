@@ -1,12 +1,18 @@
 /**
- * @file string.c
- * @brief String- und Speicherfunktionen
+ * @file str.c
+ * @brief String manipulation functions implementation.
  * @author friedrichOsDev
  */
 
 #include <lib/util/mem.h>
 #include <lib/util/str.h>
 
+/**
+ * @brief Calculates the length of a null-terminated ASCII string.
+ *
+ * @param[in] str Pointer to the null-terminated string.
+ * @return Length of the string in bytes (excluding null-terminator).
+ */
 size_t strlen(const char *str) {
     const char *char_ptr = str;
     const uint64_t *longword_ptr;
@@ -45,6 +51,13 @@ size_t strlen(const char *str) {
     }
 }
 
+/**
+ * @brief Copies a null-terminated ASCII string to a destination buffer.
+ *
+ * @param[out] dest Pointer to the destination buffer.
+ * @param[in] src Pointer to the source string.
+ * @return Pointer to the destination buffer.
+ */
 char *strcpy(char *dest, const char *src) {
     char *d = dest;
     while ((*d++ = *src++))
@@ -52,6 +65,13 @@ char *strcpy(char *dest, const char *src) {
     return dest;
 }
 
+/**
+ * @brief Compares two null-terminated ASCII strings.
+ *
+ * @param[in] s1 Pointer to the first string.
+ * @param[in] s2 Pointer to the second string.
+ * @return Returns 0 if equal, < 0 if s1 < s2, > 0 if s1 > s2.
+ */
 int strcmp(const char *s1, const char *s2) {
     while (((uintptr_t)s1 & 7) != 0 || ((uintptr_t)s2 & 7) != 0) {
         if (*s1 != *s2)
@@ -83,6 +103,14 @@ int strcmp(const char *s1, const char *s2) {
     return *(const unsigned char *)s1 - *(const unsigned char *)s2;
 }
 
+/**
+ * @brief Compares up to n characters of two ASCII strings.
+ *
+ * @param[in] s1 Pointer to the first string.
+ * @param[in] s2 Pointer to the second string.
+ * @param[in] n Maximum number of characters to compare.
+ * @return Returns 0 if equal, < 0 if s1 < s2, > 0 if s1 > s2.
+ */
 int strncmp(const char *s1, const char *s2, size_t n) {
     while (n && *s1 && (*s1 == *s2)) {
         s1++;
@@ -94,6 +122,14 @@ int strncmp(const char *s1, const char *s2, size_t n) {
     return *(const unsigned char *)s1 - *(const unsigned char *)s2;
 }
 
+/**
+ * @brief Copies up to n characters of an ASCII string to a destination buffer.
+ *
+ * @param[out] dest Pointer to the destination buffer.
+ * @param[in] src Pointer to the source string.
+ * @param[in] n Maximum number of characters to copy.
+ * @return Pointer to the destination buffer.
+ */
 char *strncpy(char *dest, const char *src, size_t n) {
     size_t i;
     for (i = 0; i < n && src[i] != '\0'; i++)
@@ -103,11 +139,24 @@ char *strncpy(char *dest, const char *src, size_t n) {
     return dest;
 }
 
+/**
+ * @brief Appends a source ASCII string to the end of a destination string.
+ *
+ * @param[out] dest Pointer to the destination string buffer.
+ * @param[in] src Pointer to the source string to append.
+ * @return Pointer to the destination buffer.
+ */
 char *strcat(char *dest, const char *src) {
     strcpy(dest + strlen(dest), src);
     return dest;
 }
 
+/**
+ * @brief Calculates the length of a null-terminated UTF-32 wide string.
+ *
+ * @param[in] str Pointer to the wide string.
+ * @return Length of the wide string in characters.
+ */
 size_t u32_strlen(const uint32_t *str) {
     const uint32_t *s = str;
     while (((uintptr_t)s & 7) != 0) {
@@ -126,6 +175,13 @@ size_t u32_strlen(const uint32_t *str) {
     }
 }
 
+/**
+ * @brief Copies a null-terminated UTF-32 wide string.
+ *
+ * @param[out] dest Pointer to the destination wide string buffer.
+ * @param[in] src Pointer to the source wide string.
+ * @return Pointer to the destination buffer.
+ */
 uint32_t *u32_strcpy(uint32_t *dest, const uint32_t *src) {
     uint32_t *d = dest;
     while ((*d++ = *src++))
@@ -133,6 +189,13 @@ uint32_t *u32_strcpy(uint32_t *dest, const uint32_t *src) {
     return dest;
 }
 
+/**
+ * @brief Compares two null-terminated UTF-32 wide strings.
+ *
+ * @param[in] s1 Pointer to the first wide string.
+ * @param[in] s2 Pointer to the second wide string.
+ * @return Returns 0 if equal, < 0 if s1 < s2, > 0 if s1 > s2.
+ */
 int u32_strcmp(const uint32_t *s1, const uint32_t *s2) {
     while (*s1 && (*s1 == *s2)) {
         s1++;
@@ -141,6 +204,14 @@ int u32_strcmp(const uint32_t *s1, const uint32_t *s2) {
     return (*s1 < *s2) ? -1 : (*s1 > *s2);
 }
 
+/**
+ * @brief Compares up to n characters of two UTF-32 wide strings.
+ *
+ * @param[in] s1 Pointer to the first wide string.
+ * @param[in] s2 Pointer to the second wide string.
+ * @param[in] n Maximum number of wide characters to compare.
+ * @return Returns 0 if equal, < 0 if s1 < s2, > 0 if s1 > s2.
+ */
 int u32_strncmp(const uint32_t *s1, const uint32_t *s2, size_t n) {
     while (n && *s1 && (*s1 == *s2)) {
         s1++;
@@ -152,6 +223,14 @@ int u32_strncmp(const uint32_t *s1, const uint32_t *s2, size_t n) {
     return (*s1 < *s2) ? -1 : (*s1 > *s2);
 }
 
+/**
+ * @brief Copies up to n characters of a UTF-32 wide string.
+ *
+ * @param[out] dest Pointer to the destination wide string buffer.
+ * @param[in] src Pointer to the source wide string.
+ * @param[in] n Maximum number of wide characters to copy.
+ * @return Pointer to the destination buffer.
+ */
 uint32_t *u32_strncpy(uint32_t *dest, const uint32_t *src, size_t n) {
     size_t i;
     for (i = 0; i < n && src[i] != U'\0'; i++)
@@ -161,6 +240,13 @@ uint32_t *u32_strncpy(uint32_t *dest, const uint32_t *src, size_t n) {
     return dest;
 }
 
+/**
+ * @brief Appends a source UTF-32 wide string to the end of a destination wide string.
+ *
+ * @param[out] dest Pointer to the destination wide string buffer.
+ * @param[in] src Pointer to the source wide string to append.
+ * @return Pointer to the destination buffer.
+ */
 uint32_t *u32_strcat(uint32_t *dest, const uint32_t *src) {
     u32_strcpy(dest + u32_strlen(dest), src);
     return dest;
