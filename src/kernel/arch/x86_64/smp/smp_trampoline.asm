@@ -112,10 +112,11 @@ ap_long_mode_entry:
         mov rax, [rel smp_trampoline_stack]
         mov rsp, rax
 
-        and rsp, -16                   ; Guarantee 16-byte stack alignment
+        and rsp, -16                   ; 16-Byte-Ausrichtung sicherstellen
+        sub rsp, 8                     ; 8 Bytes abziehen (simuliert fehlende Rücksprungadresse eines 'call')
 
         mov rax, [rel smp_trampoline_entry]
-        jmp rax                        ; Jump to C kernel logic for APs
+        jmp rax                        ; Sprung in die C-Funktion smp_ap_main
 
 ; ==============================================================================
 ; Data Structures & Buffers
