@@ -1,5 +1,5 @@
 /**
- * @file smp_trampoline.h
+ * @file smp_sym.h
  * @brief Symbol definitions for smp_trampoline.asm.
  * @author friedrichOsDev
  */
