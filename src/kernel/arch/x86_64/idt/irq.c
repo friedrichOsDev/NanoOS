@@ -28,7 +28,7 @@ void irq_init() {
 
 /**
  * @brief Saves the current interrupt flag state and disables hardware interrupts.
- * 
+ *
  * @return The saved RFLAGS register state prior to disabling interrupts.
  */
 irq_flags_t arch_irq_save() {
@@ -44,7 +44,7 @@ irq_flags_t arch_irq_save() {
 
 /**
  * @brief Restores the CPU interrupt flag state from a previously saved RFLAGS value.
- * 
+ *
  * @param[in] rflags The RFLAGS state to restore.
  */
 void arch_irq_restore(irq_flags_t rflags) {

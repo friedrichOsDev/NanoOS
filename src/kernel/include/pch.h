@@ -12,8 +12,8 @@
 #include <lib/math.h>
 
 // OWN KERNEL HEADERS
+#include <kernel/error.h>
 #include <kernel/sys_def.h>
 #include <kernel/sys_sym.h>
 #include <kernel/types.h>
-#include <kernel/error.h>
 #include <lib/log.h>

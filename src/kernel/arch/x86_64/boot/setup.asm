@@ -1,8 +1,8 @@
 ; ==============================================================================
 ; @file setup.asm
 ; @brief 32-bit entry point (bootloader to long mode transition).
-; @details Saves multiboot parameters, checks CPUID/long mode support, builds 
-;          initial page tables, enables paging & long mode, and initializes FPU/SSE.
+; @details Saves multiboot parameters, checks CPUID/long mode support, builds
+; initial page tables, enables paging & long mode, and initializes FPU/SSE.
 ; @author friedrichOsDev
 ; ==============================================================================
 

@@ -18,7 +18,7 @@ static spinlock_t pci_lock = SPINLOCK_INIT;
 
 /**
  * @brief Computes the virtual ECAM memory address for a given PCI device configuration space offset.
- * 
+ *
  * @param[in] bus PCI bus number.
  * @param[in] dev PCI device number.
  * @param[in] func PCI function number.
@@ -39,7 +39,7 @@ static virt_addr_t pci_get_ecam_addr(uint8_t bus, uint8_t dev, uint8_t func, uin
 
 /**
  * @brief Reads an 8-bit value from a PCI device's configuration space.
- * 
+ *
  * @param[in] dev Pointer to the target PCI device structure.
  * @param[in] offset Register offset in configuration space.
  * @return 8-bit value read from the register, or 0xFF on failure.
@@ -52,7 +52,7 @@ uint8_t pci_read8(pci_device_t *dev, uint16_t offset) {
 
 /**
  * @brief Reads a 16-bit value from a PCI device's configuration space.
- * 
+ *
  * @param[in] dev Pointer to the target PCI device structure.
  * @param[in] offset Register offset in configuration space.
  * @return 16-bit value read from the register, or 0xFFFF on failure.
@@ -65,7 +65,7 @@ uint16_t pci_read16(pci_device_t *dev, uint16_t offset) {
 
 /**
  * @brief Reads a 32-bit value from a PCI device's configuration space.
- * 
+ *
  * @param[in] dev Pointer to the target PCI device structure.
  * @param[in] offset Register offset in configuration space.
  * @return 32-bit value read from the register, or 0xFFFFFFFF on failure.
@@ -78,7 +78,7 @@ uint32_t pci_read32(pci_device_t *dev, uint16_t offset) {
 
 /**
  * @brief Writes an 8-bit value to a PCI device's configuration space.
- * 
+ *
  * @param[in] dev Pointer to the target PCI device structure.
  * @param[in] offset Register offset in configuration space.
  * @param[in] val 8-bit value to write.
@@ -91,7 +91,7 @@ void pci_write8(pci_device_t *dev, uint16_t offset, uint8_t val) {
 
 /**
  * @brief Writes a 16-bit value to a PCI device's configuration space.
- * 
+ *
  * @param[in] dev Pointer to the target PCI device structure.
  * @param[in] offset Register offset in configuration space.
  * @param[in] val 16-bit value to write.
@@ -104,7 +104,7 @@ void pci_write16(pci_device_t *dev, uint16_t offset, uint16_t val) {
 
 /**
  * @brief Writes a 32-bit value to a PCI device's configuration space.
- * 
+ *
  * @param[in] dev Pointer to the target PCI device structure.
  * @param[in] offset Register offset in configuration space.
  * @param[in] val 32-bit value to write.
@@ -117,7 +117,7 @@ void pci_write32(pci_device_t *dev, uint16_t offset, uint32_t val) {
 
 /**
  * @brief Parses and configures Base Address Registers (BARs) for a PCI device.
- * 
+ *
  * @param[in,out] dev Pointer to the PCI device structure to populate.
  */
 static void pci_parse_bars(pci_device_t *dev) {
@@ -177,7 +177,7 @@ static void pci_parse_bars(pci_device_t *dev) {
 
 /**
  * @brief Scans and parses capabilities list (such as MSI/MSI-X) for a PCI device.
- * 
+ *
  * @param[in,out] dev Pointer to the PCI device structure to update.
  */
 static void pci_parse_capabilities(pci_device_t *dev) {
@@ -205,7 +205,7 @@ static void pci_parse_capabilities(pci_device_t *dev) {
 
 /**
  * @brief Probes a specific PCI bus, device, and function slot, registering it if present.
- * 
+ *
  * @param[in] bus PCI bus number.
  * @param[in] dev PCI device number.
  * @param[in] func PCI function number.
@@ -254,7 +254,7 @@ static kerr_t pci_probe_device(uint8_t bus, uint8_t dev, uint8_t func) {
 
 /**
  * @brief Initializes the PCI subsystem by iterating over all MCFG entries and probing available devices.
- * 
+ *
  * @return E_OK on success, or an appropriate error code on failure.
  */
 kerr_t pci_init() {
@@ -293,7 +293,7 @@ kerr_t pci_init() {
 
 /**
  * @brief Retrieves the head pointer of the detected PCI device linked list.
- * 
+ *
  * @return Pointer to the first pci_device_t element in the list.
  */
 pci_device_t *pci_get_devices() {
@@ -302,7 +302,7 @@ pci_device_t *pci_get_devices() {
 
 /**
  * @brief Attempts to match a newly registered driver against all discovered PCI devices.
- * 
+ *
  * @param[in] driver Pointer to the PCI driver structure to match.
  * @return E_OK if a device successfully bound, or an error code otherwise.
  */
@@ -338,7 +338,7 @@ static kerr_t pci_match_driver(pci_driver_t *driver) {
 
 /**
  * @brief Registers a new PCI driver and triggers matching against existing devices.
- * 
+ *
  * @param[in] driver Pointer to the PCI driver structure to register.
  * @return E_OK or binding status result code.
  */
@@ -356,7 +356,7 @@ kerr_t pci_register_driver(pci_driver_t *driver) {
 
 /**
  * @brief Enables Message Signaled Interrupts (MSI) for a specified PCI device.
- * 
+ *
  * @param[in,out] dev Pointer to the PCI device.
  * @param[in] vector Interrupt vector number to trigger.
  * @param[in] lapic_id Target Local APIC ID.

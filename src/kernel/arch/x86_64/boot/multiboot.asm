@@ -1,8 +1,8 @@
 ; ==============================================================================
 ; @file multiboot.asm
 ; @brief Multiboot2 header for bootloaders (e.g., GRUB2).
-; @details Defines magic numbers, framebuffer configuration, relocation header, 
-;          and the end tag.
+; @details Defines magic numbers, framebuffer configuration, relocation header,
+; and the end tag.
 ; @author friedrichOsDev
 ; ==============================================================================
 
@@ -11,10 +11,10 @@
         align 8
 
 ; Multiboot2 Constants
-        MULTIBOOT2_MAGIC    equ 0xE85250D6
-        ARCHITECTURE_I386   equ 0
-        HEADER_LENGTH       equ multiboot_header_end - multiboot_header_start
-        CHECKSUM            equ 0x100000000 - (MULTIBOOT2_MAGIC + ARCHITECTURE_I386 + HEADER_LENGTH)
+        MULTIBOOT2_MAGIC equ 0xE85250D6
+        ARCHITECTURE_I386 equ 0
+        HEADER_LENGTH equ multiboot_header_end - multiboot_header_start
+        CHECKSUM equ 0x100000000 - (MULTIBOOT2_MAGIC + ARCHITECTURE_I386 + HEADER_LENGTH)
 
 ; ==============================================================================
 ; Multiboot2 Header Structure

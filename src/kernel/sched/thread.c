@@ -18,7 +18,7 @@ static spinlock_t tid_lock = SPINLOCK_INIT;
 
 /**
  * @brief Creates a new thread assigned to a specific CPU core.
- * 
+ *
  * @param[in] proc Parent process (defaults to kernel process if NULL).
  * @param[in] entry Thread entry point function.
  * @param[in] arg Argument pointer passed to the thread entry function.
@@ -101,7 +101,7 @@ kerr_t thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg, co
 
 /**
  * @brief Creates a new thread with automatic CPU affinity.
- * 
+ *
  * @param[in] proc Parent process (defaults to kernel process if NULL).
  * @param[in] entry Thread entry point function.
  * @param[in] arg Argument pointer passed to the thread entry function.
@@ -115,7 +115,7 @@ kerr_t thread_create(process_t *proc, thread_entry_t entry, void *arg, const cha
 
 /**
  * @brief Destroys a thread, removes it from its parent process, and frees its stack and memory.
- * 
+ *
  * @param[in,out] thread Pointer to the thread to destroy.
  * @return E_OK on success, or an appropriate error code on failure.
  */

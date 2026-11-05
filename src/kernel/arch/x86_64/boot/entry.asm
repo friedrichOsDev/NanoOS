@@ -2,7 +2,7 @@
 ; @file entry.asm
 ; @brief Kernel entry point in 64-bit Long Mode.
 ; @details Clears the BSS section, aligns the stack for the System V AMD64 ABI,
-;          and invokes kernel_init().
+; and invokes kernel_init().
 ; @author friedrichOsDev
 ; ==============================================================================
 
@@ -50,7 +50,7 @@ _entry:
 
 ; 3. Jump to the main kernel initialization function
 ; Signature: void kernel_init(uint64_t magic, uint64_t info_ptr)
-        mov rdi, [rel multiboot_magic]    ; 1st argument (RDI): Multiboot2 magic value
+        mov rdi, [rel multiboot_magic] ; 1st argument (RDI): Multiboot2 magic value
         mov rsi, [rel multiboot_info_ptr] ; 2nd argument (RSI): Multiboot2 info pointer
         call kernel_init
 

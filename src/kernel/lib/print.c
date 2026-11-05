@@ -10,11 +10,11 @@
 
 /**
  * @brief Core internal formatting function for processing and formatting strings.
- * 
- * Handles formatting specifiers like width, precision, padding, length modifiers, 
- * and various data types (integers, floats, strings, pointers) for both 8-bit ASCII 
+ *
+ * Handles formatting specifiers like width, precision, padding, length modifiers,
+ * and various data types (integers, floats, strings, pointers) for both 8-bit ASCII
  * and 32-bit wide character buffers.
- * 
+ *
  * @param[out] dest Pointer to the destination buffer (char* or uint32_t*).
  * @param[in] size Maximum size of the destination buffer in characters.
  * @param[in] format Format string (const char* or const uint32_t*).
@@ -325,7 +325,7 @@ static int print_formatted(void *dest, size_t size, const void *format, va_list 
 
 /**
  * @brief Formats and stores a series of characters in a wide-character buffer (UTF-32).
- * 
+ *
  * @param[out] dest Pointer to the destination wide-character buffer.
  * @param[in] size Maximum number of wide characters to write.
  * @param[in] format Wide format string (UTF-32).
@@ -342,7 +342,7 @@ int usnprintf(uint32_t *dest, const size_t size, const uint32_t *format, ...) {
 
 /**
  * @brief Formats and stores a series of characters in a wide-character buffer using a va_list.
- * 
+ *
  * @param[out] dest Pointer to the destination wide-character buffer.
  * @param[in] size Maximum number of wide characters to write.
  * @param[in] format Wide format string (UTF-32).
@@ -355,7 +355,7 @@ int uvsnprintf(uint32_t *dest, size_t size, const uint32_t *format, va_list args
 
 /**
  * @brief Formats and stores a series of characters in a standard string buffer.
- * 
+ *
  * @param[out] dest Pointer to the destination string buffer.
  * @param[in] size Maximum number of bytes to write.
  * @param[in] format Standard format string.
@@ -372,7 +372,7 @@ int snprintf(char *dest, const size_t size, const char *format, ...) {
 
 /**
  * @brief Formats and stores a series of characters in a standard string buffer using a va_list.
- * 
+ *
  * @param[out] dest Pointer to the destination string buffer.
  * @param[in] size Maximum number of bytes to write.
  * @param[in] format Standard format string.

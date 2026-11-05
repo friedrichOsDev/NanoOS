@@ -13,7 +13,7 @@
 
 /**
  * @brief Converts a thread state enum value to a human-readable string.
- * 
+ *
  * @param[in] state Thread state enum value.
  * @return Static string representing the state name.
  */

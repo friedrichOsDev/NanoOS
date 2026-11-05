@@ -117,7 +117,7 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
         }
         case MULTIBOOT_TAG_TYPE_ACPI_NEW: {
             multiboot_tag_new_acpi_t *new = (multiboot_tag_new_acpi_t *)tag;
-            rsdp_phys_addr = (phys_addr_t)new->rsdp;
+            rsdp_phys_addr = (phys_addr_t) new->rsdp;
             rsdp_t *temp_rsdp = (rsdp_t *)P2V(rsdp_phys_addr);
             size_t rsdp_size = (temp_rsdp->revision >= 2) ? temp_rsdp->length : 20;
             if (rsdp_size > sizeof(rsdp_t))
@@ -169,6 +169,7 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
  * @return phys_addr_t The physical address of the RSDP.
  */
 virt_addr_t get_rsdp_addr() {
-    if (!rsdp_copied) return 0;
+    if (!rsdp_copied)
+        return 0;
     return (virt_addr_t)&rsdp_stable_copy;
 }

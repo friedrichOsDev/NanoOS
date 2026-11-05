@@ -28,7 +28,7 @@ void scheduler_release_initial_lock() { spinlock_release(&sched_lock); }
 
 /**
  * @brief Idle thread routine executed when no other threads are ready.
- * 
+ *
  * @param[in] arg Unused thread argument pointer.
  */
 void idle_task(void *arg) {
@@ -40,7 +40,7 @@ void idle_task(void *arg) {
 
 /**
  * @brief Retrieves the currently executing thread on the local CPU core.
- * 
+ *
  * @return Pointer to current thread, or NULL if none or SMP not ready.
  */
 thread_t *sched_get_current_thread() {
@@ -50,14 +50,14 @@ thread_t *sched_get_current_thread() {
 
 /**
  * @brief Retrieves the system ticks counter since scheduler start.
- * 
+ *
  * @return Current system tick count.
  */
 uint64_t sched_get_ticks() { return system_ticks; }
 
 /**
  * @brief Sets the CPU affinity for a specific thread.
- * 
+ *
  * @param[in,out] thread Pointer to the thread.
  * @param[in] cpu_id Target CPU core ID, or -1 for any core.
  * @return E_OK on success, or an appropriate error code on failure.
@@ -80,7 +80,7 @@ kerr_t thread_set_affinity(thread_t *thread, int cpu_id) {
 
 /**
  * @brief Appends a thread to the ready queue under locked scheduler state.
- * 
+ *
  * @param[in,out] thread Pointer to the thread to enqueue.
  */
 static void scheduler_add_thread_locked(thread_t *thread) {
@@ -110,7 +110,7 @@ static void scheduler_add_thread_locked(thread_t *thread) {
 
 /**
  * @brief Adds a thread to the scheduler's ready queue thread-safely.
- * 
+ *
  * @param[in,out] thread Pointer to the thread to add.
  * @return E_OK on success, or an appropriate error code on failure.
  */
@@ -127,7 +127,7 @@ kerr_t sched_add_thread(thread_t *thread) {
 
 /**
  * @brief Dequeues the next ready thread suitable for execution on the given CPU core.
- * 
+ *
  * @param[in] cpu_id CPU core ID requesting a thread.
  * @return Pointer to next ready thread, or NULL if no eligible thread is ready.
  */
@@ -172,7 +172,7 @@ static void cleanup_dead_threads() {
 
 /**
  * @brief Initializes the scheduler subsystem and creates the BSP's main and idle threads.
- * 
+ *
  * @return E_OK on success, or an appropriate error code on failure.
  */
 kerr_t sched_init() {
@@ -298,7 +298,7 @@ void thread_yield() { sched_schedule(); }
 
 /**
  * @brief Puts the current thread to sleep for the specified duration in milliseconds.
- * 
+ *
  * @param[in] ms Duration in milliseconds to sleep.
  */
 void thread_sleep_ms(uint64_t ms) {

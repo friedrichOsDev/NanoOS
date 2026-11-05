@@ -15,7 +15,7 @@ static uint16_t port;
 
 /**
  * @brief Checks if the serial transmit holding register is empty.
- * 
+ *
  * @return true if the transmission buffer is empty and ready for new data, false otherwise.
  */
 static bool serial_is_transmit_empty() {
@@ -39,7 +39,7 @@ void serial_init() {
 
 /**
  * @brief Writes a single character to the serial port with a timeout safety check.
- * 
+ *
  * @param[in] c Character to transmit.
  * @return E_OK on success, or E_TIMEOUT if the transmit buffer did not clear in time.
  */
@@ -57,7 +57,7 @@ kerr_t serial_putc(char c) {
 
 /**
  * @brief Writes a null-terminated string to the serial port, automatically translating newlines to CRLF.
- * 
+ *
  * @param[in] str Pointer to the null-terminated string.
  * @return E_OK on success, or an appropriate error code on failure.
  */
@@ -85,7 +85,7 @@ kerr_t serial_puts(const char *str) {
 
 /**
  * @brief Formats and prints a string to the serial port using a variable argument list.
- * 
+ *
  * @param[in] format Format string conforming to standard formatting rules.
  * @param[in] args Initialized va_list of arguments.
  */
@@ -101,7 +101,7 @@ void vserial_printf(const char *format, va_list args) {
 
 /**
  * @brief Formats and prints a string to the serial port using variable arguments.
- * 
+ *
  * @param[in] format Format string conforming to standard formatting rules.
  * @param[in] ... Additional arguments corresponding to the format string.
  */

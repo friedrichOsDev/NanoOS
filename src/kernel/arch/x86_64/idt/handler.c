@@ -18,7 +18,7 @@ static spinlock_t exception_print_lock = SPINLOCK_INIT;
 
 /**
  * @brief Installs a custom callback handler for a specific CPU exception / ISR.
- * 
+ *
  * @param[in] isr ISR vector number.
  * @param[in] handler Function pointer to the ISR handler callback.
  */
@@ -32,7 +32,7 @@ void isr_install_handler(int isr, isr_handler_t handler) {
 
 /**
  * @brief Installs a custom callback handler for a specific hardware IRQ line.
- * 
+ *
  * @param[in] irq IRQ index (relative to base vector 32).
  * @param[in] handler Function pointer to the IRQ handler callback.
  */
@@ -46,7 +46,7 @@ void irq_install_handler(int irq, irq_handler_t handler) {
 
 /**
  * @brief Global dispatcher for CPU exceptions and interrupts (ISRs 0–31).
- * 
+ *
  * @param[in] regs Pointer to the saved CPU register state frame.
  */
 void isr_handler(struct registers *regs) {
@@ -83,7 +83,7 @@ void isr_handler(struct registers *regs) {
 
 /**
  * @brief Global dispatcher for external hardware interrupts (IRQs).
- * 
+ *
  * @param[in] regs Pointer to the saved CPU register state frame.
  */
 void irq_handler(struct registers *regs) {
@@ -103,7 +103,7 @@ void irq_handler(struct registers *regs) {
 
 /**
  * @brief Inter-Processor Interrupt (IPI) handler to trigger thread rescheduling.
- * 
+ *
  * @param[in] regs Pointer to the saved CPU register state frame.
  */
 void reschedule_ipi_handler(struct registers *regs) {
@@ -114,7 +114,7 @@ void reschedule_ipi_handler(struct registers *regs) {
 
 /**
  * @brief Inter-Processor Interrupt (IPI) handler to halt a target CPU core.
- * 
+ *
  * @param[in] regs Pointer to the saved CPU register state frame.
  */
 void stop_ipi_handler(struct registers *regs) {
@@ -128,7 +128,7 @@ void stop_ipi_handler(struct registers *regs) {
 
 /**
  * @brief Inter-Processor Interrupt (IPI) handler to invalidate TLB entries across cores.
- * 
+ *
  * @param[in] regs Pointer to the saved CPU register state frame.
  */
 void tlb_shootdown_ipi_handler(struct registers *regs) {
@@ -140,7 +140,7 @@ void tlb_shootdown_ipi_handler(struct registers *regs) {
 
 /**
  * @brief Local APIC timer interrupt handler driving the kernel scheduler tick.
- * 
+ *
  * @param[in] regs Pointer to the saved CPU register state frame.
  */
 void lapic_timer_handler(struct registers *regs) {

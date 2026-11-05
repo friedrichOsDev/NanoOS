@@ -18,7 +18,7 @@ static spinlock_t proc_list_lock = SPINLOCK_INIT;
 
 /**
  * @brief Initializes the process subsystem and creates the initial kernel process.
- * 
+ *
  * @return E_OK on success, or an appropriate error code on failure.
  */
 kerr_t proc_init() {
@@ -29,7 +29,7 @@ kerr_t proc_init() {
 
 /**
  * @brief Creates a new process with the specified name and virtual address space.
- * 
+ *
  * @param[in] name Name of the process.
  * @param[in] sp Pointer to the virtual memory space for the process.
  * @param[out] out Pointer to store the created process structure.
@@ -67,7 +67,7 @@ kerr_t proc_create(const char *name, vmm_space_t *sp, process_t **out) {
 
 /**
  * @brief Destroys a process, cleans up its virtual address space (if not kernel), and frees its memory.
- * 
+ *
  * @param[in,out] proc Pointer to the process to destroy.
  * @return E_OK on success, or an appropriate error code on failure.
  */
@@ -93,7 +93,7 @@ kerr_t proc_destroy(process_t *proc) {
 
 /**
  * @brief Registers a process in the global process list thread-safely.
- * 
+ *
  * @param[in,out] proc Pointer to the process to register.
  */
 void proc_register(process_t *proc) {
@@ -115,7 +115,7 @@ void proc_register(process_t *proc) {
 
 /**
  * @brief Unregisters a process from the global process list thread-safely.
- * 
+ *
  * @param[in,out] proc Pointer to the process to unregister.
  */
 void proc_unregister(process_t *proc) {
@@ -141,7 +141,7 @@ void proc_unregister(process_t *proc) {
 
 /**
  * @brief Retrieves the main kernel process structure.
- * 
+ *
  * @return Pointer to the kernel process.
  */
 process_t *proc_get_kernel_proc() {
@@ -150,7 +150,7 @@ process_t *proc_get_kernel_proc() {
 
 /**
  * @brief Retrieves the head of the global process list.
- * 
+ *
  * @return Pointer to the first process in the list.
  */
 process_t *proc_get_list() {
@@ -159,7 +159,7 @@ process_t *proc_get_list() {
 
 /**
  * @brief Retrieves the spinlock protecting the global process list.
- * 
+ *
  * @return Pointer to the process list spinlock.
  */
 spinlock_t *proc_get_list_lock() {

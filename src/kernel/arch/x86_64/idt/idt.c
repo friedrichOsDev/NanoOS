@@ -48,7 +48,7 @@ void idt_init() {
 
 /**
  * @brief Configures a standard IDT entry.
- * 
+ *
  * @param[in] num IDT entry index.
  * @param[in] base Base memory address.
  * @param[in] selector Selector for the entry.

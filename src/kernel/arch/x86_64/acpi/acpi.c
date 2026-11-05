@@ -232,7 +232,8 @@ static kerr_t acpi_register_table(acpi_sdt_header_t *phys_header) {
 
 /** @brief Check if the ACPI mode is enabled, if not, enable it. */
 static void acpi_enable_acpi_mode() {
-    if (!fadt) return;
+    if (!fadt)
+        return;
 
     uint16_t pm1_cnt = inw((uint16_t)fadt->pm1a_cnt_blk);
     if (pm1_cnt & 1) {

@@ -12,7 +12,7 @@
 
 /**
  * @brief Acquires a spinlock, spinning with a pause hint until it becomes available.
- * 
+ *
  * @param[in,out] lock Pointer to the spinlock to acquire.
  */
 void spinlock_acquire(spinlock_t *lock) {
@@ -26,7 +26,7 @@ void spinlock_acquire(spinlock_t *lock) {
 
 /**
  * @brief Releases a spinlock.
- * 
+ *
  * @param[in,out] lock Pointer to the spinlock to release.
  */
 void spinlock_release(spinlock_t *lock) {
@@ -35,7 +35,7 @@ void spinlock_release(spinlock_t *lock) {
 
 /**
  * @brief Saves the current interrupt flags, disables CPU interrupts, and acquires a spinlock.
- * 
+ *
  * @param[in,out] lock Pointer to the spinlock to acquire.
  * @return Previous CPU interrupt state flags.
  */
@@ -47,7 +47,7 @@ irq_flags_t spinlock_acquire_irqsave(spinlock_t *lock) {
 
 /**
  * @brief Releases a spinlock and restores the previous CPU interrupt state flags.
- * 
+ *
  * @param[in,out] lock Pointer to the spinlock to release.
  * @param[in] rflags Interrupt state flags to restore.
  */
@@ -58,7 +58,7 @@ void spinlock_release_irqrestore(spinlock_t *lock, irq_flags_t rflags) {
 
 /**
  * @brief Acquires a blocking mutex, blocking the current thread and invoking the scheduler if already locked.
- * 
+ *
  * @param[in,out] mux Pointer to the mutex to acquire.
  */
 void mutex_lock(mutex_t *mux) {
@@ -98,7 +98,7 @@ void mutex_lock(mutex_t *mux) {
 
 /**
  * @brief Releases a mutex, waking up the next thread in the wait queue or clearing the lock state.
- * 
+ *
  * @param[in,out] mux Pointer to the mutex to release.
  */
 void mutex_unlock(mutex_t *mux) {
@@ -123,7 +123,7 @@ void mutex_unlock(mutex_t *mux) {
 
 /**
  * @brief Attempts to acquire a mutex without blocking if it is currently locked.
- * 
+ *
  * @param[in,out] mux Pointer to the mutex to try.
  * @return Returns true if successfully acquired, false otherwise.
  */

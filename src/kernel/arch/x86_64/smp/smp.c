@@ -41,7 +41,7 @@ static void smp_enable_lapic() {
 
 /**
  * @brief Retrieves the logical CPU ID corresponding to the executing core's Local APIC ID.
- * 
+ *
  * @return The logical CPU ID.
  */
 uint32_t smp_get_cpu_id() {
@@ -57,7 +57,7 @@ uint32_t smp_get_cpu_id() {
 
 /**
  * @brief Retrieves the total number of detected active CPU cores.
- * 
+ *
  * @return Total CPU count.
  */
 size_t smp_get_cpu_count() {
@@ -66,7 +66,7 @@ size_t smp_get_cpu_count() {
 
 /**
  * @brief Retrieves the per-CPU local data structure for the currently executing core.
- * 
+ *
  * @return Pointer to the current core's cpu_local_t structure.
  */
 cpu_local_t *smp_get_current_cpu() {
@@ -82,7 +82,7 @@ cpu_local_t *smp_get_current_cpu() {
 
 /**
  * @brief Retrieves the per-CPU local data structure for a specified logical CPU ID.
- * 
+ *
  * @param[in] cpu_id Logical CPU ID.
  * @return Pointer to the requested core's cpu_local_t structure, or nullptr if out of bounds.
  */
@@ -159,7 +159,7 @@ static void smp_ap_main() {
 
 /**
  * @brief Initializes Symmetric Multiprocessing (SMP), parses the MADT, and boots all available Application Processors (APs).
- * 
+ *
  * @return Returns E_OK on success, or an error code (E_NOINIT, E_BADCOUNT) on failure/single-core fallback.
  */
 kerr_t smp_init() {

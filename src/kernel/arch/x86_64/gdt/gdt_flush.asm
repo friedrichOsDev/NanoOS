@@ -14,7 +14,7 @@
 ; void gdt_flush(uint64_t gdt_ptr_phys)
 ; ==============================================================================
 ; Parameters (System V ABI):
-;   RDI - Pointer to the GDTR structure (gdtp)
+; RDI - Pointer to the GDTR structure (gdtp)
 ; ==============================================================================
 gdt_flush:
         lgdt [rdi]
@@ -37,7 +37,7 @@ gdt_flush:
 ; void tss_load(uint16_t selector)
 ; ==============================================================================
 ; Parameters (System V ABI):
-;   RDI - TSS segment selector (lower 16 bits: DI)
+; RDI - TSS segment selector (lower 16 bits: DI)
 ; ==============================================================================
 tss_load:
         ltr di

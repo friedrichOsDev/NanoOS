@@ -75,12 +75,12 @@ static inline const char *kerr_str(kerr_t e) {
         }                     \
     } while (0)
 
-#define K_TRY_PANIC(expr) \
-    do { \
-        kerr_t _err = (expr); \
-        if (k_failed(_err)) { \
+#define K_TRY_PANIC(expr)                                                                                                    \
+    do {                                                                                                                     \
+        kerr_t _err = (expr);                                                                                                \
+        if (k_failed(_err)) {                                                                                                \
             log_panic("\"%s\" failed with error \"%s\" (%s:%d)", #expr, kerr_str(_err), __builtin_FILE(), __builtin_LINE()); \
-        } \
+        }                                                                                                                    \
     } while (0)
 
 #pragma GCC diagnostic pop

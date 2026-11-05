@@ -16,7 +16,7 @@ static uint8_t double_fault_stacks[MAX_CPUS][16384] __attribute__((aligned(16)))
 
 /**
  * @brief Initializes the Task State Segment (TSS) structure for a specific CPU core.
- * 
+ *
  * @param[in] cpu_id Target CPU core identifier index.
  * @param[in] kernel_stack Virtual address of the top of the initial kernel stack.
  */
@@ -72,7 +72,7 @@ void gdt_init() {
 
 /**
  * @brief Sets up GDT entries, TSS, and loads the task register for a specific CPU core.
- * 
+ *
  * @param[in] cpu_id Target CPU core identifier index.
  * @param[in] kernel_stack Virtual address of the top of the kernel stack.
  */
@@ -94,7 +94,7 @@ void gdt_init_core(size_t cpu_id, uintptr_t kernel_stack) {
 
 /**
  * @brief Configures a standard GDT descriptor entry (Code/Data/Null).
- * 
+ *
  * @param[in] num GDT entry index.
  * @param[in] base Base memory address.
  * @param[in] limit Segment limit.
@@ -117,7 +117,7 @@ void gdt_set_gate(int num, uint32_t base, uint32_t limit, uint8_t access, uint8_
 
 /**
  * @brief Configures a 16-byte system segment descriptor for the Task State Segment (TSS) spanning two GDT slots in 64-bit mode.
- * 
+ *
  * @param[in] num Base GDT entry index for the TSS.
  * @param[in] base 64-bit virtual memory base address of the TSS.
  * @param[in] limit Segment limit.
@@ -141,7 +141,7 @@ void gdt_set_tss_gate(int num, uintptr_t base, uint32_t limit) {
 
 /**
  * @brief Updates the kernel stack pointer (RSP0) in the TSS for a specific CPU core.
- * 
+ *
  * @param[in] cpu_id Target CPU core identifier index.
  * @param[in] stack_top New top address of the kernel stack.
  */

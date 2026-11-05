@@ -229,27 +229,27 @@ typedef struct {
 
 /** @brief MCFG (Memory-Mapped Configuration) table entry. */
 typedef struct {
-    uint64_t base_address;       /**< Base address of the PCI Express ECAM space. */
-    uint16_t pci_segment_group;  /**< PCI segment group number. */
-    uint8_t start_bus_number;    /**< Start bus number. */
-    uint8_t end_bus_number;      /**< End bus number. */
-    uint32_t reserved;           /**< Reserved. */
+    uint64_t base_address;      /**< Base address of the PCI Express ECAM space. */
+    uint16_t pci_segment_group; /**< PCI segment group number. */
+    uint8_t start_bus_number;   /**< Start bus number. */
+    uint8_t end_bus_number;     /**< End bus number. */
+    uint32_t reserved;          /**< Reserved. */
 } __attribute__((packed)) mcfg_entry_t;
 
 /** @brief Memory-Mapped Configuration Table (MCFG). */
 typedef struct {
-    acpi_sdt_header_t header;    /**< Common SDT header. */
-    uint64_t reserved;           /**< Reserved. */
-    mcfg_entry_t entries[];      /**< Variable array of MCFG entries. */
+    acpi_sdt_header_t header; /**< Common SDT header. */
+    uint64_t reserved;        /**< Reserved. */
+    mcfg_entry_t entries[];   /**< Variable array of MCFG entries. */
 } __attribute__((packed)) mcfg_t;
 
 /** @brief Runtime structure for MCFG entries including mapped virtual addresses. */
 typedef struct {
-    uint64_t phys_base;          /**< Physical base address. */
-    virt_addr_t virt_base;       /**< Mapped virtual base address. */
-    uint16_t pci_segment;        /**< PCI segment group. */
-    uint8_t start_bus;           /**< Start bus number. */
-    uint8_t end_bus;             /**< End bus number. */
+    uint64_t phys_base;    /**< Physical base address. */
+    virt_addr_t virt_base; /**< Mapped virtual base address. */
+    uint16_t pci_segment;  /**< PCI segment group. */
+    uint8_t start_bus;     /**< Start bus number. */
+    uint8_t end_bus;       /**< End bus number. */
 } mcfg_entry_runtime_t;
 
 /** @brief Container holding runtime MCFG information. */
