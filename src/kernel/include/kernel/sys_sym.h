@@ -1,4 +1,12 @@
+/**
+ * @file sys_sym.h
+ * @brief System symbols for the kernel.
+ * @author friedrichOsDev
+ */
+
 #pragma once
+
+#include <stdint.h>
 
 extern uint8_t kernel_stack_top[];
 extern uint8_t kernel_start[];

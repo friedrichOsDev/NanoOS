@@ -1,6 +1,6 @@
 /**
  * @file types.h
- * @brief Alle Datentypen für meinen Kernel
+ * @brief Types for the kernel.
  * @author friedrichOsDev
  */
 
@@ -14,17 +14,23 @@
 typedef uint64_t phys_addr_t;
 typedef uintptr_t virt_addr_t;
 
-// handler registers and functions
+// sched forward declarations
+struct thread;
+typedef struct thread thread_t;
+struct process;
+typedef struct process process_t;
+
+/** @brief Structure representing saved CPU registers during an interrupt. */
 struct registers {
-    uint64_t r15, r14, r13, r12, r11, r10, r9, r8; /**< Gesicherte Allgemeine Register (R8-R15) */
-    uint64_t rbp, rdi, rsi, rdx, rcx, rbx, rax;    /**< Gesicherte Allgemeine Register (RAX-RBP) */
-    uint64_t int_no;                               /**< Interrupt-Vektornummer */
-    uint64_t err_code;                             /**< CPU-Fehlercode (oder Dummy-Wert) */
-    uint64_t rip;                                  /**< Instruction Pointer zum Zeitpunkt des Interrupts */
-    uint64_t cs;                                   /**< Code-Segment-Selektor */
-    uint64_t rflags;                               /**< CPU RFLAGS-Register */
-    uint64_t rsp;                                  /**< Stack Pointer zum Zeitpunkt des Interrupts */
-    uint64_t ss;                                   /**< Stack-Segment-Selektor */
+    uint64_t r15, r14, r13, r12, r11, r10, r9, r8; /**< Saved general-purpose registers (R8-R15) */
+    uint64_t rbp, rdi, rsi, rdx, rcx, rbx, rax;    /**< Saved general-purpose registers (RAX-RBP) */
+    uint64_t int_no;                               /**< Interrupt vector number */
+    uint64_t err_code;                             /**< CPU error code (or dummy value) */
+    uint64_t rip;                                  /**< Instruction pointer at the time of the interrupt */
+    uint64_t cs;                                   /**< Code segment selector */
+    uint64_t rflags;                               /**< CPU RFLAGS register */
+    uint64_t rsp;                                  /**< Stack pointer at the time of the interrupt */
+    uint64_t ss;                                   /**< Stack segment selector */
 };
 
 typedef void (*isr_handler_t)(struct registers *regs);

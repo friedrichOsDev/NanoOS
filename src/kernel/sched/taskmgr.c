@@ -1,25 +1,21 @@
 /**
  * @file taskmgr.c
- * @brief Serieller Task-Manager und Prozessauflistung.
+ * @brief Serial task manager and process listing implementation.
  * @author friedrichOsDev
  */
 
 #include <arch/arch.h>
-
-#include <core/taskmgr.h>
 #include <lib/print.h>
+#include <pch.h>
 #include <sched/process.h>
+#include <sched/taskmgr.h>
 #include <sched/thread.h>
 
 /**
- * @brief Spinlock zur Absicherung des Zugriffs auf die globale Prozessliste während der Ausgabe.
- */
-static spinlock_t proc_list_lock = SPINLOCK_INIT;
-
-/**
- * @brief Wandelt einen Thread-Zustand (`thread_state_t`) in eine lesbare Zeichenkette um.
- * @param state Der abzufragende Thread-Zustand.
- * @return Eine statische Zeichenkette, die den Namen des Zustands repräsentiert (z. B. "READY", "RUNNING").
+ * @brief Converts a thread state enum value to a human-readable string.
+ * 
+ * @param[in] state Thread state enum value.
+ * @return Static string representing the state name.
  */
 static const char *thread_state_to_string(thread_state_t state) {
     switch (state) {
@@ -40,8 +36,9 @@ static const char *thread_state_to_string(thread_state_t state) {
     }
 }
 
+/** @brief Dumps all processes, associated threads, and CPU core states to the serial console. */
 void ps_dump() {
-    irq_flags_t list_flags = spinlock_acquire_irqsave(&proc_list_lock);
+    irq_flags_t list_flags = spinlock_acquire_irqsave(proc_get_list_lock());
 
     serial_printf("\n============================= TASK MANAGER ==============================\n");
     serial_printf("%-6s %-20s %-6s %-20s %-10s %-6s\n", "PID", "PROCESS", "TID", "THREAD NAME", "STATE", "CORE");
@@ -83,5 +80,5 @@ void ps_dump() {
 
     serial_printf("=========================================================================\n\n");
 
-    spinlock_release_irqrestore(&proc_list_lock, list_flags);
+    spinlock_release_irqrestore(proc_get_list_lock(), list_flags);
 }

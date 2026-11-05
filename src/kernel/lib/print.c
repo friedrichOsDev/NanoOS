@@ -1,6 +1,6 @@
 /**
  * @file print.c
- * @brief Printf Implementation
+ * @brief String formatting implementation.
  * @author friedrichOsDev
  */
 
@@ -9,17 +9,18 @@
 #include <pch.h>
 
 /**
- * @brief Interne Kernfunktion zur Verarbeitung und Formatierung von Zeichenketten.
- *
- * Unterstützt sowohl schmale (8-Bit char) als auch breite (32-Bit uint32_t) Strings und
- * verarbeitet gängige Format-Spezifizierer (%d, %i, %u, %x, %X, %o, %f, %s, %c, %p, %%).
- *
- * @param dest Zeiger auf den Zielpuffer (char* oder uint32_t*).
- * @param size Maximale Puffergröße.
- * @param format Formatstring (const char* oder const uint32_t*).
- * @param args Liste der variablen Argumente.
- * @param is_wide `true` für 32-Bit-Zeichen (UTF-32), `false` für standardmäßige 8-Bit-Zeichen.
- * @return Gesamtanzahl der verarbeiteten/generierten Zeichen.
+ * @brief Core internal formatting function for processing and formatting strings.
+ * 
+ * Handles formatting specifiers like width, precision, padding, length modifiers, 
+ * and various data types (integers, floats, strings, pointers) for both 8-bit ASCII 
+ * and 32-bit wide character buffers.
+ * 
+ * @param[out] dest Pointer to the destination buffer (char* or uint32_t*).
+ * @param[in] size Maximum size of the destination buffer in characters.
+ * @param[in] format Format string (const char* or const uint32_t*).
+ * @param[in] args Variable argument list matching the format specifiers.
+ * @param[in] is_wide `true` for 32-bit wide characters (UTF-32), `false` for standard 8-bit characters.
+ * @return int Total number of characters processed or generated (excluding null-terminator).
  */
 static int print_formatted(void *dest, size_t size, const void *format, va_list args, bool is_wide) {
     size_t i = 0;
@@ -322,6 +323,15 @@ static int print_formatted(void *dest, size_t size, const void *format, va_list 
     return (int)i;
 }
 
+/**
+ * @brief Formats and stores a series of characters in a wide-character buffer (UTF-32).
+ * 
+ * @param[out] dest Pointer to the destination wide-character buffer.
+ * @param[in] size Maximum number of wide characters to write.
+ * @param[in] format Wide format string (UTF-32).
+ * @param[in] ... Variable arguments for the format string.
+ * @return int Number of characters written or required.
+ */
 int usnprintf(uint32_t *dest, const size_t size, const uint32_t *format, ...) {
     va_list args;
     va_start(args, format);
@@ -330,10 +340,28 @@ int usnprintf(uint32_t *dest, const size_t size, const uint32_t *format, ...) {
     return res;
 }
 
+/**
+ * @brief Formats and stores a series of characters in a wide-character buffer using a va_list.
+ * 
+ * @param[out] dest Pointer to the destination wide-character buffer.
+ * @param[in] size Maximum number of wide characters to write.
+ * @param[in] format Wide format string (UTF-32).
+ * @param[in] args Variable argument list (`va_list`).
+ * @return int Number of characters written or required.
+ */
 int uvsnprintf(uint32_t *dest, size_t size, const uint32_t *format, va_list args) {
     return print_formatted(dest, size, format, args, true);
 }
 
+/**
+ * @brief Formats and stores a series of characters in a standard string buffer.
+ * 
+ * @param[out] dest Pointer to the destination string buffer.
+ * @param[in] size Maximum number of bytes to write.
+ * @param[in] format Standard format string.
+ * @param[in] ... Variable arguments for the format string.
+ * @return int Number of characters written or required.
+ */
 int snprintf(char *dest, const size_t size, const char *format, ...) {
     va_list args;
     va_start(args, format);
@@ -342,6 +370,15 @@ int snprintf(char *dest, const size_t size, const char *format, ...) {
     return res;
 }
 
+/**
+ * @brief Formats and stores a series of characters in a standard string buffer using a va_list.
+ * 
+ * @param[out] dest Pointer to the destination string buffer.
+ * @param[in] size Maximum number of bytes to write.
+ * @param[in] format Standard format string.
+ * @param[in] args Variable argument list (`va_list`).
+ * @return int Number of characters written or required.
+ */
 int vsnprintf(char *dest, size_t size, const char *format, va_list args) {
     return print_formatted(dest, size, format, args, false);
 }

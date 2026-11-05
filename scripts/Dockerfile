@@ -100,6 +100,7 @@ RUN apt-get update && apt-get install -y \
     clangd \
     clang-format \
     make \
+    bear \
     nasm \
     xorriso \
     grub-pc-bin \

@@ -1,6 +1,15 @@
+/**
+ * @file math.h
+ * @brief Math libary for my kernel.
+ * @author friedrichOsDev
+ * @note Math libary is mostly copied from Musl Libm
+ */
+
 #pragma once
 
-#include <pch.h>
+#include <float.h>
+#include <limits.h>
+#include <stdint.h>
 
 /* Floating-point constants */
 #undef NAN
@@ -38,15 +47,18 @@
 
 static inline float deg_to_radf(float deg) { return deg * ((float)M_PI / 180.0f); }
 static inline double deg_to_rad(double deg) { return deg * (M_PI / 180.0); }
-static inline long double deg_to_radl(long double deg) { return deg * (M_PI / 180.0L); }
+static inline long double deg_to_radl(long double deg) { return deg * ((long double)M_PI / 180.0L); }
 
 static inline float rad_to_degf(float rad) { return rad * (180.0f / (float)M_PI); }
 static inline double rad_to_deg(double rad) { return rad * (180.0 / M_PI); }
-static inline long double rad_to_degl(long double rad) { return rad * (180.0L / M_PI); }
+static inline long double rad_to_degl(long double rad) { return rad * (180.0L / (long double)M_PI); }
 
 /* Standard C99 / C11 Floating-Point Types for x86_64 */
 typedef float float_t;
 typedef double double_t;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-macros"
 
 extern int __signgam;
 #define signgam __signgam
@@ -447,3 +459,5 @@ float significandf(float);
 #define math_tgamma(x) MATH_1ARG(tgamma, x)
 #define math_deg_to_rad(x) MATH_1ARG(deg_to_rad, x)
 #define math_rad_to_deg(x) MATH_1ARG(rad_to_deg, x)
+
+#pragma GCC diagnostic pop

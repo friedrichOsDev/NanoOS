@@ -1,8 +1,6 @@
 /**
  * @file sched.h
- * @brief Schnittstelle für den Round-Robin-Kernel-Scheduler.
- * @details Bietet Funktionen zur Verwaltung der Thread-Warteschlangen, Zeitsteuerung (Ticks),
- *          Zuweisung von CPU-Affinitäten und Kontextwechseln im Präemptiv-Betrieb.
+ * @brief Preemptive round-robin scheduler interface.
  * @author friedrichOsDev
  */
 
@@ -11,13 +9,13 @@
 #include <pch.h>
 #include <sched/thread.h>
 
-void sched_init();
+kerr_t sched_init();
 void sched_enable();
-void sched_add_thread(thread_t *thread);
+kerr_t sched_add_thread(thread_t *thread);
 void sched_schedule();
 void sched_tick();
 
-void thread_set_affinity(thread_t *thread, int cpu_id);
+kerr_t thread_set_affinity(thread_t *thread, int cpu_id);
 void thread_sleep_ms(uint64_t ms);
 void thread_yield();
 void thread_exit();

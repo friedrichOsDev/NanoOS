@@ -1,9 +1,10 @@
-; /**
-; * @file setup.asm
-; * @brief 32-Bit Einstiegspunkt (Bootloader -> Long Mode Übergang).
-; * @details Speichert Multiboot-Parameter, prüft CPUID/Long-Mode, baut Init-Page-Tables auf, aktiviert Paging & Long Mode und initialisiert FPU/SSE.
-; * @author friedrichOsDev
-; */
+; ==============================================================================
+; @file setup.asm
+; @brief 32-bit entry point (bootloader to long mode transition).
+; @details Saves multiboot parameters, checks CPUID/long mode support, builds 
+;          initial page tables, enables paging & long mode, and initializes FPU/SSE.
+; @author friedrichOsDev
+; ==============================================================================
 
         [BITS 32]
         section .setup
@@ -20,15 +21,15 @@
 ; ==============================================================================
 ; _setup
 ; ==============================================================================
-; Einstiegspunkt vom Bootloader (32-Bit Protected Mode).
+; Entry point from the bootloader (32-bit Protected Mode).
 ; ==============================================================================
 _setup:
-        cli                            ; Interrupts deaktivieren
-        cld                            ; Direction Flag zurücksetzen
+        cli                            ; Disable interrupts
+        cld                            ; Clear direction flag
 
-; 0. Multiboot-Parameter sichern & Hardware-Unterstützung prüfen
-        mov [multiboot_info_ptr], ebx  ; Multiboot Info-Struktur Pointer
-        mov [multiboot_magic], eax     ; Multiboot Magic Number
+; 0. Save multiboot parameters & check hardware support
+        mov [multiboot_info_ptr], ebx  ; Multiboot info structure pointer
+        mov [multiboot_magic], eax     ; Multiboot magic number
 
         call check_cpuid
         test eax, eax
@@ -38,7 +39,7 @@ _setup:
         test eax, eax
         jz .no_long_mode
 
-; 1. Initiales Paging aufbauen (Identity-Mapping & High-Half-Kernel-Mapping)
+; 1. Set up initial paging (Identity mapping & high-half kernel mapping)
         mov eax, boot_pdpt
         or eax, 0x3                    ; Present + Writable
         mov [boot_pml4], eax
@@ -78,7 +79,7 @@ _setup:
         mov [edi], eax
         mov dword [edi + 4], 0
         add edi, 8
-        add eax, 0x200000              ; 2 MB Schritte
+        add eax, 0x200000              ; 2 MB steps
         loop .fill_kernel_low_pages
 
         mov edi, boot_pd_high
@@ -94,47 +95,47 @@ _setup:
         adc edx, 0
         loop .fill_direct_mapping
 
-; 2. Steuerregister & Long-Mode Aktivierung
-; PAE (Physical Address Extension) in CR4 aktivieren
+; 2. Control registers & Long Mode activation
+; Enable PAE (Physical Address Extension) in CR4
         mov eax, cr4
         or eax, 1 << 5
         mov cr4, eax
 
-; Base der PML4-Tabelle in CR3 laden
+; Load PML4 table base into CR3
         mov eax, boot_pml4
         mov cr3, eax
 
-; Long Mode (LME) & NX-Bit im EFER MSR aktivieren
+; Enable Long Mode (LME) & NX bit in EFER MSR
         mov ecx, 0xC0000080
         rdmsr
         or eax, (1 << 8) | (1 << 11)
         wrmsr
 
-; Paging aktivieren (CR0.PG = 1, CR0.WP = 1)
+; Enable paging (CR0.PG = 1, CR0.WP = 1)
         mov eax, cr0
         or eax, (1 << 31) | (1 << 16)
         mov cr0, eax
 
-; 64-Bit GDT laden
+; Load 64-bit GDT
         lgdt [gdt64_ptr]
 
-; Far Jump in den 64-Bit Long Mode
+; Far jump into 64-bit Long Mode
         jmp 0x08:init_long_mode
 
 .no_long_mode:
         cli
 .hang:
-        hlt                            ; Stoppen, falls Long Mode nicht unterstützt wird
+        hlt                            ; Halt execution if long mode is not supported
         jmp .hang
 
 ; ==============================================================================
-; Prüffunktionen für CPUID und Long-Mode-Unterstützung
+; Check functions for CPUID and Long Mode support
 ; ==============================================================================
 check_cpuid:
         pushfd
         pop eax
         mov ecx, eax
-        xor eax, 1 << 21               ; ID-Bit in EFLAGS toggeln
+        xor eax, 1 << 21               ; Toggle ID bit in EFLAGS
         push eax
         popfd
         pushfd
@@ -157,7 +158,7 @@ check_long_mode_support:
 
         mov eax, 0x80000001
         cpuid
-        test edx, 1 << 29              ; Long-Mode Bit im EDX prüfen
+        test edx, 1 << 29              ; Check Long Mode bit in EDX
         jz .no_lm
         mov eax, 1
         ret
@@ -166,49 +167,49 @@ check_long_mode_support:
         ret
 
 ; ==============================================================================
-; 64-Bit Long Mode Initialisierung
+; 64-bit Long Mode Initialization
 ; ==============================================================================
         [BITS 64]
 
 init_long_mode:
-; 3. 64-Bit Datensegmente & FPU/SSE Hardware-Init
-        mov ax, 0x10                   ; 64-Bit Datensegment (0x10)
+; 3. Setup 64-bit data segments & FPU/SSE hardware initialization
+        mov ax, 0x10                   ; 64-bit data segment selector (0x10)
         mov ds, ax
         mov es, ax
         mov fs, ax
         mov gs, ax
         mov ss, ax
 
-; FPU / SSE aktivieren (CR0 & CR4)
+; Enable FPU / SSE (CR0 & CR4)
         mov rax, cr0
-        and rax, ~((1 << 2) | (1 << 3)) ; EM & TS löschen
-        or rax, (1 << 1)               ; MP setzen
+        and rax, ~((1 << 2) | (1 << 3)) ; Clear EM & TS
+        or rax, (1 << 1)               ; Set MP
         mov cr0, rax
 
         mov rax, cr4
-        or rax, (1 << 9) | (1 << 10)   ; OSFXSR & OSXMMEXCPT setzen
+        or rax, (1 << 9) | (1 << 10)   ; Set OSFXSR & OSXMMEXCPT
         mov cr4, rax
 
-        fninit                         ; FPU zurücksetzen
+        fninit                         ; Reset FPU
 
         sub rsp, 16
-        mov dword [rsp], 0x1F80        ; Standard-MXCSR-Wert laden
+        mov dword [rsp], 0x1F80        ; Load standard MXCSR value
         ldmxcsr [rsp]
         add rsp, 16
 
-; 4. Sprung zur Kernel-Einstiegsfunktion _entry
-        and rsp, -16                   ; 16-Byte Stack Alignment garantieren
+; 4. Jump to kernel entry function _entry
+        and rsp, -16                   ; Guarantee 16-byte stack alignment
         mov rax, _entry
         jmp rax
 
 ; ==============================================================================
-; GDT & Speichertabellen
+; GDT & Memory Tables
 ; ==============================================================================
         align 8
 gdt64_start:
-        dq 0x0000000000000000          ; 0x00: Null-Deskriptor
-        dq 0x00209A0000000000          ; 0x08: 64-Bit Code Segment
-        dq 0x0000920000000000          ; 0x10: 64-Bit Data Segment
+        dq 0x0000000000000000          ; 0x00: Null descriptor
+        dq 0x00209A0000000000          ; 0x08: 64-bit code segment
+        dq 0x0000920000000000          ; 0x10: 64-bit data segment
 gdt64_end:
 
 gdt64_ptr:
@@ -221,7 +222,7 @@ multiboot_info_ptr:
 multiboot_magic:
         dq 0
 
-; Paging-Puffer für die Initialisierung (4 KB ausgerichtet)
+; Paging buffers for initialization (4 KB aligned)
         align 4096
         boot_pml4: times 4096 db 0
         boot_pdpt: times 4096 db 0

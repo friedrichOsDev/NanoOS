@@ -1,6 +1,6 @@
 /**
  * @file pmm.c
- * @brief Implementierung der physischen Speicherverwaltung (Bitmap-Allokator).
+ * @brief PMM implementation.
  * @author friedrichOsDev
  */
 
@@ -13,31 +13,27 @@
 #include <lib/util/mem.h>
 #include <mm/memory.h>
 
-/** @brief Globale PMM-Zustandsstruktur. */
 pmm_state_t pmm_state;
-
-/** @brief Spinlock zur Absicherung von PMM-Operationen gegen Rassenbedingungen (Race Conditions). */
 static spinlock_t pmm_lock = SPINLOCK_INIT;
 
 /**
- * @brief Sperrt einen Bereich aufeinanderfolgender physischer Seiten in der Bitmap.
+ * @brief Marks a contiguous range of physical memory pages as locked (allocated) in the bitmap.
  *
- * Setzt die entsprechenden Bits in der Bitmap auf 1 und aktualisiert die Seitenzähler.
- *
- * @param start Physische Startadresse (muss page-aligned sein).
- * @param count Anzahl der zu sperrenden Seiten.
+ * @param[in] start Physical starting address (must be page-aligned).
+ * @param[in] count Number of consecutive pages to lock.
+ * @return Returns E_OK on success, or an error code (E_BADADDR, E_BADCOUNT, E_NOMEM) on failure.
  */
-static void lock_pages(phys_addr_t start, uint64_t count) {
+static kerr_t lock_pages(phys_addr_t start, uint64_t count) {
     if (start > pmm_state.total_pages * PAGE_SIZE || !IS_PAGE_ALIGNED(start)) {
-        panic();
+        return E_BADADDR;
     }
     if (count > pmm_state.total_pages || count == 0) {
-        panic();
+        return E_BADCOUNT;
     }
 
     uint64_t start_page = start / PAGE_SIZE;
     if (start_page + count > pmm_state.total_pages) {
-        panic();
+        return E_NOMEM;
     }
 
     for (uint64_t i = 0; i < count; i++) {
@@ -52,27 +48,27 @@ static void lock_pages(phys_addr_t start, uint64_t count) {
                 pmm_state.free_pages--;
         }
     }
+    return E_OK;
 }
 
 /**
- * @brief Entsperrt einen Bereich aufeinanderfolgender physischer Seiten in der Bitmap.
+ * @brief Marks a contiguous range of physical memory pages as unlocked (free) in the bitmap.
  *
- * Setzt die entsprechenden Bits in der Bitmap auf 0 und aktualisiert die Seitenzähler.
- *
- * @param start Physische Startadresse (muss page-aligned sein).
- * @param count Anzahl der zu entsperrenden Seiten.
+ * @param[in] start Physical starting address (must be page-aligned).
+ * @param[in] count Number of consecutive pages to unlock.
+ * @return Returns E_OK on success, or an error code on failure.
  */
-static void unlock_pages(phys_addr_t start, uint64_t count) {
+static kerr_t unlock_pages(phys_addr_t start, uint64_t count) {
     if (start > pmm_state.total_pages * PAGE_SIZE || !IS_PAGE_ALIGNED(start)) {
-        panic();
+        return E_BADADDR;
     }
     if (count > pmm_state.total_pages || count == 0) {
-        panic();
+        return E_BADCOUNT;
     }
 
     uint64_t start_page = start / PAGE_SIZE;
     if (start_page + count > pmm_state.total_pages) {
-        panic();
+        return E_NOMEM;
     }
 
     for (uint64_t i = 0; i < count; i++) {
@@ -87,12 +83,15 @@ static void unlock_pages(phys_addr_t start, uint64_t count) {
             pmm_state.free_pages++;
         }
     }
+    return E_OK;
 }
 
 /**
- * @brief Wertet die vom Bootloader bereitgestellte Memory Map aus und baut die Bitmap auf.
+ * @brief Parses the Multiboot2 memory map to determine total physical memory and initializes the allocation bitmap.
+ *
+ * @return Returns E_OK on success, or an error code if parsing or memory initialization fails.
  */
-static void mmap_parse() {
+static kerr_t mmap_parse() {
     uint64_t max_usable_addr = 0;
 
     for (uint64_t i = 0; i < kernel_mmap.entry_count; i++) {
@@ -106,7 +105,8 @@ static void mmap_parse() {
 
     uint64_t total_pages = max_usable_addr / PAGE_SIZE;
     uint64_t bitmap_size = total_pages / 8;
-    serial_printf("PMM: max_addr=%llx, bitmap_size=%llx\n", max_usable_addr, bitmap_size);
+    log_var(max_usable_addr);
+    log_var(bitmap_size);
 
     pmm_state.bitmap = (uint8_t *)KERNEL_END_PHYS;
     pmm_state.bitmap_size = bitmap_size;
@@ -124,36 +124,51 @@ static void mmap_parse() {
             uint64_t aligned_len = PAGE_ALIGN_DOWN(entry.length);
 
             if (aligned_len >= PAGE_SIZE) {
-                unlock_pages(aligned_base, aligned_len / PAGE_SIZE);
+                K_TRY(unlock_pages(aligned_base, aligned_len / PAGE_SIZE));
             }
         }
     }
+    return E_OK;
 }
 
-void pmm_init() {
-    mmap_parse();
+/**
+ * @brief Initializes the physical memory manager, parses the memory map, and reserves critical regions (kernel, bitmap, framebuffer, low memory).
+ *
+ * @return Returns E_OK on successful initialization.
+ */
+kerr_t pmm_init() {
+    K_TRY(mmap_parse());
 
     // lock kernel + bitmap
     uint64_t kernel_and_bitmap_size = KERNEL_END_PHYS + pmm_state.bitmap_size - KERNEL_START_PHYS;
-    lock_pages(KERNEL_START_PHYS, PAGE_ALIGN_UP(kernel_and_bitmap_size) / PAGE_SIZE);
+    K_TRY(lock_pages(KERNEL_START_PHYS, PAGE_ALIGN_UP(kernel_and_bitmap_size) / PAGE_SIZE));
 
     // lock framebuffer
     if (kernel_fb_info.fb_addr) {
         uint64_t fb_start_aligned = PAGE_ALIGN_DOWN(kernel_fb_info.fb_addr);
         uint64_t fb_end_aligned = PAGE_ALIGN_UP(kernel_fb_info.fb_addr + (kernel_fb_info.fb_height * kernel_fb_info.fb_pitch));
-        lock_pages(fb_start_aligned, (fb_end_aligned - fb_start_aligned) / PAGE_SIZE);
+        K_TRY(lock_pages(fb_start_aligned, (fb_end_aligned - fb_start_aligned) / PAGE_SIZE));
     }
 
     // lock below 1M
-    lock_pages(0, 256);
+    K_TRY(lock_pages(0, 256));
 
-    serial_printf("PMM: used_pages=%llx, free_pages=%llx\n", pmm_state.used_pages, pmm_state.free_pages);
+    log_var(pmm_state.used_pages);
+    log_var(pmm_state.free_pages);
+
+    return E_OK;
 }
 
-phys_addr_t pmm_page_alloc() {
+/**
+ * @brief Allocates a single physical memory page.
+ *
+ * @param[out] out Pointer to store the physical address of the allocated page.
+ * @return Returns E_OK on success, or E_NOMEM / E_NOTFOUND if no free pages are available.
+ */
+kerr_t pmm_page_alloc(phys_addr_t *out) {
     irq_flags_t flags = spinlock_acquire_irqsave(&pmm_lock);
     if (pmm_state.free_pages == 0) {
-        panic();
+        return E_NOMEM;
     }
 
     uint64_t *bitmap64 = (uint64_t *)pmm_state.bitmap;
@@ -168,7 +183,7 @@ phys_addr_t pmm_page_alloc() {
 
             if (page_idx >= pmm_state.total_pages) {
                 spinlock_release_irqrestore(&pmm_lock, flags);
-                return 0;
+                return E_NOMEM;
             }
 
             phys_addr_t alloc_addr = page_idx * PAGE_SIZE;
@@ -176,32 +191,55 @@ phys_addr_t pmm_page_alloc() {
             lock_pages(alloc_addr, 1);
 
             spinlock_release_irqrestore(&pmm_lock, flags);
-            return alloc_addr;
+            *out = alloc_addr;
+            return E_OK;
         }
     }
 
     spinlock_release_irqrestore(&pmm_lock, flags);
-    return 0;
+    return E_NOTFOUND;
 }
 
-void pmm_page_free(phys_addr_t addr) {
+/**
+ * @brief Frees a previously allocated physical memory page.
+ *
+ * @param[in] addr Physical address of the page to free (must be page-aligned).
+ * @return Returns E_OK on success, or an error code on failure.
+ */
+kerr_t pmm_page_free(phys_addr_t addr) {
     if (!IS_PAGE_ALIGNED(addr)) {
-        panic();
+        return E_BADADDR;
     }
 
     irq_flags_t flags = spinlock_acquire_irqsave(&pmm_lock);
-    unlock_pages(addr, 1);
+    kerr_t err = unlock_pages(addr, 1);
     spinlock_release_irqrestore(&pmm_lock, flags);
+    return err;
 }
 
+/**
+ * @brief Retrieves the total number of physical memory pages managed by the PMM.
+ *
+ * @return Total page count.
+ */
 uint64_t pmm_get_total_pages() {
     return pmm_state.total_pages;
 }
 
+/**
+ * @brief Retrieves the number of currently allocated/used physical memory pages.
+ *
+ * @return Used page count.
+ */
 uint64_t pmm_get_used_pages() {
     return pmm_state.used_pages;
 }
 
+/**
+ * @brief Retrieves the number of currently available/free physical memory pages.
+ *
+ * @return Free page count.
+ */
 uint64_t pmm_get_free_pages() {
     return pmm_state.free_pages;
 }

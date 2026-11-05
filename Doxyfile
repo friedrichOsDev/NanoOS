@@ -16,6 +16,7 @@ INPUT                  = src \
 RECURSIVE              = YES
 FILE_PATTERNS          = *.h \
                          *.c \
+                         *.asm \
                          *.md
 
 USE_MDFILE_AS_MAINPAGE = README.md

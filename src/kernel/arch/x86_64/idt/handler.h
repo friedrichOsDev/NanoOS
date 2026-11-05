@@ -1,3 +1,9 @@
+/**
+ * @file handler.h
+ * @brief Internal function declarations for the interrupt handlers.
+ * @author friedrichOsDev
+ */
+
 #pragma once
 
 #include <pch.h>

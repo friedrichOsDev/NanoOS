@@ -1,3 +1,9 @@
+/**
+ * @file gdt_sym.h
+ * @brief Symbol definitions for gdt_flush.asm.
+ * @author friedrichOsDev
+ */
+
 #pragma once
 
 #include <pch.h>

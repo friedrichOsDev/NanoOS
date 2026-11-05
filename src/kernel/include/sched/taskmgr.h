@@ -1,10 +1,12 @@
 /**
  * @file taskmgr.h
- * @brief Serieller Task-Manager und die Prozessauflistung.
+ * @brief Task manager and process listing interface.
  * @author friedrichOsDev
  */
 
 #pragma once
+
+#include <pch.h>
 
 void ps_dump();
 void heap_dump();

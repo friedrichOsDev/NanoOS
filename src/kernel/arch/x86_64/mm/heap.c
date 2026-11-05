@@ -1,39 +1,39 @@
 /**
  * @file heap.c
- * @brief Implementierung des Kernel-Heap-Allocators.
+ * @brief Kernel HEAP allocator implementation.
  * @author friedrichOsDev
  */
 
-#include "heap.h"
+#include "mem_def.h"
 #include <arch/arch.h>
 #include <kernel/panic.h>
 #include <kernel/sync.h>
 #include <lib/util/mem.h>
 #include <mm/memory.h>
-#include <core/taskmgr.h>
+#include <sched/taskmgr.h>
 
-/** @brief Zeiger auf den ersten Block der doppelt verketteten Heap-Liste. */
 static heap_node_t *heap_list_head = NULL;
-
-/** @brief Virtuelle Endadresse des derzeit gemappten Heap-Bereichs. */
 static virt_addr_t heap_end_addr = 0;
-
-/** @brief Spinlock zur Absicherung von Heap-Operationen in Multithreading-/Interrupt-Kontexten. */
 static spinlock_t heap_lock = SPINLOCK_INIT;
 
-void heap_init() {
-    phys_addr_t page1 = pmm_page_alloc();
-    phys_addr_t page2 = pmm_page_alloc();
-    phys_addr_t page3 = pmm_page_alloc();
-    phys_addr_t page4 = pmm_page_alloc();
-    if (!page1 || !page2 || !page3 || !page4) {
-        panic();
-    }
-
-    vmm_map_page(vmm_kernel_space(), KERNEL_HEAP_START, page1, PTE_WRITABLE);
-    vmm_map_page(vmm_kernel_space(), KERNEL_HEAP_START + PAGE_SIZE, page2, PTE_WRITABLE);
-    vmm_map_page(vmm_kernel_space(), KERNEL_HEAP_START + PAGE_SIZE * 2, page3, PTE_WRITABLE);
-    vmm_map_page(vmm_kernel_space(), KERNEL_HEAP_START + PAGE_SIZE * 3, page4, PTE_WRITABLE);
+/**
+ * @brief Initializes the dynamic kernel heap allocator, allocating initial physical pages and setting up the head block.
+ *
+ * @return Returns E_OK on success, or an error code on failure.
+ */
+kerr_t heap_init() {
+    phys_addr_t page1;
+    phys_addr_t page2;
+    phys_addr_t page3;
+    phys_addr_t page4;
+    K_TRY(pmm_page_alloc(&page1));
+    K_TRY(pmm_page_alloc(&page2));
+    K_TRY(pmm_page_alloc(&page3));
+    K_TRY(pmm_page_alloc(&page4));
+    K_TRY(vmm_map_page(vmm_kernel_space(), KERNEL_HEAP_START, page1, PTE_WRITABLE));
+    K_TRY(vmm_map_page(vmm_kernel_space(), KERNEL_HEAP_START + PAGE_SIZE, page2, PTE_WRITABLE));
+    K_TRY(vmm_map_page(vmm_kernel_space(), KERNEL_HEAP_START + PAGE_SIZE * 2, page3, PTE_WRITABLE));
+    K_TRY(vmm_map_page(vmm_kernel_space(), KERNEL_HEAP_START + PAGE_SIZE * 3, page4, PTE_WRITABLE));
 
     memset((void *)KERNEL_HEAP_START, 0, PAGE_SIZE * 4);
 
@@ -48,21 +48,25 @@ void heap_init() {
     heap_list_head = initial_block;
     heap_end_addr = KERNEL_HEAP_START + initial_size;
 
-    serial_printf("HEAP: initial_block at %llx with size %llx\n", initial_block, initial_size);
-    serial_printf("HEAP: done\n");
+    log_debug("initial_heap_block at %llx with size %llx", initial_block, initial_size);
+    return E_OK;
 }
 
-heap_node_t *heap_extend(size_t size) {
+/**
+ * @brief Extends the kernel heap by allocating additional physical pages and appending or coalescing a new block.
+ *
+ * @param[in] size Minimum required size in bytes to extend.
+ * @param[out] out Pointer to store the resulting heap node block pointer.
+ * @return Returns E_OK on success, or an error code on failure.
+ */
+static kerr_t heap_extend(size_t size, heap_node_t **out) {
     size_t needed_pages = (size + PAGE_SIZE - 1) / PAGE_SIZE;
     virt_addr_t extension_start = heap_end_addr;
 
     for (size_t i = 0; i < needed_pages; i++) {
-        phys_addr_t phys_page = pmm_page_alloc();
-        if (!phys_page) {
-            panic();
-        }
-
-        vmm_map_page(vmm_kernel_space(), extension_start + (i * PAGE_SIZE), phys_page, PTE_WRITABLE);
+        phys_addr_t phys_page;
+        K_TRY(pmm_page_alloc(&phys_page));
+        K_TRY(vmm_map_page(vmm_kernel_space(), extension_start + (i * PAGE_SIZE), phys_page, PTE_WRITABLE));
     }
 
     size_t extended_bytes = needed_pages * PAGE_SIZE;
@@ -86,24 +90,32 @@ heap_node_t *heap_extend(size_t size) {
     current->next = new_block;
     new_block->prev = current;
 
-    /* Verschmelze mit dem vorherigen Block, falls dieser ebenfalls frei ist */
     if (current->magic == HEAP_MAGIC_FREE) {
         current->size += new_block->size;
         current->payload_size = current->size - HEAP_HEADER_SIZE;
         current->next = NULL;
-        return current;
+        *out = current;
+        return E_OK;
     }
 
-    return new_block;
+    *out = new_block;
+    return E_OK;
 }
 
-virt_addr_t kmalloc(size_t size) {
+/**
+ * @brief Allocates a block of dynamic kernel memory using a best-fit algorithm.
+ *
+ * @param[in] size Requested size in bytes.
+ * @param[out] out Pointer to store the virtual address of the allocated payload.
+ * @return Returns E_OK on success, or an error code (E_BADSIZE, E_NOMEM) on failure.
+ */
+kerr_t kmalloc(size_t size, virt_addr_t *out) {
     if (size == 0)
-        return 0;
+        return E_BADSIZE;
 
     irq_flags_t flags = spinlock_acquire_irqsave(&heap_lock);
 
-    size = (size + 15U) & ~15U; /* 16-Byte-Ausrichtung */
+    size = (size + 15U) & ~15U;
     size_t total_required_size = size + HEAP_HEADER_SIZE;
 
     heap_node_t *current = heap_list_head;
@@ -127,14 +139,13 @@ virt_addr_t kmalloc(size_t size) {
     }
 
     if (!best_fit) {
-        best_fit = heap_extend(total_required_size);
-        if (!best_fit) {
+        kerr_t err = heap_extend(total_required_size, &best_fit);
+        if (k_failed(err)) {
             spinlock_release_irqrestore(&heap_lock, flags);
-            panic();
+            return err;
         }
     }
 
-    /* Aufteilen des Blocks (Splitting), falls der verbleibende Rest groß genug ist */
     size_t min_split_size = HEAP_HEADER_SIZE + HEAP_MIN_PAYLOAD_SIZE;
     if (best_fit->size >= total_required_size + min_split_size) {
         heap_node_t *next_block = (heap_node_t *)((uintptr_t)best_fit + total_required_size);
@@ -156,34 +167,48 @@ virt_addr_t kmalloc(size_t size) {
 
     spinlock_release_irqrestore(&heap_lock, flags);
 
-    return (uintptr_t)best_fit + HEAP_HEADER_SIZE;
+    *out = (uintptr_t)best_fit + HEAP_HEADER_SIZE;
+    return E_OK;
 }
 
-virt_addr_t kzalloc(size_t size) {
-    virt_addr_t addr = kmalloc(size);
-    if (addr) {
-        memset((void *)addr, 0, size);
-    }
-    return addr;
+/**
+ * @brief Allocates and zeroes out a block of dynamic kernel memory.
+ *
+ * @param[in] size Requested size in bytes.
+ * @param[out] out Pointer to store the virtual address of the allocated zeroed payload.
+ * @return Returns E_OK on success, or an error code on failure.
+ */
+kerr_t kzalloc(size_t size, virt_addr_t *out) {
+    virt_addr_t addr;
+    K_TRY(kmalloc(size, &addr));
+    memset((void *)addr, 0, size);
+    *out = addr;
+    return E_OK;
 }
 
-void kfree(virt_addr_t addr) {
+/**
+ * @brief Frees a previously allocated block of kernel memory and coalesces adjacent free blocks.
+ *
+ * @param[in] addr Virtual address of the payload to free.
+ * @return Returns E_OK on success, or an error code (E_BADADDR, E_INVAL) on failure.
+ */
+kerr_t kfree(virt_addr_t addr) {
     if (!addr)
-        return;
+        return E_BADADDR;
 
     irq_flags_t flags = spinlock_acquire_irqsave(&heap_lock);
 
     heap_node_t *block = (heap_node_t *)(addr - HEAP_HEADER_SIZE);
 
     if (block->magic != HEAP_MAGIC_USED) {
-        serial_printf("HEAP: Attempted kfree on invalid/already freed block at %llx!\n", addr);
-        return;
+        spinlock_release_irqrestore(&heap_lock, flags);
+        return E_INVAL;
     }
 
     block->magic = HEAP_MAGIC_FREE;
     block->payload_size = block->size - HEAP_HEADER_SIZE;
 
-    // Coalesce Right (Verschmelzen mit rechtem Nachbarn)
+    // Coalesce Right
     if (block->next && block->next->magic == HEAP_MAGIC_FREE) {
         block->size += block->next->size;
         block->payload_size = block->size - HEAP_HEADER_SIZE;
@@ -194,7 +219,7 @@ void kfree(virt_addr_t addr) {
         }
     }
 
-    // Coalesce Left (Verschmelzen mit linkem Nachbarn)
+    // Coalesce Left
     if (block->prev && block->prev->magic == HEAP_MAGIC_FREE) {
         block->prev->size += block->size;
         block->prev->payload_size = block->prev->size - HEAP_HEADER_SIZE;
@@ -206,8 +231,10 @@ void kfree(virt_addr_t addr) {
     }
 
     spinlock_release_irqrestore(&heap_lock, flags);
+    return E_OK;
 }
 
+/** @brief Dumps the current state, blocks, and memory statistics of the heap manager to the serial log. */
 void heap_dump() {
     irq_flags_t flags = spinlock_acquire_irqsave(&heap_lock);
 
@@ -245,7 +272,7 @@ void heap_dump() {
 
     serial_printf("-------------------------------------------------------------------------------------------\n");
     serial_printf("Summary: %zu Blocks | Free: %zu Bytes | Used: %zu Bytes | Total: %zu Bytes\n", block_count, total_free, total_used, total_free + total_used);
-    serial_printf("===========================================================================================\n\n");
+    serial_printf("===========================================================================================\n");
 
     spinlock_release_irqrestore(&heap_lock, flags);
 }

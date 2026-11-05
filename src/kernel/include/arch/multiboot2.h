@@ -1,6 +1,6 @@
 /**
  * @file multiboot2.h
- * @brief Definitionen und Datenstrukturen der Multiboot2-Spezifikation.
+ * @brief Multiboot2 specification definitions and data structures.
  * @author friedrichOsDev
  */
 
@@ -8,66 +8,48 @@
 
 #include <pch.h>
 
-/**
- * @struct fb_info_t
- * @brief Informationen zum linearen Framebuffer des Grafikmodus.
- */
+/** @brief Information regarding the linear graphics mode framebuffer. */
 typedef struct {
-    uint64_t fb_addr;   /**< Physikalische Basisadresse des Framebuffers */
-    uint64_t fb_width;  /**< Bildbreite in Pixeln */
-    uint64_t fb_height; /**< Bildhöhe in Pixeln */
-    uint64_t fb_pitch;  /**< Byte-Anzahl pro Zeile (Pitch) */
-    uint64_t fb_bpp;    /**< Farbtiefe in Bits pro Pixel (BPP) */
+    uint64_t fb_addr;   /**< Physical base address of the framebuffer */
+    uint64_t fb_width;  /**< Screen width in pixels */
+    uint64_t fb_height; /**< Screen height in pixels */
+    uint64_t fb_pitch;  /**< Number of bytes per line (pitch) */
+    uint64_t fb_bpp;    /**< Color depth in bits per pixel (BPP) */
 } fb_info_t;
 
-/**
- * @enum mmap_type_t
- * @brief Speicherbereichstypen gemäß Multiboot2-Spezifikation.
- */
+/** @brief Memory map region types according to the Multiboot2 specification. */
 typedef enum {
-    MMAP_USABLE = 1,           /**< Freier, nutzbarer RAM */
-    MMAP_RESERVED = 2,         /**< Reservierter Speicherbereich */
-    MMAP_ACPI_RECLAIMABLE = 3, /**< ACPI-Tabellenbereich (wiederverwendbar) */
-    MMAP_NVS = 4,              /**< Nicht-flüchtiger ACPI-NVS-Speicher */
-    MMAP_BADRAM = 5            /**< Defekter Speicherbereich */
+    MMAP_USABLE = 1,           /**< Free, usable RAM */
+    MMAP_RESERVED = 2,         /**< Reserved memory region */
+    MMAP_ACPI_RECLAIMABLE = 3, /**< ACPI table area (reclaimable) */
+    MMAP_NVS = 4,              /**< Non-volatile ACPI NVS storage */
+    MMAP_BADRAM = 5            /**< Defective memory region */
 } mmap_type_t;
 
-/**
- * @struct mmap_entry_t
- * @brief Einzeleintrag der Speichermap.
- */
+/** @brief Single memory map entry. */
 typedef struct {
-    uint64_t base_addr; /**< Physikalische Startadresse */
-    uint64_t length;    /**< Länge des Speicherbereichs in Bytes */
-    mmap_type_t type;   /**< Typ des Speicherbereichs */
+    uint64_t base_addr; /**< Physical starting address */
+    uint64_t length;    /**< Length of the memory region in bytes */
+    mmap_type_t type;   /**< Type of the memory region */
 } mmap_entry_t;
 
-/**
- * @struct mmap_t
- * @brief Globale Speichermap-Struktur des Kernels.
- */
+/** @brief Global memory map structure of the kernel. */
 typedef struct {
-    uint64_t entry_count;                   /**< Anzahl erfasster Einträge */
-    mmap_entry_t entries[MMAP_MAX_ENTRIES]; /**< Array aller Speichereinträge */
+    uint64_t entry_count;                   /**< Total number of recorded entries */
+    mmap_entry_t entries[MMAP_MAX_ENTRIES]; /**< Array of all memory entries */
 } mmap_t;
 
-/**
- * @struct boot_module_t
- * @brief Beschreibung eines vom Bootloader geladenen Moduls.
- */
+/** @brief Description of a module loaded by the bootloader. */
 typedef struct {
-    uint32_t mod_start; /**< Physikalische Startadresse des Moduls */
-    uint32_t mod_end;   /**< Physikalische Endadresse des Moduls */
-    char cmdline[3];    /**< Befehlszeilenparameter des Moduls */
+    uint32_t mod_start; /**< Physical starting address of the module */
+    uint32_t mod_end;   /**< Physical ending address of the module */
+    char cmdline[3];    /**< Command line parameters for the module */
 } boot_module_t;
 
-/**
- * @struct boot_modules_t
- * @brief Liste aller vom Bootloader übergebenen Module.
- */
+/** @brief List of all modules provided by the bootloader. */
 typedef struct {
-    uint32_t count;                     /**< Anzahl geladener Module */
-    boot_module_t entries[MAX_MODULES]; /**< Modul-Einträge */
+    uint32_t count;                     /**< Total number of loaded modules */
+    boot_module_t entries[MAX_MODULES]; /**< Module entries */
 } boot_modules_t;
 
 extern mmap_t kernel_mmap;
@@ -77,4 +59,4 @@ extern char kernel_bootloader_name[64];
 extern boot_modules_t kernel_modules;
 
 void multiboot_parse(const uint64_t magic, const uint64_t info_ptr);
-phys_addr_t get_rsdp_phys_addr();
+virt_addr_t get_rsdp_addr();

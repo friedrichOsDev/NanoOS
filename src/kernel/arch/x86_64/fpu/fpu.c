@@ -1,6 +1,6 @@
 /**
  * @file fpu.c
- * @brief Implementierung der FPU- und SSE-Initialisierung.
+ * @brief FPU/SSE initialization.
  * @author friedrichOsDev
  */
 
@@ -8,6 +8,7 @@
 #include <kernel/panic.h>
 #include <lib/util/mem.h>
 
+/** @brief Initialize the FPU/SSE. */
 void fpu_init() {
     uint64_t cr0, cr4;
 
@@ -25,13 +26,16 @@ void fpu_init() {
     ASM_CODE("fninit");
 }
 
+/**
+ * @brief Initialize a FPU state.
+ *
+ * @param[in,out] fpu_buf A pointer to a buffer where the FPU state will be stored.
+ */
 void fpu_state_init(void *fpu_buf) {
     if (!fpu_buf)
         return;
 
-    if ((uintptr_t)fpu_buf % 16 != 0) {
-        panic();
-    }
+    k_assert((uintptr_t)fpu_buf % 16 == 0);
 
     memset(fpu_buf, 0, 512);
 

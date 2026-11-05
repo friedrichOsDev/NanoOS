@@ -1,8 +1,6 @@
 /**
  * @file serial.h
- * @brief Treiber-Schnittstelle für die serielle UART-Kommunikation (16550/COM-Ports).
- * @details Bietet Makros für Standard-COM-Ports sowie Prototypen zur Initialisierung
- *          und Datenausgabe über die serielle Schnittstelle.
+ * @brief Internal definitions for the serial module.
  * @author friedrichOsDev
  */
 

@@ -1,9 +1,6 @@
 /**
  * @file smp.c
- * @brief Implementierung des Symmetric Multiprocessing (SMP) Bootstrappings.
- * @details Enthält Funktionen zur Erkennung von CPU-Kernen via ACPI MADT,
- *          zum Starten der Application Processors (APs) mittels Trampoline-Code
- *          und zur Initialisierung des Pro-CPU-Schedulings.
+ * @brief Symmetric Multiprocessing (SMP) implementation and AP core initialization.
  * @author friedrichOsDev
  */
 
@@ -18,6 +15,7 @@
 #include <lib/print.h>
 #include <lib/util/mem.h>
 #include <mm/memory.h>
+#include <sched/process.h>
 #include <sched/sched.h>
 
 extern struct gdt_ptr gdtp;
@@ -26,16 +24,10 @@ extern struct idt_ptr idtp;
 cpu_local_t cpus[MAX_CPUS];
 size_t smp_cpu_count = 1;
 
-/** @brief Synchronisations-Flag für den Hochfahrprozess einzelner AP-Kerne. */
 static volatile bool ap_boot_flag = false;
 
-/**
- * @brief Aktiviert und konfiguriert das Local APIC-Modul der aktuellen CPU.
- * @details Schaltet das Bit 11 in der IA32_APIC_BASE MSR ein, konfiguriert DFR,
- *          LDR, den Spurious Interrupt Vector Register (SIVR) sowie Task Priority (TPR).
- */
+/** @brief Enables and configures the Local APIC (LAPIC) for the current core. */
 static void smp_enable_lapic() {
-    // LAPIC im MSR aktivieren
     uint32_t low, high;
     ASM_CODE("rdmsr" : "=a"(low), "=d"(high) : "c"(0x1B));
     low |= (1 << 11);
@@ -47,6 +39,11 @@ static void smp_enable_lapic() {
     lapic_write(LAPIC_REG_TPR, 0);
 }
 
+/**
+ * @brief Retrieves the logical CPU ID corresponding to the executing core's Local APIC ID.
+ * 
+ * @return The logical CPU ID.
+ */
 uint32_t smp_get_cpu_id() {
     uint32_t lapic_id = lapic_get_id();
     for (size_t i = 0; i < smp_cpu_count; i++) {
@@ -54,14 +51,24 @@ uint32_t smp_get_cpu_id() {
             return cpus[i].cpu_id;
         }
     }
-    serial_printf("THIS SHOULD NOT BE CALLED!\n");
+    log_error("failed to find CPU ID for lapic ID %d", lapic_id);
     return 0;
 }
 
+/**
+ * @brief Retrieves the total number of detected active CPU cores.
+ * 
+ * @return Total CPU count.
+ */
 size_t smp_get_cpu_count() {
     return smp_cpu_count;
 }
 
+/**
+ * @brief Retrieves the per-CPU local data structure for the currently executing core.
+ * 
+ * @return Pointer to the current core's cpu_local_t structure.
+ */
 cpu_local_t *smp_get_current_cpu() {
     uint32_t lapic_id = lapic_get_id();
     for (size_t i = 0; i < smp_cpu_count; i++) {
@@ -69,48 +76,60 @@ cpu_local_t *smp_get_current_cpu() {
             return &cpus[i];
         }
     }
-    return nullptr;
-}
-
-cpu_local_t *smp_get_cpu_by_id(uint32_t cpu_id) {
-    if (cpu_id < smp_cpu_count) {
-        return &cpus[cpu_id];
-    }
+    log_error("failed to find CPU structure for lapic ID %d", lapic_id);
     return nullptr;
 }
 
 /**
- * @brief Einstiegspunkt im 64-Bit Long Mode für hochgefahrene Application Processors (APs).
- * @details Lädt GDT/IDT, initialisiert FPU/TSS/LAPIC, erstellt den Pro-CPU Idle-Thread
- *          sowie den Haupt-Kontext-Thread, schaltet Interrupts ein und geht in die Scheduler-Schleife über.
+ * @brief Retrieves the per-CPU local data structure for a specified logical CPU ID.
+ * 
+ * @param[in] cpu_id Logical CPU ID.
+ * @return Pointer to the requested core's cpu_local_t structure, or nullptr if out of bounds.
  */
+cpu_local_t *smp_get_cpu_by_id(uint32_t cpu_id) {
+    if (cpu_id < smp_cpu_count) {
+        return &cpus[cpu_id];
+    }
+    log_error("failed to find CPU structure for CPU ID %d", cpu_id);
+    return nullptr;
+}
+
+/** @brief C-level entry point executed by Application Processors (APs) upon successful startup. */
 static void smp_ap_main() {
-    // GDT & IDT für den aktuellen Kern laden
     gdt_flush((uint64_t)&gdtp);
     idt_load((uint64_t)&idtp);
 
     fpu_init();
 
     cpu_local_t *local_cpu = smp_get_current_cpu();
-
     if (!local_cpu) {
-        panic();
+        log_panic("failed to get current CPU structure for an AP, cannot boot kernel");
     }
 
     gdt_init_core(local_cpu->cpu_id, local_cpu->kernel_stack);
 
-    // Local APIC und Timer des APs initialisieren
+    // Initialize Local APIC and timer for this AP
     smp_enable_lapic();
     lapic_timer_start_ap();
 
-    // Eigenständigen Idle-Task für diesen CPU-Kern erstellen
+    // Create an independent idle task for this CPU core
     char idle_name[16];
     snprintf(idle_name, sizeof(idle_name), "idle_%d", local_cpu->cpu_id);
-    local_cpu->idle_thread = thread_create_on_cpu(proc_get_kernel_proc(), idle_task, NULL, idle_name, (int)local_cpu->cpu_id);
+    thread_t *idle_th = NULL;
+    kerr_t idle_err = thread_create_on_cpu(proc_get_kernel_proc(), idle_task, NULL, idle_name, (int)local_cpu->cpu_id, &idle_th);
+    if (k_failed(idle_err)) {
+        log_panic("failed to create idle thread for AP %zu", local_cpu->cpu_id);
+    }
+    local_cpu->idle_thread = idle_th;
     pop_next_ready_thread_for_cpu((int)local_cpu->cpu_id);
 
-    // Thread-Struktur für den aktuell laufenden AP-Kontext anlegen
-    thread_t *ap_main_thread = (thread_t *)kzalloc(sizeof(thread_t));
+    // Allocate thread structure for the currently running AP context
+    virt_addr_t mem;
+    kerr_t err = kzalloc(sizeof(thread_t), &mem);
+    if (k_failed(err)) {
+        log_panic("failed to allocate memory for thread structure for AP main thread, cannot boot kernel");
+    }
+    thread_t *ap_main_thread = (thread_t *)mem;
     ap_main_thread->tid = 1000 + local_cpu->cpu_id; // Dummy TID
     snprintf(ap_main_thread->name, sizeof(ap_main_thread->name), "idle_ap_%d", local_cpu->cpu_id);
     ap_main_thread->state = THREAD_RUNNING;
@@ -126,38 +145,39 @@ static void smp_ap_main() {
     local_cpu->online = true;
     ap_boot_flag = true;
 
-    serial_printf("SMP: CPU Core %d (APIC ID %d) online and ready!\n", local_cpu->cpu_id, local_cpu->lapic_id);
+    log_debug("CPU core %d (LAPIC ID %d) booted successfully", local_cpu->cpu_id, local_cpu->lapic_id);
 
-    // Interrupts aktivieren
+    // Enable interrupts
     ASM_CODE("sti");
 
-    // Scheduler-Schleife für diesen Kern starten
+    // Start scheduler loop for this core
     while (1) {
         sched_schedule();
         ASM_CODE("hlt");
     }
 }
 
-void smp_init() {
-    serial_printf("SMP: scanning MADT for CPU cores...\n");
-
+/**
+ * @brief Initializes Symmetric Multiprocessing (SMP), parses the MADT, and boots all available Application Processors (APs).
+ * 
+ * @return Returns E_OK on success, or an error code (E_NOINIT, E_BADCOUNT) on failure/single-core fallback.
+ */
+kerr_t smp_init() {
     if (!madt) {
-        serial_printf("SMP: no MADT table found, staying in single-core mode\n");
-        return;
+        log_warn("no MADT table found, staying in single-core mode");
+        return E_NOINIT;
     }
 
     uint32_t bsp_lapic_id = lapic_get_id();
 
-    // Bootstrap Processor (BSP / Kern 0) registrieren
+    // Register Bootstrap Processor (BSP / Core 0)
     cpus[0].cpu_id = 0;
     cpus[0].lapic_id = bsp_lapic_id;
     cpus[0].kernel_stack = (uint64_t)kernel_stack_top;
-    if ((uint64_t)kernel_stack_top % 16 != 0) {
-        panic();
-    }
+    k_assert((uint64_t)kernel_stack_top % 16 == 0);
     cpus[0].online = true;
 
-    // MADT-Einträge parsen und alle weiteren AP-Kerne erfassen
+    // Parse MADT entries and register all additional AP cores
     uint8_t *ptr = madt->entries;
     uint8_t *end = (uint8_t *)madt + madt->header.length;
 
@@ -179,15 +199,17 @@ void smp_init() {
         ptr += entry->length;
     }
 
-    serial_printf("SMP: detected %d CPU core(s) in system\n", smp_cpu_count);
-    if (smp_cpu_count == 1)
-        return;
+    log_debug("detected %d CPU core(s)", smp_cpu_count);
+    if (smp_cpu_count == 1) {
+        log_warn("only one CPU core detected, staying in single-core mode");
+        return E_BADCOUNT;
+    }
 
-    // Real-Mode Trampoline-Code auf 0x8000 kopieren
+    // Copy real-mode trampoline code to 0x8000
     size_t trampoline_size = (size_t)(smp_trampoline_end - smp_trampoline_start);
     memcpy((void *)P2V(0x8000), smp_trampoline_start, trampoline_size);
 
-    // Alle erkannten AP-Kerne nacheinander hochfahren
+    // Boot all detected AP cores sequentially
     for (size_t i = 1; i < smp_cpu_count; i++) {
         uint32_t target_apic_id = cpus[i].lapic_id;
 
@@ -195,42 +217,40 @@ void smp_init() {
             continue;
         }
 
-        // Dedicated Kernel Stack für den Kern allozieren
-        void *ap_stack = (void *)kzalloc(STACK_SIZE);
-        if (!ap_stack)
-            return;
+        // Allocate dedicated kernel stack for the core
+        virt_addr_t mem;
+        K_TRY(kzalloc(STACK_SIZE, &mem));
+        void *ap_stack = (void *)mem;
 
         uint64_t ap_stack_top = (uint64_t)ap_stack + STACK_SIZE;
-        if (ap_stack_top % 16 != 0) {
-            panic();
-        }
+        k_assert(ap_stack_top % 16 == 0);
         cpus[i].kernel_stack = ap_stack_top;
 
-        // Trampoline-Parameter im Real-Mode Speicherbereich (0x8000) eintragen
+        // Populate trampoline parameters in real-mode memory region (0x8000)
         uint64_t *trampoline_vars = (uint64_t *)P2V(0x8000 + ((uint64_t)&smp_trampoline_pml4 - (uint64_t)smp_trampoline_start));
 
-        trampoline_vars[0] = vmm_kernel_space()->pml4_phys; // Page Table
-        trampoline_vars[1] = ap_stack_top;                  // Stack Pointer
-        trampoline_vars[2] = (uint64_t)smp_ap_main;         // Target Entry
+        trampoline_vars[0] = vmm_kernel_space()->pml4_phys; // Page table
+        trampoline_vars[1] = ap_stack_top;                  // Stack pointer
+        trampoline_vars[2] = (uint64_t)smp_ap_main;         // Target entry
 
         ap_boot_flag = false;
 
-        serial_printf("SMP: booting Core %d (APIC ID %d)...\n", i, target_apic_id);
+        log_debug("booting core %d (LAPIC ID %d)", i, target_apic_id);
 
-        // Standard INIT-SIPI-SIPI Sequenz senden
+        // Send standard INIT-SIPI-SIPI sequence
         lapic_send_init(target_apic_id);
-        hpet_mdelay(10); // 10 ms warten
+        hpet_mdelay(10); // Wait 10 ms
 
-        // Startup-IPI mit Vektor 0x08 senden (Adresse: 0x08 * 4096 = 0x8000)
+        // Send startup IPI with vector 0x08 (Address: 0x08 * 4096 = 0x8000)
         lapic_send_sipi(target_apic_id, 0x08);
-        hpet_udelay(200); // 200 µs warten
+        hpet_udelay(200); // Wait 200 µs
 
         if (!ap_boot_flag) {
             lapic_send_sipi(target_apic_id, 0x08);
             hpet_mdelay(10);
         }
 
-        // Maximal 50 ms auf Rückmeldung des Kerns warten
+        // Wait up to 50 ms for core acknowledgement
         uint64_t timeout = 50;
         while (!ap_boot_flag && timeout > 0) {
             hpet_mdelay(1);
@@ -238,12 +258,13 @@ void smp_init() {
         }
 
         if (cpus[i].online) {
-            serial_printf("SMP: Core %d successfully initialized!\n", i);
+            log_debug("core %d started successfully", i);
         } else {
-            serial_printf("SMP: warning Core %d failed to boot (timeout)!\n", i);
-            kfree((virt_addr_t)ap_stack);
+            log_error("core %d failed to start", i);
+            K_TRY(kfree((virt_addr_t)ap_stack));
         }
     }
 
-    serial_printf("SMP: all available cores started.\n");
+    log_debug("all available cores started");
+    return E_OK;
 }

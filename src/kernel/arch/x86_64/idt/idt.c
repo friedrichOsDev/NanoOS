@@ -1,6 +1,6 @@
 /**
  * @file idt.c
- * @brief Setup und Initialisierung des Interrupt Descriptor Table (IDT).
+ * @brief IDT (Interrupt Descriptor Table) implementation.
  * @author friedrichOsDev
  */
 
@@ -10,17 +10,14 @@
 #include "int_sym.h"
 #include <arch/arch.h>
 
-/** @brief Das globale IDT-Array für 256 Interrupt-Vektoren. */
 struct idt_entry idt[IDT_ENTRIES];
-
-/** @brief Die Zeiger-Struktur zur Aufbereitung des IDTR-Registerinhalts. */
 struct idt_ptr idtp;
 
+/** @brief Initializes the Interrupt Descriptor Table (IDT) and flushes the IDT. */
 void idt_init() {
     idtp.limit = (sizeof(struct idt_entry) * IDT_ENTRIES) - 1;
     idtp.base = (uint64_t)&idt;
 
-    /* Sprungtabelle für die ersten 32 CPU-Exception-Stubs */
     static const uint64_t isr_table[32] = {
         (uint64_t)isr0, (uint64_t)isr1, (uint64_t)isr2, (uint64_t)isr3,
         (uint64_t)isr4, (uint64_t)isr5, (uint64_t)isr6, (uint64_t)isr7,
@@ -31,28 +28,33 @@ void idt_init() {
         (uint64_t)isr24, (uint64_t)isr25, (uint64_t)isr26, (uint64_t)isr27,
         (uint64_t)isr28, (uint64_t)isr29, (uint64_t)isr30, (uint64_t)isr31};
 
-    serial_printf("IDT: clearing all 256 entries\n");
     for (int i = 0; i < IDT_ENTRIES; i++) {
         idt_set_gate((uint8_t)i, 0, 0, 0, 0);
     }
 
-    /* Standard CPU Exceptions 0-31 mappen */
     for (int i = 0; i < 32; i++) {
-        const uint8_t ist_index = (i == 8) ? 1 : 0; /* Nutzen von IST1 für Double Fault (Vektor 8) */
+        const uint8_t ist_index = (i == 8) ? 1 : 0;
         idt_set_gate((uint8_t)i, isr_table[i], GDT_SEL_KERN_CODE, ist_index, IDT_GATE_INTERRUPT);
     }
 
-    /* Spezialisierte Vektoren für Spurious Interrupt, Inter-Processor Interrupts & LAPIC Timer */
     idt_set_gate(0xFF, (uint64_t)spurious_handler_stub, GDT_SEL_KERN_CODE, 0, IDT_GATE_INTERRUPT);
     idt_set_gate(IPI_RESCHEDULE_VECTOR, (uint64_t)ipi_reschedule_stub, GDT_SEL_KERN_CODE, 0, IDT_GATE_INTERRUPT);
     idt_set_gate(IPI_STOP_VECTOR, (uint64_t)ipi_stop_stub, GDT_SEL_KERN_CODE, 0, IDT_GATE_INTERRUPT);
     idt_set_gate(IPI_TLB_SHOOTDOWN_VECTOR, (uint64_t)ipi_tlb_shootdown_stub, GDT_SEL_KERN_CODE, 0, IDT_GATE_INTERRUPT);
     idt_set_gate(LAPIC_TIMER_VECTOR, (uint64_t)lapic_timer_stub, GDT_SEL_KERN_CODE, 0, IDT_GATE_INTERRUPT);
 
-    serial_printf("IDT: loading IDTR\n");
     idt_load((uint64_t)&idtp);
 }
 
+/**
+ * @brief Configures a standard IDT entry.
+ * 
+ * @param[in] num IDT entry index.
+ * @param[in] base Base memory address.
+ * @param[in] selector Selector for the entry.
+ * @param[in] ist Interrupt stack number.
+ * @param[in] flags Flags for the entry.
+ */
 void idt_set_gate(uint8_t num, uint64_t base, uint16_t selector, uint8_t ist, uint8_t flags) {
     idt[num].base_low = base & 0xFFFF;
     idt[num].base_mid = (base >> 16) & 0xFFFF;

@@ -1,8 +1,9 @@
-; /**
-; * @file gdt_flush.asm
-; * @brief Assembler-Funktionen zum Flushen der GDT und Laden des TSS.
-; * @author friedrichOsDev
-; */
+; ==============================================================================
+; @file gdt_flush.asm
+; @brief Assembly routines for flushing the GDT and loading the TSS.
+; @author friedrichOsDev
+; ==============================================================================
+
         [BITS 64]
         section .text
 
@@ -12,8 +13,8 @@
 ; ==============================================================================
 ; void gdt_flush(uint64_t gdt_ptr_phys)
 ; ==============================================================================
-; Parameter (System V ABI):
-; RDI = Zeiger auf die GDTR-Struktur (gdtp)
+; Parameters (System V ABI):
+;   RDI - Pointer to the GDTR structure (gdtp)
 ; ==============================================================================
 gdt_flush:
         lgdt [rdi]
@@ -35,8 +36,8 @@ gdt_flush:
 ; ==============================================================================
 ; void tss_load(uint16_t selector)
 ; ==============================================================================
-; Parameter (System V ABI):
-; RDI = TSS-Segment-Selektor (untere 16 Bit: DI)
+; Parameters (System V ABI):
+;   RDI - TSS segment selector (lower 16 bits: DI)
 ; ==============================================================================
 tss_load:
         ltr di

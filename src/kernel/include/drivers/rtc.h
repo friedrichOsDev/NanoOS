@@ -1,6 +1,6 @@
 /**
  * @file rtc.h
- * @brief Schnittstelle für die Real-Time Clock (CMOS RTC).
+ * @brief Real-Time Clock (RTC) definitions.
  * @author friedrichOsDev
  */
 
@@ -8,16 +8,14 @@
 
 #include <pch.h>
 
-/**
- * @brief Struktur zur Speicherung von Datums- und Zeitangaben der RTC.
- */
+/** @brief Structure representing RTC date and time values. */
 typedef struct {
-    uint8_t second; /**< Sekunden (0–59) */
-    uint8_t minute; /**< Minuten (0–59) */
-    uint8_t hour;   /**< Stunden (0–23) */
-    uint8_t day;    /**< Tag des Monats (1–31) */
-    uint8_t month;  /**< Monat (1–12) */
-    uint16_t year;  /**< Jahr (z. B. 2026) */
+    uint8_t second; /**< Seconds (0–59) */
+    uint8_t minute; /**< Minutes (0–59) */
+    uint8_t hour;   /**< Hours (0–23) */
+    uint8_t day;    /**< Day of the month (1–31) */
+    uint8_t month;  /**< Month (1–12) */
+    uint16_t year;  /**< Year (e.g., 2026) */
 } rtc_time_t;
 
 void rtc_init();

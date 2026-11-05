@@ -88,7 +88,7 @@ PCH_REL         = $(BUILD_DIR)/release/pch.h.gch
 PCH_DBG         = $(BUILD_DIR)/debug/pch.h.gch
 
 # Compiler Flags (Release and Debug)
-CFLAGS       = $(KERNEL_CORE_FLAGS) -O1 $(WARN_BASE) \
+CFLAGS       = $(KERNEL_CORE_FLAGS) -O2 $(WARN_BASE) \
                $(WARN_MEM) $(WARN_FLOW) $(WARN_TYPES) $(WARN_DECL) $(WARN_FMT) $(CG_FLAGS) $(INCLUDE_FLAGS)
 
 DEBUG_CFLAGS = $(KERNEL_CORE_FLAGS) -O0 -g -DKERNEL_DEBUG_BUILD $(WARN_BASE) \
@@ -101,7 +101,7 @@ ANALYZE_FLAGS = -fanalyzer -fanalyzer-checker=taint
 LDFLAGS = -m elf_x86_64 -T $(LINKER)
 
 # Targets
-.PHONY: all clean iso iso-debug debug release run run-debug gdb analyze
+.PHONY: all clean iso iso-debug debug release run run-debug gdb analyze compile_commands
 
 all: iso
 
@@ -117,6 +117,10 @@ analyze:
 				$(CC) $(CFLAGS) $(ANALYZE_FLAGS) -fsyntax-only $$file || exit 1 ;; \
 		esac; \
 	done
+
+# --- Compile Commands ---
+compile_commands:
+	bear -- make debug
 
 # --- Kernel (Release) ---
 release: $(KERNEL_ELF)
@@ -200,15 +204,31 @@ run: iso
 		-vga virtio \
 		-display gtk,gl=off,zoom-to-fit=off \
 		-cdrom $(ISO_IMAGE) \
-		-no-reboot \
-		-no-shutdown \
 		-d int,cpu_reset \
 		-D qemu.log \
 		-serial file:serial.log
 
-# --- Run with debug ---
+# --- Run debug ---
 run-debug: iso-debug
 	qemu-system-x86_64 \
+		-machine q35,pflash0=ovmf-code,pflash1=ovmf-vars \
+		-blockdev node-name=ovmf-code,driver=file,filename=./uefi/OVMF_CODE.4m.fd,read-only=on \
+		-blockdev node-name=ovmf-vars,driver=file,filename=./uefi/OVMF_VARS.4m.fd \
+		-smp 4 \
+		-m 8G \
+		-vga virtio \
+		-display gtk,gl=off,zoom-to-fit=off \
+		-cdrom $(ISO_DEBUG) \
+		-d int,cpu_reset \
+		-D qemu.log \
+		-serial file:serial.log
+
+gdb:
+	gdb build/kernel.debug -ex "target remote localhost:1234"
+
+# --- Run debug with GDB ---
+debug-session: iso-debug
+	@qemu-system-x86_64 \
 		-machine q35,pflash0=ovmf-code,pflash1=ovmf-vars \
 		-blockdev node-name=ovmf-code,driver=file,filename=./uefi/OVMF_CODE.4m.fd,read-only=on \
 		-blockdev node-name=ovmf-vars,driver=file,filename=./uefi/OVMF_VARS.4m.fd \
@@ -222,10 +242,12 @@ run-debug: iso-debug
 		-d int,cpu_reset \
 		-D qemu.log \
 		-serial file:serial.log \
-		-S -s
-
-gdb:
-	gdb build/kernel.debug -ex "target remote localhost:1234"
+		-S -s & \
+	QEMU_PID=$$!; \
+	sleep 1; \
+	echo "Connect GDB..."; \
+	gdb build/kernel.debug -ex "target remote localhost:1234"; \
+	kill $$QEMU_PID 2>/dev/null || true
 
 # --- Clean ---
 clean:

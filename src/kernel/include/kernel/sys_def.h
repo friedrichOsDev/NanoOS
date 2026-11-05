@@ -1,3 +1,9 @@
+/**
+ * @file sys_def.h
+ * @brief System definitions for the kernel.
+ * @author friedrichOsDev
+ */
+
 #pragma once
 
 #define MAX_CPUS 64

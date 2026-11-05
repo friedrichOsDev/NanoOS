@@ -1,3 +1,9 @@
+/**
+ * @file multiboot2.c
+ * @brief Multiboot2 parsing.
+ * @author friedrichOsDev
+ */
+
 #include "../acpi/acpi.h"
 #include "../mm/mem_def.h"
 #include "_multiboot2.h"
@@ -17,21 +23,18 @@ boot_modules_t kernel_modules;
 phys_addr_t rsdp_phys_addr = 0;
 
 static rsdp_t rsdp_stable_copy;
+static bool rsdp_copied = false;
 static multiboot_info_t *kernel_multiboot_info;
 
 /**
- * @brief Liest und verarbeitet die Multiboot2-Tags des Bootloaders.
- * @details Extrahiert Kernel-Befehlszeile, Bootloader-Namen, geladene Module,
- *          Speichermap, Framebuffer-Konfiguration und ACPI-RSDP-Zeiger.
- * @param magic Die von GRUB/Multiboot übergebene Magic Number.
- * @param info_ptr Physikalische Adresse der Multiboot-Tags.
+ * @brief Parse the Multiboot2 header.
+ *
+ * @param magic The Multiboot2 magic number.
+ * @param info_ptr The address of the Multiboot2 header.
  */
 void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
-    if (magic != MULTIBOOT2_MAGIC) {
-        panic();
-    } else if (!info_ptr) {
-        panic();
-    }
+    k_assert(magic == MULTIBOOT2_MAGIC);
+    k_assert(info_ptr != 0);
 
     kernel_multiboot_info = (multiboot_info_t *)info_ptr;
 
@@ -42,7 +45,7 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
 
     while ((uint8_t *)tag < end_addr && tag->type != MULTIBOOT_TAG_TYPE_END) {
         if (tag->size == 0) {
-            serial_printf("MULTIBOOT2: Corrupt tag with size 0\n");
+            log_warn("corrupt multiboot2 tag with size 0");
             break;
         }
 
@@ -51,14 +54,14 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
             multiboot_tag_cmdline_t *cmdline = (multiboot_tag_cmdline_t *)tag;
             strncpy(kernel_cmdline, cmdline->string, sizeof(kernel_cmdline) - 1);
             kernel_cmdline[sizeof(kernel_cmdline) - 1] = '\0';
-            serial_printf("MULTIBOOT2: cmdline=%s\n", kernel_cmdline);
+            log_debug("multiboot2 cmdline=%s", kernel_cmdline);
             break;
         }
         case MULTIBOOT_TAG_TYPE_BOOT_LOADER: {
             multiboot_tag_boot_loader_t *boot_loader = (multiboot_tag_boot_loader_t *)tag;
             strncpy(kernel_bootloader_name, boot_loader->string, sizeof(kernel_bootloader_name) - 1);
             kernel_bootloader_name[sizeof(kernel_bootloader_name) - 1] = '\0';
-            serial_printf("MULTIBOOT2: bootloader=%s\n", kernel_bootloader_name);
+            log_debug("multiboot2 bootloader=%s", kernel_bootloader_name);
             break;
         }
         case MULTIBOOT_TAG_TYPE_MODULE: {
@@ -69,9 +72,9 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
                 entry->mod_end = module->mod_end;
                 strncpy(entry->cmdline, module->cmdline, sizeof(entry->cmdline) - 1);
                 entry->cmdline[sizeof(entry->cmdline) - 1] = '\0';
-                serial_printf("MULTIBOOT2: module at [%x - %x] cmd=%s\n", entry->mod_start, entry->mod_end, entry->cmdline);
+                log_debug("multiboot2 module at [%x - %x] cmd=%s", entry->mod_start, entry->mod_end, entry->cmdline);
             } else {
-                serial_printf("MULTIBOOT2: warning, max modules reached\n");
+                log_warn("multiboot2 max modules reached");
             }
             break;
         }
@@ -87,7 +90,7 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
                     kernel_mmap.entries[kernel_mmap.entry_count].type = (mmap_type_t)entry->type;
                     kernel_mmap.entry_count++;
                 }
-                serial_printf("MULTIBOOT2: mregion: base=%llx, len=%llx, type=%d\n", entry->base_addr, entry->length, entry->type);
+                log_debug("multiboot2 memory region: base=%llx, len=%llx, type=%d", entry->base_addr, entry->length, entry->type);
             }
             break;
         }
@@ -100,40 +103,35 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
             kernel_fb_info.fb_pitch = framebuffer->framebuffer_pitch;
             kernel_fb_info.fb_bpp = framebuffer->framebuffer_bpp;
 
-            serial_printf(
-                "MULTIBOOT2: framebuffer: %dx%dx%d at %llx, type=%d\n",
-                framebuffer->framebuffer_width, framebuffer->framebuffer_height,
-                framebuffer->framebuffer_bpp, framebuffer->framebuffer_addr,
-                framebuffer->framebuffer_type);
-
-            if (framebuffer->framebuffer_type == 2)
-                panic();
-
+            log_debug("multiboot2 framebuffer: %dx%dx%d at %llx, type=%d", framebuffer->framebuffer_width, framebuffer->framebuffer_height, framebuffer->framebuffer_bpp, framebuffer->framebuffer_addr, framebuffer->framebuffer_type);
+            k_assert(framebuffer->framebuffer_type != 2);
             break;
         }
         case MULTIBOOT_TAG_TYPE_ACPI_OLD: {
             multiboot_tag_old_acpi_t *old = (multiboot_tag_old_acpi_t *)tag;
             rsdp_phys_addr = (phys_addr_t)old->rsdp;
             memcpy(&rsdp_stable_copy, (void *)P2V(rsdp_phys_addr), 20);
-            serial_printf("MULTIBOOT2: ACPI Old (v1.0) RSDP physical found at %llx\n", rsdp_phys_addr);
+            rsdp_copied = true;
+            log_debug("multiboot2 ACPI old (v1.0) RSDP physical found at %llx", rsdp_phys_addr);
             break;
         }
         case MULTIBOOT_TAG_TYPE_ACPI_NEW: {
             multiboot_tag_new_acpi_t *new = (multiboot_tag_new_acpi_t *)tag;
-            rsdp_phys_addr = (phys_addr_t) new->rsdp;
+            rsdp_phys_addr = (phys_addr_t)new->rsdp;
             rsdp_t *temp_rsdp = (rsdp_t *)P2V(rsdp_phys_addr);
             size_t rsdp_size = (temp_rsdp->revision >= 2) ? temp_rsdp->length : 20;
             if (rsdp_size > sizeof(rsdp_t))
                 rsdp_size = sizeof(rsdp_t);
             memcpy(&rsdp_stable_copy, temp_rsdp, rsdp_size);
-            serial_printf("MULTIBOOT2: ACPI New (v2.0+) RSDP physical found at %llx\n", rsdp_phys_addr);
+            rsdp_copied = true;
+            log_debug("multiboot2 ACPI new (v2.0+) RSDP physical found at %llx", rsdp_phys_addr);
             break;
         }
 
         case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO: {
             multiboot_tag_basic_meminfo_t *meminfo = (multiboot_tag_basic_meminfo_t *)tag;
 
-            serial_printf("MULTIBOOT2: mem_lower=%u KB, mem_upper=%u KB (%u MB)\n", meminfo->mem_lower, meminfo->mem_upper, meminfo->mem_upper / 1024);
+            log_debug("multiboot2 mem_lower=%u KB, mem_upper=%u KB (%u MB)", meminfo->mem_lower, meminfo->mem_upper, meminfo->mem_upper / 1024);
             break;
         }
 
@@ -142,12 +140,11 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
             uintptr_t actual_phys_addr = (uintptr_t)load_base->load_base_addr;
             uintptr_t expected_phys_addr = KERNEL_START_PHYS;
 
-            serial_printf("MULTIBOOT2: load_base_addr=%lx (linked at %lx)\n", actual_phys_addr, expected_phys_addr);
+            log_debug("multiboot2 load_base_addr=%lx (linked at %lx)", actual_phys_addr, expected_phys_addr);
 
             if (actual_phys_addr != expected_phys_addr) {
                 intptr_t offset = (intptr_t)actual_phys_addr - (intptr_t)expected_phys_addr;
-                serial_printf("MULTIBOOT2: ERROR: Kernel was relocated! Offset: %lx\n", offset);
-                panic();
+                log_panic("kernel was relocated: offset=%lx", offset);
             }
             break;
         }
@@ -158,7 +155,7 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
             break;
 
         default: {
-            serial_printf("MULTIBOOT2: unknown type %d\n", tag->type);
+            log_warn("unknown multiboot2 type %d", tag->type);
             break;
         }
         }
@@ -166,6 +163,12 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
     }
 }
 
-phys_addr_t get_rsdp_phys_addr() {
-    return rsdp_phys_addr;
+/**
+ * @brief Get the physical address of the RSDP (Root System Description Pointer).
+ *
+ * @return phys_addr_t The physical address of the RSDP.
+ */
+virt_addr_t get_rsdp_addr() {
+    if (!rsdp_copied) return 0;
+    return (virt_addr_t)&rsdp_stable_copy;
 }

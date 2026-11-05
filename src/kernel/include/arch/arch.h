@@ -1,19 +1,24 @@
+/**
+ * @file arch.h
+ * @brief Architecture-specific functions and data structures.
+ * @author friedrichOsDev
+ */
+
 #pragma once
 
 #include <pch.h>
-#include <sched/thread.h>
 
-inline void arch_sti() { ASM_CODE("sti"); }
-inline void arch_cli() { ASM_CODE("cli"); }
-inline void arch_hlt() { ASM_CODE("hlt"); }
-inline void arch_pause() { ASM_CODE("pause"); }
-inline void arch_idle() {
+[[maybe_unused]] static inline void arch_sti() { ASM_CODE("sti"); }
+[[maybe_unused]] static inline void arch_cli() { ASM_CODE("cli"); }
+[[maybe_unused]] static inline void arch_hlt() { ASM_CODE("hlt"); }
+[[maybe_unused]] static inline void arch_pause() { ASM_CODE("pause"); }
+[[maybe_unused]] static inline void arch_idle() {
     arch_sti();
     arch_hlt();
 }
 
 // acpi on x86_64
-void acpi_init(phys_addr_t rsdp_phys);
+kerr_t acpi_init(virt_addr_t rsdp_addr);
 void acpi_power_off();
 
 // hpet on x86_64
@@ -25,7 +30,7 @@ uint64_t hpet_uptime_ms();
 uint64_t hpet_uptime_us();
 
 // cross cpu/apic
-void apic_init();
+kerr_t apic_init();
 void lapic_init(uint32_t target_hz);
 bool is_apic_initialized();
 void arch_ipi_reschedule();
@@ -43,8 +48,8 @@ uint32_t inl(uint16_t port);
 
 // serial port on x86_64
 void serial_init();
-void serial_putc(char c);
-void serial_puts(const char *str);
+kerr_t serial_putc(char c);
+kerr_t serial_puts(const char *str);
 void serial_printf(const char *format, ...);
 void vserial_printf(const char *format, va_list args);
 
@@ -72,17 +77,19 @@ void arch_irq_restore(irq_flags_t flags);
 void isr_install_handler(int isr, isr_handler_t handler);
 void irq_install_handler(int irq, irq_handler_t handler);
 
-// cpu/smp
+/** @brief Per-CPU local data structure containing core state and scheduling context. */
 typedef struct cpu_local {
-    uint32_t cpu_id;             /**< Logische CPU-Nummer (0 = BSP, 1 = AP1, ...) */
-    uint32_t lapic_id;           /**< Physikalische Local-APIC-ID aus der ACPI MADT */
-    uint64_t kernel_stack;       /**< Basisadresse des Kernel-Stacks dieser CPU */
-    volatile bool online;        /**< Flag: Gibt an, ob der CPU-Kern aktiv ist */
-    thread_t *current_thread;    /**< Zeiger auf den aktuell auf dieser CPU laufenden Thread */
-    thread_t *idle_thread;       /**< Dedizierter Idle-Thread für diese CPU */
-    thread_t *thread_to_enqueue; /**< Temporärer Thread-Puffer für Scheduler-Einreihungen */
+    uint32_t cpu_id;             /**< Logical CPU identifier (0 = BSP, 1 = AP1, ...) */
+    uint32_t lapic_id;           /**< Physical Local APIC ID from ACPI MADT */
+    uint64_t kernel_stack;       /**< Base address of this CPU's kernel stack */
+    volatile bool online;        /**< Flag indicating whether the CPU core is active */
+    thread_t *current_thread;    /**< Pointer to the thread currently executing on this CPU */
+    thread_t *idle_thread;       /**< Dedicated idle thread for this CPU */
+    thread_t *thread_to_enqueue; /**< Temporary thread buffer for scheduler enqueue operations */
 } cpu_local_t;
-void smp_init();
+
+// cpu/smp
+kerr_t smp_init();
 uint32_t smp_get_cpu_id();
 size_t smp_get_cpu_count();
 cpu_local_t *smp_get_current_cpu();

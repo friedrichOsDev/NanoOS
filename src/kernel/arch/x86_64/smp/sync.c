@@ -1,6 +1,6 @@
 /**
  * @file sync.c
- * @brief Implementierung der Primitiven für Spinlocks und Mutexes.
+ * @brief Thread synchronization primitives (spinlock, mutex) implementation.
  * @author friedrichOsDev
  */
 
@@ -10,6 +10,11 @@
 #include <sched/sched.h>
 #include <sched/thread.h>
 
+/**
+ * @brief Acquires a spinlock, spinning with a pause hint until it becomes available.
+ * 
+ * @param[in,out] lock Pointer to the spinlock to acquire.
+ */
 void spinlock_acquire(spinlock_t *lock) {
     uint32_t expected = 1;
     while (__atomic_exchange_n(&(lock->lock), expected, __ATOMIC_ACQUIRE)) {
@@ -19,21 +24,43 @@ void spinlock_acquire(spinlock_t *lock) {
     }
 }
 
+/**
+ * @brief Releases a spinlock.
+ * 
+ * @param[in,out] lock Pointer to the spinlock to release.
+ */
 void spinlock_release(spinlock_t *lock) {
     __atomic_clear(&(lock->lock), __ATOMIC_RELEASE);
 }
 
+/**
+ * @brief Saves the current interrupt flags, disables CPU interrupts, and acquires a spinlock.
+ * 
+ * @param[in,out] lock Pointer to the spinlock to acquire.
+ * @return Previous CPU interrupt state flags.
+ */
 irq_flags_t spinlock_acquire_irqsave(spinlock_t *lock) {
     irq_flags_t rflags = arch_irq_save();
     spinlock_acquire(lock);
     return rflags;
 }
 
+/**
+ * @brief Releases a spinlock and restores the previous CPU interrupt state flags.
+ * 
+ * @param[in,out] lock Pointer to the spinlock to release.
+ * @param[in] rflags Interrupt state flags to restore.
+ */
 void spinlock_release_irqrestore(spinlock_t *lock, irq_flags_t rflags) {
     spinlock_release(lock);
     arch_irq_restore(rflags);
 }
 
+/**
+ * @brief Acquires a blocking mutex, blocking the current thread and invoking the scheduler if already locked.
+ * 
+ * @param[in,out] mux Pointer to the mutex to acquire.
+ */
 void mutex_lock(mutex_t *mux) {
     if (!mux)
         return;
@@ -69,6 +96,11 @@ void mutex_lock(mutex_t *mux) {
     sched_schedule();
 }
 
+/**
+ * @brief Releases a mutex, waking up the next thread in the wait queue or clearing the lock state.
+ * 
+ * @param[in,out] mux Pointer to the mutex to release.
+ */
 void mutex_unlock(mutex_t *mux) {
     if (!mux)
         return;
@@ -89,6 +121,12 @@ void mutex_unlock(mutex_t *mux) {
     spinlock_release_irqrestore(&mux->lock, flags);
 }
 
+/**
+ * @brief Attempts to acquire a mutex without blocking if it is currently locked.
+ * 
+ * @param[in,out] mux Pointer to the mutex to try.
+ * @return Returns true if successfully acquired, false otherwise.
+ */
 bool mutex_trylock(mutex_t *mux) {
     if (!mux)
         return false;

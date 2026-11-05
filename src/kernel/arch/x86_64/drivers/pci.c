@@ -1,6 +1,6 @@
 /**
  * @file pci.c
- * @brief Implementierung des PCIe / PCI MMCONFIG Subsystems und Driver Frameworks.
+ * @brief Basic PCI scanning and driver registration.
  * @author friedrichOsDev
  */
 
@@ -17,12 +17,13 @@ static pci_driver_t *driver_list_head = NULL;
 static spinlock_t pci_lock = SPINLOCK_INIT;
 
 /**
- * @brief Berechnet die virtuelle Adresse des Konfigurationsraums für ein PCI-Gerät via ECAM (MCFG).
- * @param bus PCI Busnummer.
- * @param dev PCI Gerätenummer.
- * @param func PCI Funktionsnummer.
- * @param offset Byte-Offset innerhalb des Konfigurationsraums.
- * @return Virtuelle Adresse des Registers oder 0, falls der Bus nicht im MCFG vorhanden ist.
+ * @brief Computes the virtual ECAM memory address for a given PCI device configuration space offset.
+ * 
+ * @param[in] bus PCI bus number.
+ * @param[in] dev PCI device number.
+ * @param[in] func PCI function number.
+ * @param[in] offset Configuration space register offset.
+ * @return Virtual address corresponding to the ECAM location, or 0 if not found.
  */
 static virt_addr_t pci_get_ecam_addr(uint8_t bus, uint8_t dev, uint8_t func, uint16_t offset) {
     for (size_t i = 0; i < mcfg_info.count; i++) {
@@ -36,36 +37,78 @@ static virt_addr_t pci_get_ecam_addr(uint8_t bus, uint8_t dev, uint8_t func, uin
     return 0;
 }
 
+/**
+ * @brief Reads an 8-bit value from a PCI device's configuration space.
+ * 
+ * @param[in] dev Pointer to the target PCI device structure.
+ * @param[in] offset Register offset in configuration space.
+ * @return 8-bit value read from the register, or 0xFF on failure.
+ */
 uint8_t pci_read8(pci_device_t *dev, uint16_t offset) {
     if (!dev || !dev->config_space_virt)
         return 0xFF;
     return *(volatile uint8_t *)(dev->config_space_virt + offset);
 }
 
+/**
+ * @brief Reads a 16-bit value from a PCI device's configuration space.
+ * 
+ * @param[in] dev Pointer to the target PCI device structure.
+ * @param[in] offset Register offset in configuration space.
+ * @return 16-bit value read from the register, or 0xFFFF on failure.
+ */
 uint16_t pci_read16(pci_device_t *dev, uint16_t offset) {
     if (!dev || !dev->config_space_virt)
         return 0xFFFF;
     return *(volatile uint16_t *)(dev->config_space_virt + offset);
 }
 
+/**
+ * @brief Reads a 32-bit value from a PCI device's configuration space.
+ * 
+ * @param[in] dev Pointer to the target PCI device structure.
+ * @param[in] offset Register offset in configuration space.
+ * @return 32-bit value read from the register, or 0xFFFFFFFF on failure.
+ */
 uint32_t pci_read32(pci_device_t *dev, uint16_t offset) {
     if (!dev || !dev->config_space_virt)
         return 0xFFFFFFFF;
     return *(volatile uint32_t *)(dev->config_space_virt + offset);
 }
 
+/**
+ * @brief Writes an 8-bit value to a PCI device's configuration space.
+ * 
+ * @param[in] dev Pointer to the target PCI device structure.
+ * @param[in] offset Register offset in configuration space.
+ * @param[in] val 8-bit value to write.
+ */
 void pci_write8(pci_device_t *dev, uint16_t offset, uint8_t val) {
     if (!dev || !dev->config_space_virt)
         return;
     *(volatile uint8_t *)(dev->config_space_virt + offset) = val;
 }
 
+/**
+ * @brief Writes a 16-bit value to a PCI device's configuration space.
+ * 
+ * @param[in] dev Pointer to the target PCI device structure.
+ * @param[in] offset Register offset in configuration space.
+ * @param[in] val 16-bit value to write.
+ */
 void pci_write16(pci_device_t *dev, uint16_t offset, uint16_t val) {
     if (!dev || !dev->config_space_virt)
         return;
     *(volatile uint16_t *)(dev->config_space_virt + offset) = val;
 }
 
+/**
+ * @brief Writes a 32-bit value to a PCI device's configuration space.
+ * 
+ * @param[in] dev Pointer to the target PCI device structure.
+ * @param[in] offset Register offset in configuration space.
+ * @param[in] val 32-bit value to write.
+ */
 void pci_write32(pci_device_t *dev, uint16_t offset, uint32_t val) {
     if (!dev || !dev->config_space_virt)
         return;
@@ -73,8 +116,9 @@ void pci_write32(pci_device_t *dev, uint16_t offset, uint32_t val) {
 }
 
 /**
- * @brief Liest die BARs (Base Address Registers) aus und ermittelt Speicheradresse, Typ und Größe.
- * @param dev Zeiger auf das zu verarbeitende PCI-Gerät.
+ * @brief Parses and configures Base Address Registers (BARs) for a PCI device.
+ * 
+ * @param[in,out] dev Pointer to the PCI device structure to populate.
  */
 static void pci_parse_bars(pci_device_t *dev) {
     for (int i = 0; i < 6; i++) {
@@ -126,19 +170,20 @@ static void pci_parse_bars(pci_device_t *dev) {
             dev->bar[i] = full_bar;
 
             if (is_64)
-                i++; // Nächste BAR wird von den oberen 32 Bit belegt
+                i++;
         }
     }
 }
 
 /**
- * @brief Parst die Capability Linked List im Konfigurationsraum (Suchen von MSI/MSI-X Offsets).
- * @param dev Zeiger auf das zu verarbeitende PCI-Gerät.
+ * @brief Scans and parses capabilities list (such as MSI/MSI-X) for a PCI device.
+ * 
+ * @param[in,out] dev Pointer to the PCI device structure to update.
  */
 static void pci_parse_capabilities(pci_device_t *dev) {
     uint16_t status = pci_read16(dev, 0x06);
     if (!(status & (1 << 4)))
-        return; // Bit 4: Capabilities List implementiert?
+        return;
 
     uint8_t cap_ptr = (uint8_t)(pci_read8(dev, 0x34) & ~0x03U);
 
@@ -159,23 +204,29 @@ static void pci_parse_capabilities(pci_device_t *dev) {
 }
 
 /**
- * @brief Prüft ein einzelnes PCI-Gerät an der angegebenen Adresse und fügt es bei Validität hinzu.
- * @param bus Busnummer.
- * @param dev Gerätenummer.
- * @param func Funktionsnummer.
+ * @brief Probes a specific PCI bus, device, and function slot, registering it if present.
+ * 
+ * @param[in] bus PCI bus number.
+ * @param[in] dev PCI device number.
+ * @param[in] func PCI function number.
+ * @return E_OK on success, or an appropriate error code on failure.
  */
-static void pci_probe_device(uint8_t bus, uint8_t dev, uint8_t func) {
+static kerr_t pci_probe_device(uint8_t bus, uint8_t dev, uint8_t func) {
     virt_addr_t ecam = pci_get_ecam_addr(bus, dev, func, 0);
     if (!ecam)
-        return;
+        return E_INVAL;
 
     volatile uint16_t *vendor_ptr = (volatile uint16_t *)ecam;
     if (*vendor_ptr == 0xFFFF)
-        return;
+        return E_NOTFOUND;
 
-    pci_device_t *device = (pci_device_t *)kzalloc(sizeof(pci_device_t));
-    if (!device)
-        return;
+    virt_addr_t mem;
+    kerr_t err = kzalloc(sizeof(pci_device_t), &mem);
+    if (k_failed(err)) {
+        log_error("failed to allocate device structure");
+        return err;
+    }
+    pci_device_t *device = (pci_device_t *)mem;
 
     device->bus = bus;
     device->device = dev;
@@ -197,16 +248,20 @@ static void pci_probe_device(uint8_t bus, uint8_t dev, uint8_t func) {
     device_list_head = device;
     spinlock_release_irqrestore(&pci_lock, flags);
 
-    serial_printf("PCI: Device [%02x:%02x.%d] %04x:%04x (Class %02x, Sub %02x)\n", bus, dev, func, device->vendor_id, device->device_id, device->class_code, device->subclass);
+    log_debug("PCI device [%02x:%02x.%d] %04x:%04x (Class %02x, Sub %02x)", bus, dev, func, device->vendor_id, device->device_id, device->class_code, device->subclass);
+    return E_OK;
 }
 
-void pci_init() {
+/**
+ * @brief Initializes the PCI subsystem by iterating over all MCFG entries and probing available devices.
+ * 
+ * @return E_OK on success, or an appropriate error code on failure.
+ */
+kerr_t pci_init() {
     if (mcfg_info.count == 0 || !mcfg_info.entries) {
-        serial_printf("PCI: No MCFG entries available\n");
-        return;
+        log_warn("no MCFG entries available, PCI cannot be initialized");
+        return E_NOINIT;
     }
-
-    serial_printf("PCI: Initializing ECAM bus scan via MCFG...\n");
 
     for (size_t i = 0; i < mcfg_info.count; i++) {
         mcfg_entry_runtime_t *entry = &mcfg_info.entries[i];
@@ -224,23 +279,36 @@ void pci_init() {
 
                 uint8_t max_func = is_multi_function ? 8 : 1;
                 for (uint8_t func = 0; func < max_func; func++) {
-                    pci_probe_device((uint8_t)bus, dev, func);
+                    kerr_t err = pci_probe_device((uint8_t)bus, dev, func);
+                    if (err == E_NOTFOUND)
+                        continue; // no problem, slot just doesn't exist
+                    if (k_failed(err))
+                        return err;
                 }
             }
         }
     }
+    return E_OK;
 }
 
+/**
+ * @brief Retrieves the head pointer of the detected PCI device linked list.
+ * 
+ * @return Pointer to the first pci_device_t element in the list.
+ */
 pci_device_t *pci_get_devices() {
     return device_list_head;
 }
 
 /**
- * @brief Gleicht einen spezifischen Treiber mit allen bekannten PCI-Geräten ab.
- * @param driver Zeiger auf den abzugleichenden Treiber.
+ * @brief Attempts to match a newly registered driver against all discovered PCI devices.
+ * 
+ * @param[in] driver Pointer to the PCI driver structure to match.
+ * @return E_OK if a device successfully bound, or an error code otherwise.
  */
-static void pci_match_driver(pci_driver_t *driver) {
+static kerr_t pci_match_driver(pci_driver_t *driver) {
     irq_flags_t flags = spinlock_acquire_irqsave(&pci_lock);
+    kerr_t err = E_NOTFOUND;
     pci_device_t *dev = device_list_head;
     while (dev) {
         bool match = true;
@@ -256,26 +324,44 @@ static void pci_match_driver(pci_driver_t *driver) {
 
         if (match && driver->probe) {
             if (driver->probe(dev)) {
-                serial_printf("PCI: Driver '%s' bound to [%02x:%02x.%d]\n", driver->name, dev->bus, dev->device, dev->function);
+                log_debug("PCI driver '%s' bound to [%02x:%02x.%d]", driver->name, dev->bus, dev->device, dev->function);
+                err = E_OK;
+            } else {
+                err = E_NOPROBE;
             }
         }
         dev = dev->next;
     }
     spinlock_release_irqrestore(&pci_lock, flags);
+    return err;
 }
 
-void pci_register_driver(pci_driver_t *driver) {
+/**
+ * @brief Registers a new PCI driver and triggers matching against existing devices.
+ * 
+ * @param[in] driver Pointer to the PCI driver structure to register.
+ * @return E_OK or binding status result code.
+ */
+kerr_t pci_register_driver(pci_driver_t *driver) {
     if (!driver)
-        return;
+        return E_INVAL;
 
     irq_flags_t flags = spinlock_acquire_irqsave(&pci_lock);
     driver->next = driver_list_head;
     driver_list_head = driver;
     spinlock_release_irqrestore(&pci_lock, flags);
 
-    pci_match_driver(driver);
+    return pci_match_driver(driver);
 }
 
+/**
+ * @brief Enables Message Signaled Interrupts (MSI) for a specified PCI device.
+ * 
+ * @param[in,out] dev Pointer to the PCI device.
+ * @param[in] vector Interrupt vector number to trigger.
+ * @param[in] lapic_id Target Local APIC ID.
+ * @return true on success, false if MSI capability is missing or invalid.
+ */
 bool pci_enable_msi(pci_device_t *dev, uint8_t vector, uint8_t lapic_id) {
     if (!dev || dev->msi_cap_offset == 0)
         return false;
@@ -297,15 +383,13 @@ bool pci_enable_msi(pci_device_t *dev, uint8_t vector, uint8_t lapic_id) {
         pci_write16(dev, (uint16_t)(cap + 0x08), (uint16_t)msg_data);
     }
 
-    // Command/Bus Master aktivieren
     uint16_t cmd = pci_read16(dev, 0x04);
     pci_write16(dev, 0x04, cmd | (1 << 2)); // Bit 2: Bus Master Enable
 
-    // Enable-Bit im Message Control Register setzen
     msg_ctrl |= (1 << 0);
     pci_write16(dev, (uint16_t)(cap + 0x02), msg_ctrl);
 
-    serial_printf("PCI: Enabled MSI on [%02x:%02x.%d] -> Vector %u, LAPIC %u\n", dev->bus, dev->device, dev->function, vector, lapic_id);
+    log_debug("enabled MSI on [%02x:%02x.%d] -> vector %u, LAPIC %u", dev->bus, dev->device, dev->function, vector, lapic_id);
 
     return true;
 }

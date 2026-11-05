@@ -1,6 +1,6 @@
 /**
  * @file sync.h
- * @brief Implementierung von Spinlocks und Mutexes für die Kernel-Synchronisation.
+ * @brief Thread synchronization primitives (spinlock, mutex) definitions.
  * @author friedrichOsDev
  */
 
@@ -10,34 +10,31 @@
 
 struct thread;
 
-/**
- * @struct spinlock_t
- * @brief Struktur für ein einfaches Atomic-Spinlock.
- */
+/** @brief Structure for a simple atomic spinlock. */
 typedef struct {
-    uint32_t lock; /**< Sperr-Zustand (0 = frei, 1 = belegt). */
+    uint32_t lock; /**< Lock state (0 = free, 1 = locked). */
 } spinlock_t;
 
-/**
- * @struct mutex_t
- * @brief Struktur für ein blockierendes Mutex mit Warteschlange.
- */
+/** @brief Structure for a blocking mutex with a wait queue. */
 typedef struct {
-    spinlock_t lock;           /**< Interner Spinlock zum Schutz der Mutex-Struktur. */
-    struct thread *owner;      /**< Referenz auf den Thread, der den Mutex besitzt. */
-    volatile bool locked;      /**< Sperr-Status des Mutex (true = belegt). */
-    struct thread *wait_queue; /**< Zeiger auf die Liste der wartenden Threads. */
-    const char *name;          /**< Name des Mutex für Debugging-Zwecke. */
+    spinlock_t lock;           /**< Internal spinlock protecting the mutex structure. */
+    struct thread *owner;      /**< Reference to the thread that owns the mutex. */
+    volatile bool locked;      /**< Lock status of the mutex (true = locked). */
+    struct thread *wait_queue; /**< Pointer to the list of waiting threads. */
+    const char *name;          /**< Name of the mutex for debugging purposes. */
 } mutex_t;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-macros"
 #define SPINLOCK_INIT \
     { .lock = 0 }
 
 #define MUTEX_INIT(n) \
     { .name = (n) }
+#pragma GCC diagnostic pop
 
-inline void spinlock_init(spinlock_t *lock) { lock->lock = 0; }
-inline void mutex_init(mutex_t *mux, const char *name) {
+[[maybe_unused]] static inline void spinlock_init(spinlock_t *lock) { lock->lock = 0; }
+[[maybe_unused]] static inline void mutex_init(mutex_t *mux, const char *name) {
     spinlock_init(&mux->lock);
     mux->locked = false;
     mux->wait_queue = NULL;

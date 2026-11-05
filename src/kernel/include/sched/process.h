@@ -1,8 +1,6 @@
 /**
  * @file process.h
- * @brief Definitionen und Datenstrukturen zur Prozessverwaltung.
- * @details Definiert die Struktur eines Prozesses, einschließlich Thread-Verwaltung,
- *          Adressraumzeiger (PML4/CR3) und Synchronisationselemente.
+ * @brief Process definitions.
  * @author friedrichOsDev
  */
 
@@ -14,25 +12,22 @@
 
 struct thread;
 
-/**
- * @struct process
- * @brief Repräsentiert einen Prozess im System.
- */
+/** @brief Represents a process in the system. */
 typedef struct process {
-    uint64_t pid;  /**< Eindeutige Prozess-ID (PID) */
-    char name[32]; /**< Name des Prozesses */
-
-    vmm_space_t *vmm_space; /**< Pointer zum Address-Bereich des Prozesses (incl: pml4, pml4_phys, lock) */
-
-    struct thread *threads; /**< Zeiger auf die Liste der zugehörigen Threads */
-    size_t thread_count;    /**< Anzahl der Threads im Prozess */
-
-    spinlock_t lock;      /**< Spinlock zur Absicherung der Prozess-Datenstruktur */
-    struct process *next; /**< Zeiger auf den nächsten Prozess in der globalen Prozessliste */
+    uint64_t pid;           /**< Unique Process ID (PID) */
+    char name[32];          /**< Name of the process */
+    vmm_space_t *vmm_space; /**< Pointer to the process address space (including pml4, pml4_phys, lock) */
+    struct thread *threads; /**< Pointer to the list of associated threads */
+    size_t thread_count;    /**< Number of threads in the process */
+    spinlock_t lock;        /**< Spinlock protecting the process data structure */
+    struct process *next;   /**< Pointer to the next process in the global process list */
 } process_t;
 
-void proc_init();
-process_t *proc_create(const char *name, vmm_space_t *sp);
+kerr_t proc_init();
+kerr_t proc_create(const char *name, vmm_space_t *sp, process_t **out);
+kerr_t proc_destroy(process_t *proc);
 void proc_register(process_t *proc);
+void proc_unregister(process_t *proc);
 process_t *proc_get_kernel_proc();
 process_t *proc_get_list();
+spinlock_t *proc_get_list_lock();

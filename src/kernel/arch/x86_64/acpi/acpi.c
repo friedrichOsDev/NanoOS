@@ -1,11 +1,12 @@
 /**
  * @file acpi.c
- * @brief Implementierung des ACPI-Parsings und der Power-Management-Funktionen.
+ * @brief ACPI parsing and power management.
  * @author friedrichOsDev
  */
 
 #include "acpi.h"
 #include "../mm/mem_def.h"
+#include "aml.h"
 #include <arch/arch.h>
 #include <lib/util/mem.h>
 #include <lib/util/str.h>
@@ -24,15 +25,14 @@ mcfg_t *mcfg = NULL;
 mcfg_info_t mcfg_info;
 
 /**
- * @brief Überprüft die Prüfsummen der RSDP-Struktur.
- *
- * Verifiziert die Standard-Prüfsumme (ACPI 1.0) sowie ggf. die erweiterte Prüfsumme (ACPI 2.0+).
- *
- * @param target_rsdp Zeiger auf die zu prüfende RSDP-Struktur.
- * @return `true` bei gültigen Prüfsummen, sonst `false`.
+ * @brief Verifies the checksum of an ACPI RSDP structure.
+
+ * @param[in] target_rsdp Pointer to the ACPI RSDP structure to verify.
+ * @return true if checksum is valid, false otherwise.
  */
 static bool acpi_verify_rsdp_checksum(rsdp_t *target_rsdp) {
     if (!target_rsdp || memcmp(target_rsdp->signature, RSDP_SIGNATURE, 8) != 0) {
+        log_warn("rsdp checksum cannot be verified (invalid structure)");
         return false;
     }
 
@@ -43,7 +43,7 @@ static bool acpi_verify_rsdp_checksum(rsdp_t *target_rsdp) {
     }
 
     if (sum != 0) {
-        serial_printf("ACPI: RSDP base checksum invalid\n");
+        log_error("rsdp checksum is not valid");
         return false;
     }
 
@@ -53,7 +53,7 @@ static bool acpi_verify_rsdp_checksum(rsdp_t *target_rsdp) {
             ext_sum = (uint8_t)(ext_sum + bytes[i]);
         }
         if (ext_sum != 0) {
-            serial_printf("ACPI: RSDP extended checksum invalid\n");
+            log_error("rsdp extended checksum is not valid");
             return false;
         }
     }
@@ -61,10 +61,10 @@ static bool acpi_verify_rsdp_checksum(rsdp_t *target_rsdp) {
 }
 
 /**
- * @brief Überprüft die Byte-Prüfsumme eines SDT-Headers.
+ * @brief Verifies the checksum of an ACPI table.
  *
- * @param header Zeiger auf den zu überprüfenden SDT-Header.
- * @return `true` wenn die Gesamtsumme der Bytes 0 ergibt, sonst `false`.
+ * @param[in] header Pointer to the ACPI table header to verify.
+ * @return true if the checksum is valid, false otherwise.
  */
 static bool acpi_verify_sdt_checksum(acpi_sdt_header_t *header) {
     if (!header)
@@ -78,11 +78,9 @@ static bool acpi_verify_sdt_checksum(acpi_sdt_header_t *header) {
 }
 
 /**
- * @brief Parst die Unterstrukturen der MADT (Multiple APIC Description Table).
+ * @brief Parses the MADT table and stores the parsed information in a structure.
  *
- * Iteriert durch die MADT-Einträge und sortiert LAPICs, IOAPICs, ISOs und NMIs in `madt_parsed` ein.
- *
- * @param target_madt Zeiger auf die MADT-Struktur.
+ * @param[in] target_madt Pointer to the MADT table to parse.
  */
 static void acpi_parse_madt(madt_t *target_madt) {
     if (!target_madt)
@@ -95,7 +93,7 @@ static void acpi_parse_madt(madt_t *target_madt) {
     while (ptr < end) {
         madt_entry_header_t *entry = (madt_entry_header_t *)ptr;
         if (entry->length == 0) {
-            serial_printf("ACPI: MADT entry with length 0\n");
+            log_warn("skipping invalid MADT entry\n");
             break;
         }
 
@@ -148,45 +146,46 @@ static void acpi_parse_madt(madt_t *target_madt) {
         ptr += entry->length;
     }
 
-    serial_printf("ACPI: loaded MADT (LAPICs: %d, IOAPICs: %d, ISOs: %d)\n", madt_parsed.lapic_count, madt_parsed.ioapic_count, madt_parsed.iso_count);
+    log_debug("MADT loaded (LAPICs: %d, IOAPICs: %d, ISOs: %d)", madt_parsed.lapic_count, madt_parsed.ioapic_count, madt_parsed.iso_count);
 }
 
 /**
- * @brief Registriert eine einzelne ACPI-Tabelle anhand ihrer Signatur.
+ * @brief Registers an given ACPI table (e.g FADT, MADT, HPET, MCFG, etc.)
  *
- * Verifiziert die Prüfsumme der Tabelle und speichert relevante Zeiger (FADT, DSDT, MADT, HPET, MCFG).
- *
- * @param phys_header Physische Adresse der zu registrierenden Tabelle.
+ * @param[in] phys_header The physical address of the ACPI table.
+ * @return E_OK on success, E_CHECKSUM on failure.
  */
-static void acpi_register_table(acpi_sdt_header_t *phys_header) {
+static kerr_t acpi_register_table(acpi_sdt_header_t *phys_header) {
     acpi_sdt_header_t *header = (acpi_sdt_header_t *)P2V((uint64_t)phys_header);
 
     if (!acpi_verify_sdt_checksum(header)) {
-        serial_printf("ACPI: SDT checksum invalid for: %c%c%c%c\n", header->signature[0], header->signature[1], header->signature[2], header->signature[3]);
-        return;
+        log_error("SDT header checksum invalid for: %c%c%c%c", header->signature[0], header->signature[1], header->signature[2], header->signature[3]);
+        return E_CHECKSUM;
     }
 
     if (memcmp(header->signature, FADT_SIGNATURE, 4) == 0) {
         fadt = (fadt_t *)header;
-        serial_printf("ACPI: FADT loaded at %llx\n", (uint64_t)fadt);
+        log_debug("FADT loaded at %llx", (uint64_t)fadt);
         if (fadt->x_dsdt) {
             dsdt = (acpi_sdt_header_t *)P2V(fadt->x_dsdt);
         } else if (fadt->dsdt) {
             dsdt = (acpi_sdt_header_t *)P2V(fadt->dsdt);
         }
         if (dsdt) {
-            serial_printf("ACPI: DSDT loaded at %llx\n", (uint64_t)dsdt);
+            log_debug("DSDT loaded at %llx", (uint64_t)dsdt);
+        } else {
+            log_error("DSDT not found in FADT");
         }
     } else if (memcmp(header->signature, MADT_SIGNATURE, 4) == 0) {
         madt = (madt_t *)header;
-        serial_printf("ACPI: MADT loaded at %llx\n", (uint64_t)madt);
+        log_debug("MADT loaded at %llx", (uint64_t)madt);
         acpi_parse_madt(madt);
     } else if (memcmp(header->signature, HPET_SIGNATURE, 4) == 0) {
         hpet = (hpet_t *)header;
-        serial_printf("ACPI: HPET loaded at %llx\n", (uint64_t)hpet);
+        log_debug("HPET loaded at %llx", (uint64_t)hpet);
     } else if (memcmp(header->signature, MCFG_SIGNATURE, 4) == 0) {
         mcfg = (mcfg_t *)header;
-        serial_printf("ACPI: MCFG loaded at %llx\n", (uint64_t)mcfg);
+        log_debug("MCFG loaded at %llx", (uint64_t)mcfg);
 
         size_t header_size = sizeof(acpi_sdt_header_t) + sizeof(uint64_t);
         if (mcfg->header.length > header_size) {
@@ -196,124 +195,143 @@ static void acpi_register_table(acpi_sdt_header_t *phys_header) {
         }
 
         if (mcfg_info.count > 0) {
-            mcfg_info.entries = (mcfg_entry_runtime_t *)kzalloc(mcfg_info.count * sizeof(mcfg_entry_runtime_t));
-
-            if (mcfg_info.entries == NULL) {
-                serial_printf("ACPI: Error, failed to allocate memory for mcfg_info.entries\n");
+            virt_addr_t mem;
+            kerr_t err = kzalloc(mcfg_info.count * sizeof(mcfg_entry_runtime_t), &mem);
+            if (k_failed(err)) {
+                log_error("failed to allocate memory for mcfg_info.entries");
                 mcfg_info.count = 0;
-                return;
+                mcfg_info.entries = nullptr;
+                return err;
             }
+            mcfg_info.entries = (mcfg_entry_runtime_t *)mem;
 
             for (size_t i = 0; i < mcfg_info.count; i++) {
                 uint8_t start_bus = mcfg->entries[i].start_bus_number;
                 uint8_t end_bus = mcfg->entries[i].end_bus_number;
 
-                // 1 MB pro Bus (32 Devs * 8 Funcs * 4096 Bytes ECAM Space)
+                // 1 MB per Bus (32 Devs * 8 Funcs * 4096 Bytes ECAM Space)
                 size_t bus_count = (size_t)(end_bus - start_bus + 1);
                 size_t mmio_size = bus_count * 1024 * 1024;
 
                 mcfg_info.entries[i].phys_base = mcfg->entries[i].base_address;
-                mcfg_info.entries[i].virt_base = vmm_map_mmio(vmm_kernel_space(), mcfg->entries[i].base_address, mmio_size);
+                err = vmm_map_mmio(vmm_kernel_space(), mcfg->entries[i].base_address, mmio_size, &(mcfg_info.entries[i].virt_base));
+                if (k_failed(err)) {
+                    log_error("failed to map MCFG[%zu]", i);
+                    return err;
+                }
                 mcfg_info.entries[i].pci_segment = mcfg->entries[i].pci_segment_group;
                 mcfg_info.entries[i].start_bus = start_bus;
                 mcfg_info.entries[i].end_bus = end_bus;
 
-                serial_printf("ACPI: MCFG[%zu] Seg %u, Bus %u-%u -> Phys: %llx, Virt: %llx\n", i, mcfg_info.entries[i].pci_segment, start_bus, end_bus, mcfg_info.entries[i].phys_base, mcfg_info.entries[i].virt_base);
+                log_debug("MCFG[%zu] Seg %u, Bus %u-%u -> Phys: %llx, Virt: %llx", i, mcfg_info.entries[i].pci_segment, start_bus, end_bus, mcfg_info.entries[i].phys_base, mcfg_info.entries[i].virt_base);
             }
-            serial_printf("ACPI: Registered %d MCFG entries dynamically.\n", mcfg_info.count);
         }
     }
+    return E_OK;
 }
 
-void acpi_init(phys_addr_t rsdp_phys) {
-    if (!rsdp_phys) {
-        serial_printf("ACPI: bad RSDP address\n");
+/** @brief Check if the ACPI mode is enabled, if not, enable it. */
+static void acpi_enable_acpi_mode() {
+    if (!fadt) return;
+
+    uint16_t pm1_cnt = inw((uint16_t)fadt->pm1a_cnt_blk);
+    if (pm1_cnt & 1) {
         return;
     }
 
-    rsdp = (rsdp_t *)P2V(rsdp_phys);
+    if (fadt->smi_cmd != 0 && fadt->acpi_enable != 0) {
+        outb((uint16_t)fadt->smi_cmd, fadt->acpi_enable);
+
+        int timeout = 30000;
+        while (timeout--) {
+            if (inw((uint16_t)fadt->pm1a_cnt_blk) & 1) {
+                log_debug("ACPI mode enabled successfully");
+                return;
+            }
+            arch_pause();
+        }
+        log_warn("failed to enable ACPI mode (timeout waiting for SCI_EN)");
+    }
+}
+
+/**
+ * @brief Initialize ACPI.
+ *
+ * @param[in] rsdp_phys The physical address of the RSDP.
+ * @return E_OK on success, E_BADADDR or E_CHECKSUM on failure.
+ */
+kerr_t acpi_init(virt_addr_t rsdp_addr) {
+    if (!rsdp_addr) {
+        log_error("bad RSDP address");
+        return E_BADADDR;
+    }
+
+    rsdp = (rsdp_t *)rsdp_addr;
 
     if (!acpi_verify_rsdp_checksum(rsdp)) {
-        serial_printf("ACPI: cannot verify RSDP checksum\n");
-        return;
+        log_error("RSDP checksum invalid");
+        return E_CHECKSUM;
     }
 
-    serial_printf("ACPI: RSDP Revision %d, OEM %c%c%c%c%c%c found\n", rsdp->revision, rsdp->oem_id[0], rsdp->oem_id[1], rsdp->oem_id[2], rsdp->oem_id[3], rsdp->oem_id[4], rsdp->oem_id[5]);
+    log_debug("RSDP revision %d, OEM %c%c%c%c%c%c found", rsdp->revision, rsdp->oem_id[0], rsdp->oem_id[1], rsdp->oem_id[2], rsdp->oem_id[3], rsdp->oem_id[4], rsdp->oem_id[5]);
 
-    // Falls Revision >= 2 und xsdt_address gesetzt ist, präferiert 64-Bit XSDT nutzen
     if (rsdp->revision >= 2 && rsdp->xsdt_address != 0) {
         xsdt = (xsdt_t *)P2V(rsdp->xsdt_address);
-        if (acpi_verify_sdt_checksum((acpi_sdt_header_t *)xsdt)) {
-            serial_printf("ACPI: Use 64-Bit XSDT at %llx\n", (uint64_t)xsdt);
-            size_t entries = (xsdt->header.length - sizeof(acpi_sdt_header_t)) / sizeof(uint64_t);
-            for (size_t i = 0; i < entries; i++) {
-                acpi_register_table((acpi_sdt_header_t *)xsdt->pointer_to_other_sdt[i]);
-            }
-            return;
+        if (!acpi_verify_sdt_checksum((acpi_sdt_header_t *)xsdt)) {
+            log_error("XSDT checksum invalid");
+            return E_CHECKSUM;
         }
+        log_debug("use 64-bit XSDT at %llx", (uint64_t)xsdt);
+        size_t entries = (xsdt->header.length - sizeof(acpi_sdt_header_t)) / sizeof(uint64_t);
+        for (size_t i = 0; i < entries; i++) {
+            acpi_register_table((acpi_sdt_header_t *)xsdt->pointer_to_other_sdt[i]);
+        }
+        acpi_enable_acpi_mode();
+        return E_OK;
     }
 
-    // Fallback auf 32-Bit RSDT
     if (rsdp->rsdt_address != 0) {
         rsdt = (rsdt_t *)P2V(rsdp->rsdt_address);
-        if (acpi_verify_sdt_checksum(&rsdt->header)) {
-            serial_printf("ACPI: Use 32-Bit RSDT at %llx\n", (uint64_t)rsdt);
-            size_t entries = (rsdt->header.length - sizeof(acpi_sdt_header_t)) / sizeof(uint32_t);
-            for (size_t i = 0; i < entries; i++) {
-                acpi_register_table((acpi_sdt_header_t *)(uint64_t)rsdt->pointer_to_other_sdt[i]);
-            }
+        if (!acpi_verify_sdt_checksum(&rsdt->header)) {
+            log_error("RSDT checksum invalid");
+            return E_CHECKSUM;
         }
+        log_debug("use 32-bit RSDT at %llx", (uint64_t)rsdt);
+        size_t entries = (rsdt->header.length - sizeof(acpi_sdt_header_t)) / sizeof(uint32_t);
+        for (size_t i = 0; i < entries; i++) {
+            acpi_register_table((acpi_sdt_header_t *)(uint64_t)rsdt->pointer_to_other_sdt[i]);
+        }
+        acpi_enable_acpi_mode();
+        return E_OK;
     }
+    log_error("no valid XSDT or RSDT found in RSDP");
+    return E_NOTFOUND;
 }
 
+/** @brief Power off the system. */
 void acpi_power_off() {
     if (!fadt || !dsdt) {
-        serial_printf("ACPI: Cannot power off, FADT or DSDT are missing\n");
+        log_error("unable to power off, FADT or DSDT are missing");
         return;
     }
 
-    uint8_t *ptr = (uint8_t *)dsdt + sizeof(acpi_sdt_header_t);
-    uint8_t *end = (uint8_t *)dsdt + dsdt->length;
+    s5_sleep_values_t s5;
 
-    uint16_t SLP_TYPa = 0;
-    uint16_t SLP_TYPb = 0;
-    bool found = false;
+    size_t dsdt_payload_len = dsdt->length - sizeof(acpi_sdt_header_t);
+    const void *dsdt_payload = (const void *)((uint8_t *)dsdt + sizeof(acpi_sdt_header_t));
 
-    // Suche nach dem AML-Name-Opcode "_S5_" in der DSDT
-    while (ptr < end - 8) {
-        if (memcmp(ptr, "_S5_", 4) == 0) {
-            ptr += 4;
-            if (*ptr == 0x12) { // PackageOp
-                ptr++;
-                uint8_t b = *ptr++;
-                uint8_t pkg_len_bytes = (b >> 6);
-                ptr += pkg_len_bytes;
+    if (aml_parse_s5(dsdt_payload, dsdt_payload_len, &s5) && s5.valid) {
+        log_debug("successfully parsed _S5 package (SLP_TYPa: %x, SLP_TYPb: %x)", s5.slp_typa, s5.slp_typb);
+        log_info("system shutdown");
 
-                ptr++;
+        uint16_t pm1a_val = (uint16_t)(((s5.slp_typa & 7) << 10) | (1 << 13));
+        outw((uint16_t)fadt->pm1a_cnt_blk, pm1a_val);
 
-                if (*ptr == 0x0A) // BytePrefix
-                    ptr++;
-                SLP_TYPa = *ptr++;
-
-                if (*ptr == 0x0A) // BytePrefix
-                    ptr++;
-                SLP_TYPb = *ptr++;
-
-                found = true;
-                break;
-            }
-        }
-        ptr++;
-    }
-
-    if (found) {
-        serial_printf("ACPI: Found _S5 package, SLP_TYPa: %x, SLP_TYPb: %x\n", SLP_TYPa, SLP_TYPb);
-
-        outw((uint16_t)fadt->pm1a_cnt_blk, (uint16_t)(SLP_TYPa | (1 << 13))); // Bit 13: "Sleep Enable" (SLP_EN)
         if (fadt->pm1b_cnt_blk) {
-            outw((uint16_t)fadt->pm1b_cnt_blk, (uint16_t)(SLP_TYPb | (1 << 13)));
+            uint16_t pm1b_val = (uint16_t)(((s5.slp_typb & 7) << 10) | (1 << 13));
+            outw((uint16_t)fadt->pm1b_cnt_blk, pm1b_val);
         }
     } else {
-        serial_printf("ACPI: _S5 package not found in DSDT\n");
+        log_warn("_S5 package not found or malformed in DSDT");
     }
 }
