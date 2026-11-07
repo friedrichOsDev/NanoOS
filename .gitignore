@@ -11,3 +11,4 @@ repomix-output.xml
 *.tmp
 .cache
 uefi/my_OVMF_VARS.4m.fd
+docs
