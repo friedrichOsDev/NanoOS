@@ -8,7 +8,6 @@
 #include <drivers/gfx/compositor.h>
 #include <drivers/gfx/gfx.h>
 #include <kernel/sync.h>
-#include <lib/math.h>
 #include <lib/util/mem.h>
 #include <mm/memory.h>
 #include <pch.h>

@@ -11,7 +11,6 @@
 #include <drivers/gfx/version_splash.h>
 #include <drivers/pci.h>
 #include <drivers/rtc.h>
-#include <kernel/error.h>
 #include <kernel/panic.h>
 #include <lib/util/str.h>
 #include <mm/memory.h>
