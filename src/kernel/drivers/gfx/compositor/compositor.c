@@ -727,7 +727,8 @@ static void compositor_swap() {
     irq_flags_t sflags = spinlock_acquire_irqsave(&state_lock);
     bool enabled = rendering_enabled;
     spinlock_release_irqrestore(&state_lock, sflags);
-    if (!enabled || !backbuffer) return;
+    if (!enabled || !backbuffer)
+        return;
 
     mutex_lock(&compositor_mutex);
     gfx_flush(backbuffer, fb_size);

@@ -4,10 +4,10 @@
  * @author friedrichOsDev
  */
 
-#include <drivers/gfx/fb_driver.h>
 #include <arch/multiboot2.h>
-#include <drivers/gfx/gfx.h>
 #include <drivers/gfx/compositor.h>
+#include <drivers/gfx/fb_driver.h>
+#include <drivers/gfx/gfx.h>
 #include <mm/memory.h>
 #include <pch.h>
 
