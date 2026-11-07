@@ -123,3 +123,12 @@ uint64_t hpet_uptime_us() {
     }
     return hpet_regs->main_counter_value / hpet_ticks_per_us;
 }
+
+/**
+ * @brief Get the current timestamp in milliseconds.
+ *
+ * @return The current timestamp in milliseconds.
+ */
+uint64_t hpet_get_timestamp() {
+    return hpet_uptime_ms();
+}

@@ -802,7 +802,7 @@ kerr_t compositor_init() {
     video_mode_t *mode = NULL;
     K_TRY(gfx_get_current_mode(&mode));
     if (!mode || mode->width == 0 || mode->height == 0) {
-        log_error("compositor: current video mode is invalid or unavailable");
+        log_error("current video mode is invalid or unavailable");
         return E_NOINIT;
     }
 
@@ -828,7 +828,7 @@ kerr_t compositor_init() {
     thread_t *thread = NULL;
     kerr_t err = thread_create(NULL, compositor_thread, NULL, "compositor_thread", &thread);
     if (k_failed(err)) {
-        log_error("compositor: failed to create compositor thread (%s)", kerr_str(err));
+        log_error("failed to create compositor thread (%s)", kerr_str(err));
         kfree((virt_addr_t)backbuffer);
         backbuffer = NULL;
 
@@ -839,7 +839,7 @@ kerr_t compositor_init() {
         return err;
     }
 
-    log_debug("compositor: initialized successfully");
+    log_debug("compositor initialized successfully");
     return E_OK;
 }
 
@@ -859,7 +859,7 @@ kerr_t compositor_deinit() {
         backbuffer = NULL;
     }
 
-    log_info("compositor: deinitialized");
+    log_info("compositor deinitialized");
     return E_OK;
 }
 

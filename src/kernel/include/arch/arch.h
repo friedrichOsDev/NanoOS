@@ -28,6 +28,7 @@ void hpet_udelay(uint64_t microseconds);
 void hpet_mdelay(uint64_t milliseconds);
 uint64_t hpet_uptime_ms();
 uint64_t hpet_uptime_us();
+uint64_t hpet_get_timestamp();
 
 // cross cpu/apic
 kerr_t apic_init();

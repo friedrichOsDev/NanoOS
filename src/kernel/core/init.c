@@ -9,6 +9,7 @@
 #include <drivers/gfx/compositor.h>
 #include <drivers/gfx/gfx.h>
 #include <drivers/gfx/version_splash.h>
+#include <drivers/hid/hid.h>
 #include <drivers/pci.h>
 #include <drivers/rtc.h>
 #include <kernel/panic.h>
@@ -28,6 +29,12 @@ static void kernel_init_thread(void *arg) {
         log_warn("gfx init failed, no graphical output available (%s)", kerr_str(err));
     }
     log_info("gfx done");
+
+    err = hid_init();
+    if (k_failed(err)) {
+        log_warn("hid init failed, no keyboard or mouse will be available (%s)", kerr_str(err));
+    }
+    log_info("hid done");
 
     version_splash_show("0.0.3", 3000);
     acpi_power_off();
