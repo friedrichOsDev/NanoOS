@@ -173,27 +173,6 @@ kerr_t vmm_init() {
     //     }
     //     kernel_fb_info.fb_addr = fb_vaddr;
     // }
-    log_debug("map framebuffer");
-    if (kernel_fb_info.fb_addr) {
-        uint64_t raw_size = (uint64_t)kernel_fb_info.fb_height * kernel_fb_info.fb_pitch;
-
-        uint64_t huge_page_size = 0x200000; // 2 MiB
-        uint64_t fb_size_aligned = (raw_size + huge_page_size - 1) & ~(huge_page_size - 1);
-
-        virt_addr_t fb_vaddr = next_free_mmio_vaddr;
-        next_free_mmio_vaddr += fb_size_aligned;
-
-        for (uint64_t offset = 0; offset < fb_size_aligned; offset += huge_page_size) {
-            phys_addr_t paddr = kernel_fb_info.fb_addr + offset;
-            virt_addr_t vaddr = fb_vaddr + offset;
-
-            uint64_t huge_flags = PTE_WRITABLE | PTE_PCD | PTE_PWT | PTE_HUGE;
-
-            K_TRY(vmm_map_page(vmm_kernel_space(), vaddr, paddr, huge_flags));
-        }
-
-        kernel_fb_info.fb_addr = fb_vaddr;
-    }
     return E_OK;
 }
 

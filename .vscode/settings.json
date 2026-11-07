@@ -1,12 +1,71 @@
 {
-    "editor.fontFamily": "Fira Code",
-    "editor.fontLigatures": true,
-    "editor.quickSuggestions": {
-        "other": "on",
-        "comments": "off",
-        "strings": "off"
-    },
-    "editor.quickSuggestionsDelay": 0,
-    "editor.inlayHints.enabled": "on",
-    "files.insertFinalNewline": true
+	"editor.fontFamily": "Fira Code",
+	"editor.fontLigatures": true,
+	"editor.quickSuggestions": {
+		"other": "on",
+		"comments": "off",
+		"strings": "off"
+	},
+	"editor.quickSuggestionsDelay": 0,
+	"editor.inlayHints.enabled": "on",
+	"files.insertFinalNewline": true,
+	"files.associations": {
+		"*.log": "log",
+		"*.serial.log": "log"
+	},
+	"editor.tokenColorCustomizations": {
+		"[Caelestia]": {
+			"textMateRules": [
+				{
+					"scope": [
+						"log.info",
+						"markup.inserted.log"
+					],
+					"settings": {
+						"foreground": "#A6E3A1",
+						"fontStyle": "bold"
+					}
+				},
+				{
+					"scope": [
+						"log.debug",
+						"markup.changed.log"
+					],
+					"settings": {
+						"foreground": "#F9E2AF",
+						"fontStyle": "bold"
+					}
+				},
+				{
+					"scope": [
+						"log.verbose"
+					],
+					"settings": {
+						"foreground": "#89B4FA",
+						"fontStyle": ""
+					}
+				},
+				{
+					"scope": [
+						"log.warning",
+						"markup.deleted.log"
+					],
+					"settings": {
+						"foreground": "#FAB387",
+						"fontStyle": "bold"
+					}
+				},
+				{
+					"scope": [
+						"log.error",
+						"string.regexp"
+					],
+					"settings": {
+						"foreground": "#F38BA8",
+						"fontStyle": "bold"
+					}
+				}
+			]
+		}
+	}
 }

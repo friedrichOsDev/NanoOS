@@ -102,9 +102,22 @@ void multiboot_parse(const uint64_t magic, const uint64_t info_ptr) {
             kernel_fb_info.fb_height = framebuffer->framebuffer_height;
             kernel_fb_info.fb_pitch = framebuffer->framebuffer_pitch;
             kernel_fb_info.fb_bpp = framebuffer->framebuffer_bpp;
+            kernel_fb_info.fb_type = framebuffer->framebuffer_type;
 
-            log_debug("multiboot2 framebuffer: %dx%dx%d at %llx, type=%d", framebuffer->framebuffer_width, framebuffer->framebuffer_height, framebuffer->framebuffer_bpp, framebuffer->framebuffer_addr, framebuffer->framebuffer_type);
-            k_assert(framebuffer->framebuffer_type != 2);
+            if (framebuffer->framebuffer_type == 1) { // Direct RGB
+                kernel_fb_info.red_field_position = framebuffer->framebuffer_red_field_position;
+                kernel_fb_info.red_mask_size = framebuffer->framebuffer_red_mask_size;
+                kernel_fb_info.green_field_position = framebuffer->framebuffer_green_field_position;
+                kernel_fb_info.green_mask_size = framebuffer->framebuffer_green_mask_size;
+                kernel_fb_info.blue_field_position = framebuffer->framebuffer_blue_field_position;
+                kernel_fb_info.blue_mask_size = framebuffer->framebuffer_blue_mask_size;
+            }
+
+            log_debug("multiboot2 framebuffer: %dx%dx%d at %llx, type=%d",
+                      framebuffer->framebuffer_width, framebuffer->framebuffer_height,
+                      framebuffer->framebuffer_bpp, framebuffer->framebuffer_addr,
+                      framebuffer->framebuffer_type);
+            k_assert(framebuffer->framebuffer_type != 2); // Text mode not supported for graphical HAL
             break;
         }
         case MULTIBOOT_TAG_TYPE_ACPI_OLD: {

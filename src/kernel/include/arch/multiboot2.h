@@ -10,11 +10,18 @@
 
 /** @brief Information regarding the linear graphics mode framebuffer. */
 typedef struct {
-    uint64_t fb_addr;   /**< Physical base address of the framebuffer */
-    uint64_t fb_width;  /**< Screen width in pixels */
-    uint64_t fb_height; /**< Screen height in pixels */
-    uint64_t fb_pitch;  /**< Number of bytes per line (pitch) */
-    uint64_t fb_bpp;    /**< Color depth in bits per pixel (BPP) */
+    uint64_t fb_addr;             /**< Physical base address of the framebuffer */
+    uint64_t fb_width;            /**< Screen width in pixels */
+    uint64_t fb_height;           /**< Screen height in pixels */
+    uint64_t fb_pitch;            /**< Number of bytes per line (pitch) */
+    uint64_t fb_bpp;              /**< Color depth in bits per pixel (BPP) */
+    uint8_t fb_type;              /**< Framebuffer type (0 = indexed, 1 = RGB, 2 = text) */
+    uint8_t red_field_position;   /**< Red bit shift */
+    uint8_t red_mask_size;        /**< Red bit length */
+    uint8_t green_field_position; /**< Green bit shift */
+    uint8_t green_mask_size;      /**< Green bit length */
+    uint8_t blue_field_position;  /**< Blue bit shift */
+    uint8_t blue_mask_size;       /**< Blue bit length */
 } fb_info_t;
 
 /** @brief Memory map region types according to the Multiboot2 specification. */

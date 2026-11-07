@@ -25,6 +25,8 @@ KERNEL_DEBUG = $(BUILD_DIR)/kernel.debug
 ISO_IMAGE    = $(BUILD_DIR)/nanoos.iso
 ISO_DEBUG    = $(BUILD_DIR)/nanoos-debug.iso
 LINKER       = $(KERNEL_DIR)/arch/x86_64/linker.ld
+OVMF_CODE    = uefi/OVMF_CODE.4m.fd
+OVMF_VARS    = uefi/my_OVMF_VARS.4m.fd
 
 ALL_INCLUDE_DIRS = $(sort $(dir $(call rwildcard,$(INCLUDE_DIR),*/)))
 INCLUDE_FLAGS = -I$(INCLUDE_DIR) $(foreach dir,$(ALL_INCLUDE_DIRS),-I$(dir))
@@ -89,11 +91,11 @@ PCH_DBG         = $(BUILD_DIR)/debug/pch.h.gch
 
 # Compiler Flags (Release and Debug)
 CFLAGS       = $(KERNEL_CORE_FLAGS) -O2 $(WARN_BASE) \
-               $(WARN_MEM) $(WARN_FLOW) $(WARN_TYPES) $(WARN_DECL) $(WARN_FMT) $(CG_FLAGS) $(INCLUDE_FLAGS)
+               $(WARN_MEM) $(WARN_FLOW) $(WARN_TYPES) $(WARN_DECL) $(WARN_FMT) $(CG_FLAGS) $(INCLUDE_FLAGS) -Wno-gnu-binary-literal
 
 DEBUG_CFLAGS = $(KERNEL_CORE_FLAGS) -O0 -g -DKERNEL_DEBUG_BUILD $(WARN_BASE) \
                $(WARN_MEM) $(WARN_FLOW) $(WARN_TYPES) $(WARN_DECL) $(WARN_FMT) \
-			   $(CG_FLAGS) $(INCLUDE_FLAGS)
+			   $(CG_FLAGS) $(INCLUDE_FLAGS) -Wno-gnu-binary-literal
 
 # Static Analysis: make analyze flags
 ANALYZE_FLAGS = -fanalyzer -fanalyzer-checker=taint
@@ -101,7 +103,7 @@ ANALYZE_FLAGS = -fanalyzer -fanalyzer-checker=taint
 LDFLAGS = -m elf_x86_64 -T $(LINKER)
 
 # Targets
-.PHONY: all clean iso iso-debug debug release run run-debug gdb analyze compile_commands
+.PHONY: all clean iso iso-debug debug release run run-debug gdb analyze compile-commands
 
 all: iso
 
@@ -119,7 +121,7 @@ analyze:
 	done
 
 # --- Compile Commands ---
-compile_commands:
+compile-commands:
 	bear -- make debug
 
 # --- Kernel (Release) ---
@@ -196,9 +198,9 @@ iso-debug: debug
 # --- Run ---
 run: iso
 	qemu-system-x86_64 \
-		-machine q35,pflash0=ovmf-code,pflash1=ovmf-vars \
-		-blockdev node-name=ovmf-code,driver=file,filename=./uefi/OVMF_CODE.4m.fd,read-only=on \
-		-blockdev node-name=ovmf-vars,driver=file,filename=./uefi/OVMF_VARS.4m.fd \
+		-machine q35 \
+		-drive if=pflash,format=raw,readonly=on,file=$(OVMF_CODE) \
+		-drive if=pflash,format=raw,file=$(OVMF_VARS) \
 		-smp 4 \
 		-m 8G \
 		-vga virtio \
@@ -206,14 +208,14 @@ run: iso
 		-cdrom $(ISO_IMAGE) \
 		-d int,cpu_reset \
 		-D qemu.log \
-		-serial file:serial.log
+		-serial stdio | grep --line-buffered -E "(TRACE|DEBUG|INFO|WARN|ERROR|PANIC|ASSERT)" > serial.log &
 
 # --- Run debug ---
 run-debug: iso-debug
 	qemu-system-x86_64 \
-		-machine q35,pflash0=ovmf-code,pflash1=ovmf-vars \
-		-blockdev node-name=ovmf-code,driver=file,filename=./uefi/OVMF_CODE.4m.fd,read-only=on \
-		-blockdev node-name=ovmf-vars,driver=file,filename=./uefi/OVMF_VARS.4m.fd \
+		-machine q35 \
+		-drive if=pflash,format=raw,readonly=on,file=$(OVMF_CODE) \
+		-drive if=pflash,format=raw,file=$(OVMF_VARS) \
 		-smp 4 \
 		-m 8G \
 		-vga virtio \
@@ -221,7 +223,7 @@ run-debug: iso-debug
 		-cdrom $(ISO_DEBUG) \
 		-d int,cpu_reset \
 		-D qemu.log \
-		-serial file:serial.log
+		-serial stdio | grep --line-buffered -E "(TRACE|DEBUG|INFO|WARN|ERROR|PANIC|ASSERT)" > serial.log &
 
 gdb:
 	gdb build/kernel.debug -ex "target remote localhost:1234"
@@ -229,20 +231,18 @@ gdb:
 # --- Run debug with GDB ---
 debug-session: iso-debug
 	@qemu-system-x86_64 \
-		-machine q35,pflash0=ovmf-code,pflash1=ovmf-vars \
-		-blockdev node-name=ovmf-code,driver=file,filename=./uefi/OVMF_CODE.4m.fd,read-only=on \
-		-blockdev node-name=ovmf-vars,driver=file,filename=./uefi/OVMF_VARS.4m.fd \
+		-machine q35 \
+		-drive if=pflash,format=raw,readonly=on,file=$(OVMF_CODE) \
+		-drive if=pflash,format=raw,file=$(OVMF_VARS) \
 		-smp 4 \
 		-m 8G \
 		-vga virtio \
 		-display gtk,gl=off,zoom-to-fit=off \
 		-cdrom $(ISO_DEBUG) \
-		-no-reboot \
-		-no-shutdown \
 		-d int,cpu_reset \
 		-D qemu.log \
-		-serial file:serial.log \
 		-S -s & \
+		-serial stdio | grep --line-buffered -E "(TRACE|DEBUG|INFO|WARN|ERROR|PANIC|ASSERT)" > serial.log &
 	QEMU_PID=$$!; \
 	sleep 1; \
 	echo "Connect GDB..."; \
