@@ -47,7 +47,7 @@ static bool wait_output_full(void) {
 
 static kerr_t controller_command(uint8_t command) {
     if (!wait_input_empty()) return E_TIMEOUT;
-    outb(I8042_COMMAND_PORT, command);
+    outb(PS2_COMMAND_PORT, command);
     return E_OK;
 }
 
