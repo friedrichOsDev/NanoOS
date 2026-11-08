@@ -10,6 +10,8 @@
 #include <drivers/gfx/gfx.h>
 #include <drivers/gfx/version_splash.h>
 #include <drivers/hid/hid.h>
+#include <drivers/hid/input.h>
+#include <drivers/hid/ps2/ps2.h>
 #include <drivers/pci.h>
 #include <drivers/rtc.h>
 #include <kernel/panic.h>
@@ -36,8 +38,16 @@ static void kernel_init_thread(void *arg) {
     }
     log_info("hid done");
 
+    err = input_init();
+    if (k_failed(err)) log_warn("input API initialization failed (%s)", kerr_str(err));
+
+    if (!k_failed(err)) {
+        err = ps2_register_driver();
+        if (k_failed(err)) log_warn("PS/2 driver unavailable (%s)", kerr_str(err));
+    }
+    log_info("input initialization done");
+
     version_splash_show("0.0.3", 3000);
-    acpi_power_off();
 
     while (1) {
         thread_yield();
