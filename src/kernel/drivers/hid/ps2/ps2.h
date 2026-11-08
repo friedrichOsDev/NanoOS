@@ -22,3 +22,4 @@ void ps2_mouse_byte(uint8_t byte);
 void ps2_irq_handler(struct registers *regs);
 void ps2_keyboard_reset_parser(void);
 void ps2_mouse_reset_parser(void);
+void ps2_mouse_set_id(uint8_t id);
