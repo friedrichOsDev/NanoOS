@@ -28,8 +28,8 @@ void ps2_mouse_byte(uint8_t byte) {
     packet_index = 0;
 
     if (packet[0] & 0xC0) return;
-    int16_t dx = (int16_t)(int8_t)packet[1];
-    int16_t dy = (int16_t)(int8_t)packet[2];
+    int32_t dx = (int32_t)(int8_t)packet[1];
+    int32_t dy = (int32_t)(int8_t)packet[2];
     if (packet[0] & 0x10) dx -= 256;
     if (packet[0] & 0x20) dy -= 256;
     if (dx || dy) {
