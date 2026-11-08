@@ -175,6 +175,8 @@ kerr_t ps2_controller_init(void) {
         if (!k_failed(device_command(false, 0xFF))) {
             uint8_t reset = 0;
             if (!k_failed(device_read(false, &reset)) && reset == 0xAA) {
+                /* Discard optional keyboard identification bytes after BAT. */
+                drain_output();
                 /* Select scan-code set 2; disable controller translation. */
                 if (!k_failed(device_command(false, 0xF0)) &&
                     !k_failed(device_command(false, 0x02)) &&
@@ -187,8 +189,10 @@ kerr_t ps2_controller_init(void) {
         (void)controller_command(I8042_CMD_ENABLE_B);
         if (!k_failed(device_command(true, 0xFF))) {
             uint8_t reset = 0;
-            if (!k_failed(device_read(true, &reset)) && reset == 0xAA &&
-                !k_failed(device_command(true, 0xF6))) {
+            if (!k_failed(device_read(true, &reset)) && reset == 0xAA) {
+                /* Discard optional device ID bytes after BAT. */
+                drain_output();
+                if (!k_failed(device_command(true, 0xF6))) {
                 /* IntelliMouse wheel negotiation: sample rates 200, 100, 80. */
                 bool wheel_mode = !k_failed(device_command(true, 0xF3)) &&
                                   !k_failed(device_write(true, 200)) &&
@@ -207,6 +211,7 @@ kerr_t ps2_controller_init(void) {
                     if (!k_failed(device_read(true, &id)) && (id == 0x03 || id == 0x04)) {
                         ps2_mouse_set_id(id);
                     }
+                }
                 }
                 }
             }
