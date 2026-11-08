@@ -9,6 +9,11 @@ static uint8_t packet_index;
 static uint8_t packet_size = 3;
 static uint8_t buttons;
 
+void ps2_mouse_set_id(uint8_t id) {
+    packet_size = (id == 0x03 || id == 0x04) ? 4 : 3;
+    packet_index = 0;
+}
+
 void ps2_mouse_reset_parser(void) {
     packet_index = 0;
     packet_size = 3;
