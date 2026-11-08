@@ -39,7 +39,7 @@ kerr_t input_init(void) {
 kerr_t keyboard_register_layout(const keyboard_layout_t *layout) {
     if (!layout || !layout->name || layout_count >= INPUT_MAX_LAYOUTS) return E_INVAL;
     for (size_t i = 0; i < layout_count; i++) {
-        if (strcmp(layouts[i]->name, layout->name) == 0) return E_EXIST;
+        if (strcmp(layouts[i]->name, layout->name) == 0) return E_INVAL;
     }
     layouts[layout_count++] = layout;
     if (!active_layout) active_layout = layout;
