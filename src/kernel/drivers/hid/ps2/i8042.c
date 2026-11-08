@@ -3,7 +3,6 @@
  * @brief PC/AT-compatible 8042 controller and PS/2 device transport.
  */
 #include <arch/arch.h>
-#include <arch/x86_64/apic/apic.h>
 #include <drivers/hid/ps2/ps2.h>
 
 #define I8042_WAIT_LIMIT 1000000U
@@ -189,15 +188,26 @@ kerr_t ps2_controller_init(void) {
         if (!k_failed(device_command(true, 0xFF))) {
             uint8_t reset = 0;
             if (!k_failed(device_read(true, &reset)) && reset == 0xAA &&
-                !k_failed(device_command(true, 0xF6)) &&
-                !k_failed(device_command(true, 0xF4))) {
+                !k_failed(device_command(true, 0xF6))) {
+                /* IntelliMouse wheel negotiation: sample rates 200, 100, 80. */
+                bool wheel_mode = !k_failed(device_command(true, 0xF3)) &&
+                                  !k_failed(device_write(true, 200)) &&
+                                  !k_failed(device_read(true, &response)) && response == 0xFA &&
+                                  !k_failed(device_command(true, 0xF3)) &&
+                                  !k_failed(device_write(true, 100)) &&
+                                  !k_failed(device_read(true, &response)) && response == 0xFA &&
+                                  !k_failed(device_command(true, 0xF3)) &&
+                                  !k_failed(device_write(true, 80)) &&
+                                  !k_failed(device_read(true, &response)) && response == 0xFA;
+                if (!k_failed(device_command(true, 0xF4))) {
                 mouse_ready = true;
-                /* Query device ID to detect IntelliMouse wheel packet mode. */
-                if (!k_failed(device_command(true, 0xF2))) {
+                /* Query device ID after negotiation; ID 3/4 uses four-byte packets. */
+                if (wheel_mode && !k_failed(device_command(true, 0xF2))) {
                     uint8_t id = 0;
                     if (!k_failed(device_read(true, &id)) && (id == 0x03 || id == 0x04)) {
                         ps2_mouse_set_id(id);
                     }
+                }
                 }
             }
         }
