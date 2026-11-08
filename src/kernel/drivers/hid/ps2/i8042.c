@@ -115,15 +115,8 @@ static kerr_t device_command(bool auxiliary, uint8_t command) {
     return E_TIMEOUT;
 }
 
-static void keyboard_irq(struct registers *regs) {
-    (void)regs;
-    ps2_irq_handler(regs);
-}
-
-static void mouse_irq(struct registers *regs) {
-    (void)regs;
-    ps2_irq_handler(regs);
-}
+static void keyboard_irq(struct registers *regs) { ps2_irq_handler(regs); }
+static void mouse_irq(struct registers *regs) { ps2_irq_handler(regs); }
 
 void ps2_irq_handler(struct registers *regs) {
     (void)regs;
