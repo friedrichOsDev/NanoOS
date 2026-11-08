@@ -21,7 +21,7 @@ static bool key_is(hid_keycode_t key, hid_keycode_t left, hid_keycode_t right) {
 }
 
 static void update_modifiers(void) {
-    key_state.shift = key_is(KEY_LSHIFT, KEY_LSHIFT, KEY_RSHIFT) ? key_state.pressed[KEY_LSHIFT] : false;
+    key_state.shift = key_state.pressed[KEY_LSHIFT];
     key_state.shift = key_state.shift || key_state.pressed[KEY_RSHIFT];
     key_state.control = key_state.pressed[KEY_LCONTROL] || key_state.pressed[KEY_RCONTROL];
     key_state.alt = key_state.pressed[KEY_LMENU];
