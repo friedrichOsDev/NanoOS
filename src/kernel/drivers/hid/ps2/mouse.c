@@ -3,6 +3,7 @@
  * @brief PS/2 mouse packet parser (3-byte and IntelliMouse 4-byte).
  */
 #include <drivers/hid/ps2/ps2.h>
+#include <arch/arch.h>
 
 static uint8_t packet[4];
 static uint8_t packet_index;
