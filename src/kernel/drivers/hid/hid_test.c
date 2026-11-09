@@ -91,10 +91,16 @@ static void log_key_event(const input_event_t *event) {
         log_debug("[HID][KEY] DEAD_KEY accent=U+%04X pending key=%s",
                   (unsigned)event->dead_key_accent, key_name(hid->key.keycode));
     } else if (event->dead_key_accent != 0 && event->dead_key_base != 0) {
-        log_debug("[HID][KEY] COMBINE accent=U+%04X base=U+%04X result=U+%04X",
-                  (unsigned)event->dead_key_accent,
-                  (unsigned)event->dead_key_base,
-                  (unsigned)event->unicode);
+        if (event->dead_key_result != 0) {
+            log_debug("[HID][KEY] COMPOSED accent=U+%04X base=U+%04X result=U+%04X",
+                      (unsigned)event->dead_key_accent,
+                      (unsigned)event->dead_key_base,
+                      (unsigned)event->dead_key_result);
+        } else {
+            log_debug("[HID][KEY] UNCOMPOSED accent=U+%04X base=U+%04X",
+                      (unsigned)event->dead_key_accent,
+                      (unsigned)event->dead_key_base);
+        }
     }
 
     /*
