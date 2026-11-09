@@ -89,15 +89,19 @@ void ps2_keyboard_byte(uint8_t byte) {
     if (byte == 0xF0) { releasing = true; return; }
 
     hid_keycode_t key = decode(byte, extended);
-    if (key != KEY_UNKNOWN) {
-        hid_event_t event = {
-            .type = releasing ? HID_EVENT_KEY_RELEASE : HID_EVENT_KEY_PRESS,
-            .timestamp = hpet_get_timestamp()
-        };
-        event.key.keycode = key;
-        event.key.scancode = byte;
-        (void)hid_push_event(&event);
-    }
+    /*
+     * Preserve unmapped scan codes as KEY_UNKNOWN events. The debug HID
+     * monitor can then reveal missing mappings without logging from IRQ
+     * context or losing the raw byte.
+     */
+    hid_event_t event = {
+        .type = releasing ? HID_EVENT_KEY_RELEASE : HID_EVENT_KEY_PRESS,
+        .timestamp = hpet_get_timestamp()
+    };
+    event.key.keycode = key;
+    event.key.scancode = byte;
+    (void)hid_push_event(&event);
+
     extended = false;
     releasing = false;
 }
