@@ -27,12 +27,23 @@ void ps2_mouse_byte(uint8_t byte) {
     if (packet_index < packet_size) return;
     packet_index = 0;
 
-    if (packet[0] & 0xC0) return;
+    /*
+     * Bytes 1 and 2 are already signed 8-bit two's-complement values.
+     * Casting through int8_t performs the sign extension. The sign bits in
+     * byte 0 are consistency flags only; subtracting 256 again would turn
+     * every negative delta into an erroneous value around -256 (for example,
+     * -1 would become -257).
+     *
+     * On overflow the corresponding movement counter is invalid. Discard
+     * only that axis while still processing the other axis and button state.
+     */
     int32_t dx = (int32_t)(int8_t)packet[1];
     int32_t dy = (int32_t)(int8_t)packet[2];
-    if (packet[0] & 0x10) dx -= 256;
-    if (packet[0] & 0x20) dy -= 256;
-    if (dx || dy) {
+
+    if (packet[0] & 0x40) dx = 0;
+    if (packet[0] & 0x80) dy = 0;
+
+    if (dx != 0 || dy != 0) {
         hid_event_t event = {.type = HID_EVENT_MOUSE_MOVE, .timestamp = hpet_get_timestamp()};
         event.mouse_move.dx = dx;
         event.mouse_move.dy = -(int64_t)dy;
