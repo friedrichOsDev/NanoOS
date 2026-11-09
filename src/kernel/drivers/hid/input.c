@@ -5,6 +5,7 @@
 #include <drivers/hid/input.h>
 #include <kernel/sync.h>
 #include <lib/util/str.h>
+#include <lib/util/mem.h>
 
 #define INPUT_MAX_LAYOUTS 8
 
@@ -44,17 +45,19 @@ static const keyboard_layout_t german_layout = {
 };
 
 static bool is_letter(hid_keycode_t key) {
-    switch (key) {
-    case KEY_Q: case KEY_W: case KEY_E: case KEY_R: case KEY_T:
-    case KEY_Z: case KEY_U: case KEY_I: case KEY_O: case KEY_P:
-    case KEY_A: case KEY_S: case KEY_D: case KEY_F: case KEY_G:
-    case KEY_H: case KEY_J: case KEY_K: case KEY_L:
-    case KEY_Y: case KEY_X: case KEY_C: case KEY_V: case KEY_B:
-    case KEY_N: case KEY_M:
-        return true;
-    default:
-        return false;
-    }
+    /*
+     * Use comparisons rather than switch(key): -Wswitch-enum intentionally
+     * requires every HID key enumerator to appear in an enum switch.
+     */
+    return key == KEY_Q || key == KEY_W || key == KEY_E ||
+           key == KEY_R || key == KEY_T || key == KEY_Z ||
+           key == KEY_U || key == KEY_I || key == KEY_O ||
+           key == KEY_P || key == KEY_A || key == KEY_S ||
+           key == KEY_D || key == KEY_F || key == KEY_G ||
+           key == KEY_H || key == KEY_J || key == KEY_K ||
+           key == KEY_L || key == KEY_Y || key == KEY_X ||
+           key == KEY_C || key == KEY_V || key == KEY_B ||
+           key == KEY_N || key == KEY_M;
 }
 
 static void update_modifiers(void) {
