@@ -33,9 +33,24 @@ typedef struct {
     uint8_t buttons;
 } mouse_state_t;
 
+/**
+ * @brief Semantic action for a keyboard event after key-state processing.
+ *
+ * A repeated action is a make event received while the key was already down.
+ * This is useful for text input and key-repeat handling without maintaining
+ * another pressed-key table in every consumer.
+ */
+typedef enum {
+    INPUT_KEY_ACTION_NONE = 0,
+    INPUT_KEY_ACTION_PRESSED,
+    INPUT_KEY_ACTION_REPEATED,
+    INPUT_KEY_ACTION_RELEASED
+} input_key_action_t;
+
 typedef struct {
     hid_event_t hid;
     uint32_t unicode;
+    input_key_action_t key_action;
 } input_event_t;
 
 kerr_t input_init(void);
