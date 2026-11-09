@@ -240,6 +240,10 @@ kerr_t keyboard_set_layout(const char *name) {
     return E_NOTFOUND;
 }
 
+/**
+ * @brief Return the currently active keyboard layout.
+ * @return Active keyboard layout, or NULL when none is selected.
+ */
 const keyboard_layout_t *keyboard_get_layout() { return active_layout; }
 
 /**
