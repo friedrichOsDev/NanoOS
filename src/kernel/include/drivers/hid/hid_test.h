@@ -15,3 +15,11 @@
  * @return Number of events consumed.
  */
 size_t hid_test_poll(size_t max_events);
+
+/**
+ * @brief Run the HID monitor continuously.
+ *
+ * This function does not return. It drains queued events and yields the CPU
+ * when the queue is empty so other kernel threads can run.
+ */
+void hid_test_run(void);
