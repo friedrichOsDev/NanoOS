@@ -261,11 +261,13 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
                         if (codepoint == ' ') {
                             /* Dead key followed by Space emits the accent. */
                             emit_unicode(out, pending_dead_key);
+                            out->dead_key_result = pending_dead_key;
                         } else {
                             uint32_t composed = compose_dead_key(pending_dead_key,
                                                                  codepoint);
                             if (composed != 0) {
                                 emit_unicode(out, composed);
+                                out->dead_key_result = composed;
                             } else {
                                 /* Preserve both characters if no pair exists. */
                                 emit_unicode(out, pending_dead_key);
