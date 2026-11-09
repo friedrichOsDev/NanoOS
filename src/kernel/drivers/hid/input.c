@@ -150,6 +150,22 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
         if ((size_t)key < INPUT_KEY_COUNT) {
             bool down = event->type == HID_EVENT_KEY_PRESS;
             bool was_down = key_state.pressed[key];
+
+            /*
+             * PS/2 typematic repeats produce additional make codes while the
+             * key remains down. Classify them here so consumers need not
+             * maintain their own key-state edge detection.
+             */
+            if (down) {
+                out->key_action = was_down
+                                      ? INPUT_KEY_ACTION_REPEATED
+                                      : INPUT_KEY_ACTION_PRESSED;
+            } else {
+                out->key_action = was_down
+                                      ? INPUT_KEY_ACTION_RELEASED
+                                      : INPUT_KEY_ACTION_NONE;
+            }
+
             key_state.pressed[key] = down;
             if (down && !was_down && key == KEY_CAPITAL) key_state.caps_lock = !key_state.caps_lock;
             if (down && !was_down && key == KEY_NUMLOCK) key_state.num_lock = !key_state.num_lock;
