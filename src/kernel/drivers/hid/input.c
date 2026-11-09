@@ -20,27 +20,39 @@ static bool input_initialized;
 static const keyboard_layout_t german_layout = {
     .name = "de-DE",
     .normal = {
-        [KEY_1]='1', [KEY_2]='2', [KEY_3]='3', [KEY_4]='4', [KEY_5]='5',
-        [KEY_6]='6', [KEY_7]='7', [KEY_8]='8', [KEY_9]='9', [KEY_0]='0',
+        [KEY_OEM2]='^', [KEY_1]='1', [KEY_2]='2', [KEY_3]='3', [KEY_4]='4',
+        [KEY_5]='5', [KEY_6]='6', [KEY_7]='7', [KEY_8]='8', [KEY_9]='9',
+        [KEY_0]='0', [KEY_OEM4]=0x00DF, [KEY_OEM6]=0x00B4,
         [KEY_Q]='q', [KEY_W]='w', [KEY_E]='e', [KEY_R]='r', [KEY_T]='t',
         [KEY_Z]='z', [KEY_U]='u', [KEY_I]='i', [KEY_O]='o', [KEY_P]='p',
+        [KEY_OEM1]=0x00FC, [KEY_OEM_PLUS]='+',
         [KEY_A]='a', [KEY_S]='s', [KEY_D]='d', [KEY_F]='f', [KEY_G]='g',
-        [KEY_H]='h', [KEY_J]='j', [KEY_K]='k', [KEY_L]='l', [KEY_Y]='y',
-        [KEY_X]='x', [KEY_C]='c', [KEY_V]='v', [KEY_B]='b', [KEY_N]='n',
-        [KEY_M]='m', [KEY_SPACE]=' ', [KEY_TAB]='\t', [KEY_RETURN]='\n',
-        [KEY_BACK]='\b', [KEY_OEM1]=0x00FC, [KEY_OEM3]=0x00F6, [KEY_OEM7]=0x00E4,
-        [KEY_OEM_PLUS]='+', [KEY_OEM4]=0x00DF, [KEY_OEM5]='#'
+        [KEY_H]='h', [KEY_J]='j', [KEY_K]='k', [KEY_L]='l',
+        [KEY_OEM3]=0x00F6, [KEY_OEM7]=0x00E4, [KEY_OEM5]='#',
+        [KEY_OEM10]='<', [KEY_Y]='y', [KEY_X]='x', [KEY_C]='c', [KEY_V]='v',
+        [KEY_B]='b', [KEY_N]='n', [KEY_M]='m', [KEY_OEM_CC]=',',
+        [KEY_OEM_PE]='.', [KEY_OEM_MI]='-', [KEY_SPACE]=' ', [KEY_TAB]=9,
+        [KEY_RETURN]=10, [KEY_BACK]=8
     },
     .shift = {
-        [KEY_1]='!', [KEY_2]='"', [KEY_3]=0x00A7, [KEY_4]='$', [KEY_5]='%',
-        [KEY_6]='&', [KEY_7]='/', [KEY_8]='(', [KEY_9]=')', [KEY_0]='=',
+        [KEY_OEM2]=0x00B0, [KEY_1]='!', [KEY_2]=0x22, [KEY_3]=0x00A7,
+        [KEY_4]='$', [KEY_5]='%', [KEY_6]='&', [KEY_7]='/', [KEY_8]='(',
+        [KEY_9]=')', [KEY_0]='=', [KEY_OEM4]='?', [KEY_OEM6]='`',
         [KEY_Q]='Q', [KEY_W]='W', [KEY_E]='E', [KEY_R]='R', [KEY_T]='T',
         [KEY_Z]='Z', [KEY_U]='U', [KEY_I]='I', [KEY_O]='O', [KEY_P]='P',
+        [KEY_OEM1]=0x00DC, [KEY_OEM_PLUS]='*',
         [KEY_A]='A', [KEY_S]='S', [KEY_D]='D', [KEY_F]='F', [KEY_G]='G',
-        [KEY_H]='H', [KEY_J]='J', [KEY_K]='K', [KEY_L]='L', [KEY_Y]='Y',
-        [KEY_X]='X', [KEY_C]='C', [KEY_V]='V', [KEY_B]='B', [KEY_N]='N',
-        [KEY_M]='M', [KEY_OEM1]=0x00DC, [KEY_OEM3]=0x00D6, [KEY_OEM7]=0x00C4,
-        [KEY_OEM_PLUS]='*', [KEY_OEM4]='?', [KEY_OEM5]='\''
+        [KEY_H]='H', [KEY_J]='J', [KEY_K]='K', [KEY_L]='L',
+        [KEY_OEM3]=0x00D6, [KEY_OEM7]=0x00C4, [KEY_OEM5]=0x27,
+        [KEY_OEM10]='>', [KEY_Y]='Y', [KEY_X]='X', [KEY_C]='C', [KEY_V]='V',
+        [KEY_B]='B', [KEY_N]='N', [KEY_M]='M', [KEY_OEM_CC]=';',
+        [KEY_OEM_PE]=':', [KEY_OEM_MI]='_', [KEY_SPACE]=' ', [KEY_TAB]=9,
+        [KEY_RETURN]=10, [KEY_BACK]=8
+    },
+    .altgr = {
+        [KEY_2]=0x00B2, [KEY_3]=0x00B3, [KEY_7]='{', [KEY_8]='[',
+        [KEY_9]=']', [KEY_0]='}', [KEY_Q]='@', [KEY_E]=0x20AC,
+        [KEY_OEM4]=0x5C, [KEY_OEM_PLUS]='~', [KEY_OEM10]='|'
     }
 };
 
