@@ -83,10 +83,28 @@ static void log_key_event(const input_event_t *event) {
         break;
     }
 
-    log_debug("[HID][KEY] %s key=%s code=%u scancode=0x%02X unicode=U+%04X timestamp=%llu",
-              action, key_name(hid->key.keycode), (unsigned)hid->key.keycode,
-              (unsigned)hid->key.scancode, (unsigned)event->unicode,
-              (unsigned long long)hid->timestamp);
+    /*
+     * Serial logs are ASCII-only. Print printable ASCII characters directly;
+     * represent non-ASCII code points as U+XXXX so umlauts and other Unicode
+     * characters remain unambiguous and do not corrupt the serial output.
+     * Release events normally have unicode == 0 because they produce no text.
+     */
+    if (event->unicode >= 0x20U && event->unicode <= 0x7EU) {
+        char character[2] = {(char)event->unicode, '\\0'};
+        log_debug("[HID][KEY] %s key=%s char='%s' code=%u scancode=0x%02X timestamp=%llu",
+                  action, key_name(hid->key.keycode), character,
+                  (unsigned)hid->key.keycode, (unsigned)hid->key.scancode,
+                  (unsigned long long)hid->timestamp);
+    } else if (event->unicode > 0x7EU) {
+        log_debug("[HID][KEY] %s key=%s unicode=U+%04X code=%u scancode=0x%02X timestamp=%llu",
+                  action, key_name(hid->key.keycode), (unsigned)event->unicode,
+                  (unsigned)hid->key.keycode, (unsigned)hid->key.scancode,
+                  (unsigned long long)hid->timestamp);
+    } else {
+        log_debug("[HID][KEY] %s key=%s code=%u scancode=0x%02X timestamp=%llu",
+                  action, key_name(hid->key.keycode), (unsigned)hid->key.keycode,
+                  (unsigned)hid->key.scancode, (unsigned long long)hid->timestamp);
+    }
 }
 
 static void log_input_event(const input_event_t *event) {
