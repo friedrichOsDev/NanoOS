@@ -81,6 +81,12 @@ static const keyboard_layout_t german_layout = {
  * A zero result means that this pair has no composition in the supported
  * Latin-1 repertoire.
  */
+/**
+ * @brief Return the precomposed character for a dead-key pair.
+ * @param[in] accent Input parameter.
+ * @param[in] base Input parameter.
+ * @return Operation status or result.
+ */
 static uint32_t compose_dead_key(uint32_t accent, uint32_t base) {
     struct composition {
         uint32_t accent;
