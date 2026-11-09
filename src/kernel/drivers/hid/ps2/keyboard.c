@@ -41,7 +41,8 @@ static hid_keycode_t decode(uint8_t code, bool ext) {
     case 0x0C: return KEY_F4; case 0x03: return KEY_F5; case 0x0B: return KEY_F6;
     case 0x83: return KEY_F7; case 0x0A: return KEY_F8; case 0x01: return KEY_F9;
     case 0x09: return KEY_F10; case 0x78: return KEY_F11; case 0x07: return KEY_F12;
-    case 0x0E: return KEY_OEM2;
+    /* German ISO layout: 0x0E is ^/°, 0x5D is #/'. */
+    case 0x0E: return KEY_OEM5;
     case 0x16: return KEY_1; case 0x1E: return KEY_2; case 0x26: return KEY_3;
     case 0x25: return KEY_4; case 0x2E: return KEY_5; case 0x36: return KEY_6;
     case 0x3D: return KEY_7; case 0x3E: return KEY_8; case 0x46: return KEY_9;
@@ -55,7 +56,7 @@ static hid_keycode_t decode(uint8_t code, bool ext) {
     case 0x1C: return KEY_A; case 0x1B: return KEY_S; case 0x23: return KEY_D;
     case 0x2B: return KEY_F; case 0x34: return KEY_G; case 0x33: return KEY_H;
     case 0x3B: return KEY_J; case 0x42: return KEY_K; case 0x4B: return KEY_L;
-    case 0x4C: return KEY_OEM3; case 0x52: return KEY_OEM7; case 0x5D: return KEY_OEM5;
+    case 0x4C: return KEY_OEM3; case 0x52: return KEY_OEM7; case 0x5D: return KEY_OEM2;
     case 0x61: return KEY_OEM10;
     case 0x12: return KEY_LSHIFT; case 0x59: return KEY_RSHIFT;
     case 0x1A: return KEY_Y; case 0x22: return KEY_X; case 0x21: return KEY_C;
