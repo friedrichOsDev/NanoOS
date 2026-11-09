@@ -3,6 +3,7 @@
  * @brief PC/AT-compatible 8042 controller and PS/2 device transport.
  * @author friedrichOsDev
  */
+
 #include "../../../arch/x86_64/apic/apic.h"
 #include <arch/arch.h>
 #include <drivers/hid/ps2/ps2.h>
@@ -32,7 +33,8 @@ static uint8_t controller_config;
 
 /**
  * @brief Wait input empty.
- * @return Operation status or result.
+ *
+ * @return true if input empty, false otherwise.
  */
 static bool wait_input_empty() {
     for (uint32_t i = 0; i < I8042_WAIT_LIMIT; i++) {
@@ -45,7 +47,8 @@ static bool wait_input_empty() {
 
 /**
  * @brief Wait output full.
- * @return Operation status or result.
+ *
+ * @return true if output full, false otherwise.
  */
 static bool wait_output_full() {
     for (uint32_t i = 0; i < I8042_WAIT_LIMIT; i++) {
@@ -58,8 +61,9 @@ static bool wait_output_full() {
 
 /**
  * @brief Controller command.
- * @param[in] command Input parameter.
- * @return Operation status or result.
+ *
+ * @param[in] command Command to send.
+ * @return E_OK on success, E_TIMEOUT on timeout.
  */
 static kerr_t controller_command(uint8_t command) {
     if (!wait_input_empty())
@@ -70,8 +74,9 @@ static kerr_t controller_command(uint8_t command) {
 
 /**
  * @brief Controller write.
- * @param[in] value Input parameter.
- * @return Operation status or result.
+ *
+ * @param[in] value Data to send.
+ * @return E_OK on success, E_TIMEOUT on timeout.
  */
 static kerr_t controller_write(uint8_t value) {
     if (!wait_input_empty())
@@ -82,8 +87,9 @@ static kerr_t controller_write(uint8_t value) {
 
 /**
  * @brief Controller read.
- * @param[in] value Input parameter.
- * @return Operation status or result.
+ *
+ * @param[out] value Pointer to store the read value.
+ * @return E_OK on success, E_TIMEOUT on timeout.
  */
 static kerr_t controller_read(uint8_t *value) {
     if (!value)
@@ -94,9 +100,7 @@ static kerr_t controller_read(uint8_t *value) {
     return E_OK;
 }
 
-/**
- * @brief Drain output.
- */
+/** @brief Drain output. */
 static void drain_output() {
     for (uint32_t i = 0; i < 32; i++) {
         if (!(inb(PS2_STATUS_PORT) & PS2_STATUS_OUTPUT_FULL))
@@ -107,8 +111,9 @@ static void drain_output() {
 
 /**
  * @brief Read config.
- * @param[in] config Input parameter.
- * @return Operation status or result.
+ *
+ * @param[out] config The pointer to store the read config.
+ * @return E_OK on success, E error on failure.
  */
 static kerr_t read_config(uint8_t *config) {
     K_TRY(controller_command(I8042_CMD_READ_CONFIG));
@@ -117,8 +122,9 @@ static kerr_t read_config(uint8_t *config) {
 
 /**
  * @brief Write config.
- * @param[in] config Input parameter.
- * @return Operation status or result.
+ *
+ * @param[in] config The config to write.
+ * @return E_OK on success, E error on failure.
  */
 static kerr_t write_config(uint8_t config) {
     K_TRY(controller_command(I8042_CMD_WRITE_CONFIG));
@@ -127,9 +133,10 @@ static kerr_t write_config(uint8_t config) {
 
 /**
  * @brief Device write.
- * @param[in] auxiliary Input parameter.
- * @param[in] value Input parameter.
- * @return Operation status or result.
+ *
+ * @param[in] auxiliary true if auxiliary device present, false otherwise.
+ * @param[in] value The value to write.
+ * @return E_OK on success, E error on failure.
  */
 static kerr_t device_write(bool auxiliary, uint8_t value) {
     if (auxiliary)
@@ -137,12 +144,12 @@ static kerr_t device_write(bool auxiliary, uint8_t value) {
     return controller_write(value);
 }
 
-/* Device replies are read only after the corresponding command. */
 /**
  * @brief Read a response from a PS/2 device.
- * @param[in] auxiliary Input parameter.
- * @param[in] value Input parameter.
- * @return Operation status or result.
+ *
+ * @param[in] auxiliary true if auxiliary device present, false otherwise.
+ * @param[out] value The pointer to store the read value.
+ * @return E_OK on success, E error on failure.
  */
 static kerr_t device_read(bool auxiliary, uint8_t *value) {
     if (!value)
@@ -165,9 +172,10 @@ static kerr_t device_read(bool auxiliary, uint8_t *value) {
 
 /**
  * @brief Device command.
- * @param[in] auxiliary Input parameter.
- * @param[in] command Input parameter.
- * @return Operation status or result.
+ *
+ * @param[in] auxiliary true if the command is for the auxiliary port, false otherwise.
+ * @param[in] command The command to send.
+ * @return E_OK on success, E_CHECKSUM if the checksum is incorrect, E_TIMEOUT if the command times out.
  */
 static kerr_t device_command(bool auxiliary, uint8_t command) {
     for (uint32_t attempt = 0; attempt < 3; attempt++) {
@@ -184,19 +192,22 @@ static kerr_t device_command(bool auxiliary, uint8_t command) {
 
 /**
  * @brief Dispatch the keyboard IRQ to the shared PS/2 handler.
+ *
  * @param[in] regs Interrupt register state.
  */
 static void keyboard_irq(struct registers *regs) { ps2_irq_handler(regs); }
 
 /**
  * @brief Dispatch the mouse IRQ to the shared PS/2 handler.
+ *
  * @param[in] regs Interrupt register state.
  */
 static void mouse_irq(struct registers *regs) { ps2_irq_handler(regs); }
 
 /**
  * @brief Ps2 irq handler.
- * @param[in] regs Input parameter.
+ *
+ * @param[in] regs 
  */
 void ps2_irq_handler(struct registers *regs) {
     (void)regs;
@@ -219,7 +230,8 @@ void ps2_irq_handler(struct registers *regs) {
 
 /**
  * @brief Ps2 controller init.
- * @return Operation status or result.
+ *
+ * @return E_OK on success, E error on failure.
  */
 kerr_t ps2_controller_init() {
     uint8_t response = 0;
@@ -336,9 +348,7 @@ kerr_t ps2_controller_init() {
     return E_OK;
 }
 
-/**
- * @brief Ps2 controller deinit.
- */
+/** @brief Ps2 controller deinit. */
 void ps2_controller_deinit() {
     if (!controller_ready)
         return;
