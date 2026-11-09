@@ -38,16 +38,24 @@ static void kernel_init_thread(void *arg) {
 
     err = hid_init();
     if (k_failed(err)) {
-        log_warn("hid init failed, no keyboard or mouse will be available (%s)", kerr_str(err));
-    } else {
-        log_info("hid done");
-        err = input_init();
-        if (k_failed(err)) {
-            log_warn("input API initialization failed (%s)", kerr_str(err));
-        } else {
-            err = ps2_register_driver();
-            if (k_failed(err)) log_warn("PS/2 driver unavailable (%s)", kerr_str(err));
+        log_warn("hid initialization failed (%s)", kerr_str(err));
+        for (;;) {
+            thread_yield();
         }
+    }
+    log_info("hid done");
+
+    err = input_init();
+    if (k_failed(err)) {
+        log_warn("input initialization failed (%s)", kerr_str(err));
+        for (;;) {
+            thread_yield();
+        }
+    }
+
+    err = ps2_register_driver();
+    if (k_failed(err)) {
+        log_warn("PS/2 driver unavailable (%s)", kerr_str(err));
     }
     log_info("input initialization done");
 
