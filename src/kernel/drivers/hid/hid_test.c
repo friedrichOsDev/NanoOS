@@ -6,6 +6,7 @@
 #include <drivers/hid/input.h>
 #include <lib/log.h>
 #include <pch.h>
+#include <sched/sched.h>
 
 static const char *const key_names[INPUT_KEY_COUNT] = {
     [KEY_UNKNOWN] = "UNKNOWN",
@@ -120,4 +121,21 @@ size_t hid_test_poll(size_t max_events) {
         processed++;
     }
     return processed;
+}
+
+/**
+ * @brief Continuously monitor HID events until the kernel stops.
+ *
+ * Poll in batches to drain bursts, and yield only when no event is pending.
+ * This keeps the listener alive indefinitely without busy-spinning while idle.
+ */
+void hid_test_run(void) {
+    log_info("[HID_TEST] continuous event monitor started");
+
+    for (;;) {
+        size_t processed = hid_test_poll(64);
+        if (processed == 0) {
+            thread_yield();
+        }
+    }
 }
