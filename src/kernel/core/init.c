@@ -11,9 +11,7 @@
 #include <drivers/gfx/version_splash.h>
 #include <drivers/hid/hid.h>
 #include <drivers/hid/input.h>
-#ifdef KERNEL_DEBUG_BUILD
-#include <drivers/hid/hid_test.h>
-#endif
+#include <arch/x86_64/acpi/acpi.h>
 #include <drivers/hid/ps2/ps2.h>
 #include <drivers/pci.h>
 #include <drivers/rtc.h>
@@ -52,13 +50,27 @@ static void kernel_init_thread(void *arg) {
 
     version_splash_show("0.0.3", 3000);
 
-#ifdef KERNEL_DEBUG_BUILD
-    hid_test_run();
-#else
-    while (1) {
-        thread_yield();
+    for (;;) {
+        input_event_t event;
+        err = input_poll_event(&event);
+        if (err == E_NOTAVAIL) {
+            thread_yield();
+            continue;
+        }
+        if (k_failed(err)) {
+            log_warn("input event polling failed (%s)", kerr_str(err));
+            thread_yield();
+            continue;
+        }
+
+        if (event.hid.type == HID_EVENT_KEY_PRESS &&
+            event.hid.key.keycode == KEY_ESC &&
+            event.key_action == INPUT_KEY_ACTION_PRESSED) {
+            log_info("ESC pressed, shutting down");
+            acpi_power_off();
+            log_warn("ACPI shutdown request returned");
+        }
     }
-#endif
 }
 
 void kernel_init(const uint64_t magic, const uint64_t info_ptr); // first declaration
