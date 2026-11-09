@@ -240,6 +240,7 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
 
                 if (codepoint != 0) {
                     if (is_dead_key(codepoint)) {
+                        out->dead_key_accent = codepoint;
                         /*
                          * Pressing a second dead key emits the previous accent
                          * as spacing text and starts the new composition.
@@ -255,6 +256,8 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
                             pending_dead_key = codepoint;
                         }
                     } else if (pending_dead_key != 0) {
+                        out->dead_key_accent = pending_dead_key;
+                        out->dead_key_base = codepoint;
                         if (codepoint == ' ') {
                             /* Dead key followed by Space emits the accent. */
                             emit_unicode(out, pending_dead_key);
