@@ -130,6 +130,12 @@ static kerr_t device_write(bool auxiliary, uint8_t value) {
 }
 
 /* Device replies are read only after the corresponding command. */
+/**
+ * @brief Read a response from a PS/2 device.
+ * @param[in] auxiliary Input parameter.
+ * @param[in] value Input parameter.
+ * @return Operation status or result.
+ */
 static kerr_t device_read(bool auxiliary, uint8_t *value) {
     if (!value) return E_INVAL;
     for (uint32_t i = 0; i < I8042_WAIT_LIMIT; i++) {
