@@ -23,6 +23,10 @@
 #include <sched/taskmgr.h>
 #include <sched/thread.h>
 
+/**
+ * @brief Initialize kernel drivers and process input events.
+ * @param[in] arg Input parameter.
+ */
 static void kernel_init_thread(void *arg) {
     (void)arg;
 
@@ -73,6 +77,11 @@ static void kernel_init_thread(void *arg) {
 }
 
 void kernel_init(const uint64_t magic, const uint64_t info_ptr); // first declaration
+/**
+ * @brief Initialize the kernel and start the scheduler.
+ * @param[in] magic Input parameter.
+ * @param[in] info_ptr Input parameter.
+ */
 void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     serial_init();
     log_info("start");
