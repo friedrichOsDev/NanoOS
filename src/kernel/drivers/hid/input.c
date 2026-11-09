@@ -89,9 +89,9 @@ static uint32_t compose_dead_key(uint32_t accent, uint32_t base) {
     static const struct composition compositions[] = {
         /* Circumflex. */
         {'^','a',0x00E2}, {'^','e',0x00EA}, {'^','i',0x00EE},
-        {'^','o',0x00F4}, {'^','u',0x00FB},
+        {'^','o',0x00F4}, {'^','u',0x00FB}, {'^','y',0x0177},
         {'^','A',0x00C2}, {'^','E',0x00CA}, {'^','I',0x00CE},
-        {'^','O',0x00D4}, {'^','U',0x00DB},
+        {'^','O',0x00D4}, {'^','U',0x00DB}, {'^','Y',0x0176},
         /* Acute accent. */
         {0x00B4,'a',0x00E1}, {0x00B4,'e',0x00E9},
         {0x00B4,'i',0x00ED}, {0x00B4,'o',0x00F3},
@@ -244,10 +244,16 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
                          * Pressing a second dead key emits the previous accent
                          * as spacing text and starts the new composition.
                          */
-                        if (pending_dead_key != 0) {
-                            emit_unicode(out, pending_dead_key);
+                        if (pending_dead_key == codepoint) {
+                            /* Typing the same dead key twice emits it once. */
+                            emit_unicode(out, codepoint);
+                            pending_dead_key = 0;
+                        } else {
+                            if (pending_dead_key != 0) {
+                                emit_unicode(out, pending_dead_key);
+                            }
+                            pending_dead_key = codepoint;
                         }
-                        pending_dead_key = codepoint;
                     } else if (pending_dead_key != 0) {
                         if (codepoint == ' ') {
                             /* Dead key followed by Space emits the accent. */
