@@ -11,6 +11,9 @@
 #include <drivers/gfx/version_splash.h>
 #include <drivers/hid/hid.h>
 #include <drivers/hid/input.h>
+#ifdef KERNEL_DEBUG_BUILD
+#include <drivers/hid/hid_test.h>
+#endif
 #include <drivers/hid/ps2/ps2.h>
 #include <drivers/pci.h>
 #include <drivers/rtc.h>
@@ -50,6 +53,9 @@ static void kernel_init_thread(void *arg) {
     version_splash_show("0.0.3", 3000);
 
     while (1) {
+#ifdef KERNEL_DEBUG_BUILD
+        (void)hid_test_poll(32);
+#endif
         thread_yield();
     }
 }
