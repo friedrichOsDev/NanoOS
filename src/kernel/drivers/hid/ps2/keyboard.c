@@ -3,6 +3,7 @@
  * @brief PS/2 Set-2 keyboard scan-code parser for ISO-105 keyboards.
  * @author friedrichOsDev
  */
+
 #include <arch/arch.h>
 #include <drivers/hid/ps2/ps2.h>
 
@@ -12,10 +13,11 @@ static bool pause_sequence;
 static uint8_t pause_index;
 
 /**
- * @brief Decode.
- * @param[in] code Input parameter.
- * @param[in] ext Input parameter.
- * @return Operation status or result.
+ * @brief Decode a PS/2 Set-2 scan code byte into a mapped HID keycode.
+ *
+ * @param[in] code The raw scan code byte to decode.
+ * @param[in] ext True if the scan code is part of an extended (E0-prefixed) sequence.
+ * @return The corresponding hid_keycode_t mapping, or KEY_UNKNOWN if unmapped.
  */
 static hid_keycode_t decode(uint8_t code, bool ext) {
     if (ext) {
@@ -240,9 +242,7 @@ static hid_keycode_t decode(uint8_t code, bool ext) {
     }
 }
 
-/**
- * @brief Ps2 keyboard reset parser.
- */
+/** @brief Reset the internal PS/2 keyboard scan-code parser state machine variables. */
 void ps2_keyboard_reset_parser() {
     extended = false;
     releasing = false;
@@ -251,8 +251,9 @@ void ps2_keyboard_reset_parser() {
 }
 
 /**
- * @brief Ps2 keyboard byte.
- * @param[in] byte Input parameter.
+ * @brief Process and parse an incoming raw byte from the PS/2 keyboard hardware stream.
+ *
+ * @param[in] byte The raw scan code or ACK/response byte received from the keyboard.
  */
 void ps2_keyboard_byte(uint8_t byte) {
     static const uint8_t pause_tail[] = {0x14, 0x77, 0xE1, 0xF0, 0x14, 0xF0, 0x77};

@@ -3,6 +3,7 @@
  * @brief Layout translation and stateful input facade above HID.
  * @author friedrichOsDev
  */
+
 #include <drivers/hid/input.h>
 #include <kernel/sync.h>
 #include <lib/util/mem.h>
@@ -28,16 +29,12 @@ static const keyboard_layout_t german_layout = {
     .shift = {[KEY_OEM5] = 0x00B0, [KEY_1] = '!', [KEY_2] = 0x22, [KEY_3] = 0x00A7, [KEY_4] = '$', [KEY_5] = '%', [KEY_6] = '&', [KEY_7] = '/', [KEY_8] = '(', [KEY_9] = ')', [KEY_0] = '=', [KEY_OEM4] = '?', [KEY_OEM6] = '`', [KEY_Q] = 'Q', [KEY_W] = 'W', [KEY_E] = 'E', [KEY_R] = 'R', [KEY_T] = 'T', [KEY_Z] = 'Z', [KEY_U] = 'U', [KEY_I] = 'I', [KEY_O] = 'O', [KEY_P] = 'P', [KEY_OEM1] = 0x00DC, [KEY_OEM_PLUS] = '*', [KEY_A] = 'A', [KEY_S] = 'S', [KEY_D] = 'D', [KEY_F] = 'F', [KEY_G] = 'G', [KEY_H] = 'H', [KEY_J] = 'J', [KEY_K] = 'K', [KEY_L] = 'L', [KEY_OEM3] = 0x00D6, [KEY_OEM7] = 0x00C4, [KEY_OEM2] = 0x27, [KEY_OEM10] = '>', [KEY_Y] = 'Y', [KEY_X] = 'X', [KEY_C] = 'C', [KEY_V] = 'V', [KEY_B] = 'B', [KEY_N] = 'N', [KEY_M] = 'M', [KEY_OEM_COMMA] = ';', [KEY_OEM_PERIOD] = ':', [KEY_OEM_MINUS] = '_', [KEY_SPACE] = ' ', [KEY_TAB] = 9, [KEY_RETURN] = 10, [KEY_BACK] = 8, [KEY_NUMLOCK_INSERT] = '0', [KEY_NUMLOCK_END] = '1', [KEY_NUMLOCK_DOWN] = '2', [KEY_NUMLOCK_NEXT] = '3', [KEY_NUMLOCK_LEFT] = '4', [KEY_NUMLOCK_CLEAR] = '5', [KEY_NUMLOCK_RIGHT] = '6', [KEY_NUMLOCK_HOME] = '7', [KEY_NUMLOCK_UP] = '8', [KEY_NUMLOCK_PRIOR] = '9', [KEY_NUMLOCK_DELETE] = ',', [KEY_NUMLOCK_DIVIDE] = '/', [KEY_NUMLOCK_MULTIPLY] = '*', [KEY_NUMLOCK_SUBTRACT] = '-', [KEY_NUMLOCK_ADD] = '+', [KEY_NUMLOCK_RETURN] = 10},
     .altgr = {[KEY_2] = 0x00B2, [KEY_3] = 0x00B3, [KEY_7] = '{', [KEY_8] = '[', [KEY_9] = ']', [KEY_0] = '}', [KEY_Q] = '@', [KEY_E] = 0x20AC, [KEY_OEM4] = 0x5C, [KEY_OEM_PLUS] = '~', [KEY_OEM10] = '|'}};
 
-/*
- * Return the precomposed Unicode character for a dead-key/base-key pair.
- * A zero result means that this pair has no composition in the supported
- * Latin-1 repertoire.
- */
 /**
  * @brief Return the precomposed character for a dead-key pair.
- * @param[in] accent Input parameter.
- * @param[in] base Input parameter.
- * @return Operation status or result.
+ *
+ * @param[in] accent The dead key accent codepoint.
+ * @param[in] base The base character codepoint.
+ * @return The precomposed Unicode character, or 0 if no composition exists.
  */
 static uint32_t compose_dead_key(uint32_t accent, uint32_t base) {
     struct composition {
@@ -94,18 +91,20 @@ static uint32_t compose_dead_key(uint32_t accent, uint32_t base) {
 }
 
 /**
- * @brief Is dead key.
- * @param[in] codepoint Input parameter.
- * @return Operation status or result.
+ * @brief Check if a codepoint represents a dead key.
+ *
+ * @param[in] codepoint The Unicode codepoint to check.
+ * @return True if the codepoint is a dead key, false otherwise.
  */
 static bool is_dead_key(uint32_t codepoint) {
     return codepoint == '^' || codepoint == 0x00B4U || codepoint == '`';
 }
 
 /**
- * @brief Emit unicode.
- * @param[in] out Input parameter.
- * @param[in] codepoint Input parameter.
+ * @brief Emit a Unicode codepoint into the input event structure.
+ *
+ * @param[out] out Pointer to the input event structure to populate.
+ * @param[in] codepoint The Unicode codepoint to emit.
  */
 static void emit_unicode(input_event_t *out, uint32_t codepoint) {
     if (codepoint == 0)
@@ -121,9 +120,10 @@ static void emit_unicode(input_event_t *out, uint32_t codepoint) {
 }
 
 /**
- * @brief Is letter.
- * @param[in] key Input parameter.
- * @return Operation status or result.
+ * @brief Check if a HID keycode represents an alphabetic letter.
+ *
+ * @param[in] key The HID keycode to check.
+ * @return True if the key is a letter, false otherwise.
  */
 static bool is_letter(hid_keycode_t key) {
     /*
@@ -143,9 +143,10 @@ static bool is_letter(hid_keycode_t key) {
 }
 
 /**
- * @brief Is numpad key.
- * @param[in] key Input parameter.
- * @return Operation status or result.
+ * @brief Check if a HID keycode belongs to the numeric keypad.
+ *
+ * @param[in] key The HID keycode to check.
+ * @return True if the key is a numpad key, false otherwise.
  */
 static bool is_numpad_key(hid_keycode_t key) {
     return key == KEY_NUMLOCK_INSERT || key == KEY_NUMLOCK_END ||
@@ -156,9 +157,7 @@ static bool is_numpad_key(hid_keycode_t key) {
            key == KEY_NUMLOCK_DELETE;
 }
 
-/**
- * @brief Update modifiers.
- */
+/** @brief Update modifier states based on current key presses. */
 static void update_modifiers() {
     key_state.shift = key_state.pressed[KEY_LSHIFT] || key_state.pressed[KEY_RSHIFT];
     key_state.control = key_state.pressed[KEY_LCONTROL] || key_state.pressed[KEY_RCONTROL];
@@ -167,9 +166,10 @@ static void update_modifiers() {
 }
 
 /**
- * @brief Keyboard register layout.
- * @param[in] layout Input parameter.
- * @return Operation status or result.
+ * @brief Register a new keyboard layout.
+ *
+ * @param[in] layout Pointer to the keyboard layout structure to register.
+ * @return E_OK on success, or an appropriate error code (e.g., E_INVAL) on failure.
  */
 kerr_t keyboard_register_layout(const keyboard_layout_t *layout) {
     if (!layout || !layout->name || layout_count >= INPUT_MAX_LAYOUTS)
@@ -185,8 +185,9 @@ kerr_t keyboard_register_layout(const keyboard_layout_t *layout) {
 }
 
 /**
- * @brief Input init.
- * @return Operation status or result.
+ * @brief Initialize the input subsystem.
+ *
+ * @return E_OK on success, or an error code on failure.
  */
 kerr_t input_init() {
     if (input_initialized)
@@ -202,9 +203,10 @@ kerr_t input_init() {
 }
 
 /**
- * @brief Keyboard set layout.
- * @param[in] name Input parameter.
- * @return Operation status or result.
+ * @brief Set the active keyboard layout by name.
+ *
+ * @param[in] name Null-terminated string containing the name of the layout.
+ * @return E_OK on success, E_INVAL if name is NULL, or E_NOTFOUND if the layout does not exist.
  */
 kerr_t keyboard_set_layout(const char *name) {
     if (!name)
@@ -220,16 +222,18 @@ kerr_t keyboard_set_layout(const char *name) {
 
 /**
  * @brief Return the currently active keyboard layout.
- * @return Active keyboard layout, or NULL when none is selected.
+ *
+ * @return Active keyboard layout structure, or NULL when none is selected.
  */
 const keyboard_layout_t *keyboard_get_layout() { return active_layout; }
 
 /**
- * @brief Keyboard translate key.
- * @param[in] key Input parameter.
- * @param[in] shift Input parameter.
- * @param[in] altgr Input parameter.
- * @return Operation status or result.
+ * @brief Translate a HID keycode to a Unicode codepoint using the active layout and modifier states.
+ *
+ * @param[in] key The HID keycode to translate.
+ * @param[in] shift True if the shift modifier is active.
+ * @param[in] altgr True if the AltGr modifier is active.
+ * @return The translated Unicode codepoint, or 0 if translation is not available.
  */
 uint32_t keyboard_translate_key(hid_keycode_t key, bool shift, bool altgr) {
     if (!active_layout || (size_t)key >= INPUT_KEY_COUNT)
@@ -240,9 +244,10 @@ uint32_t keyboard_translate_key(hid_keycode_t key, bool shift, bool altgr) {
 }
 
 /**
- * @brief Update state.
- * @param[in] event Input parameter.
- * @param[in] out Input parameter.
+ * @brief Update the internal keyboard and pointer state based on a raw HID event.
+ *
+ * @param[in] event Pointer to the incoming raw HID event.
+ * @param[out] out Pointer to the input event structure to be filled with translated actions and unicode.
  */
 static void update_state(const hid_event_t *event, input_event_t *out) {
     if (event->type == HID_EVENT_KEY_PRESS || event->type == HID_EVENT_KEY_RELEASE) {
@@ -335,9 +340,10 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
 }
 
 /**
- * @brief Input poll event.
- * @param[in] event Input parameter.
- * @return Operation status or result.
+ * @brief Poll the next input event from the HID layer and update states.
+ *
+ * @param[out] event Pointer to the input event structure to be populated.
+ * @return E_OK on success, or an error code on failure.
  */
 kerr_t input_poll_event(input_event_t *event) {
     if (!event || !input_initialized)
@@ -353,9 +359,10 @@ kerr_t input_poll_event(input_event_t *event) {
 }
 
 /**
- * @brief Keyboard get state.
- * @param[in] out Input parameter.
- * @return Operation status or result.
+ * @brief Retrieve a copy of the current keyboard state.
+ *
+ * @param[out] out Pointer to the keyboard state structure to be populated.
+ * @return E_OK on success, or E_INVAL if the pointer is invalid or subsystem is uninitialized.
  */
 kerr_t keyboard_get_state(keyboard_state_t *out) {
     if (!out || !input_initialized)
@@ -367,9 +374,10 @@ kerr_t keyboard_get_state(keyboard_state_t *out) {
 }
 
 /**
- * @brief Mouse get state.
- * @param[in] out Input parameter.
- * @return Operation status or result.
+ * @brief Retrieve a copy of the current mouse pointer state.
+ *
+ * @param[out] out Pointer to the mouse state structure to be populated.
+ * @return E_OK on success, or E_INVAL if the pointer is invalid or subsystem is uninitialized.
  */
 kerr_t mouse_get_state(mouse_state_t *out) {
     if (!out || !input_initialized)

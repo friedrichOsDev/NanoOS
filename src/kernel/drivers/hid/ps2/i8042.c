@@ -32,9 +32,9 @@ static bool mouse_ready;
 static uint8_t controller_config;
 
 /**
- * @brief Wait input empty.
+ * @brief Wait until the 8042 controller input buffer is empty and ready for a command or data write.
  *
- * @return true if input empty, false otherwise.
+ * @return true if input buffer became empty, false on timeout.
  */
 static bool wait_input_empty() {
     for (uint32_t i = 0; i < I8042_WAIT_LIMIT; i++) {
@@ -46,9 +46,9 @@ static bool wait_input_empty() {
 }
 
 /**
- * @brief Wait output full.
+ * @brief Wait until the 8042 controller output buffer is full and ready for data reading.
  *
- * @return true if output full, false otherwise.
+ * @return true if output buffer became full, false on timeout.
  */
 static bool wait_output_full() {
     for (uint32_t i = 0; i < I8042_WAIT_LIMIT; i++) {
@@ -60,7 +60,7 @@ static bool wait_output_full() {
 }
 
 /**
- * @brief Controller command.
+ * @brief Send a control command byte to the 8042 controller command port.
  *
  * @param[in] command Command to send.
  * @return E_OK on success, E_TIMEOUT on timeout.
@@ -73,7 +73,7 @@ static kerr_t controller_command(uint8_t command) {
 }
 
 /**
- * @brief Controller write.
+ * @brief Write a data byte to the 8042 controller data port.
  *
  * @param[in] value Data to send.
  * @return E_OK on success, E_TIMEOUT on timeout.
@@ -86,7 +86,7 @@ static kerr_t controller_write(uint8_t value) {
 }
 
 /**
- * @brief Controller read.
+ * @brief Read a data byte from the 8042 controller data port.
  *
  * @param[out] value Pointer to store the read value.
  * @return E_OK on success, E_TIMEOUT on timeout.
@@ -100,7 +100,7 @@ static kerr_t controller_read(uint8_t *value) {
     return E_OK;
 }
 
-/** @brief Drain output. */
+/** @brief Drain any stale or pending bytes from the 8042 controller output buffer. */
 static void drain_output() {
     for (uint32_t i = 0; i < 32; i++) {
         if (!(inb(PS2_STATUS_PORT) & PS2_STATUS_OUTPUT_FULL))
@@ -110,7 +110,7 @@ static void drain_output() {
 }
 
 /**
- * @brief Read config.
+ * @brief Read the current configuration byte from the 8042 controller.
  *
  * @param[out] config The pointer to store the read config.
  * @return E_OK on success, E error on failure.
@@ -121,7 +121,7 @@ static kerr_t read_config(uint8_t *config) {
 }
 
 /**
- * @brief Write config.
+ * @brief Write a new configuration byte to the 8042 controller.
  *
  * @param[in] config The config to write.
  * @return E_OK on success, E error on failure.
@@ -132,7 +132,7 @@ static kerr_t write_config(uint8_t config) {
 }
 
 /**
- * @brief Device write.
+ * @brief Write a command or data byte to a specific PS/2 device channel.
  *
  * @param[in] auxiliary true if auxiliary device present, false otherwise.
  * @param[in] value The value to write.
@@ -145,7 +145,7 @@ static kerr_t device_write(bool auxiliary, uint8_t value) {
 }
 
 /**
- * @brief Read a response from a PS/2 device.
+ * @brief Read a response byte from a specific PS/2 device channel, filtering status errors.
  *
  * @param[in] auxiliary true if auxiliary device present, false otherwise.
  * @param[out] value The pointer to store the read value.
@@ -171,7 +171,7 @@ static kerr_t device_read(bool auxiliary, uint8_t *value) {
 }
 
 /**
- * @brief Device command.
+ * @brief Send a command byte to a PS/2 device and verify its acknowledgment response.
  *
  * @param[in] auxiliary true if the command is for the auxiliary port, false otherwise.
  * @param[in] command The command to send.
@@ -205,9 +205,9 @@ static void keyboard_irq(struct registers *regs) { ps2_irq_handler(regs); }
 static void mouse_irq(struct registers *regs) { ps2_irq_handler(regs); }
 
 /**
- * @brief Ps2 irq handler.
+ * @brief Handle incoming PS/2 controller hardware interrupts and route bytes to keyboard or mouse parsers.
  *
- * @param[in] regs 
+ * @param[in] regs Interrupt register state structure.
  */
 void ps2_irq_handler(struct registers *regs) {
     (void)regs;
@@ -229,7 +229,7 @@ void ps2_irq_handler(struct registers *regs) {
 }
 
 /**
- * @brief Ps2 controller init.
+ * @brief Initialize the 8042 controller, perform self-tests, negotiate connected PS/2 devices, and configure IRQ routing.
  *
  * @return E_OK on success, E error on failure.
  */
@@ -348,7 +348,7 @@ kerr_t ps2_controller_init() {
     return E_OK;
 }
 
-/** @brief Ps2 controller deinit. */
+/** @brief Deinitialize the 8042 controller, disable channels, and clear interrupt routing configurations. */
 void ps2_controller_deinit() {
     if (!controller_ready)
         return;

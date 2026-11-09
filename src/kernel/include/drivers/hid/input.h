@@ -3,6 +3,7 @@
  * @brief Hardware-independent keyboard and pointer API.
  * @author friedrichOsDev
  */
+
 #pragma once
 
 #include <drivers/hid/hid.h>
@@ -10,62 +11,50 @@
 #define INPUT_LAYOUT_NAME_MAX 32
 #define INPUT_KEY_COUNT ((size_t)KEY_NUMLOCK_DELETE + 1)
 
+/** @brief Keyboard layout definition mapping keycodes to Unicode codepoints. */
 typedef struct {
-    const char *name;
-    /* Unicode code point produced by a physical key without modifiers. */
-    uint32_t normal[INPUT_KEY_COUNT];
-    uint32_t shift[INPUT_KEY_COUNT];
-    uint32_t altgr[INPUT_KEY_COUNT];
+    const char *name;                 /**< Layout name identifier (e.g., "de-DE"). */
+    uint32_t normal[INPUT_KEY_COUNT]; /**< Unmodified key codepoint mapping array. */
+    uint32_t shift[INPUT_KEY_COUNT];  /**< Shift-modified key codepoint mapping array. */
+    uint32_t altgr[INPUT_KEY_COUNT];  /**< AltGr-modified key codepoint mapping array. */
 } keyboard_layout_t;
 
+/** @brief Current state of the keyboard including modifier states and toggle locks. */
 typedef struct {
-    bool pressed[INPUT_KEY_COUNT];
-    bool shift;
-    bool control;
-    bool alt;
-    bool altgr;
-    bool caps_lock;
-    bool num_lock;
+    bool pressed[INPUT_KEY_COUNT]; /**< State array tracking currently pressed keys. */
+    bool shift;                    /**< True if either Left or Right Shift is active. */
+    bool control;                  /**< True if either Left or Right Control is active. */
+    bool alt;                      /**< True if Left Alt (Menu) is active. */
+    bool altgr;                    /**< True if Right Alt (AltGr) is active. */
+    bool caps_lock;                /**< True if Caps Lock is toggled on. */
+    bool num_lock;                 /**< True if Num Lock is toggled on. */
 } keyboard_state_t;
 
+/** @brief Current state of the mouse pointer position and button bitmask. */
 typedef struct {
-    int64_t x;
-    int64_t y;
-    uint8_t buttons;
+    int64_t x;       /**< Accumulated X coordinate of the mouse pointer. */
+    int64_t y;       /**< Accumulated Y coordinate of the mouse pointer. */
+    uint8_t buttons; /**< Bitmask of currently depressed mouse buttons. */
 } mouse_state_t;
 
-/**
- * @brief Semantic action for a keyboard event after key-state processing.
- *
- * A repeated action is a make event received while the key was already down.
- * This is useful for text input and key-repeat handling without maintaining
- * another pressed-key table in every consumer.
- */
+/** @brief Enumeration of key action types for translated input events. */
 typedef enum {
-    INPUT_KEY_ACTION_NONE = 0,
-    INPUT_KEY_ACTION_PRESSED,
-    INPUT_KEY_ACTION_REPEATED,
-    INPUT_KEY_ACTION_RELEASED
+    INPUT_KEY_ACTION_NONE = 0, /**< No key action occurred. */
+    INPUT_KEY_ACTION_PRESSED,  /**< Key was pressed down for the first time. */
+    INPUT_KEY_ACTION_REPEATED, /**< Key is being held, producing a typematic repeat. */
+    INPUT_KEY_ACTION_RELEASED  /**< Key was released. */
 } input_key_action_t;
 
+/** @brief High-level translated input event combining raw HID data, Unicode output, and dead keys. */
 typedef struct {
-    hid_event_t hid;
-    /* First Unicode code point emitted by this key event, if any. */
-    uint32_t unicode;
-    /*
-     * Optional second code point. When a pending dead key cannot be composed,
-     * unicode contains the spacing accent and unicode_secondary the base key.
-     * unicode_count is 0, 1, or 2. Existing consumers may continue using
-     * unicode; text consumers should process both code points in order.
-     */
-    uint32_t unicode_secondary;
-    uint8_t unicode_count;
-    /* Dead-key diagnostics: accent alone means a composition is pending. */
-    uint32_t dead_key_accent;
-    uint32_t dead_key_base;
-    /* Nonzero when a composition or spacing accent was produced. */
-    uint32_t dead_key_result;
-    input_key_action_t key_action;
+    hid_event_t hid;               /**< Underlying raw HID event. */
+    uint32_t unicode;              /**< Primary translated Unicode codepoint. */
+    uint32_t unicode_secondary;    /**< Secondary Unicode codepoint (if dual emission occurs). */
+    uint8_t unicode_count;         /**< Number of valid Unicode codepoints emitted (0, 1, or 2). */
+    uint32_t dead_key_accent;      /**< Active dead-key accent codepoint, if any. */
+    uint32_t dead_key_base;        /**< Base character codepoint combined with a dead key. */
+    uint32_t dead_key_result;      /**< Resulting precomposed or fallback codepoint from a dead key operation. */
+    input_key_action_t key_action; /**< Classified key action state. */
 } input_event_t;
 
 kerr_t input_init();

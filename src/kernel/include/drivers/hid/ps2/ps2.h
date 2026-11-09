@@ -3,7 +3,9 @@
  * @brief Internal PS/2 controller and device interfaces.
  * @author friedrichOsDev
  */
+
 #pragma once
+
 #include <drivers/hid/hid.h>
 
 #define PS2_DATA_PORT 0x60

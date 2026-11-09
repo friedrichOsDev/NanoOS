@@ -3,6 +3,7 @@
  * @brief PS/2 mouse packet parser (3-byte and IntelliMouse 4-byte).
  * @author friedrichOsDev
  */
+
 #include <arch/arch.h>
 #include <drivers/hid/ps2/ps2.h>
 
@@ -12,17 +13,16 @@ static uint8_t packet_size = 3;
 static uint8_t buttons;
 
 /**
- * @brief Ps2 mouse set id.
- * @param[in] id Input parameter.
+ * @brief Set the mouse packet size based on the detected device identification byte.
+ *
+ * @param[in] id The ID to set.
  */
 void ps2_mouse_set_id(uint8_t id) {
     packet_size = (id == 0x03 || id == 0x04) ? 4 : 3;
     packet_index = 0;
 }
 
-/**
- * @brief Ps2 mouse reset parser.
- */
+/** @brief Reset the internal PS/2 mouse packet parser state, indices, and button tracking. */
 void ps2_mouse_reset_parser() {
     packet_index = 0;
     packet_size = 3;
@@ -30,8 +30,9 @@ void ps2_mouse_reset_parser() {
 }
 
 /**
- * @brief Ps2 mouse byte.
- * @param[in] byte Input parameter.
+ * @brief Process and decode an incoming raw byte from the PS/2 mouse hardware data stream.
+ *
+ * @param[in] byte The byte to parse.
  */
 void ps2_mouse_byte(uint8_t byte) {
     if (packet_index == 0 && !(byte & 0x08))
