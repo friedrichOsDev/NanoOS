@@ -312,7 +312,6 @@ kerr_t acpi_init(virt_addr_t rsdp_addr) {
     return E_NOTFOUND;
 }
 
-/** @brief Power off the system. */
 /**
  * @brief Request a system shutdown through ACPI S5.
  */
