@@ -67,7 +67,8 @@ static bool is_letter(hid_keycode_t key) {
            key == KEY_P || key == KEY_A || key == KEY_S ||
            key == KEY_D || key == KEY_F || key == KEY_G ||
            key == KEY_H || key == KEY_J || key == KEY_K ||
-           key == KEY_L || key == KEY_Y || key == KEY_X ||
+           key == KEY_L || key == KEY_OEM1 || key == KEY_OEM3 ||
+           key == KEY_OEM7 || key == KEY_Y || key == KEY_X ||
            key == KEY_C || key == KEY_V || key == KEY_B ||
            key == KEY_N || key == KEY_M;
 }
