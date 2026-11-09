@@ -1,6 +1,7 @@
 /**
  * @file i8042.c
  * @brief PC/AT-compatible 8042 controller and PS/2 device transport.
+ * @author friedrichOsDev
  */
 #include <arch/arch.h>
 #include "../../../arch/x86_64/apic/apic.h"
@@ -29,7 +30,11 @@ static bool keyboard_ready;
 static bool mouse_ready;
 static uint8_t controller_config;
 
-static bool wait_input_empty(void) {
+/**
+ * @brief Handles wait input empty.
+ * @return Result of the operation.
+ */
+static bool wait_input_empty() {
     for (uint32_t i = 0; i < I8042_WAIT_LIMIT; i++) {
         if (!(inb(PS2_STATUS_PORT) & PS2_STATUS_INPUT_FULL)) return true;
         arch_pause();
@@ -37,7 +42,11 @@ static bool wait_input_empty(void) {
     return false;
 }
 
-static bool wait_output_full(void) {
+/**
+ * @brief Handles wait output full.
+ * @return Result of the operation.
+ */
+static bool wait_output_full() {
     for (uint32_t i = 0; i < I8042_WAIT_LIMIT; i++) {
         if (inb(PS2_STATUS_PORT) & PS2_STATUS_OUTPUT_FULL) return true;
         arch_pause();
@@ -45,18 +54,33 @@ static bool wait_output_full(void) {
     return false;
 }
 
+/**
+ * @brief Handles controller command.
+ * @param[in] command Function input.
+ * @return Result of the operation.
+ */
 static kerr_t controller_command(uint8_t command) {
     if (!wait_input_empty()) return E_TIMEOUT;
     outb(PS2_COMMAND_PORT, command);
     return E_OK;
 }
 
+/**
+ * @brief Handles controller write.
+ * @param[in] value Function input.
+ * @return Result of the operation.
+ */
 static kerr_t controller_write(uint8_t value) {
     if (!wait_input_empty()) return E_TIMEOUT;
     outb(PS2_DATA_PORT, value);
     return E_OK;
 }
 
+/**
+ * @brief Handles controller read.
+ * @param[in] value Function input.
+ * @return Result of the operation.
+ */
 static kerr_t controller_read(uint8_t *value) {
     if (!value) return E_INVAL;
     if (!wait_output_full()) return E_TIMEOUT;
@@ -64,25 +88,50 @@ static kerr_t controller_read(uint8_t *value) {
     return E_OK;
 }
 
-static void drain_output(void) {
+/**
+ * @brief Handles drain output.
+ */
+static void drain_output() {
     for (uint32_t i = 0; i < 32; i++) {
         if (!(inb(PS2_STATUS_PORT) & PS2_STATUS_OUTPUT_FULL)) break;
-        (void)inb(PS2_DATA_PORT);
+        ()inb(PS2_DATA_PORT);
     }
 }
 
+/**
+ * @brief Handles read config.
+ * @param[in] config Function input.
+ * @return Result of the operation.
+ */
 static kerr_t read_config(uint8_t *config) {
     K_TRY(controller_command(I8042_CMD_READ_CONFIG));
+/**
+ * @brief Handles controller read.
+ * @param[in] config Function input.
+ * @return Result of the operation.
+ */
     return controller_read(config);
 }
 
 static kerr_t write_config(uint8_t config) {
     K_TRY(controller_command(I8042_CMD_WRITE_CONFIG));
+/**
+ * @brief Handles controller write.
+ * @param[in] auxiliary Function input.
+ * @param[in] value Function input.
+ * @return Result of the operation.
+ */
     return controller_write(config);
 }
 
 static kerr_t device_write(bool auxiliary, uint8_t value) {
     if (auxiliary) K_TRY(controller_command(I8042_CMD_WRITE_B));
+/**
+ * @brief Handles controller write.
+ * @param[in] auxiliary Function input.
+ * @param[in] value Function input.
+ * @return Result of the operation.
+ */
     return controller_write(value);
 }
 
@@ -104,6 +153,12 @@ static kerr_t device_read(bool auxiliary, uint8_t *value) {
     return E_TIMEOUT;
 }
 
+/**
+ * @brief Handles device command.
+ * @param[in] auxiliary Function input.
+ * @param[in] command Function input.
+ * @return Result of the operation.
+ */
 static kerr_t device_command(bool auxiliary, uint8_t command) {
     for (uint32_t attempt = 0; attempt < 3; attempt++) {
         uint8_t response = 0;
@@ -115,11 +170,23 @@ static kerr_t device_command(bool auxiliary, uint8_t command) {
     return E_TIMEOUT;
 }
 
+/**
+ * @brief Handles keyboard irq.
+ * @param[in] regs Function input.
+ */
 static void keyboard_irq(struct registers *regs) { ps2_irq_handler(regs); }
+/**
+ * @brief Handles mouse irq.
+ * @param[in] regs Function input.
+ */
 static void mouse_irq(struct registers *regs) { ps2_irq_handler(regs); }
 
+/**
+ * @brief Handles ps2 irq handler.
+ * @param[in] regs Function input.
+ */
 void ps2_irq_handler(struct registers *regs) {
-    (void)regs;
+    ()regs;
     /* IRQ1 and IRQ12 share the data port: route by the controller AUX status bit. */
     for (uint32_t i = 0; i < 16; i++) {
         uint8_t status = inb(PS2_STATUS_PORT);
@@ -134,13 +201,17 @@ void ps2_irq_handler(struct registers *regs) {
     }
 }
 
-kerr_t ps2_controller_init(void) {
+/**
+ * @brief Handles ps2 controller init.
+ * @return Result of the operation.
+ */
+kerr_t ps2_controller_init() {
     uint8_t response = 0;
 
     /* No i8042 FADT flag is treated as advisory: QEMU and legacy firmware can
        expose a working controller even when firmware metadata is incomplete. */
-    (void)controller_command(I8042_CMD_DISABLE_A);
-    (void)controller_command(I8042_CMD_DISABLE_B);
+    ()controller_command(I8042_CMD_DISABLE_A);
+    ()controller_command(I8042_CMD_DISABLE_B);
     drain_output();
 
     if (k_failed(controller_command(I8042_CMD_TEST_CONTROLLER)) ||
@@ -161,7 +232,7 @@ kerr_t ps2_controller_init(void) {
         !k_failed(controller_read(&response))) {
         second_channel = (response & I8042_CFG_CLOCK_B) == 0;
     }
-    (void)controller_command(I8042_CMD_DISABLE_B);
+    ()controller_command(I8042_CMD_DISABLE_B);
 
     bool first_ok = !k_failed(controller_command(I8042_CMD_TEST_A)) &&
                     !k_failed(controller_read(&response)) && response == 0;
@@ -172,7 +243,7 @@ kerr_t ps2_controller_init(void) {
     if (!first_ok && !second_ok) return E_NOPROBE;
 
     if (first_ok) {
-        (void)controller_command(I8042_CMD_ENABLE_A);
+        ()controller_command(I8042_CMD_ENABLE_A);
         if (!k_failed(device_command(false, 0xFF))) {
             uint8_t reset = 0;
             if (!k_failed(device_read(false, &reset)) && reset == 0xAA) {
@@ -187,7 +258,7 @@ kerr_t ps2_controller_init(void) {
     }
 
     if (second_ok) {
-        (void)controller_command(I8042_CMD_ENABLE_B);
+        ()controller_command(I8042_CMD_ENABLE_B);
         if (!k_failed(device_command(true, 0xFF))) {
             uint8_t reset = 0;
             if (!k_failed(device_read(true, &reset)) && reset == 0xAA) {
@@ -240,12 +311,15 @@ kerr_t ps2_controller_init(void) {
     return E_OK;
 }
 
-void ps2_controller_deinit(void) {
+/**
+ * @brief Handles ps2 controller deinit.
+ */
+void ps2_controller_deinit() {
     if (!controller_ready) return;
-    (void)controller_command(I8042_CMD_DISABLE_A);
-    (void)controller_command(I8042_CMD_DISABLE_B);
+    ()controller_command(I8042_CMD_DISABLE_A);
+    ()controller_command(I8042_CMD_DISABLE_B);
     controller_config &= (uint8_t)~(I8042_CFG_IRQ_A | I8042_CFG_IRQ_B);
-    (void)write_config(controller_config);
+    ()write_config(controller_config);
     keyboard_ready = false;
     mouse_ready = false;
     controller_ready = false;
