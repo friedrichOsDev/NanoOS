@@ -170,7 +170,16 @@ static kerr_t device_command(bool auxiliary, uint8_t command) {
     return E_TIMEOUT;
 }
 
+/**
+ * @brief Dispatch the keyboard IRQ to the shared PS/2 handler.
+ * @param[in] regs Interrupt register state.
+ */
 static void keyboard_irq(struct registers *regs) { ps2_irq_handler(regs); }
+
+/**
+ * @brief Dispatch the mouse IRQ to the shared PS/2 handler.
+ * @param[in] regs Interrupt register state.
+ */
 static void mouse_irq(struct registers *regs) { ps2_irq_handler(regs); }
 
 /**
