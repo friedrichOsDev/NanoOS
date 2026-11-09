@@ -3,6 +3,7 @@
  * @brief PC/AT-compatible 8042 controller and PS/2 device transport.
  */
 #include <arch/arch.h>
+#include "../../../arch/x86_64/apic/apic.h"
 #include <drivers/hid/ps2/ps2.h>
 
 #define I8042_WAIT_LIMIT 1000000U
