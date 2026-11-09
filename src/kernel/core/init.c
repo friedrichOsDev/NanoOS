@@ -52,12 +52,13 @@ static void kernel_init_thread(void *arg) {
 
     version_splash_show("0.0.3", 3000);
 
-    while (1) {
 #ifdef KERNEL_DEBUG_BUILD
-        (void)hid_test_poll(32);
-#endif
+    hid_test_run();
+#else
+    while (1) {
         thread_yield();
     }
+#endif
 }
 
 void kernel_init(const uint64_t magic, const uint64_t info_ptr); // first declaration
