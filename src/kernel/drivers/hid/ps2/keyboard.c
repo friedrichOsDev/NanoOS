@@ -1,6 +1,7 @@
 /**
  * @file keyboard.c
  * @brief PS/2 Set-2 keyboard scan-code parser for ISO-105 keyboards.
+ * @author friedrichOsDev
  */
 #include <drivers/hid/ps2/ps2.h>
 #include <arch/arch.h>
@@ -10,6 +11,12 @@ static bool releasing;
 static bool pause_sequence;
 static uint8_t pause_index;
 
+/**
+ * @brief Handles decode.
+ * @param[in] code Function input.
+ * @param[in] ext Function input.
+ * @return Result of the operation.
+ */
 static hid_keycode_t decode(uint8_t code, bool ext) {
     if (ext) {
         switch (code) {
@@ -77,13 +84,20 @@ static hid_keycode_t decode(uint8_t code, bool ext) {
     }
 }
 
-void ps2_keyboard_reset_parser(void) {
+/**
+ * @brief Handles ps2 keyboard reset parser.
+ */
+void ps2_keyboard_reset_parser() {
     extended = false;
     releasing = false;
     pause_sequence = false;
     pause_index = 0;
 }
 
+/**
+ * @brief Handles ps2 keyboard byte.
+ * @param[in] byte Function input.
+ */
 void ps2_keyboard_byte(uint8_t byte) {
     static const uint8_t pause_tail[] = {0x14, 0x77, 0xE1, 0xF0, 0x14, 0xF0, 0x77};
 
@@ -94,9 +108,9 @@ void ps2_keyboard_byte(uint8_t byte) {
                 hid_event_t event = {.type = HID_EVENT_KEY_PRESS, .timestamp = hpet_get_timestamp()};
                 event.key.keycode = KEY_PAUSE;
                 event.key.scancode = 0xE1;
-                (void)hid_push_event(&event);
+                ()hid_push_event(&event);
                 event.type = HID_EVENT_KEY_RELEASE;
-                (void)hid_push_event(&event);
+                ()hid_push_event(&event);
                 pause_sequence = false;
                 pause_index = 0;
             }
@@ -126,7 +140,7 @@ void ps2_keyboard_byte(uint8_t byte) {
     };
     event.key.keycode = key;
     event.key.scancode = byte;
-    (void)hid_push_event(&event);
+    ()hid_push_event(&event);
 
     extended = false;
     releasing = false;
