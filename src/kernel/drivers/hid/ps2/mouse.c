@@ -1,6 +1,7 @@
 /**
  * @file mouse.c
  * @brief PS/2 mouse packet parser (3-byte and IntelliMouse 4-byte).
+ * @author friedrichOsDev
  */
 #include <drivers/hid/ps2/ps2.h>
 #include <arch/arch.h>
@@ -10,17 +11,28 @@ static uint8_t packet_index;
 static uint8_t packet_size = 3;
 static uint8_t buttons;
 
+/**
+ * @brief Handles ps2 mouse set id.
+ * @param[in] id Function input.
+ */
 void ps2_mouse_set_id(uint8_t id) {
     packet_size = (id == 0x03 || id == 0x04) ? 4 : 3;
     packet_index = 0;
 }
 
-void ps2_mouse_reset_parser(void) {
+/**
+ * @brief Handles ps2 mouse reset parser.
+ */
+void ps2_mouse_reset_parser() {
     packet_index = 0;
     packet_size = 3;
     buttons = 0;
 }
 
+/**
+ * @brief Handles ps2 mouse byte.
+ * @param[in] byte Function input.
+ */
 void ps2_mouse_byte(uint8_t byte) {
     if (packet_index == 0 && !(byte & 0x08)) return;
     packet[packet_index++] = byte;
@@ -47,7 +59,7 @@ void ps2_mouse_byte(uint8_t byte) {
         hid_event_t event = {.type = HID_EVENT_MOUSE_MOVE, .timestamp = hpet_get_timestamp()};
         event.mouse_move.dx = dx;
         event.mouse_move.dy = -(int64_t)dy;
-        (void)hid_push_event(&event);
+        ()hid_push_event(&event);
     }
 
     uint8_t next = packet[0] & 0x07;
@@ -59,7 +71,7 @@ void ps2_mouse_byte(uint8_t byte) {
                 .timestamp = hpet_get_timestamp()
             };
             event.mouse_btn.button = masks[i];
-            (void)hid_push_event(&event);
+            ()hid_push_event(&event);
         }
     }
     buttons = next;
@@ -69,7 +81,7 @@ void ps2_mouse_byte(uint8_t byte) {
         if (wheel) {
             hid_event_t event = {.type = HID_EVENT_MOUSE_SCROLL, .timestamp = hpet_get_timestamp()};
             event.mouse_scroll.delta = wheel;
-            (void)hid_push_event(&event);
+            ()hid_push_event(&event);
         }
     }
 }
