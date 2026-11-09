@@ -34,8 +34,6 @@ uint64_t hpet_get_timestamp();
 kerr_t apic_init();
 void lapic_init(uint32_t target_hz);
 bool is_apic_initialized();
-uint32_t lapic_get_id();
-void ioapic_route_irq(uint8_t irq, uint8_t vector, uint8_t cpu_id);
 void arch_ipi_reschedule();
 void arch_ipi_stop_others();
 void arch_tlb_flush_local(virt_addr_t vaddr);
