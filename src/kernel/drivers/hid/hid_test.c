@@ -89,7 +89,24 @@ static void log_key_event(const input_event_t *event) {
      * characters remain unambiguous and do not corrupt the serial output.
      * Release events normally have unicode == 0 because they produce no text.
      */
-    if (event->unicode >= 0x20U && event->unicode <= 0x7EU) {
+    if (event->unicode_count == 2) {
+        if (event->unicode <= 0x7EU && event->unicode_secondary <= 0x7EU) {
+            char characters[3] = {
+                (char)event->unicode,
+                (char)event->unicode_secondary,
+                '\\0'
+            };
+            log_debug("[HID][KEY] %s key=%s text='%s' code=%u scancode=0x%02X timestamp=%llu",
+                      action, key_name(hid->key.keycode), characters,
+                      (unsigned)hid->key.keycode, (unsigned)hid->key.scancode,
+                      (unsigned long long)hid->timestamp);
+        } else {
+            log_debug("[HID][KEY] %s key=%s unicode=U+%04X,U+%04X code=%u scancode=0x%02X timestamp=%llu",
+                      action, key_name(hid->key.keycode), (unsigned)event->unicode,
+                      (unsigned)event->unicode_secondary, (unsigned)hid->key.keycode,
+                      (unsigned)hid->key.scancode, (unsigned long long)hid->timestamp);
+        }
+    } else if (event->unicode >= 0x20U && event->unicode <= 0x7EU) {
         char character[2] = {(char)event->unicode, '\0'};
         log_debug("[HID][KEY] %s key=%s char='%s' code=%u scancode=0x%02X timestamp=%llu",
                   action, key_name(hid->key.keycode), character,
