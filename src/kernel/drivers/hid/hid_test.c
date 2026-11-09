@@ -66,7 +66,23 @@ static const char *key_name(hid_keycode_t key) {
 
 static void log_key_event(const input_event_t *event) {
     const hid_event_t *hid = &event->hid;
-    const char *action = hid->type == HID_EVENT_KEY_PRESS ? "DOWN" : "UP";
+    const char *action = "UP";
+    switch (event->key_action) {
+    case INPUT_KEY_ACTION_PRESSED:
+        action = "DOWN";
+        break;
+    case INPUT_KEY_ACTION_REPEATED:
+        action = "REPEAT";
+        break;
+    case INPUT_KEY_ACTION_RELEASED:
+        action = "UP";
+        break;
+    case INPUT_KEY_ACTION_NONE:
+    default:
+        action = "UP_UNMATCHED";
+        break;
+    }
+
     log_debug("[HID][KEY] %s key=%s code=%u scancode=0x%02X unicode=U+%04X timestamp=%llu",
               action, key_name(hid->key.keycode), (unsigned)hid->key.keycode,
               (unsigned)hid->key.scancode, (unsigned)event->unicode,
