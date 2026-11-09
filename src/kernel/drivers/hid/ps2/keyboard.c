@@ -12,10 +12,10 @@ static bool pause_sequence;
 static uint8_t pause_index;
 
 /**
- * @brief Handles decode.
- * @param[in] code Function input.
- * @param[in] ext Function input.
- * @return Result of the operation.
+ * @brief Decode.
+ * @param[in] code Input parameter.
+ * @param[in] ext Input parameter.
+ * @return Operation status or result.
  */
 static hid_keycode_t decode(uint8_t code, bool ext) {
     if (ext) {
@@ -85,7 +85,7 @@ static hid_keycode_t decode(uint8_t code, bool ext) {
 }
 
 /**
- * @brief Handles ps2 keyboard reset parser.
+ * @brief Ps2 keyboard reset parser.
  */
 void ps2_keyboard_reset_parser() {
     extended = false;
@@ -95,8 +95,8 @@ void ps2_keyboard_reset_parser() {
 }
 
 /**
- * @brief Handles ps2 keyboard byte.
- * @param[in] byte Function input.
+ * @brief Ps2 keyboard byte.
+ * @param[in] byte Input parameter.
  */
 void ps2_keyboard_byte(uint8_t byte) {
     static const uint8_t pause_tail[] = {0x14, 0x77, 0xE1, 0xF0, 0x14, 0xF0, 0x77};
@@ -108,9 +108,9 @@ void ps2_keyboard_byte(uint8_t byte) {
                 hid_event_t event = {.type = HID_EVENT_KEY_PRESS, .timestamp = hpet_get_timestamp()};
                 event.key.keycode = KEY_PAUSE;
                 event.key.scancode = 0xE1;
-                ()hid_push_event(&event);
+                (void)hid_push_event(&event);
                 event.type = HID_EVENT_KEY_RELEASE;
-                ()hid_push_event(&event);
+                (void)hid_push_event(&event);
                 pause_sequence = false;
                 pause_index = 0;
             }
@@ -140,7 +140,7 @@ void ps2_keyboard_byte(uint8_t byte) {
     };
     event.key.keycode = key;
     event.key.scancode = byte;
-    ()hid_push_event(&event);
+    (void)hid_push_event(&event);
 
     extended = false;
     releasing = false;
