@@ -32,7 +32,15 @@ static const keyboard_layout_t german_layout = {
         [KEY_OEM10]='<', [KEY_Y]='y', [KEY_X]='x', [KEY_C]='c', [KEY_V]='v',
         [KEY_B]='b', [KEY_N]='n', [KEY_M]='m', [KEY_OEM_CC]=',',
         [KEY_OEM_PE]='.', [KEY_OEM_MI]='-', [KEY_SPACE]=' ', [KEY_TAB]=9,
-        [KEY_RETURN]=10, [KEY_BACK]=8
+        [KEY_RETURN]=10, [KEY_BACK]=8,
+        [KEY_NUMLOCK_INSERT]='0', [KEY_NUMLOCK_END]='1',
+        [KEY_NUMLOCK_DOWN]='2', [KEY_NUMLOCK_NEXT]='3',
+        [KEY_NUMLOCK_LEFT]='4', [KEY_NUMLOCK_CLEAR]='5',
+        [KEY_NUMLOCK_RIGHT]='6', [KEY_NUMLOCK_HOME]='7',
+        [KEY_NUMLOCK_UP]='8', [KEY_NUMLOCK_PRIOR]='9',
+        [KEY_NUMLOCK_DELETE]=',', [KEY_NUMLOCK_DIVIDE]='/',
+        [KEY_NUMLOCK_MULTIPLY]='*', [KEY_NUMLOCK_SUBTRACT]='-',
+        [KEY_NUMLOCK_ADD]='+', [KEY_NUMLOCK_RETURN]=10
     },
     .shift = {
         [KEY_OEM2]=0x00B0, [KEY_1]='!', [KEY_2]=0x22, [KEY_3]=0x00A7,
@@ -47,7 +55,15 @@ static const keyboard_layout_t german_layout = {
         [KEY_OEM10]='>', [KEY_Y]='Y', [KEY_X]='X', [KEY_C]='C', [KEY_V]='V',
         [KEY_B]='B', [KEY_N]='N', [KEY_M]='M', [KEY_OEM_CC]=';',
         [KEY_OEM_PE]=':', [KEY_OEM_MI]='_', [KEY_SPACE]=' ', [KEY_TAB]=9,
-        [KEY_RETURN]=10, [KEY_BACK]=8
+        [KEY_RETURN]=10, [KEY_BACK]=8,
+        [KEY_NUMLOCK_INSERT]='0', [KEY_NUMLOCK_END]='1',
+        [KEY_NUMLOCK_DOWN]='2', [KEY_NUMLOCK_NEXT]='3',
+        [KEY_NUMLOCK_LEFT]='4', [KEY_NUMLOCK_CLEAR]='5',
+        [KEY_NUMLOCK_RIGHT]='6', [KEY_NUMLOCK_HOME]='7',
+        [KEY_NUMLOCK_UP]='8', [KEY_NUMLOCK_PRIOR]='9',
+        [KEY_NUMLOCK_DELETE]=',', [KEY_NUMLOCK_DIVIDE]='/',
+        [KEY_NUMLOCK_MULTIPLY]='*', [KEY_NUMLOCK_SUBTRACT]='-',
+        [KEY_NUMLOCK_ADD]='+', [KEY_NUMLOCK_RETURN]=10
     },
     .altgr = {
         [KEY_2]=0x00B2, [KEY_3]=0x00B3, [KEY_7]='{', [KEY_8]='[',
@@ -71,6 +87,17 @@ static bool is_letter(hid_keycode_t key) {
            key == KEY_OEM7 || key == KEY_Y || key == KEY_X ||
            key == KEY_C || key == KEY_V || key == KEY_B ||
            key == KEY_N || key == KEY_M;
+}
+
+static bool is_numpad_key(hid_keycode_t key) {
+    return key == KEY_NUMLOCK_INSERT || key == KEY_NUMLOCK_END ||
+           key == KEY_NUMLOCK_DOWN || key == KEY_NUMLOCK_NEXT ||
+           key == KEY_NUMLOCK_LEFT || key == KEY_NUMLOCK_CLEAR ||
+           key == KEY_NUMLOCK_RIGHT || key == KEY_NUMLOCK_HOME ||
+           key == KEY_NUMLOCK_UP || key == KEY_NUMLOCK_PRIOR ||
+           key == KEY_NUMLOCK_DELETE || key == KEY_NUMLOCK_DIVIDE ||
+           key == KEY_NUMLOCK_MULTIPLY || key == KEY_NUMLOCK_SUBTRACT ||
+           key == KEY_NUMLOCK_ADD || key == KEY_NUMLOCK_RETURN;
 }
 
 static void update_modifiers(void) {
@@ -132,7 +159,9 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
             if (down) {
                 bool shift = key_state.shift;
                 if (is_letter(key) && key_state.caps_lock) shift = !shift;
-                out->unicode = keyboard_translate_key(key, shift, key_state.altgr);
+                out->unicode = (is_numpad_key(key) && !key_state.num_lock)
+                                   ? 0
+                                   : keyboard_translate_key(key, shift, key_state.altgr);
             }
         }
     } else if (event->type == HID_EVENT_MOUSE_MOVE) {
