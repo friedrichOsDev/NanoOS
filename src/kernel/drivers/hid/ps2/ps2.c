@@ -5,12 +5,25 @@
  */
 #include <drivers/hid/ps2/ps2.h>
 
-static kerr_t ps2_driver_init() { return ps2_controller_init(); }
-static void ps2_driver_deinit() { ps2_controller_deinit(); }
 /**
- * @brief Ps2 driver enable.
+ * @brief Initialize the registered PS/2 controller.
+ * @return Controller initialization status.
+ */
+static kerr_t ps2_driver_init() { return ps2_controller_init(); }
+
+/**
+ * @brief Deinitialize the registered PS/2 controller.
+ */
+static void ps2_driver_deinit() { ps2_controller_deinit(); }
+
+/**
+ * @brief Enable the PS/2 HID driver.
  */
 static void ps2_driver_enable() { }
+
+/**
+ * @brief Disable the PS/2 HID driver.
+ */
 static void ps2_driver_disable() { ps2_controller_deinit(); }
 
 static hid_driver_t ps2_hid_driver = {
