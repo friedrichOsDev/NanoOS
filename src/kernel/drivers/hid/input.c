@@ -1,6 +1,7 @@
 /**
  * @file input.c
  * @brief Layout translation and stateful input facade above HID.
+ * @author friedrichOsDev
  */
 #include <drivers/hid/input.h>
 #include <kernel/sync.h>
@@ -115,10 +116,20 @@ static uint32_t compose_dead_key(uint32_t accent, uint32_t base) {
     return 0;
 }
 
+/**
+ * @brief Handles is dead key.
+ * @param[in] codepoint Function input.
+ * @return Result of the operation.
+ */
 static bool is_dead_key(uint32_t codepoint) {
     return codepoint == '^' || codepoint == 0x00B4U || codepoint == '`';
 }
 
+/**
+ * @brief Handles emit unicode.
+ * @param[in] out Function input.
+ * @param[in] codepoint Function input.
+ */
 static void emit_unicode(input_event_t *out, uint32_t codepoint) {
     if (codepoint == 0) return;
     if (out->unicode_count == 0) {
@@ -131,6 +142,11 @@ static void emit_unicode(input_event_t *out, uint32_t codepoint) {
     out->unicode_count++;
 }
 
+/**
+ * @brief Handles is letter.
+ * @param[in] key Function input.
+ * @return Result of the operation.
+ */
 static bool is_letter(hid_keycode_t key) {
     /*
      * Use comparisons rather than switch(key): -Wswitch-enum intentionally
@@ -148,6 +164,11 @@ static bool is_letter(hid_keycode_t key) {
            key == KEY_N || key == KEY_M;
 }
 
+/**
+ * @brief Handles is numpad key.
+ * @param[in] key Function input.
+ * @return Result of the operation.
+ */
 static bool is_numpad_key(hid_keycode_t key) {
     return key == KEY_NUMLOCK_INSERT || key == KEY_NUMLOCK_END ||
            key == KEY_NUMLOCK_DOWN || key == KEY_NUMLOCK_NEXT ||
@@ -157,13 +178,21 @@ static bool is_numpad_key(hid_keycode_t key) {
            key == KEY_NUMLOCK_DELETE;
 }
 
-static void update_modifiers(void) {
+/**
+ * @brief Handles update modifiers.
+ */
+static void update_modifiers() {
     key_state.shift = key_state.pressed[KEY_LSHIFT] || key_state.pressed[KEY_RSHIFT];
     key_state.control = key_state.pressed[KEY_LCONTROL] || key_state.pressed[KEY_RCONTROL];
     key_state.alt = key_state.pressed[KEY_LMENU];
     key_state.altgr = key_state.pressed[KEY_RMENU];
 }
 
+/**
+ * @brief Handles keyboard register layout.
+ * @param[in] layout Function input.
+ * @return Result of the operation.
+ */
 kerr_t keyboard_register_layout(const keyboard_layout_t *layout) {
     if (!layout || !layout->name || layout_count >= INPUT_MAX_LAYOUTS) return E_INVAL;
     for (size_t i = 0; i < layout_count; i++) {
@@ -174,7 +203,11 @@ kerr_t keyboard_register_layout(const keyboard_layout_t *layout) {
     return E_OK;
 }
 
-kerr_t input_init(void) {
+/**
+ * @brief Handles input init.
+ * @return Result of the operation.
+ */
+kerr_t input_init() {
     if (input_initialized) return E_OK;
     memset(&key_state, 0, sizeof(key_state));
     memset(&pointer_state, 0, sizeof(pointer_state));
@@ -185,6 +218,11 @@ kerr_t input_init(void) {
     return E_OK;
 }
 
+/**
+ * @brief Handles keyboard set layout.
+ * @param[in] name Function input.
+ * @return Result of the operation.
+ */
 kerr_t keyboard_set_layout(const char *name) {
     if (!name) return E_INVAL;
     for (size_t i = 0; i < layout_count; i++) {
@@ -196,14 +234,30 @@ kerr_t keyboard_set_layout(const char *name) {
     return E_NOTFOUND;
 }
 
-const keyboard_layout_t *keyboard_get_layout(void) { return active_layout; }
+/**
+ * @brief Handles keyboard get layout.
+ * @return Result of the operation.
+ */
+const keyboard_layout_t *keyboard_get_layout() { return active_layout; }
 
+/**
+ * @brief Handles keyboard translate key.
+ * @param[in] key Function input.
+ * @param[in] shift Function input.
+ * @param[in] altgr Function input.
+ * @return Result of the operation.
+ */
 uint32_t keyboard_translate_key(hid_keycode_t key, bool shift, bool altgr) {
     if (!active_layout || (size_t)key >= INPUT_KEY_COUNT) return 0;
     if (altgr && active_layout->altgr[key]) return active_layout->altgr[key];
     return shift ? active_layout->shift[key] : active_layout->normal[key];
 }
 
+/**
+ * @brief Handles update state.
+ * @param[in] event Function input.
+ * @param[in] out Function input.
+ */
 static void update_state(const hid_event_t *event, input_event_t *out) {
     if (event->type == HID_EVENT_KEY_PRESS || event->type == HID_EVENT_KEY_RELEASE) {
         hid_keycode_t key = event->key.keycode;
@@ -291,6 +345,11 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
     }
 }
 
+/**
+ * @brief Handles input poll event.
+ * @param[in] event Function input.
+ * @return Result of the operation.
+ */
 kerr_t input_poll_event(input_event_t *event) {
     if (!event || !input_initialized) return E_INVAL;
     memset(event, 0, sizeof(*event));
@@ -302,6 +361,11 @@ kerr_t input_poll_event(input_event_t *event) {
     return E_OK;
 }
 
+/**
+ * @brief Handles keyboard get state.
+ * @param[in] out Function input.
+ * @return Result of the operation.
+ */
 kerr_t keyboard_get_state(keyboard_state_t *out) {
     if (!out || !input_initialized) return E_INVAL;
     irq_flags_t flags = spinlock_acquire_irqsave(&input_lock);
@@ -310,6 +374,11 @@ kerr_t keyboard_get_state(keyboard_state_t *out) {
     return E_OK;
 }
 
+/**
+ * @brief Handles mouse get state.
+ * @param[in] out Function input.
+ * @return Result of the operation.
+ */
 kerr_t mouse_get_state(mouse_state_t *out) {
     if (!out || !input_initialized) return E_INVAL;
     irq_flags_t flags = spinlock_acquire_irqsave(&input_lock);
