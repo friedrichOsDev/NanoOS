@@ -99,6 +99,10 @@ static void log_input_event(const input_event_t *event) {
         log_debug("[HID][MOUSE] SCROLL delta=%lld timestamp=%llu",
                   (long long)hid->mouse_scroll.delta, (unsigned long long)hid->timestamp);
         break;
+    default:
+        log_warn("[HID] UNKNOWN_EVENT type=%u timestamp=%llu",
+                 (unsigned)hid->type, (unsigned long long)hid->timestamp);
+        break;
     }
 }
 
