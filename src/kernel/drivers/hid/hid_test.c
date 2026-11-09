@@ -94,7 +94,7 @@ static void log_key_event(const input_event_t *event) {
             char characters[3] = {
                 (char)event->unicode,
                 (char)event->unicode_secondary,
-                '\\0'
+                '\0'
             };
             log_debug("[HID][KEY] %s key=%s text='%s' code=%u scancode=0x%02X timestamp=%llu",
                       action, key_name(hid->key.keycode), characters,
