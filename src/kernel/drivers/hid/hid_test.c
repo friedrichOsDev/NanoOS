@@ -90,7 +90,7 @@ static void log_key_event(const input_event_t *event) {
      * Release events normally have unicode == 0 because they produce no text.
      */
     if (event->unicode >= 0x20U && event->unicode <= 0x7EU) {
-        char character[2] = {(char)event->unicode, '\\0'};
+        char character[2] = {(char)event->unicode, '\0'};
         log_debug("[HID][KEY] %s key=%s char='%s' code=%u scancode=0x%02X timestamp=%llu",
                   action, key_name(hid->key.keycode), character,
                   (unsigned)hid->key.keycode, (unsigned)hid->key.scancode,
