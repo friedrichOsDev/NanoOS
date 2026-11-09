@@ -8,7 +8,6 @@
 
 #include <pch.h>
 
-/** @brief HID event type */
 typedef enum {
     HID_EVENT_NONE = 0,
     HID_EVENT_KEY_PRESS,
@@ -19,10 +18,6 @@ typedef enum {
     HID_EVENT_MOUSE_SCROLL
 } hid_event_type_t;
 
-/**
- * @brief HID keycodes
- * @details All keys for ISO-105 arrangement.
- */
 typedef enum {
     KEY_UNKNOWN = 0,
     KEY_ESC,
@@ -108,9 +103,9 @@ typedef enum {
     KEY_B,
     KEY_N,
     KEY_M,
-    KEY_OEM_CC,
-    KEY_OEM_PE,
-    KEY_OEM_MI,
+    KEY_OEM_COMMA,
+    KEY_OEM_PERIOD,
+    KEY_OEM_MINUS,
     KEY_RSHIFT,
     KEY_NUMLOCK_END,
     KEY_NUMLOCK_DOWN,
@@ -139,29 +134,20 @@ typedef enum {
 #define MOUSE_BTN_MIDDLE (1 << 2)
 #pragma GCC diagnostic pop
 
-/** @brief HID event */
 typedef struct {
     hid_event_type_t type;
-    uint64_t timestamp; // hpet_get_timestamp()
+    uint64_t timestamp;
     union {
         struct {
             hid_keycode_t keycode;
             uint8_t scancode;
         } key;
-        struct {
-            int64_t dx;
-            int64_t dy;
-        } mouse_move;
-        struct {
-            uint8_t button;
-        } mouse_btn;
-        struct {
-            int64_t delta;
-        } mouse_scroll;
+        struct { int64_t dx; int64_t dy; } mouse_move;
+        struct { uint8_t button; } mouse_btn;
+        struct { int64_t delta; } mouse_scroll;
     };
 } hid_event_t;
 
-/** @brief HID driver interface structure (VTable). */
 typedef struct hid_driver {
     const char *driver_name;
     kerr_t (*init)();
