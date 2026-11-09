@@ -153,13 +153,14 @@ size_t ringbuffer_read(ringbuffer_t *rb, void *data, size_t size) {
 }
 
 /**
- * @brief Check how many bytes are available in the ring buffer. 
+ * @brief Check how many bytes are available in the ring buffer.
  *
  * @param rb Ring buffer to check.
- * @return Number of bytes available in the ring buffer. 
+ * @return Number of bytes available in the ring buffer.
  */
 size_t ringbuffer_available(ringbuffer_t *rb) {
-    if (!rb) return 0;
+    if (!rb)
+        return 0;
     irq_flags_t flags = spinlock_acquire_irqsave(&rb->lock);
     size_t s = rb->size;
     spinlock_release_irqrestore(&rb->lock, flags);
@@ -183,7 +184,8 @@ bool ringbuffer_is_empty(ringbuffer_t *rb) {
  * @return True if the ring buffer is full, false otherwise.
  */
 bool ringbuffer_is_full(ringbuffer_t *rb) {
-    if (!rb) return false;
+    if (!rb)
+        return false;
     irq_flags_t flags = spinlock_acquire_irqsave(&rb->lock);
     bool full = (rb->size >= rb->capacity);
     spinlock_release_irqrestore(&rb->lock, flags);

@@ -10,6 +10,8 @@
 #include <drivers/gfx/gfx.h>
 #include <drivers/gfx/version_splash.h>
 #include <drivers/hid/hid.h>
+#include <drivers/hid/input.h>
+#include <drivers/hid/ps2/ps2.h>
 #include <drivers/pci.h>
 #include <drivers/rtc.h>
 #include <kernel/panic.h>
@@ -21,6 +23,11 @@
 #include <sched/taskmgr.h>
 #include <sched/thread.h>
 
+/**
+ * @brief Initialize kernel drivers and process input events.
+ *
+ * @param[in] arg Unused argument.
+ */
 static void kernel_init_thread(void *arg) {
     (void)arg;
 
@@ -32,18 +39,58 @@ static void kernel_init_thread(void *arg) {
 
     err = hid_init();
     if (k_failed(err)) {
-        log_warn("hid init failed, no keyboard or mouse will be available (%s)", kerr_str(err));
+        log_warn("hid initialization failed (%s)", kerr_str(err));
+        for (;;) {
+            thread_yield();
+        }
     }
     log_info("hid done");
 
-    version_splash_show("0.0.3", 3000);
-    acpi_power_off();
+    err = input_init();
+    if (k_failed(err)) {
+        log_warn("input initialization failed (%s)", kerr_str(err));
+        for (;;) {
+            thread_yield();
+        }
+    }
 
-    while (1) {
-        thread_yield();
+    err = ps2_register_driver();
+    if (k_failed(err)) {
+        log_warn("PS/2 driver unavailable (%s)", kerr_str(err));
+    }
+    log_info("input initialization done");
+
+    version_splash_show("0.0.3", 1000);
+
+    for (;;) {
+        input_event_t event;
+        err = input_poll_event(&event);
+        if (err == E_NOTAVAIL) {
+            thread_yield();
+            continue;
+        }
+        if (k_failed(err)) {
+            log_warn("input event polling failed (%s)", kerr_str(err));
+            thread_yield();
+            continue;
+        }
+
+        if (event.hid.type == HID_EVENT_KEY_PRESS &&
+            event.hid.key.keycode == KEY_ESC &&
+            event.key_action == INPUT_KEY_ACTION_PRESSED) {
+            log_info("ESC pressed, shutting down");
+            acpi_power_off();
+            log_warn("ACPI shutdown request returned");
+        }
     }
 }
 
+/**
+ * @brief Initialize the kernel and start the scheduler.
+ *
+ * @param[in] magic Multiboot2 magic number.
+ * @param[in] info_ptr Pointer to the multiboot2 information structure.
+ */
 void kernel_init(const uint64_t magic, const uint64_t info_ptr); // first declaration
 void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     serial_init();

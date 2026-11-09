@@ -309,7 +309,7 @@ kerr_t acpi_init(virt_addr_t rsdp_addr) {
     return E_NOTFOUND;
 }
 
-/** @brief Power off the system. */
+/** @brief Request a system shutdown through ACPI S5. */
 void acpi_power_off() {
     if (!fadt || !dsdt) {
         log_error("unable to power off, FADT or DSDT are missing");
