@@ -11,7 +11,6 @@
 #include <drivers/gfx/version_splash.h>
 #include <drivers/hid/hid.h>
 #include <drivers/hid/input.h>
-#include <arch/x86_64/acpi/acpi.h>
 #include <drivers/hid/ps2/ps2.h>
 #include <drivers/pci.h>
 #include <drivers/rtc.h>
