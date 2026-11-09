@@ -17,6 +17,9 @@ static mouse_state_t pointer_state;
 static spinlock_t input_lock = SPINLOCK_INIT;
 static bool input_initialized;
 
+/* Pending dead-key accent (0 means no pending accent). */
+static uint32_t pending_dead_key;
+
 static const keyboard_layout_t german_layout = {
     .name = "de-DE",
     .normal = {
@@ -72,6 +75,62 @@ static const keyboard_layout_t german_layout = {
     }
 };
 
+/*
+ * Return the precomposed Unicode character for a dead-key/base-key pair.
+ * A zero result means that this pair has no composition in the supported
+ * Latin-1 repertoire.
+ */
+static uint32_t compose_dead_key(uint32_t accent, uint32_t base) {
+    struct composition {
+        uint32_t accent;
+        uint32_t base;
+        uint32_t result;
+    };
+    static const struct composition compositions[] = {
+        /* Circumflex. */
+        {'^','a',0x00E2}, {'^','e',0x00EA}, {'^','i',0x00EE},
+        {'^','o',0x00F4}, {'^','u',0x00FB},
+        {'^','A',0x00C2}, {'^','E',0x00CA}, {'^','I',0x00CE},
+        {'^','O',0x00D4}, {'^','U',0x00DB},
+        /* Acute accent. */
+        {0x00B4,'a',0x00E1}, {0x00B4,'e',0x00E9},
+        {0x00B4,'i',0x00ED}, {0x00B4,'o',0x00F3},
+        {0x00B4,'u',0x00FA}, {0x00B4,'y',0x00FD},
+        {0x00B4,'A',0x00C1}, {0x00B4,'E',0x00C9},
+        {0x00B4,'I',0x00CD}, {0x00B4,'O',0x00D3},
+        {0x00B4,'U',0x00DA}, {0x00B4,'Y',0x00DD},
+        /* Grave accent (Shift + acute key). */
+        {'`','a',0x00E0}, {'`','e',0x00E8}, {'`','i',0x00EC},
+        {'`','o',0x00F2}, {'`','u',0x00F9},
+        {'`','A',0x00C0}, {'`','E',0x00C8}, {'`','I',0x00CC},
+        {'`','O',0x00D2}, {'`','U',0x00D9}
+    };
+
+    for (size_t i = 0; i < sizeof(compositions) / sizeof(compositions[0]); i++) {
+        if (compositions[i].accent == accent &&
+            compositions[i].base == base) {
+            return compositions[i].result;
+        }
+    }
+    return 0;
+}
+
+static bool is_dead_key(uint32_t codepoint) {
+    return codepoint == '^' || codepoint == 0x00B4U || codepoint == '`';
+}
+
+static void emit_unicode(input_event_t *out, uint32_t codepoint) {
+    if (codepoint == 0) return;
+    if (out->unicode_count == 0) {
+        out->unicode = codepoint;
+    } else if (out->unicode_count == 1) {
+        out->unicode_secondary = codepoint;
+    } else {
+        return;
+    }
+    out->unicode_count++;
+}
+
 static bool is_letter(hid_keycode_t key) {
     /*
      * Use comparisons rather than switch(key): -Wswitch-enum intentionally
@@ -119,6 +178,7 @@ kerr_t input_init(void) {
     if (input_initialized) return E_OK;
     memset(&key_state, 0, sizeof(key_state));
     memset(&pointer_state, 0, sizeof(pointer_state));
+    pending_dead_key = 0;
     kerr_t err = keyboard_register_layout(&german_layout);
     if (k_failed(err)) return err;
     input_initialized = true;
@@ -170,12 +230,44 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
             if (down && !was_down && key == KEY_CAPITAL) key_state.caps_lock = !key_state.caps_lock;
             if (down && !was_down && key == KEY_NUMLOCK) key_state.num_lock = !key_state.num_lock;
             update_modifiers();
-            if (down) {
+            if (down && out->key_action != INPUT_KEY_ACTION_REPEATED) {
                 bool shift = key_state.shift;
                 if (is_letter(key) && key_state.caps_lock) shift = !shift;
-                out->unicode = (is_numpad_key(key) && !key_state.num_lock)
-                                   ? 0
-                                   : keyboard_translate_key(key, shift, key_state.altgr);
+
+                uint32_t codepoint = (is_numpad_key(key) && !key_state.num_lock)
+                                         ? 0
+                                         : keyboard_translate_key(key, shift, key_state.altgr);
+
+                if (codepoint != 0) {
+                    if (is_dead_key(codepoint)) {
+                        /*
+                         * Pressing a second dead key emits the previous accent
+                         * as spacing text and starts the new composition.
+                         */
+                        if (pending_dead_key != 0) {
+                            emit_unicode(out, pending_dead_key);
+                        }
+                        pending_dead_key = codepoint;
+                    } else if (pending_dead_key != 0) {
+                        if (codepoint == ' ') {
+                            /* Dead key followed by Space emits the accent. */
+                            emit_unicode(out, pending_dead_key);
+                        } else {
+                            uint32_t composed = compose_dead_key(pending_dead_key,
+                                                                 codepoint);
+                            if (composed != 0) {
+                                emit_unicode(out, composed);
+                            } else {
+                                /* Preserve both characters if no pair exists. */
+                                emit_unicode(out, pending_dead_key);
+                                emit_unicode(out, codepoint);
+                            }
+                        }
+                        pending_dead_key = 0;
+                    } else {
+                        emit_unicode(out, codepoint);
+                    }
+                }
             }
         }
     } else if (event->type == HID_EVENT_MOUSE_MOVE) {
