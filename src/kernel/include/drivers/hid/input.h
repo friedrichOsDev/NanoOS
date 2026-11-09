@@ -49,7 +49,16 @@ typedef enum {
 
 typedef struct {
     hid_event_t hid;
+    /* First Unicode code point emitted by this key event, if any. */
     uint32_t unicode;
+    /*
+     * Optional second code point. When a pending dead key cannot be composed,
+     * unicode contains the spacing accent and unicode_secondary the base key.
+     * unicode_count is 0, 1, or 2. Existing consumers may continue using
+     * unicode; text consumers should process both code points in order.
+     */
+    uint32_t unicode_secondary;
+    uint8_t unicode_count;
     input_key_action_t key_action;
 } input_event_t;
 
