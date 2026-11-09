@@ -231,6 +231,9 @@ static kerr_t acpi_register_table(acpi_sdt_header_t *phys_header) {
 }
 
 /** @brief Check if the ACPI mode is enabled, if not, enable it. */
+/**
+ * @brief Handle acpi enable acpi mode.
+ */
 static void acpi_enable_acpi_mode() {
     if (!fadt)
         return;
@@ -310,6 +313,9 @@ kerr_t acpi_init(virt_addr_t rsdp_addr) {
 }
 
 /** @brief Power off the system. */
+/**
+ * @brief Request a system shutdown through ACPI S5.
+ */
 void acpi_power_off() {
     if (!fadt || !dsdt) {
         log_error("unable to power off, FADT or DSDT are missing");
