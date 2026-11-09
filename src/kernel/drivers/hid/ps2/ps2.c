@@ -19,7 +19,7 @@ static void ps2_driver_deinit() { ps2_controller_deinit(); }
 /**
  * @brief Enable the PS/2 HID driver.
  */
-static void ps2_driver_enable() { }
+static void ps2_driver_enable() {}
 
 /**
  * @brief Disable the PS/2 HID driver.
@@ -32,8 +32,7 @@ static hid_driver_t ps2_hid_driver = {
     .deinit = ps2_driver_deinit,
     .enable = ps2_driver_enable,
     .disable = ps2_driver_disable,
-    .next = NULL
-};
+    .next = NULL};
 
 /**
  * @brief Ps2 register driver.

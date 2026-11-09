@@ -142,9 +142,16 @@ typedef struct {
             hid_keycode_t keycode;
             uint8_t scancode;
         } key;
-        struct { int64_t dx; int64_t dy; } mouse_move;
-        struct { uint8_t button; } mouse_btn;
-        struct { int64_t delta; } mouse_scroll;
+        struct {
+            int64_t dx;
+            int64_t dy;
+        } mouse_move;
+        struct {
+            uint8_t button;
+        } mouse_btn;
+        struct {
+            int64_t delta;
+        } mouse_scroll;
     };
 } hid_event_t;
 

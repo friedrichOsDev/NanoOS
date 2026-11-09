@@ -3,8 +3,8 @@
  * @brief PS/2 mouse packet parser (3-byte and IntelliMouse 4-byte).
  * @author friedrichOsDev
  */
-#include <drivers/hid/ps2/ps2.h>
 #include <arch/arch.h>
+#include <drivers/hid/ps2/ps2.h>
 
 static uint8_t packet[4];
 static uint8_t packet_index;
@@ -34,9 +34,11 @@ void ps2_mouse_reset_parser() {
  * @param[in] byte Input parameter.
  */
 void ps2_mouse_byte(uint8_t byte) {
-    if (packet_index == 0 && !(byte & 0x08)) return;
+    if (packet_index == 0 && !(byte & 0x08))
+        return;
     packet[packet_index++] = byte;
-    if (packet_index < packet_size) return;
+    if (packet_index < packet_size)
+        return;
     packet_index = 0;
 
     /*
@@ -52,8 +54,10 @@ void ps2_mouse_byte(uint8_t byte) {
     int32_t dx = (int32_t)(int8_t)packet[1];
     int32_t dy = (int32_t)(int8_t)packet[2];
 
-    if (packet[0] & 0x40) dx = 0;
-    if (packet[0] & 0x80) dy = 0;
+    if (packet[0] & 0x40)
+        dx = 0;
+    if (packet[0] & 0x80)
+        dy = 0;
 
     if (dx != 0 || dy != 0) {
         hid_event_t event = {.type = HID_EVENT_MOUSE_MOVE, .timestamp = hpet_get_timestamp()};
@@ -68,8 +72,7 @@ void ps2_mouse_byte(uint8_t byte) {
         if ((next & (1U << i)) != (buttons & (1U << i))) {
             hid_event_t event = {
                 .type = (next & (1U << i)) ? HID_EVENT_MOUSE_BUTTON_PRESS : HID_EVENT_MOUSE_BUTTON_RELEASE,
-                .timestamp = hpet_get_timestamp()
-            };
+                .timestamp = hpet_get_timestamp()};
             event.mouse_btn.button = masks[i];
             (void)hid_push_event(&event);
         }

@@ -5,8 +5,8 @@
  */
 #include <drivers/hid/input.h>
 #include <kernel/sync.h>
-#include <lib/util/str.h>
 #include <lib/util/mem.h>
+#include <lib/util/str.h>
 
 #define INPUT_MAX_LAYOUTS 8
 
@@ -24,57 +24,9 @@ static uint32_t pending_dead_key;
 static const keyboard_layout_t german_layout = {
     .name = "de-DE",
     .normal = {
-        [KEY_OEM5]='^', [KEY_1]='1', [KEY_2]='2', [KEY_3]='3', [KEY_4]='4',
-        [KEY_5]='5', [KEY_6]='6', [KEY_7]='7', [KEY_8]='8', [KEY_9]='9',
-        [KEY_0]='0', [KEY_OEM4]=0x00DF, [KEY_OEM6]=0x00B4,
-        [KEY_Q]='q', [KEY_W]='w', [KEY_E]='e', [KEY_R]='r', [KEY_T]='t',
-        [KEY_Z]='z', [KEY_U]='u', [KEY_I]='i', [KEY_O]='o', [KEY_P]='p',
-        [KEY_OEM1]=0x00FC, [KEY_OEM_PLUS]='+',
-        [KEY_A]='a', [KEY_S]='s', [KEY_D]='d', [KEY_F]='f', [KEY_G]='g',
-        [KEY_H]='h', [KEY_J]='j', [KEY_K]='k', [KEY_L]='l',
-        [KEY_OEM3]=0x00F6, [KEY_OEM7]=0x00E4, [KEY_OEM2]='#',
-        [KEY_OEM10]='<', [KEY_Y]='y', [KEY_X]='x', [KEY_C]='c', [KEY_V]='v',
-        [KEY_B]='b', [KEY_N]='n', [KEY_M]='m', [KEY_OEM_COMMA]=',',
-        [KEY_OEM_PERIOD]='.', [KEY_OEM_MINUS]='-', [KEY_SPACE]=' ', [KEY_TAB]=9,
-        [KEY_RETURN]=10, [KEY_BACK]=8,
-        [KEY_NUMLOCK_INSERT]='0', [KEY_NUMLOCK_END]='1',
-        [KEY_NUMLOCK_DOWN]='2', [KEY_NUMLOCK_NEXT]='3',
-        [KEY_NUMLOCK_LEFT]='4', [KEY_NUMLOCK_CLEAR]='5',
-        [KEY_NUMLOCK_RIGHT]='6', [KEY_NUMLOCK_HOME]='7',
-        [KEY_NUMLOCK_UP]='8', [KEY_NUMLOCK_PRIOR]='9',
-        [KEY_NUMLOCK_DELETE]=',', [KEY_NUMLOCK_DIVIDE]='/',
-        [KEY_NUMLOCK_MULTIPLY]='*', [KEY_NUMLOCK_SUBTRACT]='-',
-        [KEY_NUMLOCK_ADD]='+', [KEY_NUMLOCK_RETURN]=10
-    },
-    .shift = {
-        [KEY_OEM5]=0x00B0, [KEY_1]='!', [KEY_2]=0x22, [KEY_3]=0x00A7,
-        [KEY_4]='$', [KEY_5]='%', [KEY_6]='&', [KEY_7]='/', [KEY_8]='(',
-        [KEY_9]=')', [KEY_0]='=', [KEY_OEM4]='?', [KEY_OEM6]='`',
-        [KEY_Q]='Q', [KEY_W]='W', [KEY_E]='E', [KEY_R]='R', [KEY_T]='T',
-        [KEY_Z]='Z', [KEY_U]='U', [KEY_I]='I', [KEY_O]='O', [KEY_P]='P',
-        [KEY_OEM1]=0x00DC, [KEY_OEM_PLUS]='*',
-        [KEY_A]='A', [KEY_S]='S', [KEY_D]='D', [KEY_F]='F', [KEY_G]='G',
-        [KEY_H]='H', [KEY_J]='J', [KEY_K]='K', [KEY_L]='L',
-        [KEY_OEM3]=0x00D6, [KEY_OEM7]=0x00C4, [KEY_OEM2]=0x27,
-        [KEY_OEM10]='>', [KEY_Y]='Y', [KEY_X]='X', [KEY_C]='C', [KEY_V]='V',
-        [KEY_B]='B', [KEY_N]='N', [KEY_M]='M', [KEY_OEM_COMMA]=';',
-        [KEY_OEM_PERIOD]=':', [KEY_OEM_MINUS]='_', [KEY_SPACE]=' ', [KEY_TAB]=9,
-        [KEY_RETURN]=10, [KEY_BACK]=8,
-        [KEY_NUMLOCK_INSERT]='0', [KEY_NUMLOCK_END]='1',
-        [KEY_NUMLOCK_DOWN]='2', [KEY_NUMLOCK_NEXT]='3',
-        [KEY_NUMLOCK_LEFT]='4', [KEY_NUMLOCK_CLEAR]='5',
-        [KEY_NUMLOCK_RIGHT]='6', [KEY_NUMLOCK_HOME]='7',
-        [KEY_NUMLOCK_UP]='8', [KEY_NUMLOCK_PRIOR]='9',
-        [KEY_NUMLOCK_DELETE]=',', [KEY_NUMLOCK_DIVIDE]='/',
-        [KEY_NUMLOCK_MULTIPLY]='*', [KEY_NUMLOCK_SUBTRACT]='-',
-        [KEY_NUMLOCK_ADD]='+', [KEY_NUMLOCK_RETURN]=10
-    },
-    .altgr = {
-        [KEY_2]=0x00B2, [KEY_3]=0x00B3, [KEY_7]='{', [KEY_8]='[',
-        [KEY_9]=']', [KEY_0]='}', [KEY_Q]='@', [KEY_E]=0x20AC,
-        [KEY_OEM4]=0x5C, [KEY_OEM_PLUS]='~', [KEY_OEM10]='|'
-    }
-};
+        [KEY_OEM5] = '^', [KEY_1] = '1', [KEY_2] = '2', [KEY_3] = '3', [KEY_4] = '4', [KEY_5] = '5', [KEY_6] = '6', [KEY_7] = '7', [KEY_8] = '8', [KEY_9] = '9', [KEY_0] = '0', [KEY_OEM4] = 0x00DF, [KEY_OEM6] = 0x00B4, [KEY_Q] = 'q', [KEY_W] = 'w', [KEY_E] = 'e', [KEY_R] = 'r', [KEY_T] = 't', [KEY_Z] = 'z', [KEY_U] = 'u', [KEY_I] = 'i', [KEY_O] = 'o', [KEY_P] = 'p', [KEY_OEM1] = 0x00FC, [KEY_OEM_PLUS] = '+', [KEY_A] = 'a', [KEY_S] = 's', [KEY_D] = 'd', [KEY_F] = 'f', [KEY_G] = 'g', [KEY_H] = 'h', [KEY_J] = 'j', [KEY_K] = 'k', [KEY_L] = 'l', [KEY_OEM3] = 0x00F6, [KEY_OEM7] = 0x00E4, [KEY_OEM2] = '#', [KEY_OEM10] = '<', [KEY_Y] = 'y', [KEY_X] = 'x', [KEY_C] = 'c', [KEY_V] = 'v', [KEY_B] = 'b', [KEY_N] = 'n', [KEY_M] = 'm', [KEY_OEM_COMMA] = ',', [KEY_OEM_PERIOD] = '.', [KEY_OEM_MINUS] = '-', [KEY_SPACE] = ' ', [KEY_TAB] = 9, [KEY_RETURN] = 10, [KEY_BACK] = 8, [KEY_NUMLOCK_INSERT] = '0', [KEY_NUMLOCK_END] = '1', [KEY_NUMLOCK_DOWN] = '2', [KEY_NUMLOCK_NEXT] = '3', [KEY_NUMLOCK_LEFT] = '4', [KEY_NUMLOCK_CLEAR] = '5', [KEY_NUMLOCK_RIGHT] = '6', [KEY_NUMLOCK_HOME] = '7', [KEY_NUMLOCK_UP] = '8', [KEY_NUMLOCK_PRIOR] = '9', [KEY_NUMLOCK_DELETE] = ',', [KEY_NUMLOCK_DIVIDE] = '/', [KEY_NUMLOCK_MULTIPLY] = '*', [KEY_NUMLOCK_SUBTRACT] = '-', [KEY_NUMLOCK_ADD] = '+', [KEY_NUMLOCK_RETURN] = 10},
+    .shift = {[KEY_OEM5] = 0x00B0, [KEY_1] = '!', [KEY_2] = 0x22, [KEY_3] = 0x00A7, [KEY_4] = '$', [KEY_5] = '%', [KEY_6] = '&', [KEY_7] = '/', [KEY_8] = '(', [KEY_9] = ')', [KEY_0] = '=', [KEY_OEM4] = '?', [KEY_OEM6] = '`', [KEY_Q] = 'Q', [KEY_W] = 'W', [KEY_E] = 'E', [KEY_R] = 'R', [KEY_T] = 'T', [KEY_Z] = 'Z', [KEY_U] = 'U', [KEY_I] = 'I', [KEY_O] = 'O', [KEY_P] = 'P', [KEY_OEM1] = 0x00DC, [KEY_OEM_PLUS] = '*', [KEY_A] = 'A', [KEY_S] = 'S', [KEY_D] = 'D', [KEY_F] = 'F', [KEY_G] = 'G', [KEY_H] = 'H', [KEY_J] = 'J', [KEY_K] = 'K', [KEY_L] = 'L', [KEY_OEM3] = 0x00D6, [KEY_OEM7] = 0x00C4, [KEY_OEM2] = 0x27, [KEY_OEM10] = '>', [KEY_Y] = 'Y', [KEY_X] = 'X', [KEY_C] = 'C', [KEY_V] = 'V', [KEY_B] = 'B', [KEY_N] = 'N', [KEY_M] = 'M', [KEY_OEM_COMMA] = ';', [KEY_OEM_PERIOD] = ':', [KEY_OEM_MINUS] = '_', [KEY_SPACE] = ' ', [KEY_TAB] = 9, [KEY_RETURN] = 10, [KEY_BACK] = 8, [KEY_NUMLOCK_INSERT] = '0', [KEY_NUMLOCK_END] = '1', [KEY_NUMLOCK_DOWN] = '2', [KEY_NUMLOCK_NEXT] = '3', [KEY_NUMLOCK_LEFT] = '4', [KEY_NUMLOCK_CLEAR] = '5', [KEY_NUMLOCK_RIGHT] = '6', [KEY_NUMLOCK_HOME] = '7', [KEY_NUMLOCK_UP] = '8', [KEY_NUMLOCK_PRIOR] = '9', [KEY_NUMLOCK_DELETE] = ',', [KEY_NUMLOCK_DIVIDE] = '/', [KEY_NUMLOCK_MULTIPLY] = '*', [KEY_NUMLOCK_SUBTRACT] = '-', [KEY_NUMLOCK_ADD] = '+', [KEY_NUMLOCK_RETURN] = 10},
+    .altgr = {[KEY_2] = 0x00B2, [KEY_3] = 0x00B3, [KEY_7] = '{', [KEY_8] = '[', [KEY_9] = ']', [KEY_0] = '}', [KEY_Q] = '@', [KEY_E] = 0x20AC, [KEY_OEM4] = 0x5C, [KEY_OEM_PLUS] = '~', [KEY_OEM10] = '|'}};
 
 /*
  * Return the precomposed Unicode character for a dead-key/base-key pair.
@@ -95,23 +47,42 @@ static uint32_t compose_dead_key(uint32_t accent, uint32_t base) {
     };
     static const struct composition compositions[] = {
         /* Circumflex. */
-        {'^','a',0x00E2}, {'^','e',0x00EA}, {'^','i',0x00EE},
-        {'^','o',0x00F4}, {'^','u',0x00FB}, {'^','y',0x0177},
-        {'^','A',0x00C2}, {'^','E',0x00CA}, {'^','I',0x00CE},
-        {'^','O',0x00D4}, {'^','U',0x00DB}, {'^','Y',0x0176},
+        {'^', 'a', 0x00E2},
+        {'^', 'e', 0x00EA},
+        {'^', 'i', 0x00EE},
+        {'^', 'o', 0x00F4},
+        {'^', 'u', 0x00FB},
+        {'^', 'y', 0x0177},
+        {'^', 'A', 0x00C2},
+        {'^', 'E', 0x00CA},
+        {'^', 'I', 0x00CE},
+        {'^', 'O', 0x00D4},
+        {'^', 'U', 0x00DB},
+        {'^', 'Y', 0x0176},
         /* Acute accent. */
-        {0x00B4,'a',0x00E1}, {0x00B4,'e',0x00E9},
-        {0x00B4,'i',0x00ED}, {0x00B4,'o',0x00F3},
-        {0x00B4,'u',0x00FA}, {0x00B4,'y',0x00FD},
-        {0x00B4,'A',0x00C1}, {0x00B4,'E',0x00C9},
-        {0x00B4,'I',0x00CD}, {0x00B4,'O',0x00D3},
-        {0x00B4,'U',0x00DA}, {0x00B4,'Y',0x00DD},
+        {0x00B4, 'a', 0x00E1},
+        {0x00B4, 'e', 0x00E9},
+        {0x00B4, 'i', 0x00ED},
+        {0x00B4, 'o', 0x00F3},
+        {0x00B4, 'u', 0x00FA},
+        {0x00B4, 'y', 0x00FD},
+        {0x00B4, 'A', 0x00C1},
+        {0x00B4, 'E', 0x00C9},
+        {0x00B4, 'I', 0x00CD},
+        {0x00B4, 'O', 0x00D3},
+        {0x00B4, 'U', 0x00DA},
+        {0x00B4, 'Y', 0x00DD},
         /* Grave accent (Shift + acute key). */
-        {'`','a',0x00E0}, {'`','e',0x00E8}, {'`','i',0x00EC},
-        {'`','o',0x00F2}, {'`','u',0x00F9},
-        {'`','A',0x00C0}, {'`','E',0x00C8}, {'`','I',0x00CC},
-        {'`','O',0x00D2}, {'`','U',0x00D9}
-    };
+        {'`', 'a', 0x00E0},
+        {'`', 'e', 0x00E8},
+        {'`', 'i', 0x00EC},
+        {'`', 'o', 0x00F2},
+        {'`', 'u', 0x00F9},
+        {'`', 'A', 0x00C0},
+        {'`', 'E', 0x00C8},
+        {'`', 'I', 0x00CC},
+        {'`', 'O', 0x00D2},
+        {'`', 'U', 0x00D9}};
 
     for (size_t i = 0; i < sizeof(compositions) / sizeof(compositions[0]); i++) {
         if (compositions[i].accent == accent &&
@@ -137,7 +108,8 @@ static bool is_dead_key(uint32_t codepoint) {
  * @param[in] codepoint Input parameter.
  */
 static void emit_unicode(input_event_t *out, uint32_t codepoint) {
-    if (codepoint == 0) return;
+    if (codepoint == 0)
+        return;
     if (out->unicode_count == 0) {
         out->unicode = codepoint;
     } else if (out->unicode_count == 1) {
@@ -200,12 +172,15 @@ static void update_modifiers() {
  * @return Operation status or result.
  */
 kerr_t keyboard_register_layout(const keyboard_layout_t *layout) {
-    if (!layout || !layout->name || layout_count >= INPUT_MAX_LAYOUTS) return E_INVAL;
+    if (!layout || !layout->name || layout_count >= INPUT_MAX_LAYOUTS)
+        return E_INVAL;
     for (size_t i = 0; i < layout_count; i++) {
-        if (strcmp(layouts[i]->name, layout->name) == 0) return E_INVAL;
+        if (strcmp(layouts[i]->name, layout->name) == 0)
+            return E_INVAL;
     }
     layouts[layout_count++] = layout;
-    if (!active_layout) active_layout = layout;
+    if (!active_layout)
+        active_layout = layout;
     return E_OK;
 }
 
@@ -214,12 +189,14 @@ kerr_t keyboard_register_layout(const keyboard_layout_t *layout) {
  * @return Operation status or result.
  */
 kerr_t input_init() {
-    if (input_initialized) return E_OK;
+    if (input_initialized)
+        return E_OK;
     memset(&key_state, 0, sizeof(key_state));
     memset(&pointer_state, 0, sizeof(pointer_state));
     pending_dead_key = 0;
     kerr_t err = keyboard_register_layout(&german_layout);
-    if (k_failed(err)) return err;
+    if (k_failed(err))
+        return err;
     input_initialized = true;
     return E_OK;
 }
@@ -230,7 +207,8 @@ kerr_t input_init() {
  * @return Operation status or result.
  */
 kerr_t keyboard_set_layout(const char *name) {
-    if (!name) return E_INVAL;
+    if (!name)
+        return E_INVAL;
     for (size_t i = 0; i < layout_count; i++) {
         if (strcmp(layouts[i]->name, name) == 0) {
             active_layout = layouts[i];
@@ -254,8 +232,10 @@ const keyboard_layout_t *keyboard_get_layout() { return active_layout; }
  * @return Operation status or result.
  */
 uint32_t keyboard_translate_key(hid_keycode_t key, bool shift, bool altgr) {
-    if (!active_layout || (size_t)key >= INPUT_KEY_COUNT) return 0;
-    if (altgr && active_layout->altgr[key]) return active_layout->altgr[key];
+    if (!active_layout || (size_t)key >= INPUT_KEY_COUNT)
+        return 0;
+    if (altgr && active_layout->altgr[key])
+        return active_layout->altgr[key];
     return shift ? active_layout->shift[key] : active_layout->normal[key];
 }
 
@@ -287,12 +267,15 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
             }
 
             key_state.pressed[key] = down;
-            if (down && !was_down && key == KEY_CAPITAL) key_state.caps_lock = !key_state.caps_lock;
-            if (down && !was_down && key == KEY_NUMLOCK) key_state.num_lock = !key_state.num_lock;
+            if (down && !was_down && key == KEY_CAPITAL)
+                key_state.caps_lock = !key_state.caps_lock;
+            if (down && !was_down && key == KEY_NUMLOCK)
+                key_state.num_lock = !key_state.num_lock;
             update_modifiers();
             if (down && out->key_action != INPUT_KEY_ACTION_REPEATED) {
                 bool shift = key_state.shift;
-                if (is_letter(key) && key_state.caps_lock) shift = !shift;
+                if (is_letter(key) && key_state.caps_lock)
+                    shift = !shift;
 
                 uint32_t codepoint = (is_numpad_key(key) && !key_state.num_lock)
                                          ? 0
@@ -357,10 +340,12 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
  * @return Operation status or result.
  */
 kerr_t input_poll_event(input_event_t *event) {
-    if (!event || !input_initialized) return E_INVAL;
+    if (!event || !input_initialized)
+        return E_INVAL;
     memset(event, 0, sizeof(*event));
     kerr_t err = hid_poll_event(&event->hid);
-    if (k_failed(err)) return err;
+    if (k_failed(err))
+        return err;
     irq_flags_t flags = spinlock_acquire_irqsave(&input_lock);
     update_state(&event->hid, event);
     spinlock_release_irqrestore(&input_lock, flags);
@@ -373,7 +358,8 @@ kerr_t input_poll_event(input_event_t *event) {
  * @return Operation status or result.
  */
 kerr_t keyboard_get_state(keyboard_state_t *out) {
-    if (!out || !input_initialized) return E_INVAL;
+    if (!out || !input_initialized)
+        return E_INVAL;
     irq_flags_t flags = spinlock_acquire_irqsave(&input_lock);
     *out = key_state;
     spinlock_release_irqrestore(&input_lock, flags);
@@ -386,7 +372,8 @@ kerr_t keyboard_get_state(keyboard_state_t *out) {
  * @return Operation status or result.
  */
 kerr_t mouse_get_state(mouse_state_t *out) {
-    if (!out || !input_initialized) return E_INVAL;
+    if (!out || !input_initialized)
+        return E_INVAL;
     irq_flags_t flags = spinlock_acquire_irqsave(&input_lock);
     *out = pointer_state;
     spinlock_release_irqrestore(&input_lock, flags);
