@@ -62,6 +62,8 @@ typedef struct {
     /* Dead-key diagnostics: accent alone means a composition is pending. */
     uint32_t dead_key_accent;
     uint32_t dead_key_base;
+    /* Nonzero when a composition or spacing accent was produced. */
+    uint32_t dead_key_result;
     input_key_action_t key_action;
 } input_event_t;
 
