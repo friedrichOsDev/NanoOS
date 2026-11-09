@@ -117,18 +117,18 @@ static uint32_t compose_dead_key(uint32_t accent, uint32_t base) {
 }
 
 /**
- * @brief Handles is dead key.
- * @param[in] codepoint Function input.
- * @return Result of the operation.
+ * @brief Is dead key.
+ * @param[in] codepoint Input parameter.
+ * @return Operation status or result.
  */
 static bool is_dead_key(uint32_t codepoint) {
     return codepoint == '^' || codepoint == 0x00B4U || codepoint == '`';
 }
 
 /**
- * @brief Handles emit unicode.
- * @param[in] out Function input.
- * @param[in] codepoint Function input.
+ * @brief Emit unicode.
+ * @param[in] out Input parameter.
+ * @param[in] codepoint Input parameter.
  */
 static void emit_unicode(input_event_t *out, uint32_t codepoint) {
     if (codepoint == 0) return;
@@ -143,9 +143,9 @@ static void emit_unicode(input_event_t *out, uint32_t codepoint) {
 }
 
 /**
- * @brief Handles is letter.
- * @param[in] key Function input.
- * @return Result of the operation.
+ * @brief Is letter.
+ * @param[in] key Input parameter.
+ * @return Operation status or result.
  */
 static bool is_letter(hid_keycode_t key) {
     /*
@@ -165,9 +165,9 @@ static bool is_letter(hid_keycode_t key) {
 }
 
 /**
- * @brief Handles is numpad key.
- * @param[in] key Function input.
- * @return Result of the operation.
+ * @brief Is numpad key.
+ * @param[in] key Input parameter.
+ * @return Operation status or result.
  */
 static bool is_numpad_key(hid_keycode_t key) {
     return key == KEY_NUMLOCK_INSERT || key == KEY_NUMLOCK_END ||
@@ -179,7 +179,7 @@ static bool is_numpad_key(hid_keycode_t key) {
 }
 
 /**
- * @brief Handles update modifiers.
+ * @brief Update modifiers.
  */
 static void update_modifiers() {
     key_state.shift = key_state.pressed[KEY_LSHIFT] || key_state.pressed[KEY_RSHIFT];
@@ -189,9 +189,9 @@ static void update_modifiers() {
 }
 
 /**
- * @brief Handles keyboard register layout.
- * @param[in] layout Function input.
- * @return Result of the operation.
+ * @brief Keyboard register layout.
+ * @param[in] layout Input parameter.
+ * @return Operation status or result.
  */
 kerr_t keyboard_register_layout(const keyboard_layout_t *layout) {
     if (!layout || !layout->name || layout_count >= INPUT_MAX_LAYOUTS) return E_INVAL;
@@ -204,8 +204,8 @@ kerr_t keyboard_register_layout(const keyboard_layout_t *layout) {
 }
 
 /**
- * @brief Handles input init.
- * @return Result of the operation.
+ * @brief Input init.
+ * @return Operation status or result.
  */
 kerr_t input_init() {
     if (input_initialized) return E_OK;
@@ -219,9 +219,9 @@ kerr_t input_init() {
 }
 
 /**
- * @brief Handles keyboard set layout.
- * @param[in] name Function input.
- * @return Result of the operation.
+ * @brief Keyboard set layout.
+ * @param[in] name Input parameter.
+ * @return Operation status or result.
  */
 kerr_t keyboard_set_layout(const char *name) {
     if (!name) return E_INVAL;
@@ -234,18 +234,14 @@ kerr_t keyboard_set_layout(const char *name) {
     return E_NOTFOUND;
 }
 
-/**
- * @brief Handles keyboard get layout.
- * @return Result of the operation.
- */
 const keyboard_layout_t *keyboard_get_layout() { return active_layout; }
 
 /**
- * @brief Handles keyboard translate key.
- * @param[in] key Function input.
- * @param[in] shift Function input.
- * @param[in] altgr Function input.
- * @return Result of the operation.
+ * @brief Keyboard translate key.
+ * @param[in] key Input parameter.
+ * @param[in] shift Input parameter.
+ * @param[in] altgr Input parameter.
+ * @return Operation status or result.
  */
 uint32_t keyboard_translate_key(hid_keycode_t key, bool shift, bool altgr) {
     if (!active_layout || (size_t)key >= INPUT_KEY_COUNT) return 0;
@@ -254,9 +250,9 @@ uint32_t keyboard_translate_key(hid_keycode_t key, bool shift, bool altgr) {
 }
 
 /**
- * @brief Handles update state.
- * @param[in] event Function input.
- * @param[in] out Function input.
+ * @brief Update state.
+ * @param[in] event Input parameter.
+ * @param[in] out Input parameter.
  */
 static void update_state(const hid_event_t *event, input_event_t *out) {
     if (event->type == HID_EVENT_KEY_PRESS || event->type == HID_EVENT_KEY_RELEASE) {
@@ -346,9 +342,9 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
 }
 
 /**
- * @brief Handles input poll event.
- * @param[in] event Function input.
- * @return Result of the operation.
+ * @brief Input poll event.
+ * @param[in] event Input parameter.
+ * @return Operation status or result.
  */
 kerr_t input_poll_event(input_event_t *event) {
     if (!event || !input_initialized) return E_INVAL;
@@ -362,9 +358,9 @@ kerr_t input_poll_event(input_event_t *event) {
 }
 
 /**
- * @brief Handles keyboard get state.
- * @param[in] out Function input.
- * @return Result of the operation.
+ * @brief Keyboard get state.
+ * @param[in] out Input parameter.
+ * @return Operation status or result.
  */
 kerr_t keyboard_get_state(keyboard_state_t *out) {
     if (!out || !input_initialized) return E_INVAL;
@@ -375,9 +371,9 @@ kerr_t keyboard_get_state(keyboard_state_t *out) {
 }
 
 /**
- * @brief Handles mouse get state.
- * @param[in] out Function input.
- * @return Result of the operation.
+ * @brief Mouse get state.
+ * @param[in] out Input parameter.
+ * @return Operation status or result.
  */
 kerr_t mouse_get_state(mouse_state_t *out) {
     if (!out || !input_initialized) return E_INVAL;
