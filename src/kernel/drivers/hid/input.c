@@ -23,7 +23,7 @@ static uint32_t pending_dead_key;
 static const keyboard_layout_t german_layout = {
     .name = "de-DE",
     .normal = {
-        [KEY_OEM2]='^', [KEY_1]='1', [KEY_2]='2', [KEY_3]='3', [KEY_4]='4',
+        [KEY_OEM5]='^', [KEY_1]='1', [KEY_2]='2', [KEY_3]='3', [KEY_4]='4',
         [KEY_5]='5', [KEY_6]='6', [KEY_7]='7', [KEY_8]='8', [KEY_9]='9',
         [KEY_0]='0', [KEY_OEM4]=0x00DF, [KEY_OEM6]=0x00B4,
         [KEY_Q]='q', [KEY_W]='w', [KEY_E]='e', [KEY_R]='r', [KEY_T]='t',
@@ -31,7 +31,7 @@ static const keyboard_layout_t german_layout = {
         [KEY_OEM1]=0x00FC, [KEY_OEM_PLUS]='+',
         [KEY_A]='a', [KEY_S]='s', [KEY_D]='d', [KEY_F]='f', [KEY_G]='g',
         [KEY_H]='h', [KEY_J]='j', [KEY_K]='k', [KEY_L]='l',
-        [KEY_OEM3]=0x00F6, [KEY_OEM7]=0x00E4, [KEY_OEM5]='#',
+        [KEY_OEM3]=0x00F6, [KEY_OEM7]=0x00E4, [KEY_OEM2]='#',
         [KEY_OEM10]='<', [KEY_Y]='y', [KEY_X]='x', [KEY_C]='c', [KEY_V]='v',
         [KEY_B]='b', [KEY_N]='n', [KEY_M]='m', [KEY_OEM_COMMA]=',',
         [KEY_OEM_PERIOD]='.', [KEY_OEM_MINUS]='-', [KEY_SPACE]=' ', [KEY_TAB]=9,
@@ -46,7 +46,7 @@ static const keyboard_layout_t german_layout = {
         [KEY_NUMLOCK_ADD]='+', [KEY_NUMLOCK_RETURN]=10
     },
     .shift = {
-        [KEY_OEM2]=0x00B0, [KEY_1]='!', [KEY_2]=0x22, [KEY_3]=0x00A7,
+        [KEY_OEM5]=0x00B0, [KEY_1]='!', [KEY_2]=0x22, [KEY_3]=0x00A7,
         [KEY_4]='$', [KEY_5]='%', [KEY_6]='&', [KEY_7]='/', [KEY_8]='(',
         [KEY_9]=')', [KEY_0]='=', [KEY_OEM4]='?', [KEY_OEM6]='`',
         [KEY_Q]='Q', [KEY_W]='W', [KEY_E]='E', [KEY_R]='R', [KEY_T]='T',
@@ -54,7 +54,7 @@ static const keyboard_layout_t german_layout = {
         [KEY_OEM1]=0x00DC, [KEY_OEM_PLUS]='*',
         [KEY_A]='A', [KEY_S]='S', [KEY_D]='D', [KEY_F]='F', [KEY_G]='G',
         [KEY_H]='H', [KEY_J]='J', [KEY_K]='K', [KEY_L]='L',
-        [KEY_OEM3]=0x00D6, [KEY_OEM7]=0x00C4, [KEY_OEM5]=0x27,
+        [KEY_OEM3]=0x00D6, [KEY_OEM7]=0x00C4, [KEY_OEM2]=0x27,
         [KEY_OEM10]='>', [KEY_Y]='Y', [KEY_X]='X', [KEY_C]='C', [KEY_V]='V',
         [KEY_B]='B', [KEY_N]='N', [KEY_M]='M', [KEY_OEM_COMMA]=';',
         [KEY_OEM_PERIOD]=':', [KEY_OEM_MINUS]='_', [KEY_SPACE]=' ', [KEY_TAB]=9,
