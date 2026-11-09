@@ -1,6 +1,7 @@
 /**
  * @file input.h
  * @brief Hardware-independent keyboard and pointer API.
+ * @author friedrichOsDev
  */
 #pragma once
 
@@ -67,11 +68,11 @@ typedef struct {
     input_key_action_t key_action;
 } input_event_t;
 
-kerr_t input_init(void);
+kerr_t input_init();
 kerr_t input_poll_event(input_event_t *event);
 kerr_t keyboard_register_layout(const keyboard_layout_t *layout);
 kerr_t keyboard_set_layout(const char *name);
-const keyboard_layout_t *keyboard_get_layout(void);
+const keyboard_layout_t *keyboard_get_layout();
 uint32_t keyboard_translate_key(hid_keycode_t key, bool shift, bool altgr);
 kerr_t keyboard_get_state(keyboard_state_t *out);
 kerr_t mouse_get_state(mouse_state_t *out);
