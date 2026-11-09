@@ -61,8 +61,8 @@ static hid_keycode_t decode(uint8_t code, bool ext) {
     case 0x12: return KEY_LSHIFT; case 0x59: return KEY_RSHIFT;
     case 0x1A: return KEY_Y; case 0x22: return KEY_X; case 0x21: return KEY_C;
     case 0x2A: return KEY_V; case 0x32: return KEY_B; case 0x31: return KEY_N;
-    case 0x3A: return KEY_M; case 0x41: return KEY_OEM_CC;
-    case 0x49: return KEY_OEM_PE; case 0x4A: return KEY_OEM_MI;
+    case 0x3A: return KEY_M; case 0x41: return KEY_OEM_COMMA;
+    case 0x49: return KEY_OEM_PERIOD; case 0x4A: return KEY_OEM_MINUS;
     case 0x14: return KEY_LCONTROL; case 0x11: return KEY_LMENU;
     case 0x29: return KEY_SPACE; case 0x77: return KEY_NUMLOCK;
     case 0x7E: return KEY_SCROLL; case 0x7C: return KEY_NUMLOCK_MULTIPLY;
