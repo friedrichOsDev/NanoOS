@@ -25,7 +25,8 @@
 
 /**
  * @brief Initialize kernel drivers and process input events.
- * @param[in] arg Input parameter.
+ *
+ * @param[in] arg Unused argument.
  */
 static void kernel_init_thread(void *arg) {
     (void)arg;
@@ -59,7 +60,7 @@ static void kernel_init_thread(void *arg) {
     }
     log_info("input initialization done");
 
-    version_splash_show("0.0.3", 3000);
+    version_splash_show("0.0.3", 1000);
 
     for (;;) {
         input_event_t event;
@@ -84,12 +85,13 @@ static void kernel_init_thread(void *arg) {
     }
 }
 
-void kernel_init(const uint64_t magic, const uint64_t info_ptr); // first declaration
 /**
  * @brief Initialize the kernel and start the scheduler.
- * @param[in] magic Input parameter.
- * @param[in] info_ptr Input parameter.
+ *
+ * @param[in] magic Multiboot2 magic number.
+ * @param[in] info_ptr Pointer to the multiboot2 information structure.
  */
+void kernel_init(const uint64_t magic, const uint64_t info_ptr); // first declaration
 void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     serial_init();
     log_info("start");
