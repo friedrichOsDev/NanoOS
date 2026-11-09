@@ -95,9 +95,7 @@ static bool is_numpad_key(hid_keycode_t key) {
            key == KEY_NUMLOCK_LEFT || key == KEY_NUMLOCK_CLEAR ||
            key == KEY_NUMLOCK_RIGHT || key == KEY_NUMLOCK_HOME ||
            key == KEY_NUMLOCK_UP || key == KEY_NUMLOCK_PRIOR ||
-           key == KEY_NUMLOCK_DELETE || key == KEY_NUMLOCK_DIVIDE ||
-           key == KEY_NUMLOCK_MULTIPLY || key == KEY_NUMLOCK_SUBTRACT ||
-           key == KEY_NUMLOCK_ADD || key == KEY_NUMLOCK_RETURN;
+           key == KEY_NUMLOCK_DELETE;
 }
 
 static void update_modifiers(void) {
