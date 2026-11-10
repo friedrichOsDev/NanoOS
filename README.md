@@ -224,7 +224,7 @@ NanoOS/
 ├── uefi/                # OVMF firmware images
 ├── Doxyfile             # Doxygen configuration
 ├── Makefile             # Kernel build system
-└── README.md
+└── README.md 
 ```
 
 ---
