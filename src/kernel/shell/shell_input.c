@@ -20,7 +20,7 @@ void shell_input_thread(void *arg) {
         input_event_t event;
         kerr_t err = input_poll_event(&event);
         if (err == E_NOTAVAIL) {
-            thread_yield();
+            thread_sleep_ms(10U);
             continue;
         }
         if (k_failed(err)) {
