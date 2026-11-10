@@ -19,13 +19,17 @@ void shell_input_thread(void *arg) {
     while (shell_is_running()) {
         input_event_t event;
         kerr_t err = input_poll_event(&event);
+        uint64_t dropped = hid_take_dropped_events();
+        if (dropped > 0U) {
+            log_warn("HID event queue dropped %llu event(s)", (unsigned long long)dropped);
+        }
         if (err == E_NOTAVAIL) {
-            thread_sleep_ms(10U);
+            thread_sleep_ms(1U);
             continue;
         }
         if (k_failed(err)) {
             log_warn("shell input polling failed (%s)", kerr_str(err));
-            thread_sleep_ms(10U);
+            thread_sleep_ms(1U);
             continue;
         }
         shell_handle_event(&event);
