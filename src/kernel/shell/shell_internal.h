@@ -12,7 +12,7 @@
 
 #define SHELL_INPUT_MAX 256U
 #define SHELL_HISTORY_COUNT 8U
-#define SHELL_OUTPUT_LINES 32U
+#define SHELL_OUTPUT_LINES 64U
 #define SHELL_OUTPUT_WIDTH 160U
 
 void shell_handle_event(const input_event_t *event);
