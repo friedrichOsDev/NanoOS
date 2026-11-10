@@ -315,7 +315,7 @@ static bool font_init(void) {
 }
 
 /* Decode one UTF-8 code point. Invalid input consumes one byte and yields U+FFFD. */
-static uint32_t font_utf8_decode(const uint8_t *text, size_t remaining, size_t *consumed) {
+static uint32_t font_utf8_decode(const uint8_t *text, size_t *consumed) {
     uint8_t first = text[0];
     *consumed = 1U;
     if (first < 0x80U) {
@@ -375,7 +375,7 @@ static uint32_t font_find_glyph(uint32_t codepoint) {
                 continue;
             }
             size_t consumed = 0U;
-            uint32_t current = font_utf8_decode(cursor, (size_t)(end - cursor), &consumed);
+            uint32_t current = font_utf8_decode(cursor, &consumed);
             if (consumed == 0U) {
                 break;
             }
