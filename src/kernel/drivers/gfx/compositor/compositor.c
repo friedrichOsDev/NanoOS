@@ -1092,6 +1092,11 @@ kerr_t compositor_init() {
     K_TRY(kzalloc(fb_size, &mem));
     backbuffer = (uint8_t *)mem;
 
+    /* Validate the embedded font before the compositor render thread starts. */
+    if (!font_init()) {
+        log_warn("embedded PSF2 font is unavailable or invalid");
+    }
+
     sflags = spinlock_acquire_irqsave(&state_lock);
     compositor_initialized = true;
     spinlock_release_irqrestore(&state_lock, sflags);
