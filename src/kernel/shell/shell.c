@@ -395,13 +395,13 @@ void shell_get_snapshot(char lines[SHELL_OUTPUT_LINES][SHELL_OUTPUT_WIDTH],
     *line_count = output_count;
     *input_bytes = input_length;
     *cursor_byte = input_cursor;
-    for (size_t row = 0U; row < SHELL_OUTPUT_LINES; row++) {
+    for (size_t row = 0U; row < output_count; row++) {
         size_t source_row = (output_start + row) % SHELL_OUTPUT_LINES;
         for (size_t col = 0U; col < SHELL_OUTPUT_WIDTH; col++) {
-            lines[row][col] = (row < output_count) ? output_lines[source_row][col] : '\0';
+            lines[row][col] = output_lines[source_row][col];
         }
     }
-    for (size_t col = 0U; col < SHELL_INPUT_MAX; col++) {
+    for (size_t col = 0U; col <= input_length; col++) {
         input[col] = input_line[col];
     }
     spinlock_release_irqrestore(&shell_lock, flags);
