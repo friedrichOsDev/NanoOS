@@ -100,6 +100,7 @@ kerr_t canvas_create(rect_size_t size, canvas_t **out);
 kerr_t canvas_destroy(canvas_t *canvas);
 kerr_t canvas_clear(canvas_t *canvas, color_t color);
 kerr_t canvas_draw_pixel(canvas_t *canvas, point_t pos, color_t color);
+kerr_t canvas_draw_text(canvas_t *canvas, point_t pos, const char *text, color_t color, uint32_t scale);
 kerr_t canvas_draw_triangle(canvas_t *canvas, point_t vertex1, point_t vertex2, point_t vertex3, color_t color, bool filled, uint64_t border_size);
 kerr_t canvas_draw_rectangle(canvas_t *canvas, point_t pos, rect_size_t size, color_t color, bool filled, uint64_t border_size);
 kerr_t canvas_draw_line(canvas_t *canvas, point_t start, point_t end, color_t color, uint64_t thickness);
