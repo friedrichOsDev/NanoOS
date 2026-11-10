@@ -22,6 +22,7 @@
 #include <sched/sched.h>
 #include <sched/taskmgr.h>
 #include <sched/thread.h>
+#include <shell/shell.h>
 
 /**
  * @brief Initialize kernel drivers and process input events.
@@ -60,28 +61,18 @@ static void kernel_init_thread(void *arg) {
     }
     log_info("input initialization done");
 
-    version_splash_show("0.0.3", 10000);
+    version_splash_show("0.0.3", 2000);
+
+    err = shell_init();
+    if (k_failed(err)) {
+        log_warn("shell initialization failed (%s)", kerr_str(err));
+        for (;;) {
+            thread_yield();
+        }
+    }
 
     for (;;) {
-        input_event_t event;
-        err = input_poll_event(&event);
-        if (err == E_NOTAVAIL) {
-            thread_yield();
-            continue;
-        }
-        if (k_failed(err)) {
-            log_warn("input event polling failed (%s)", kerr_str(err));
-            thread_yield();
-            continue;
-        }
-
-        if (event.hid.type == HID_EVENT_KEY_PRESS &&
-            event.hid.key.keycode == KEY_ESC &&
-            event.key_action == INPUT_KEY_ACTION_PRESSED) {
-            log_info("ESC pressed, shutting down");
-            acpi_power_off();
-            log_warn("ACPI shutdown request returned");
-        }
+        thread_yield();
     }
 }
 
