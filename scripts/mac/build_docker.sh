@@ -1,2 +1,8 @@
-SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" &>/dev/null && pwd)
-docker build -t nano-cross "$SCRIPT_DIR/.."
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../container_runtime.sh
+source "$SCRIPT_DIR/../container_runtime.sh"
+
+nanoos_build_image
