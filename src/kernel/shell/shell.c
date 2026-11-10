@@ -374,7 +374,7 @@ kerr_t shell_init(void) {
     }
     output_count = 1U;
     output_column = 0U;
-    output_columns = (size.width > 16U) ? (size_t)((screen.width - 16U) / 8U) : 1U;
+    output_columns = (screen.width > 16U) ? (size_t)((screen.width - 16U) / 8U) : 1U;
     if (output_columns >= SHELL_OUTPUT_WIDTH) output_columns = SHELL_OUTPUT_WIDTH - 1U;
     if (output_columns == 0U) output_columns = 1U;
     input_length = 0U;
