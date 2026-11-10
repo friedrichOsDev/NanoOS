@@ -28,15 +28,13 @@ jobs:
       - name: Build Documentation
         run: doxygen Doxyfile
 
-      - name: Compress Documentation
-        run: |
-          mkdir -p build_pages
-          tar -czf build_pages/pages.tar.gz -C docs/html .
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: build_pages/pages.tar.gz
+          path: 'docs/html'
 
       - name: Deploy to GitHub Pages
         id: deployment
