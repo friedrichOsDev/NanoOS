@@ -148,7 +148,7 @@ void shell_execute_command(const char *line) {
     if (length >= sizeof(command)) {
         length = sizeof(command) - 1U;
     }
-    memcpy(command, line, length);
+    for (size_t i = 0U; i < length; i++) command[i] = line[i];
     command[length] = '\0';
 
     char *cursor = command;
