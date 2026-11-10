@@ -76,8 +76,12 @@ static void command_meminfo(void) {
 
 /** @brief Lists all registered processes and their threads. */
 static void command_psinfo(void) {
+    uint64_t cpu_count = (uint64_t)smp_get_cpu_count();
     shell_write("Available CPU cores: ");
-    shell_write_u64((uint64_t)smp_get_cpu_count());
+    for (uint64_t cpu = 0U; cpu < cpu_count; cpu++) {
+        if (cpu > 0U) shell_write(" ");
+        shell_write_u64(cpu);
+    }
     shell_writeln("");
     shell_writeln("Processes:");
 
