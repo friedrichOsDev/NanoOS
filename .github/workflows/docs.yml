@@ -30,13 +30,13 @@ jobs:
 
       - name: Compress Documentation
         run: |
-          rm -f pages.tar.gz
-          tar -czf pages.tar.gz -C docs/html .
+          mkdir -p build_pages
+          tar -czf build_pages/pages.tar.gz -C docs/html .
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: pages.tar.gz
+          path: build_pages/pages.tar.gz
 
       - name: Deploy to GitHub Pages
         id: deployment
