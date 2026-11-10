@@ -62,8 +62,7 @@ kerr_t version_splash_show(const char *version_str, uint64_t duration_ms) {
     /* Small accent mark and a restrained divider. */
     const point_t accent_pos = {
         .x = center_x - 22,
-        .y = title_y - 22
-    };
+        .y = title_y - 22};
     canvas_draw_rectangle(canvas, accent_pos,
                           (rect_size_t){.width = 44U, .height = 3U},
                           accent, true, 0U);
