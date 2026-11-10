@@ -337,9 +337,6 @@ static uint32_t font_utf8_decode(const uint8_t *text, size_t *consumed) {
         return UINT32_C(0xFFFD);
     }
 
-    if (remaining < count) {
-        return UINT32_C(0xFFFD);
-    }
     for (size_t i = 1U; i < count; i++) {
         if ((text[i] & 0xC0U) != 0x80U) {
             return UINT32_C(0xFFFD);
@@ -425,12 +422,8 @@ kerr_t canvas_draw_text(canvas_t *canvas, point_t pos, const char *text, color_t
 
     const uint8_t *input = (const uint8_t *)text;
     while (*input != 0U) {
-        size_t remaining = 0U;
-        while (input[remaining] != 0U) {
-            remaining++;
-        }
         size_t consumed = 0U;
-        uint32_t codepoint = font_utf8_decode(input, remaining, &consumed);
+        uint32_t codepoint = font_utf8_decode(input, &consumed);
         input += consumed;
 
         if (codepoint == (uint32_t)'\n') {
@@ -446,7 +439,12 @@ kerr_t canvas_draw_text(canvas_t *canvas, point_t pos, const char *text, color_t
         }
         if (codepoint == (uint32_t)'\t') {
             int64_t relative = cursor_x - origin_x;
-            cursor_x = origin_x + ((relative / tab_width) + 1) * tab_width;
+            int64_t tab_remainder = relative % tab_width;
+            int64_t tab_advance = tab_width - tab_remainder;
+            if (cursor_x > INT64_MAX - tab_advance) {
+                break;
+            }
+            cursor_x += tab_advance;
             continue;
         }
 
