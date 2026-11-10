@@ -19,7 +19,7 @@
 
 #define SHELL_PROMPT "friedrichOsDev@nanoos> "
 
-static bool shell_running = false;
+static volatile bool shell_running = false;
 static bool shell_initialized = false;
 static spinlock_t shell_lock = SPINLOCK_INIT;
 static vmm_space_t shell_space;
