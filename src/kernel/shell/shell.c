@@ -29,6 +29,7 @@ static layer_t *shell_layer = NULL;
 static char output_lines[SHELL_OUTPUT_LINES][SHELL_OUTPUT_WIDTH];
 static size_t output_count = 1U;
 static size_t output_column = 0U;
+static size_t output_columns = SHELL_OUTPUT_WIDTH - 1U;
 static char input_line[SHELL_INPUT_MAX];
 static size_t input_length = 0U;
 static size_t input_cursor = 0U;
@@ -74,7 +75,7 @@ static void shell_write_locked(const char *text) {
 
         size_t remaining = strlen(text);
         if (bytes > remaining) bytes = 1U;
-        if (output_column + bytes >= SHELL_OUTPUT_WIDTH) {
+        if (output_column + bytes > output_columns) {
             shell_newline_locked();
         }
         for (size_t i = 0U; i < bytes; i++) {
@@ -105,10 +106,15 @@ void shell_write_u64(uint64_t value) {
         value /= 10U;
     } while (value != 0U && count < sizeof(digits));
 
-    irq_flags_t flags = spinlock_acquire_irqsave(&shell_lock);
-    while (count > 0U) {
-        shell_write_locked((char[]){digits[--count], '\0'});
+    for (size_t i = 0U; i < count / 2U; i++) {
+        char temporary = digits[i];
+        digits[i] = digits[count - i - 1U];
+        digits[count - i - 1U] = temporary;
     }
+    digits[count] = '\0';
+
+    irq_flags_t flags = spinlock_acquire_irqsave(&shell_lock);
+    shell_write_locked(digits);
     spinlock_release_irqrestore(&shell_lock, flags);
 }
 
@@ -368,6 +374,9 @@ kerr_t shell_init(void) {
     }
     output_count = 1U;
     output_column = 0U;
+    output_columns = (size.width > 16U) ? (size_t)((screen.width - 16U) / 8U) : 1U;
+    if (output_columns >= SHELL_OUTPUT_WIDTH) output_columns = SHELL_OUTPUT_WIDTH - 1U;
+    if (output_columns == 0U) output_columns = 1U;
     input_length = 0U;
     input_cursor = 0U;
     history_count = 0U;
