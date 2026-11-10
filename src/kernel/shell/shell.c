@@ -238,7 +238,9 @@ void shell_handle_event(const input_event_t *event) {
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_lock);
     hid_keycode_t key = event->hid.key.keycode;
 
-    switch (key) {
+    /* Only navigation/editing keys need dedicated handling; all other keys
+     * are processed through their translated Unicode value below. */
+    switch ((int)key) {
     case KEY_LEFT:
         input_cursor = utf8_previous(input_line, input_cursor);
         break;
