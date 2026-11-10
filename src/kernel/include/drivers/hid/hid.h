@@ -173,3 +173,4 @@ kerr_t hid_deinit();
 kerr_t hid_register_driver(hid_driver_t *driver);
 kerr_t hid_push_event(const hid_event_t *event);
 kerr_t hid_poll_event(hid_event_t *out_event);
+uint64_t hid_take_dropped_events(void);
