@@ -191,3 +191,64 @@ bool ringbuffer_is_full(ringbuffer_t *rb) {
     spinlock_release_irqrestore(&rb->lock, flags);
     return full;
 }
+
+
+/**
+ * @brief Writes a complete record or leaves the ring buffer unchanged.
+ * @param rb Ring buffer to write to.
+ * @param data Source record.
+ * @param size Exact record size in bytes.
+ * @return size on success, otherwise 0.
+ */
+size_t ringbuffer_write_exact(ringbuffer_t *rb, const void *data, size_t size) {
+    if (!rb || !data || size == 0U) return 0U;
+    irq_flags_t flags = spinlock_acquire_irqsave(&rb->lock);
+    if (size > rb->capacity - rb->size) {
+        spinlock_release_irqrestore(&rb->lock, flags);
+        return 0U;
+    }
+    const uint8_t *src = (const uint8_t *)data;
+    size_t first_chunk = rb->capacity - rb->head;
+    if (size <= first_chunk) {
+        memcpy(rb->buffer + rb->head, src, size);
+        rb->head = (rb->head + size) % rb->capacity;
+    } else {
+        memcpy(rb->buffer + rb->head, src, first_chunk);
+        size_t second_chunk = size - first_chunk;
+        memcpy(rb->buffer, src + first_chunk, second_chunk);
+        rb->head = second_chunk;
+    }
+    rb->size += size;
+    spinlock_release_irqrestore(&rb->lock, flags);
+    return size;
+}
+
+/**
+ * @brief Reads a complete record or leaves the ring buffer unchanged.
+ * @param rb Ring buffer to read from.
+ * @param data Destination record.
+ * @param size Exact record size in bytes.
+ * @return size on success, otherwise 0.
+ */
+size_t ringbuffer_read_exact(ringbuffer_t *rb, void *data, size_t size) {
+    if (!rb || !data || size == 0U) return 0U;
+    irq_flags_t flags = spinlock_acquire_irqsave(&rb->lock);
+    if (size > rb->size) {
+        spinlock_release_irqrestore(&rb->lock, flags);
+        return 0U;
+    }
+    uint8_t *dest = (uint8_t *)data;
+    size_t first_chunk = rb->capacity - rb->tail;
+    if (size <= first_chunk) {
+        memcpy(dest, rb->buffer + rb->tail, size);
+        rb->tail = (rb->tail + size) % rb->capacity;
+    } else {
+        memcpy(dest, rb->buffer + rb->tail, first_chunk);
+        size_t second_chunk = size - first_chunk;
+        memcpy(dest + first_chunk, rb->buffer, second_chunk);
+        rb->tail = second_chunk;
+    }
+    rb->size -= size;
+    spinlock_release_irqrestore(&rb->lock, flags);
+    return size;
+}
