@@ -25,7 +25,7 @@ void shell_input_thread(void *arg) {
         }
         if (k_failed(err)) {
             log_warn("shell input polling failed (%s)", kerr_str(err));
-            thread_yield();
+            thread_sleep_ms(10U);
             continue;
         }
         shell_handle_event(&event);
