@@ -28,6 +28,7 @@ static layer_t *shell_layer = NULL;
 
 static char output_lines[SHELL_OUTPUT_LINES][SHELL_OUTPUT_WIDTH];
 static size_t output_count = 1U;
+static size_t output_start = 0U;
 static size_t output_column = 0U;
 static size_t output_columns = SHELL_OUTPUT_WIDTH - 1U;
 static char input_line[SHELL_INPUT_MAX];
@@ -38,32 +39,40 @@ static size_t history_count = 0U;
 static size_t history_next = 0U;
 static size_t history_view = 0U;
 
+#define SHELL_COMMAND_QUEUE_CAPACITY 8U
+static char command_queue[SHELL_COMMAND_QUEUE_CAPACITY][SHELL_INPUT_MAX];
+static size_t command_queue_head = 0U;
+static size_t command_queue_tail = 0U;
+static size_t command_queue_count = 0U;
+static spinlock_t command_queue_lock = SPINLOCK_INIT;
+
+/** @brief Advances the scrollback ring without shifting every stored line. */
 static void shell_newline_locked(void) {
     if (output_count < SHELL_OUTPUT_LINES) {
         output_count++;
     } else {
-        for (size_t row = 1U; row < SHELL_OUTPUT_LINES; row++) {
-            for (size_t col = 0U; col < SHELL_OUTPUT_WIDTH; col++) {
-                output_lines[row - 1U][col] = output_lines[row][col];
-            }
-        }
-        for (size_t col = 0U; col < SHELL_OUTPUT_WIDTH; col++) {
-            output_lines[SHELL_OUTPUT_LINES - 1U][col] = '\0';
-        }
+        output_start = (output_start + 1U) % SHELL_OUTPUT_LINES;
+    }
+    size_t last_row = (output_start + output_count - 1U) % SHELL_OUTPUT_LINES;
+    for (size_t col = 0U; col < SHELL_OUTPUT_WIDTH; col++) {
+        output_lines[last_row][col] = '\0';
     }
     output_column = 0U;
 }
 
 /** @brief Appends UTF-8 text while preserving character boundaries at line wraps. */
 static void shell_write_locked(const char *text) {
-    while (*text != '\0') {
+    size_t remaining = strlen(text);
+    while (remaining > 0U) {
         if (*text == '\r') {
             text++;
+            remaining--;
             continue;
         }
         if (*text == '\n') {
             shell_newline_locked();
             text++;
+            remaining--;
             continue;
         }
 
@@ -72,17 +81,18 @@ static void shell_write_locked(const char *text) {
         if ((first & 0xE0U) == 0xC0U) bytes = 2U;
         else if ((first & 0xF0U) == 0xE0U) bytes = 3U;
         else if ((first & 0xF8U) == 0xF0U) bytes = 4U;
-
-        size_t remaining = strlen(text);
         if (bytes > remaining) bytes = 1U;
+
         if (output_column + bytes > output_columns) {
             shell_newline_locked();
         }
+        size_t row = (output_start + output_count - 1U) % SHELL_OUTPUT_LINES;
         for (size_t i = 0U; i < bytes; i++) {
-            output_lines[output_count - 1U][output_column++] = text[i];
+            output_lines[row][output_column++] = text[i];
         }
-        output_lines[output_count - 1U][output_column] = '\0';
+        output_lines[row][output_column] = '\0';
         text += bytes;
+        remaining -= bytes;
     }
 }
 
@@ -126,6 +136,7 @@ void shell_clear(void) {
         }
     }
     output_count = 1U;
+    output_start = 0U;
     output_column = 0U;
     spinlock_release_irqrestore(&shell_lock, flags);
 }
@@ -315,8 +326,55 @@ void shell_handle_event(const input_event_t *event) {
     if (execute) {
         shell_write(SHELL_PROMPT);
         shell_writeln(submitted);
-        shell_execute_command(submitted);
+        if (submitted[0] != '\0') {
+            irq_flags_t queue_flags = spinlock_acquire_irqsave(&command_queue_lock);
+            bool queued = command_queue_count < SHELL_COMMAND_QUEUE_CAPACITY;
+            if (queued) {
+                size_t length = strlen(submitted);
+                if (length >= SHELL_INPUT_MAX) length = SHELL_INPUT_MAX - 1U;
+                for (size_t i = 0U; i <= length; i++) {
+                    command_queue[command_queue_head][i] = submitted[i];
+                }
+                command_queue_head = (command_queue_head + 1U) % SHELL_COMMAND_QUEUE_CAPACITY;
+                command_queue_count++;
+            }
+            spinlock_release_irqrestore(&command_queue_lock, queue_flags);
+            if (!queued) shell_writeln("Command queue full; command dropped.");
+        }
     }
+}
+
+/**
+ * @brief Executes queued commands independently of the keyboard event consumer.
+ * @param[in] arg Unused thread argument.
+ */
+static void shell_command_thread(void *arg) {
+    (void)arg;
+    while (shell_is_running()) {
+        char command[SHELL_INPUT_MAX];
+        bool have_command = false;
+        irq_flags_t flags = spinlock_acquire_irqsave(&command_queue_lock);
+        if (command_queue_count > 0U) {
+            size_t length = 0U;
+            while (length + 1U < SHELL_INPUT_MAX &&
+                   command_queue[command_queue_tail][length] != '\0') {
+                command[length] = command_queue[command_queue_tail][length];
+                length++;
+            }
+            command[length] = '\0';
+            command_queue_tail = (command_queue_tail + 1U) % SHELL_COMMAND_QUEUE_CAPACITY;
+            command_queue_count--;
+            have_command = true;
+        }
+        spinlock_release_irqrestore(&command_queue_lock, flags);
+
+        if (have_command) {
+            shell_execute_command(command);
+        } else {
+            thread_sleep_ms(1U);
+        }
+    }
+    thread_exit();
 }
 
 /**
@@ -338,8 +396,9 @@ void shell_get_snapshot(char lines[SHELL_OUTPUT_LINES][SHELL_OUTPUT_WIDTH],
     *input_bytes = input_length;
     *cursor_byte = input_cursor;
     for (size_t row = 0U; row < SHELL_OUTPUT_LINES; row++) {
+        size_t source_row = (output_start + row) % SHELL_OUTPUT_LINES;
         for (size_t col = 0U; col < SHELL_OUTPUT_WIDTH; col++) {
-            lines[row][col] = output_lines[row][col];
+            lines[row][col] = (row < output_count) ? output_lines[source_row][col] : '\0';
         }
     }
     for (size_t col = 0U; col < SHELL_INPUT_MAX; col++) {
@@ -375,6 +434,7 @@ kerr_t shell_init(void) {
         output_lines[row][0] = '\0';
     }
     output_count = 1U;
+    output_start = 0U;
     output_column = 0U;
     output_columns = (screen.width > 16U) ? (size_t)((screen.width - 16U) / 8U) : 1U;
     if (output_columns >= SHELL_OUTPUT_WIDTH) output_columns = SHELL_OUTPUT_WIDTH - 1U;
@@ -384,6 +444,9 @@ kerr_t shell_init(void) {
     history_count = 0U;
     history_next = 0U;
     history_view = 0U;
+    command_queue_head = 0U;
+    command_queue_tail = 0U;
+    command_queue_count = 0U;
 
     K_TRY(vmm_space_create(&shell_space));
     kerr_t err = proc_create("shell", &shell_space, &shell_process);
@@ -404,6 +467,19 @@ kerr_t shell_init(void) {
     shell_running = true;
     thread_t *render_thread = NULL;
     err = thread_create(shell_process, shell_render_thread, NULL, "shell renderer", &render_thread);
+    if (k_failed(err)) {
+        shell_running = false;
+        layer_destroy(shell_layer);
+        shell_layer = NULL;
+        proc_unregister(shell_process);
+        kfree((virt_addr_t)shell_process);
+        shell_process = NULL;
+        vmm_space_destroy(&shell_space);
+        return err;
+    }
+
+    thread_t *command_thread = NULL;
+    err = thread_create(shell_process, shell_command_thread, NULL, "shell command worker", &command_thread);
     if (k_failed(err)) {
         shell_running = false;
         layer_destroy(shell_layer);
