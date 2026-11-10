@@ -18,7 +18,6 @@
 #include <shell/shell.h>
 
 #define SHELL_PROMPT "friedrichOsDev@nanoos> "
-#define SHELL_PROMPT_LENGTH 22U
 
 static bool shell_running = false;
 static bool shell_initialized = false;
@@ -54,30 +53,42 @@ static void shell_newline_locked(void) {
     output_column = 0U;
 }
 
-/** @brief Appends a byte to the terminal output while the state lock is held. */
-static void shell_put_byte_locked(char value) {
-    if (value == '\r') {
-        return;
+/** @brief Appends UTF-8 text while preserving character boundaries at line wraps. */
+static void shell_write_locked(const char *text) {
+    while (*text != '\0') {
+        if (*text == '\r') {
+            text++;
+            continue;
+        }
+        if (*text == '\n') {
+            shell_newline_locked();
+            text++;
+            continue;
+        }
+
+        size_t bytes = 1U;
+        uint8_t first = (uint8_t)*text;
+        if ((first & 0xE0U) == 0xC0U) bytes = 2U;
+        else if ((first & 0xF0U) == 0xE0U) bytes = 3U;
+        else if ((first & 0xF8U) == 0xF0U) bytes = 4U;
+
+        size_t remaining = strlen(text);
+        if (bytes > remaining) bytes = 1U;
+        if (output_column + bytes >= SHELL_OUTPUT_WIDTH) {
+            shell_newline_locked();
+        }
+        for (size_t i = 0U; i < bytes; i++) {
+            output_lines[output_count - 1U][output_column++] = text[i];
+        }
+        output_lines[output_count - 1U][output_column] = '\0';
+        text += bytes;
     }
-    if (value == '\n') {
-        shell_newline_locked();
-        return;
-    }
-    if (output_column >= SHELL_OUTPUT_WIDTH - 1U) {
-        shell_newline_locked();
-    }
-    output_lines[output_count - 1U][output_column++] = value;
-    output_lines[output_count - 1U][output_column] = '\0';
 }
 
 void shell_write(const char *text) {
-    if (!text) {
-        return;
-    }
+    if (!text) return;
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_lock);
-    while (*text != '\0') {
-        shell_put_byte_locked(*text++);
-    }
+    shell_write_locked(text);
     spinlock_release_irqrestore(&shell_lock, flags);
 }
 
@@ -96,7 +107,7 @@ void shell_write_u64(uint64_t value) {
 
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_lock);
     while (count > 0U) {
-        shell_put_byte_locked(digits[--count]);
+        shell_write_locked((char[]){digits[--count], '\0'});
     }
     spinlock_release_irqrestore(&shell_lock, flags);
 }
@@ -298,6 +309,40 @@ void shell_handle_event(const input_event_t *event) {
         shell_writeln(submitted);
         shell_execute_command(submitted);
     }
+}
+
+/**
+ * @brief Copies a consistent terminal snapshot for the renderer.
+ * @param[out] lines Destination output-line array.
+ * @param[out] line_count Number of valid output lines.
+ * @param[out] input Destination editable command buffer.
+ * @param[out] input_bytes Number of bytes in the input buffer.
+ * @param[out] cursor_byte Cursor byte offset in the input buffer.
+ */
+void shell_get_snapshot(char lines[SHELL_OUTPUT_LINES][SHELL_OUTPUT_WIDTH],
+                        size_t *line_count,
+                        char input[SHELL_INPUT_MAX],
+                        size_t *input_bytes,
+                        size_t *cursor_byte) {
+    if (!lines || !line_count || !input || !input_bytes || !cursor_byte) return;
+    irq_flags_t flags = spinlock_acquire_irqsave(&shell_lock);
+    *line_count = output_count;
+    *input_bytes = input_length;
+    *cursor_byte = input_cursor;
+    for (size_t row = 0U; row < SHELL_OUTPUT_LINES; row++) {
+        for (size_t col = 0U; col < SHELL_OUTPUT_WIDTH; col++) {
+            lines[row][col] = output_lines[row][col];
+        }
+    }
+    for (size_t col = 0U; col < SHELL_INPUT_MAX; col++) {
+        input[col] = input_line[col];
+    }
+    spinlock_release_irqrestore(&shell_lock, flags);
+}
+
+/** @brief Returns the shell's compositor layer. */
+layer_t *shell_get_layer(void) {
+    return shell_layer;
 }
 
 void shell_request_shutdown(void) {
