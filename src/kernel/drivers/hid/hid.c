@@ -9,11 +9,12 @@
 #include <mm/memory.h>
 #include <pch.h>
 
-#define HID_EVENT_QUEUE_CAPACITY (256 * sizeof(hid_event_t))
+#define HID_EVENT_QUEUE_CAPACITY (1024U * sizeof(hid_event_t))
 
 static hid_driver_t *driver_list = NULL;
 static ringbuffer_t *event_queue = NULL;
 static bool hid_initialized = false;
+static volatile uint64_t dropped_event_count = 0U;
 
 /**
  * @brief Initializes the HID subsystem and event ring buffer.
@@ -102,9 +103,9 @@ kerr_t hid_push_event(const hid_event_t *event) {
         return E_INVAL;
     }
 
-    size_t written = ringbuffer_write(event_queue, event, sizeof(hid_event_t));
+    size_t written = ringbuffer_write_exact(event_queue, event, sizeof(hid_event_t));
     if (written != sizeof(hid_event_t)) {
-        log_warn("hid event queue full, dropping event type %d", event->type);
+        (void)__atomic_add_fetch(&dropped_event_count, 1U, __ATOMIC_RELAXED);
         return E_NOMEM;
     }
 
@@ -122,10 +123,18 @@ kerr_t hid_poll_event(hid_event_t *out_event) {
         return E_INVAL;
     }
 
-    size_t read_bytes = ringbuffer_read(event_queue, out_event, sizeof(hid_event_t));
+    size_t read_bytes = ringbuffer_read_exact(event_queue, out_event, sizeof(hid_event_t));
     if (read_bytes != sizeof(hid_event_t)) {
         return E_NOTAVAIL;
     }
 
     return E_OK;
+}
+
+/**
+ * @brief Atomically retrieves and resets the number of dropped HID events.
+ * @return Number of events dropped since the previous call.
+ */
+uint64_t hid_take_dropped_events(void) {
+    return __atomic_exchange_n(&dropped_event_count, 0U, __ATOMIC_RELAXED);
 }
