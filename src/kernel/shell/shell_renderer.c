@@ -10,9 +10,8 @@
 #include <sched/sched.h>
 #include <shell/shell.h>
 
-static const color_t shell_background = MAKE_COLOR(0, 0, 0);
-static const color_t shell_foreground = MAKE_COLOR(224, 228, 232);
-static const color_t shell_cursor_color = MAKE_COLOR(224, 228, 232);
+/* MAKE_COLOR uses a compound literal, which is not a pedantic C constant
+ * expression for a file-scope initializer. Keep these as runtime locals. */
 
 /** @brief Counts UTF-8 leading bytes before the supplied byte offset. */
 static size_t utf8_character_count(const char *text, size_t bytes) {
@@ -55,6 +54,9 @@ void shell_render_frame(void) {
 
     if (k_failed(layer_draw_begin(layer))) return;
     canvas_t *canvas = &layer->canvas;
+    const color_t shell_background = MAKE_COLOR(0, 0, 0);
+    const color_t shell_foreground = MAKE_COLOR(224, 228, 232);
+    const color_t shell_cursor_color = MAKE_COLOR(224, 228, 232);
     canvas_clear(canvas, shell_background);
 
     const uint64_t line_height = 16U;
