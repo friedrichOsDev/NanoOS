@@ -28,8 +28,7 @@ LINKER       = $(KERNEL_DIR)/arch/x86_64/linker.ld
 OVMF_CODE    = uefi/OVMF_CODE.4m.fd
 OVMF_VARS    = uefi/my_OVMF_VARS.4m.fd
 
-ALL_INCLUDE_DIRS = $(sort $(dir $(call rwildcard,$(INCLUDE_DIR),*/)))
-INCLUDE_FLAGS = -I$(INCLUDE_DIR) $(foreach dir,$(ALL_INCLUDE_DIRS),-I$(dir))
+INCLUDE_FLAGS = -I$(INCLUDE_DIR)
 
 C_SOURCES   = $(call rwildcard,$(KERNEL_DIR),*.c)
 ASM_SOURCES = $(call rwildcard,$(KERNEL_DIR),*.asm)
