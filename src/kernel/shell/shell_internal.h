@@ -23,3 +23,10 @@ void shell_writeln(const char *text);
 void shell_write_u64(uint64_t value);
 void shell_clear(void);
 void shell_request_shutdown(void);
+
+void shell_get_snapshot(char lines[SHELL_OUTPUT_LINES][SHELL_OUTPUT_WIDTH],
+                        size_t *line_count,
+                        char input[SHELL_INPUT_MAX],
+                        size_t *input_bytes,
+                        size_t *cursor_byte);
+layer_t *shell_get_layer(void);
