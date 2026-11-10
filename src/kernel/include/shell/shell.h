@@ -1,6 +1,6 @@
 /**
  * @file shell.h
- * @brief Kernel shell / terminal interface.
+ * @brief Public kernel shell / terminal interface.
  * @author friedrichOsDev
  */
 
@@ -8,6 +8,6 @@
 
 #include <pch.h>
 
-kerr_t shell_init();
-bool shell_is_running();
-void shell_deinit();
+kerr_t shell_init(void);
+bool shell_is_running(void);
+void shell_deinit(void);
