@@ -16,8 +16,7 @@
  *
  * @param[in] version_str Null-terminated version string (e.g., "0.0.3").
  * @param[in] duration_ms Duration in milliseconds to hold the splash display.
- * @return E_OK on success, E_INVAL for a NULL version, E_NOINIT if the screen
- *         or embedded font is unavailable, or another compositor error.
+ * @return E_OK on success, E_INVAL for a NULL version, E_NOINIT if the screen or embedded font is unavailable, or another compositor error.
  */
 kerr_t version_splash_show(const char *version_str, uint64_t duration_ms) {
     if (!version_str) {
@@ -63,12 +62,10 @@ kerr_t version_splash_show(const char *version_str, uint64_t duration_ms) {
     const point_t accent_pos = {
         .x = center_x - 22,
         .y = title_y - 22};
-    canvas_draw_rectangle(canvas, accent_pos,
-                          (rect_size_t){.width = 44U, .height = 3U},
-                          accent, true, 0U);
 
-    err = canvas_draw_text(canvas, (point_t){.x = title_x, .y = title_y},
-                           "NanoOS", foreground, 3U);
+    canvas_draw_rectangle(canvas, accent_pos, (rect_size_t){.width = 44U, .height = 3U}, accent, true, 0U);
+
+    err = canvas_draw_text(canvas, (point_t){.x = title_x, .y = title_y}, "NanoOS", foreground, 3U);
 
     if (!k_failed(err)) {
         const size_t version_length = strlen(version_str);
@@ -87,19 +84,10 @@ kerr_t version_splash_show(const char *version_str, uint64_t duration_ms) {
     if (!k_failed(err)) {
         const char *tagline = "A SMALL OPERATING SYSTEM";
         const int64_t tagline_width = 24 * 8;
-        err = canvas_draw_text(
-            canvas,
-            (point_t){.x = center_x - (tagline_width / 2),
-                      .y = title_y + 88},
-            tagline, muted, 1U);
+        err = canvas_draw_text(canvas, (point_t){.x = center_x - (tagline_width / 2), .y = title_y + 88}, tagline, muted, 1U);
     }
 
-    /* A subtle baseline gives the otherwise quiet layout some structure. */
-    canvas_draw_rectangle(
-        canvas,
-        (point_t){.x = center_x - 48, .y = title_y + 116},
-        (rect_size_t){.width = 96U, .height = 1U},
-        accent_dim, true, 0U);
+    canvas_draw_rectangle(canvas, (point_t){.x = center_x - 48, .y = title_y + 116}, (rect_size_t){.width = 96U, .height = 1U}, accent_dim, true, 0U);
 
     layer_draw_end(splash_layer);
 
