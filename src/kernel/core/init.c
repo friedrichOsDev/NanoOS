@@ -60,7 +60,7 @@ static void kernel_init_thread(void *arg) {
     }
     log_info("input initialization done");
 
-    version_splash_show("0.0.3", 1000);
+    version_splash_show("0.0.3", 10000);
 
     for (;;) {
         input_event_t event;

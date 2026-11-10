@@ -161,6 +161,7 @@ kerr_t version_splash_show(const char *version_str, uint64_t duration_ms) {
     draw_string(&splash_layer->canvas, title_x, title_y, "NanoOS", COLOR_WHITE, scale_title);
     draw_string(&splash_layer->canvas, ver_x, ver_y, version_str, COLOR_CYAN, scale_ver);
 
+    canvas_draw_text(&splash_layer->canvas, (point_t){.x = 16, .y = 16}, "NanoOS - Grüße!", COLOR_WHITE, 1);
     layer_draw_end(splash_layer);
 
     thread_sleep_ms(duration_ms);

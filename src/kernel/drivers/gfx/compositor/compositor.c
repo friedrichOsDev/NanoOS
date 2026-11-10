@@ -4,6 +4,7 @@
  * @author friedrichOsDev
  */
 
+#include "font.h"
 #include <arch/arch.h>
 #include <drivers/gfx/compositor.h>
 #include <drivers/gfx/gfx.h>
@@ -13,6 +14,10 @@
 #include <pch.h>
 #include <sched/sched.h>
 #include <sched/thread.h>
+
+static psf2_font_t builtin_font;
+static bool builtin_font_checked = false;
+static bool builtin_font_valid = false;
 
 static bool compositor_initialized = false;
 static bool rendering_enabled = false;
@@ -226,26 +231,12 @@ kerr_t canvas_draw_pixel(canvas_t *canvas, point_t pos, color_t color) {
     return E_OK;
 }
 
-/* Embedded PSF2 font, linked from assets/font.psf. */
-extern const uint8_t nanoos_font_start[];
-extern const uint8_t nanoos_font_end[];
-
-typedef struct {
-    uint32_t header_size;
-    uint32_t flags;
-    uint32_t glyph_count;
-    uint32_t glyph_size;
-    uint32_t height;
-    uint32_t width;
-    const uint8_t *glyph_data;
-    const uint8_t *unicode_table;
-    const uint8_t *end;
-} psf2_font_t;
-
-static psf2_font_t builtin_font;
-static bool builtin_font_checked = false;
-static bool builtin_font_valid = false;
-
+/**
+ * @brief Read a 32-bit value from a font location.
+ *
+ * @param[in] ptr Pointer to the font data.
+ * @return The 32-bit value read from the font location.
+ */
 static uint32_t font_read_u32(const uint8_t *ptr) {
     return (uint32_t)ptr[0] |
            ((uint32_t)ptr[1] << 8) |
@@ -253,7 +244,12 @@ static uint32_t font_read_u32(const uint8_t *ptr) {
            ((uint32_t)ptr[3] << 24);
 }
 
-static bool font_init(void) {
+/**
+ * @brief Initialize the font system.
+ *
+ * @return true if the font system is initialized successfully, false otherwise.
+ */
+static bool font_init() {
     if (builtin_font_checked) {
         return builtin_font_valid;
     }
@@ -303,8 +299,7 @@ static bool font_init(void) {
         .width = width,
         .glyph_data = start + header_size,
         .unicode_table = start + table_offset,
-        .end = end
-    };
+        .end = end};
 
     if ((flags & 1U) != 0U && builtin_font.unicode_table >= end) {
         return false;
@@ -314,7 +309,14 @@ static bool font_init(void) {
     return true;
 }
 
-/* Decode one UTF-8 code point. Invalid input consumes one byte and yields U+FFFD. */
+/**
+ * @brief Decode a UTF-8 character.
+ *
+ * @param[in] text The text to decode.
+ * @param[in] remaining The remaining bytes to decode.
+ * @param[out] consumed The number of bytes consumed.
+ * @return The decoded character.
+ */
 static uint32_t font_utf8_decode(const uint8_t *text, size_t remaining, size_t *consumed) {
     uint8_t first = text[0];
     *consumed = 1U;
@@ -357,6 +359,12 @@ static uint32_t font_utf8_decode(const uint8_t *text, size_t remaining, size_t *
     return value;
 }
 
+/**
+ * @brief Find a glyph in the font.
+ *
+ * @param codepoint The Unicode codepoint to find.
+ * @return The index of the glyph in the font, or 0 if not found.
+ */
 static uint32_t font_find_glyph(uint32_t codepoint) {
     if ((builtin_font.flags & 1U) == 0U) {
         return codepoint < builtin_font.glyph_count ? codepoint : 0U;
@@ -1092,7 +1100,6 @@ kerr_t compositor_init() {
     K_TRY(kzalloc(fb_size, &mem));
     backbuffer = (uint8_t *)mem;
 
-    /* Validate the embedded font before the compositor render thread starts. */
     if (!font_init()) {
         log_warn("embedded PSF2 font is unavailable or invalid");
     }
