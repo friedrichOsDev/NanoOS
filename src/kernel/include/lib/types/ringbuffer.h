@@ -23,6 +23,8 @@ kerr_t ringbuffer_create(size_t capacity, ringbuffer_t **out);
 kerr_t ringbuffer_destroy(ringbuffer_t *rb);
 size_t ringbuffer_write(ringbuffer_t *rb, const void *data, size_t size);
 size_t ringbuffer_read(ringbuffer_t *rb, void *data, size_t size);
+size_t ringbuffer_write_exact(ringbuffer_t *rb, const void *data, size_t size);
+size_t ringbuffer_read_exact(ringbuffer_t *rb, void *data, size_t size);
 size_t ringbuffer_available(ringbuffer_t *rb);
 bool ringbuffer_is_empty(ringbuffer_t *rb);
 bool ringbuffer_is_full(ringbuffer_t *rb);
