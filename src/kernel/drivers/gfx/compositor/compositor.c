@@ -315,7 +315,7 @@ static bool font_init(void) {
 }
 
 /* Decode one UTF-8 code point. Invalid input consumes one byte and yields U+FFFD. */
-static uint32_t font_utf8_decode(const uint8_t *text, size_t *consumed) {
+static uint32_t font_utf8_decode(const uint8_t *text, size_t remaining, size_t *consumed) {
     uint8_t first = text[0];
     *consumed = 1U;
     if (first < 0x80U) {
@@ -337,6 +337,9 @@ static uint32_t font_utf8_decode(const uint8_t *text, size_t *consumed) {
         return UINT32_C(0xFFFD);
     }
 
+    if (remaining < count) {
+        return UINT32_C(0xFFFD);
+    }
     for (size_t i = 1U; i < count; i++) {
         if ((text[i] & 0xC0U) != 0x80U) {
             return UINT32_C(0xFFFD);
@@ -372,7 +375,7 @@ static uint32_t font_find_glyph(uint32_t codepoint) {
                 continue;
             }
             size_t consumed = 0U;
-            uint32_t current = font_utf8_decode(cursor, &consumed);
+            uint32_t current = font_utf8_decode(cursor, (size_t)(end - cursor), &consumed);
             if (consumed == 0U) {
                 break;
             }
@@ -422,8 +425,12 @@ kerr_t canvas_draw_text(canvas_t *canvas, point_t pos, const char *text, color_t
 
     const uint8_t *input = (const uint8_t *)text;
     while (*input != 0U) {
+        size_t available = 1U;
+        while (available < 4U && input[available] != 0U) {
+            available++;
+        }
         size_t consumed = 0U;
-        uint32_t codepoint = font_utf8_decode(input, &consumed);
+        uint32_t codepoint = font_utf8_decode(input, available, &consumed);
         input += consumed;
 
         if (codepoint == (uint32_t)'\n') {
