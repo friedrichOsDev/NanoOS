@@ -226,6 +226,272 @@ kerr_t canvas_draw_pixel(canvas_t *canvas, point_t pos, color_t color) {
     return E_OK;
 }
 
+/* Embedded PSF2 font, linked from assets/font.psf. */
+extern const uint8_t nanoos_font_start[];
+extern const uint8_t nanoos_font_end[];
+
+typedef struct {
+    uint32_t header_size;
+    uint32_t flags;
+    uint32_t glyph_count;
+    uint32_t glyph_size;
+    uint32_t height;
+    uint32_t width;
+    const uint8_t *glyph_data;
+    const uint8_t *unicode_table;
+    const uint8_t *end;
+} psf2_font_t;
+
+static psf2_font_t builtin_font;
+static bool builtin_font_checked = false;
+static bool builtin_font_valid = false;
+
+static uint32_t font_read_u32(const uint8_t *ptr) {
+    return (uint32_t)ptr[0] |
+           ((uint32_t)ptr[1] << 8) |
+           ((uint32_t)ptr[2] << 16) |
+           ((uint32_t)ptr[3] << 24);
+}
+
+static bool font_init(void) {
+    if (builtin_font_checked) {
+        return builtin_font_valid;
+    }
+    builtin_font_checked = true;
+
+    const uint8_t *start = nanoos_font_start;
+    const uint8_t *end = nanoos_font_end;
+    if (end <= start || (size_t)(end - start) < 32U) {
+        return false;
+    }
+    if (font_read_u32(start) != UINT32_C(0x864AB572)) {
+        return false;
+    }
+
+    uint32_t header_size = font_read_u32(start + 8);
+    uint32_t flags = font_read_u32(start + 12);
+    uint32_t glyph_count = font_read_u32(start + 16);
+    uint32_t glyph_size = font_read_u32(start + 20);
+    uint32_t height = font_read_u32(start + 24);
+    uint32_t width = font_read_u32(start + 28);
+
+    if (header_size < 32U || header_size > (size_t)(end - start) ||
+        glyph_count == 0U || glyph_size == 0U ||
+        width == 0U || width > 32U || height == 0U || height > 64U) {
+        return false;
+    }
+
+    size_t bitmap_row_size = ((size_t)width + 7U) / 8U;
+    if (bitmap_row_size > SIZE_MAX / (size_t)height ||
+        bitmap_row_size * (size_t)height > glyph_size ||
+        (size_t)glyph_count > (SIZE_MAX - (size_t)header_size) / (size_t)glyph_size) {
+        return false;
+    }
+
+    size_t glyph_bytes = (size_t)glyph_count * (size_t)glyph_size;
+    size_t table_offset = (size_t)header_size + glyph_bytes;
+    if (table_offset > (size_t)(end - start)) {
+        return false;
+    }
+
+    builtin_font = (psf2_font_t){
+        .header_size = header_size,
+        .flags = flags,
+        .glyph_count = glyph_count,
+        .glyph_size = glyph_size,
+        .height = height,
+        .width = width,
+        .glyph_data = start + header_size,
+        .unicode_table = start + table_offset,
+        .end = end
+    };
+
+    if ((flags & 1U) != 0U && builtin_font.unicode_table >= end) {
+        return false;
+    }
+
+    builtin_font_valid = true;
+    return true;
+}
+
+/* Decode one UTF-8 code point. Invalid input consumes one byte and yields U+FFFD. */
+static uint32_t font_utf8_decode(const uint8_t *text, size_t remaining, size_t *consumed) {
+    uint8_t first = text[0];
+    *consumed = 1U;
+    if (first < 0x80U) {
+        return first;
+    }
+
+    uint32_t value;
+    size_t count;
+    if (first >= 0xC2U && first <= 0xDFU) {
+        value = (uint32_t)(first & 0x1FU);
+        count = 2U;
+    } else if (first >= 0xE0U && first <= 0xEFU) {
+        value = (uint32_t)(first & 0x0FU);
+        count = 3U;
+    } else if (first >= 0xF0U && first <= 0xF4U) {
+        value = (uint32_t)(first & 0x07U);
+        count = 4U;
+    } else {
+        return UINT32_C(0xFFFD);
+    }
+
+    if (remaining < count) {
+        return UINT32_C(0xFFFD);
+    }
+    for (size_t i = 1U; i < count; i++) {
+        if ((text[i] & 0xC0U) != 0x80U) {
+            return UINT32_C(0xFFFD);
+        }
+        value = (value << 6) | (uint32_t)(text[i] & 0x3FU);
+    }
+
+    if ((count == 3U && value < UINT32_C(0x800)) ||
+        (count == 4U && value < UINT32_C(0x10000)) ||
+        value > UINT32_C(0x10FFFF) ||
+        (value >= UINT32_C(0xD800) && value <= UINT32_C(0xDFFF))) {
+        return UINT32_C(0xFFFD);
+    }
+    *consumed = count;
+    return value;
+}
+
+static uint32_t font_find_glyph(uint32_t codepoint) {
+    if ((builtin_font.flags & 1U) == 0U) {
+        return codepoint < builtin_font.glyph_count ? codepoint : 0U;
+    }
+
+    const uint8_t *cursor = builtin_font.unicode_table;
+    const uint8_t *end = builtin_font.end;
+    uint32_t fallback = 0U;
+
+    for (uint32_t glyph = 0U; glyph < builtin_font.glyph_count && cursor < end; glyph++) {
+        bool sequence = false;
+        while (cursor < end && *cursor != 0xFFU) {
+            if (*cursor == 0xFEU) {
+                sequence = true;
+                cursor++;
+                continue;
+            }
+            size_t consumed = 0U;
+            uint32_t current = font_utf8_decode(cursor, (size_t)(end - cursor), &consumed);
+            if (consumed == 0U) {
+                break;
+            }
+            cursor += consumed;
+            if (!sequence && current == codepoint) {
+                return glyph;
+            }
+            if (!sequence && current == (uint32_t)'?') {
+                fallback = glyph;
+            }
+        }
+        if (cursor < end && *cursor == 0xFFU) {
+            cursor++;
+        }
+    }
+    return fallback;
+}
+
+/**
+ * @brief Draws a UTF-8 string using the embedded PSF2 bitmap font.
+ *
+ * @param[in,out] canvas Target canvas.
+ * @param[in] pos Top-left position.
+ * @param[in] text Null-terminated UTF-8 string.
+ * @param[in] color Foreground color.
+ * @param[in] scale Integer scale from 1 to 16.
+ * @return E_OK on success, or an error code.
+ */
+kerr_t canvas_draw_text(canvas_t *canvas, point_t pos, const char *text, color_t color, uint32_t scale) {
+    if (!canvas || !canvas->buffer || !text || scale == 0U || scale > 16U ||
+        pos.x < 0 || pos.y < 0) {
+        return E_INVAL;
+    }
+    if (!font_init()) {
+        return E_NOINIT;
+    }
+    if (color.a == 0U) {
+        return E_OK;
+    }
+
+    int64_t origin_x = pos.x;
+    int64_t cursor_x = pos.x;
+    int64_t cursor_y = pos.y;
+    int64_t advance_x = (int64_t)(builtin_font.width * scale);
+    int64_t advance_y = (int64_t)(builtin_font.height * scale);
+    int64_t tab_width = advance_x * 4;
+
+    const uint8_t *input = (const uint8_t *)text;
+    while (*input != 0U) {
+        size_t remaining = 0U;
+        while (input[remaining] != 0U) {
+            remaining++;
+        }
+        size_t consumed = 0U;
+        uint32_t codepoint = font_utf8_decode(input, remaining, &consumed);
+        input += consumed;
+
+        if (codepoint == (uint32_t)'\n') {
+            cursor_x = origin_x;
+            if (cursor_y > INT64_MAX - advance_y) {
+                break;
+            }
+            cursor_y += advance_y;
+            continue;
+        }
+        if (codepoint == (uint32_t)'\r') {
+            continue;
+        }
+        if (codepoint == (uint32_t)'\t') {
+            int64_t relative = cursor_x - origin_x;
+            cursor_x = origin_x + ((relative / tab_width) + 1) * tab_width;
+            continue;
+        }
+
+        if (cursor_x > INT64_MAX - advance_x || cursor_y > INT64_MAX - advance_y) {
+            break;
+        }
+
+        uint32_t glyph = font_find_glyph(codepoint);
+        const uint8_t *bitmap = builtin_font.glyph_data + ((size_t)glyph * builtin_font.glyph_size);
+        size_t bytes_per_row = ((size_t)builtin_font.width + 7U) / 8U;
+
+        for (uint32_t gy = 0U; gy < builtin_font.height; gy++) {
+            for (uint32_t gx = 0U; gx < builtin_font.width; gx++) {
+                size_t byte_index = ((size_t)gy * bytes_per_row) + ((size_t)gx / 8U);
+                uint8_t mask = (uint8_t)(0x80U >> (gx % 8U));
+                if ((bitmap[byte_index] & mask) == 0U) {
+                    continue;
+                }
+
+                int64_t pixel_x = cursor_x + (int64_t)(gx * scale);
+                int64_t pixel_y = cursor_y + (int64_t)(gy * scale);
+                for (uint32_t sy = 0U; sy < scale; sy++) {
+                    int64_t y = pixel_y + (int64_t)sy;
+                    if (y < 0 || (uint64_t)y >= canvas->size.height) {
+                        continue;
+                    }
+                    size_t stride = (size_t)(canvas->pitch / sizeof(uint32_t));
+                    uint32_t *row = canvas->buffer + ((size_t)y * stride);
+                    for (uint32_t sx = 0U; sx < scale; sx++) {
+                        int64_t px = pixel_x + (int64_t)sx;
+                        if (px < 0 || (uint64_t)px >= canvas->size.width) {
+                            continue;
+                        }
+                        size_t offset = (size_t)px;
+                        color_t background = unpack_color(row[offset]);
+                        row[offset] = pack_color(blend_color(background, color));
+                    }
+                }
+            }
+        }
+        cursor_x += advance_x;
+    }
+    return E_OK;
+}
+
 /**
  * @brief Draws a triangle onto the canvas (either outline or filled).
  *
