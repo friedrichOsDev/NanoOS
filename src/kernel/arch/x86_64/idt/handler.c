@@ -77,6 +77,16 @@ void isr_handler(struct registers *regs) {
     log_debug("Page Table Base (CR3) : %016llx", cr3);
     log_registers(regs);
 
+    /*
+     * The CPU only pushes RSP/SS automatically when entering from a less
+     * privileged level. For a ring-0 fault, the interrupted RSP is the
+     * address immediately after the three-qword RIP/CS/RFLAGS frame.
+     */
+    uint64_t interrupted_rsp = ((regs->cs & 0x3U) == 0U)
+                                   ? (uint64_t)((uintptr_t)regs + offsetof(struct registers, rsp))
+                                   : regs->rsp;
+    log_debug("Interrupted RSP: %016llx", interrupted_rsp);
+
     spinlock_release_irqrestore(&exception_print_lock, rf);
     panic();
 }
