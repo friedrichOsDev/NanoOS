@@ -9,7 +9,7 @@
 #include <kernel/sync.h>
 #include <pch.h>
 
-#define STACK_SIZE (16 * 1024)
+#define STACK_SIZE (64 * 1024)
 #define DEFAULT_TIME_SLICE 10
 
 /** @brief States a thread can assume during its lifecycle. */
