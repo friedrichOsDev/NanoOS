@@ -128,7 +128,6 @@ static inline void _k_log_var_default(const char *name, uintptr_t val) {
         log_var((r)->rsi);    \
         log_var((r)->rdi);    \
         log_var((r)->rbp);    \
-        log_var((r)->rsp);    \
         log_var((r)->r8);     \
         log_var((r)->r9);     \
         log_var((r)->r10);    \
