@@ -22,6 +22,7 @@
 #include <sched/sched.h>
 #include <sched/taskmgr.h>
 #include <sched/thread.h>
+#include <shell/shell.h>
 
 /**
  * @brief Initialize kernel drivers and process input events.
@@ -60,7 +61,15 @@ static void kernel_init_thread(void *arg) {
     }
     log_info("input initialization done");
 
-    version_splash_show("0.0.3", 10000);
+    version_splash_show("0.0.3", 1000);
+
+    err = shell_init();
+    if (k_failed(err)) {
+        log_warn("shell initialization failed (%s)", kerr_str(err));
+        for (;;) {
+            thread_yield();
+        }
+    }
 
     for (;;) {
         input_event_t event;
