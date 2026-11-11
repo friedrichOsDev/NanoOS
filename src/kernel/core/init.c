@@ -33,10 +33,11 @@ static void kernel_init_thread(void *arg) {
     (void)arg;
 
     kerr_t err = gfx_init();
-    if (k_failed(err)) {
+    bool graphics_ready = !k_failed(err);
+    if (!graphics_ready) {
         log_warn("gfx init failed, no graphical output available (%s)", kerr_str(err));
     }
-    log_info("gfx done");
+    log_info("gfx initialization finished");
 
     err = hid_init();
     if (k_failed(err)) {
@@ -61,14 +62,14 @@ static void kernel_init_thread(void *arg) {
     }
     log_info("input initialization done");
 
-    version_splash_show("0.0.3", 1000);
-
-    err = shell_init();
-    if (k_failed(err)) {
-        log_warn("shell initialization failed (%s)", kerr_str(err));
-        for (;;) {
-            thread_yield();
+    if (graphics_ready) {
+        version_splash_show("0.0.3", 1000);
+        err = shell_init();
+        if (k_failed(err)) {
+            log_warn("shell initialization failed (%s)", kerr_str(err));
         }
+    } else {
+        log_warn("kernel shell disabled because graphics are unavailable");
     }
 
     for (;;) {
@@ -83,6 +84,8 @@ static void kernel_init_thread(void *arg) {
             thread_yield();
             continue;
         }
+
+        shell_handle_event(&event);
 
         if (event.hid.type == HID_EVENT_KEY_PRESS &&
             event.hid.key.keycode == KEY_ESC &&

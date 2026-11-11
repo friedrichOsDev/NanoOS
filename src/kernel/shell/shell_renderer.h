@@ -1,6 +1,6 @@
 /**
  * @file shell_renderer.h
- * @brief Kernel shell rendering subsystem.
+ * @brief Kernel shell renderer interface.
  * @author friedrichOsDev
  */
 

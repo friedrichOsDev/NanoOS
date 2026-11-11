@@ -1,9 +1,9 @@
 /**
  * @file shell_input.h
- * @brief Kernel shell input subsystem.
+ * @brief Kernel shell keyboard input interface.
  * @author friedrichOsDev
  */
 
 #pragma once
 
-void shell_input_thread(void *arg);
+#include <shell/shell.h>
