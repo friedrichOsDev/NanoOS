@@ -25,7 +25,57 @@
 #include <shell/shell.h>
 
 /**
- * @brief Initialize kernel drivers and process input events.
+ * @brief Polls HID events on a dedicated kernel thread.
+ *
+ * The thread drains pending events in bounded batches and sleeps briefly when
+ * the queue is empty, avoiding a busy polling loop while keeping input latency
+ * low. Input processing is isolated from driver and graphics initialization.
+ *
+ * @param[in] arg Unused argument.
+ */
+static void kernel_input_thread(void *arg) {
+    (void)arg;
+
+    for (;;) {
+        size_t processed = 0U;
+
+        while (processed < 64U) {
+            input_event_t event;
+            kerr_t err = input_poll_event(&event);
+
+            if (err == E_NOTAVAIL) {
+                break;
+            }
+            if (k_failed(err)) {
+                log_warn("input event polling failed (%s)", kerr_str(err));
+                break;
+            }
+
+            processed++;
+
+            if (event.hid.type == HID_EVENT_KEY_PRESS &&
+                event.hid.key.keycode == KEY_ESC &&
+                event.key_action == INPUT_KEY_ACTION_PRESSED) {
+                log_info("ESC pressed, shutting down");
+                acpi_power_off();
+                log_warn("ACPI shutdown request returned");
+            }
+
+            shell_handle_event(&event);
+        }
+
+        if (processed == 0U) {
+            /* No pending input: yield the CPU for one scheduler tick. */
+            thread_sleep_ms(1U);
+        } else if (processed == 64U) {
+            /* Bound each batch so rendering and other kernel threads progress. */
+            thread_yield();
+        }
+    }
+}
+
+/**
+ * @brief Initializes kernel drivers and starts shell and input workers.
  *
  * @param[in] arg Unused argument.
  */
@@ -42,18 +92,14 @@ static void kernel_init_thread(void *arg) {
     err = hid_init();
     if (k_failed(err)) {
         log_warn("hid initialization failed (%s)", kerr_str(err));
-        for (;;) {
-            thread_yield();
-        }
+        thread_exit();
     }
     log_info("hid done");
 
     err = input_init();
     if (k_failed(err)) {
         log_warn("input initialization failed (%s)", kerr_str(err));
-        for (;;) {
-            thread_yield();
-        }
+        thread_exit();
     }
 
     err = ps2_register_driver();
@@ -72,29 +118,16 @@ static void kernel_init_thread(void *arg) {
         log_warn("kernel shell disabled because graphics are unavailable");
     }
 
-    for (;;) {
-        input_event_t event;
-        err = input_poll_event(&event);
-        if (err == E_NOTAVAIL) {
-            thread_yield();
-            continue;
-        }
-        if (k_failed(err)) {
-            log_warn("input event polling failed (%s)", kerr_str(err));
-            thread_yield();
-            continue;
-        }
-
-        shell_handle_event(&event);
-
-        if (event.hid.type == HID_EVENT_KEY_PRESS &&
-            event.hid.key.keycode == KEY_ESC &&
-            event.key_action == INPUT_KEY_ACTION_PRESSED) {
-            log_info("ESC pressed, shutting down");
-            acpi_power_off();
-            log_warn("ACPI shutdown request returned");
-        }
+    thread_t *input_thread = NULL;
+    err = thread_create(proc_get_kernel_proc(), kernel_input_thread, NULL,
+                        "kernel input", &input_thread);
+    if (k_failed(err)) {
+        log_error("failed to create kernel input thread (%s)", kerr_str(err));
+        thread_exit();
     }
+
+    log_info("kernel input thread started");
+    thread_exit();
 }
 
 /**
