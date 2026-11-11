@@ -296,7 +296,17 @@ void sched_schedule() {
         if ((uintptr_t)next->fpu_state % 16 != 0) {
             panic();
         }
+
+        /*
+         * Never hold the global scheduler lock across a context switch.
+         * The outgoing thread is suspended inside switch_context(); if it
+         * retained sched_lock, the incoming thread (and every other CPU)
+         * could block forever trying to schedule. All shared scheduler state
+         * has already been updated, so it is safe to release the lock here.
+         */
+        spinlock_release_irqrestore(&sched_lock, flags);
         switch_context(&prev->rsp, next->rsp, prev->fpu_state, next->fpu_state);
+        return;
     }
 
     spinlock_release_irqrestore(&sched_lock, flags);
