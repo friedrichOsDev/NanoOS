@@ -258,6 +258,15 @@ void sched_schedule() {
         next = my_cpu->idle_thread ? my_cpu->idle_thread : NULL;
     }
 
+    /* Every online CPU must have an idle thread before it can deschedule its
+       current thread. Keep this guard here rather than dereferencing NULL
+       while preparing the context switch if initialization ever regresses. */
+    if (!next) {
+        log_error("CPU %zu has no runnable or idle thread", my_cpu->cpu_id);
+        spinlock_release_irqrestore(&sched_lock, flags);
+        return;
+    }
+
     if (prev && prev->state == THREAD_RUNNING) {
         if (strncmp(prev->name, "idle", 4) != 0 &&
             strcmp(prev->name, "kmain") != 0) {
