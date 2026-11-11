@@ -121,6 +121,17 @@ irq%1:
         push r15
         %endmacro
 
+; Calls a C handler with the System V AMD64 stack alignment guaranteed.
+; RBX is safe as a temporary because its interrupted value is already saved
+; in the register frame and the C ABI requires callees to preserve RBX.
+        %macro CALL_ALIGNED 1
+        mov rbx, rsp                   ; Preserve the exact register-frame address
+        mov rdi, rsp                   ; First argument: struct registers*
+        and rsp, -16                   ; Align stack before CALL (callee enters at 8 mod 16)
+        call %1
+        mov rsp, rbx                   ; Restore the unmodified interrupt frame
+        %endmacro
+
 ; Restores the saved register context
         %macro RESTORE_CONTEXT 0
         pop r15
@@ -145,8 +156,7 @@ irq%1:
 ; ==============================================================================
 common_isr_stub:
         SAVE_CONTEXT
-        mov rdi, rsp                   ; Pointer to struct registers* as 1st argument
-        call isr_handler
+        CALL_ALIGNED isr_handler
         RESTORE_CONTEXT
         add rsp, 16                    ; Remove vector and error code from stack
         iretq
@@ -156,8 +166,7 @@ common_isr_stub:
 ; ==============================================================================
 common_irq_stub:
         SAVE_CONTEXT
-        mov rdi, rsp                   ; Pointer to struct registers* as 1st argument
-        call irq_handler
+        CALL_ALIGNED irq_handler
         RESTORE_CONTEXT
         add rsp, 16                    ; Remove vector and error code from stack
         iretq
@@ -184,8 +193,7 @@ ipi_reschedule_stub:
         push qword 0
         push qword 0xFD                ; Vector 253
         SAVE_CONTEXT
-        mov rdi, rsp
-        call reschedule_ipi_handler
+        CALL_ALIGNED reschedule_ipi_handler
         RESTORE_CONTEXT
         add rsp, 16
         iretq
@@ -195,8 +203,7 @@ ipi_stop_stub:
         push qword 0
         push qword 0xFC                ; Vector 252
         SAVE_CONTEXT
-        mov rdi, rsp
-        call stop_ipi_handler
+        CALL_ALIGNED stop_ipi_handler
         RESTORE_CONTEXT
         add rsp, 16
         iretq
@@ -206,8 +213,7 @@ lapic_timer_stub:
         push qword 0
         push qword 0xFE                ; Vector 254
         SAVE_CONTEXT
-        mov rdi, rsp
-        call lapic_timer_handler
+        CALL_ALIGNED lapic_timer_handler
         RESTORE_CONTEXT
         add rsp, 16
         iretq
@@ -217,8 +223,7 @@ ipi_tlb_shootdown_stub:
         push qword 0
         push qword 0xFB                ; Vector 251
         SAVE_CONTEXT
-        mov rdi, rsp
-        call tlb_shootdown_ipi_handler
+        CALL_ALIGNED tlb_shootdown_ipi_handler
         RESTORE_CONTEXT
         add rsp, 16
         iretq
