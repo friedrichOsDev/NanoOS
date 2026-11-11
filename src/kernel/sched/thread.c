@@ -59,7 +59,7 @@ kerr_t thread_create_on_cpu(process_t *proc, thread_entry_t entry, void *arg, co
     thread->cpu_affinity = cpu_affinity;
     fpu_state_init(thread->fpu_state);
 
-    // Allocate kernel stack (16 KiB)
+    // Allocate the per-thread kernel stack (STACK_SIZE).
     kerr_t err = kzalloc(STACK_SIZE, &mem);
     if (k_failed(err)) {
         K_TRY(kfree((virt_addr_t)thread)); // Returns err on failure
