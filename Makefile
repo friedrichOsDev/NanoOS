@@ -99,7 +99,7 @@ DEBUG_CFLAGS = $(KERNEL_CORE_FLAGS) -O0 -g -DKERNEL_DEBUG_BUILD $(WARN_BASE) \
 # Static Analysis: make analyze flags
 ANALYZE_FLAGS = -fanalyzer -fanalyzer-checker=taint
 
-LDFLAGS = -m elf_x86_64 -T $(LINKER) -z noexecstack
+LDFLAGS = -m elf_x86_64 -T $(LINKER)
 
 # Targets
 .PHONY: all clean iso iso-debug debug release run run-debug gdb analyze compile-commands
