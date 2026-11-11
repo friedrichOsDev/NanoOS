@@ -108,8 +108,14 @@ void irq_handler(struct registers *regs) {
  */
 void reschedule_ipi_handler(struct registers *regs) {
     (void)regs;
-    sched_schedule();
+
+    /*
+     * A reschedule can context-switch away from this interrupt frame.
+     * Acknowledge the IPI before scheduling so the LAPIC does not keep this
+     * vector in-service while the interrupted thread is suspended.
+     */
     lapic_eoi();
+    sched_schedule();
 }
 
 /**
@@ -145,6 +151,13 @@ void tlb_shootdown_ipi_handler(struct registers *regs) {
  */
 void lapic_timer_handler(struct registers *regs) {
     (void)regs;
-    sched_tick();
+
+    /*
+     * sched_tick() may invoke the scheduler and switch to another thread.
+     * Send EOI first; otherwise the timer interrupt can remain in-service
+     * until this particular thread is scheduled again, stalling further
+     * timer interrupts on this CPU.
+     */
     lapic_eoi();
+    sched_tick();
 }
