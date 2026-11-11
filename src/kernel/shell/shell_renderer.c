@@ -73,7 +73,13 @@ static void shell_render_frame(void) {
 
     size_t prompt_length = strlen(SHELL_PROMPT);
     int64_t prompt_x = left_margin;
-    int64_t prompt_y = top_margin + ((int64_t)screen->line_count * line_height);
+    /*
+     * line_count includes the active row where the prompt is rendered.
+     * Therefore the prompt belongs on the last stored row, not one row
+     * below it. This also keeps an empty or cleared shell at the top.
+     */
+    size_t prompt_row = (screen->line_count > 0U) ? screen->line_count - 1U : 0U;
+    int64_t prompt_y = top_margin + ((int64_t)prompt_row * line_height);
     (void)canvas_draw_text(canvas, (point_t){.x = prompt_x, .y = prompt_y},
                            SHELL_PROMPT, foreground, 1U);
 
