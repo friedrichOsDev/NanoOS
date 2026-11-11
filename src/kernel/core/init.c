@@ -64,10 +64,13 @@ static void kernel_input_thread(void *arg) {
             shell_handle_event(&event);
         }
 
-        if (processed == 0U) {
-            /* No pending input: yield the CPU for one scheduler tick. */
+        if (processed < 64U) {
+            /*
+             * The queue was drained (or polling failed). Sleep for one tick
+             * instead of immediately polling again and consuming a full CPU.
+             */
             thread_sleep_ms(1U);
-        } else if (processed == 64U) {
+        } else {
             /* Bound each batch so rendering and other kernel threads progress. */
             thread_yield();
         }
