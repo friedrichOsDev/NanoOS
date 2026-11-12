@@ -27,6 +27,7 @@ static shell_screen_t shell_screen;
 static shell_screen_t shell_render_screen;
 static size_t shell_cursor_index;
 static size_t shell_input_start_index;
+static size_t shell_input_end_index;
 static spinlock_t shell_lock = SPINLOCK_INIT;
 static bool shell_initialized;
 static bool shell_dirty;
@@ -56,13 +57,24 @@ static void shell_scroll() {
     } else {
         shell_input_start_index = 0U;
     }
+
+    if (shell_input_end_index >= columns) {
+        shell_input_end_index -= columns;
+    } else {
+        shell_input_end_index = 0U;
+    }
 }
 
 /** @brief Keep the cursor inside the allocated screen model. */
 static void shell_cursor_normalize() {
     size_t total_cells = shell_screen.columns * shell_screen.rows;
 
-    while (shell_cursor_index >= total_cells) {
+    if (total_cells == 0U) {
+        return;
+    }
+
+    while (shell_cursor_index >= total_cells ||
+           shell_input_end_index >= total_cells) {
         shell_scroll();
     }
 }
@@ -134,6 +146,7 @@ static kerr_t shell_write_prompt() {
     shell_cursor_index += sizeof(shell_prompt) - 1U;
     shell_cursor_normalize();
     shell_input_start_index = shell_cursor_index;
+    shell_input_end_index = shell_cursor_index;
     return E_OK;
 }
 
@@ -150,8 +163,22 @@ static void shell_insert_codepoint(uint32_t codepoint) {
     }
 
     shell_cursor_normalize();
+
+    size_t total_cells = shell_screen.columns * shell_screen.rows;
+    while (shell_input_end_index >= total_cells - 1U) {
+        shell_scroll();
+    }
+
+    size_t trailing_cells = shell_input_end_index - shell_cursor_index;
+    if (trailing_cells > 0U) {
+        memmove(&shell_screen.cells[shell_cursor_index + 1U],
+                &shell_screen.cells[shell_cursor_index],
+                trailing_cells * sizeof(uint32_t));
+    }
+
     shell_screen.cells[shell_cursor_index] = codepoint;
     shell_cursor_index++;
+    shell_input_end_index++;
     shell_cursor_normalize();
 }
 
@@ -168,8 +195,70 @@ static void shell_backspace() {
         return;
     }
 
+    size_t trailing_cells = shell_input_end_index - shell_cursor_index;
+    memmove(&shell_screen.cells[shell_cursor_index - 1U],
+            &shell_screen.cells[shell_cursor_index],
+            trailing_cells * sizeof(uint32_t));
     shell_cursor_index--;
-    shell_screen.cells[shell_cursor_index] = 0U;
+    shell_input_end_index--;
+    shell_screen.cells[shell_input_end_index] = 0U;
+}
+
+/** @brief Delete the character at the cursor without moving the cursor. */
+static void shell_delete() {
+    if (shell_cursor_index >= shell_input_end_index) {
+        return;
+    }
+
+    size_t trailing_cells = shell_input_end_index - shell_cursor_index - 1U;
+    memmove(&shell_screen.cells[shell_cursor_index],
+            &shell_screen.cells[shell_cursor_index + 1U],
+            trailing_cells * sizeof(uint32_t));
+    shell_input_end_index--;
+    shell_screen.cells[shell_input_end_index] = 0U;
+}
+
+/** @brief Move the cursor one cell to the left within the current input. */
+static void shell_cursor_left() {
+    if (shell_cursor_index > shell_input_start_index) {
+        shell_cursor_index--;
+    }
+}
+
+/** @brief Move the cursor one cell to the right within the current input. */
+static void shell_cursor_right() {
+    if (shell_cursor_index < shell_input_end_index) {
+        shell_cursor_index++;
+    }
+}
+
+/** @brief Move the cursor up one visual row within the current input. */
+static void shell_cursor_up() {
+    size_t columns = shell_screen.columns;
+    if (columns > 0U && shell_cursor_index >= shell_input_start_index + columns) {
+        shell_cursor_index -= columns;
+    }
+}
+
+/** @brief Move the cursor down one visual row within the current input. */
+static void shell_cursor_down() {
+    size_t columns = shell_screen.columns;
+    if (columns > 0U && shell_cursor_index < shell_input_end_index) {
+        size_t target = shell_cursor_index + columns;
+        shell_cursor_index = (target <= shell_input_end_index)
+                                 ? target
+                                 : shell_input_end_index;
+    }
+}
+
+/** @brief Move the cursor to the beginning of the current input line. */
+static void shell_cursor_home() {
+    shell_cursor_index = shell_input_start_index;
+}
+
+/** @brief Move the cursor to the end of the current input line. */
+static void shell_cursor_end() {
+    shell_cursor_index = shell_input_end_index;
 }
 
 /**
@@ -178,6 +267,7 @@ static void shell_backspace() {
  * @return E_OK on success or an error code.
  */
 static kerr_t shell_newline() {
+    shell_cursor_index = shell_input_end_index;
     size_t column = shell_cursor_index % shell_screen.columns;
     if (column != 0U) {
         shell_cursor_index += shell_screen.columns - column;
@@ -203,7 +293,10 @@ static void shell_input_handler(const input_event_t *event, void *context) {
     }
 
     hid_keycode_t key = event->hid.key.keycode;
-    if (event->unicode_count == 0U && key != KEY_RETURN && key != KEY_BACK) {
+    if (event->unicode_count == 0U &&
+        key != KEY_RETURN && key != KEY_BACK && key != KEY_DELETE &&
+        key != KEY_LEFT && key != KEY_RIGHT && key != KEY_UP &&
+        key != KEY_DOWN && key != KEY_HOME && key != KEY_END) {
         return;
     }
 
@@ -226,6 +319,20 @@ static void shell_input_handler(const input_event_t *event, void *context) {
         }
     } else if (key == KEY_BACK) {
         shell_backspace();
+    } else if (key == KEY_DELETE) {
+        shell_delete();
+    } else if (key == KEY_LEFT) {
+        shell_cursor_left();
+    } else if (key == KEY_RIGHT) {
+        shell_cursor_right();
+    } else if (key == KEY_UP) {
+        shell_cursor_up();
+    } else if (key == KEY_DOWN) {
+        shell_cursor_down();
+    } else if (key == KEY_HOME) {
+        shell_cursor_home();
+    } else if (key == KEY_END) {
+        shell_cursor_end();
     } else {
         for (uint8_t i = 0U; i < event->unicode_count; i++) {
             uint32_t codepoint = (i == 0U)
