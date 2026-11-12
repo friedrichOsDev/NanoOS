@@ -19,6 +19,7 @@ static uint32_t *previous_cells;
 static size_t row_buffer_size;
 static size_t renderer_columns;
 static size_t renderer_rows;
+static size_t renderer_previous_cursor_index = (size_t)-1;
 static bool renderer_cache_valid;
 static bool renderer_initialized;
 
@@ -58,23 +59,61 @@ static size_t renderer_encode_utf8(uint32_t codepoint, char output[5]) {
 }
 
 /**
- * @brief Return the character currently visible at a screen cell.
- * 
+ * @brief Return the character stored in a screen cell.
+ *
  * @param[in] screen Character-cell screen.
  * @param[in] index Linear cell index.
  * @return Visible Unicode codepoint.
  */
-static uint32_t renderer_visible_cell(const shell_screen_t *screen,
-                                      size_t index,
-                                      size_t cursor_index) {
-    if (index == cursor_index) {
-        return (uint32_t)'_';
-    }
-
+static uint32_t renderer_visible_cell(const shell_screen_t *screen, size_t index) {
     uint32_t codepoint = screen->cells[index];
     return (codepoint == 0U) ? (uint32_t)' ' : codepoint;
 }
 
+/**
+ * @brief Find the cell adjacent to a cursor boundary.
+ *
+ * @param[in] cursor_index Linear cursor position; SIZE_MAX disables the cursor.
+ * @return Adjacent cell index or SIZE_MAX when the cursor is disabled.
+ */
+static size_t renderer_cursor_cell(size_t cursor_index) {
+    if (cursor_index == (size_t)-1) {
+        return (size_t)-1;
+    }
+
+    size_t column = cursor_index % renderer_columns;
+    return (column == 0U) ? cursor_index : cursor_index - 1U;
+}
+
+/**
+ * @brief Draw a one-pixel cursor at a character-cell boundary.
+ *
+ * @param[in] canvas Target shell layer canvas.
+ * @param[in] cursor_index Linear cursor position; SIZE_MAX disables the cursor.
+ * @return E_OK on success or an error code.
+ */
+static kerr_t renderer_draw_cursor(canvas_t *canvas, size_t cursor_index) {
+    if (cursor_index == (size_t)-1) {
+        return E_OK;
+    }
+
+    size_t column = cursor_index % renderer_columns;
+    size_t row = cursor_index / renderer_columns;
+    int64_t x = (int64_t)(column * SHELL_FONT_WIDTH);
+    if (column > 0U) {
+        x--;
+    }
+
+    point_t position = {
+        .x = x,
+        .y = (int64_t)(row * SHELL_FONT_HEIGHT)};
+    rect_size_t cursor_size = {
+        .width = 1U,
+        .height = SHELL_FONT_HEIGHT};
+
+    return canvas_draw_rectangle(canvas, position, cursor_size,
+                                 MAKE_COLOR(224, 228, 234), true, 0U);
+}
 /**
  * @brief Draw one changed horizontal run of cells.
  * 
@@ -89,14 +128,13 @@ static kerr_t renderer_draw_run(canvas_t *canvas,
                                 const shell_screen_t *screen,
                                 size_t row,
                                 size_t first_column,
-                                size_t column_count,
-                                size_t cursor_index) {
+                                size_t column_count) {
     size_t offset = 0U;
     size_t row_start = row * screen->columns;
 
     for (size_t column = 0U; column < column_count; column++) {
         size_t index = row_start + first_column + column;
-        uint32_t codepoint = renderer_visible_cell(screen, index, cursor_index);
+        uint32_t codepoint = renderer_visible_cell(screen, index);
         char encoded[5] = {0};
         size_t encoded_length = renderer_encode_utf8(codepoint, encoded);
 
@@ -169,6 +207,7 @@ kerr_t shell_renderer_init() {
     }
 
     renderer_cache_valid = false;
+    renderer_previous_cursor_index = (size_t)-1;
     renderer_initialized = true;
     return E_OK;
 
@@ -211,15 +250,20 @@ kerr_t shell_renderer_render(const shell_screen_t *screen, size_t cursor_index) 
         err = canvas_clear(canvas, COLOR_BLACK);
     }
 
+    size_t old_cursor_cell = renderer_cursor_cell(renderer_previous_cursor_index);
+    size_t new_cursor_cell = renderer_cursor_cell(cursor_index);
+
     for (size_t row = 0U; row < renderer_rows && !k_failed(err); row++) {
         size_t column = 0U;
         size_t row_start = row * renderer_columns;
 
         while (column < renderer_columns && !k_failed(err)) {
             size_t index = row_start + column;
-            uint32_t visible = renderer_visible_cell(screen, index, cursor_index);
+            uint32_t visible = renderer_visible_cell(screen, index);
             bool changed = !renderer_cache_valid ||
-                           visible != previous_cells[index];
+                           visible != previous_cells[index] ||
+                           index == old_cursor_cell ||
+                           index == new_cursor_cell;
 
             if (!changed) {
                 column++;
@@ -229,9 +273,11 @@ kerr_t shell_renderer_render(const shell_screen_t *screen, size_t cursor_index) 
             size_t run_start = column;
             do {
                 index = row_start + column;
-                visible = renderer_visible_cell(screen, index, cursor_index);
+                visible = renderer_visible_cell(screen, index);
                 changed = !renderer_cache_valid ||
-                          visible != previous_cells[index];
+                          visible != previous_cells[index] ||
+                          index == old_cursor_cell ||
+                          index == new_cursor_cell;
                 if (!changed) {
                     break;
                 }
@@ -239,19 +285,23 @@ kerr_t shell_renderer_render(const shell_screen_t *screen, size_t cursor_index) 
             } while (column < renderer_columns);
 
             size_t run_length = column - run_start;
-            err = renderer_draw_run(canvas, screen, row, run_start,
-                                    run_length, cursor_index);
+            err = renderer_draw_run(canvas, screen, row, run_start, run_length);
             if (!k_failed(err)) {
                 for (size_t i = 0U; i < run_length; i++) {
                     size_t changed_index = row_start + run_start + i;
                     previous_cells[changed_index] =
-                        renderer_visible_cell(screen, changed_index, cursor_index);
+                        renderer_visible_cell(screen, changed_index);
                 }
             }
         }
     }
 
     if (!k_failed(err)) {
+        err = renderer_draw_cursor(canvas, cursor_index);
+    }
+
+    if (!k_failed(err)) {
+        renderer_previous_cursor_index = cursor_index;
         renderer_cache_valid = true;
     } else {
         /* Force a complete repaint next time after any partial failure. */
@@ -288,6 +338,7 @@ kerr_t shell_renderer_deinit() {
     renderer_columns = 0U;
     renderer_rows = 0U;
     renderer_cache_valid = false;
+    renderer_previous_cursor_index = (size_t)-1;
     renderer_initialized = false;
     return E_OK;
 }
