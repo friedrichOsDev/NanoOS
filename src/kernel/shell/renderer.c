@@ -207,8 +207,7 @@ kerr_t shell_renderer_render(const shell_screen_t *screen, size_t cursor_index) 
     size_t cell_count = renderer_columns * renderer_rows;
 
     if (!renderer_initialized || !shell_layer || !screen || !screen->cells ||
-        screen->columns != renderer_columns || screen->rows != renderer_rows ||
-        cursor_index >= cell_count) {
+        screen->columns != renderer_columns || screen->rows != renderer_rows) {
         return E_INVAL;
     }
 
