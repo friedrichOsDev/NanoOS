@@ -126,6 +126,8 @@ static void input_dispatcher_thread(void *arg) {
                       dispatched_events, idle_polls, (unsigned)handler_count);
             hid_log_diagnostics();
             ps2_log_diagnostics();
+            ps2_mouse_log_diagnostics();
+            input_log_diagnostics();
             last_report_ms = now_ms;
         }
     }

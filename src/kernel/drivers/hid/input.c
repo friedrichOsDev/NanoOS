@@ -21,6 +21,7 @@ static bool input_initialized;
 
 /* Pending dead-key accent (0 means no pending accent). */
 static uint32_t pending_dead_key;
+static uint64_t pointer_move_events;
 
 static const keyboard_layout_t german_layout = {
     .name = "de-DE",
@@ -194,6 +195,7 @@ kerr_t input_init() {
         return E_OK;
     memset(&key_state, 0, sizeof(key_state));
     memset(&pointer_state, 0, sizeof(pointer_state));
+    pointer_move_events = 0U;
     pending_dead_key = 0;
     kerr_t err = keyboard_register_layout(&german_layout);
     if (k_failed(err))
@@ -334,6 +336,7 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
     } else if (event->type == HID_EVENT_MOUSE_MOVE) {
         pointer_state.x += event->mouse_move.dx;
         pointer_state.y += event->mouse_move.dy;
+        pointer_move_events++;
     } else if (event->type == HID_EVENT_MOUSE_BUTTON_PRESS) {
         pointer_state.buttons |= event->mouse_btn.button;
     } else if (event->type == HID_EVENT_MOUSE_BUTTON_RELEASE) {
@@ -373,6 +376,22 @@ kerr_t keyboard_get_state(keyboard_state_t *out) {
     *out = key_state;
     spinlock_release_irqrestore(&input_lock, flags);
     return E_OK;
+}
+
+/**
+ * @brief Log the accumulated pointer coordinates and processed movement count.
+ */
+void input_log_diagnostics() {
+    mouse_state_t state;
+    if (k_failed(mouse_get_state(&state))) {
+        log_warn("input pointer diagnostics unavailable");
+        return;
+    }
+    irq_flags_t flags = spinlock_acquire_irqsave(&input_lock);
+    uint64_t move_events = pointer_move_events;
+    spinlock_release_irqrestore(&input_lock, flags);
+    log_trace("input pointer state: x=%lld y=%lld buttons=%02x move_events=%llu",
+              state.x, state.y, state.buttons, move_events);
 }
 
 /**

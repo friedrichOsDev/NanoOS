@@ -229,13 +229,24 @@ void ps2_irq_handler(struct registers *regs) {
         if (!(status & PS2_STATUS_OUTPUT_FULL))
             break;
         uint8_t byte = inb(PS2_DATA_PORT);
-        if (status & (PS2_STATUS_TIMEOUT | PS2_STATUS_PARITY))
+        if (status & (PS2_STATUS_TIMEOUT | PS2_STATUS_PARITY)) {
+            ps2_error_byte_count++;
             continue;
+        }
         if (status & PS2_STATUS_AUXILIARY) {
-            if (mouse_ready)
+            mouse_byte_count++;
+            if (mouse_ready) {
                 ps2_mouse_byte(byte);
-        } else if (keyboard_ready) {
-            ps2_keyboard_byte(byte);
+            } else {
+                ps2_unclaimed_byte_count++;
+            }
+        } else {
+            keyboard_byte_count++;
+            if (keyboard_ready) {
+                ps2_keyboard_byte(byte);
+            } else {
+                ps2_unclaimed_byte_count++;
+            }
         }
     }
 }
