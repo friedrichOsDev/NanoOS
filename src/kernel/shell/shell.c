@@ -56,7 +56,7 @@ static kerr_t shell_rebuild_screen(size_t *cursor_index) {
 
     size_t columns = shell_screen.columns;
     size_t rows = shell_screen.rows;
-    cell_count = columns * rows;
+    size_t cell_count = columns * rows;
     size_t absolute_cursor = shell_input_start_index + shell_input_cursor;
     size_t cursor_row = absolute_cursor / columns;
     size_t view_start_row = (cursor_row >= rows) ? cursor_row - rows + 1U : 0U;
@@ -278,7 +278,7 @@ static void shell_cursor_vertical(int direction) {
 static kerr_t shell_newline() {
     shell_input_cursor = shell_input_length;
 
-    cursor_index = 0U;
+    size_t cursor_index = 0U;
     K_TRY(shell_rebuild_screen(&cursor_index));
 
     size_t columns = shell_screen.columns;
@@ -340,7 +340,7 @@ static void shell_renderer_thread(void *arg) {
         bool running;
         bool dirty;
 
-        flags = spinlock_acquire_irqsave(&shell_lock);
+        irq_flags_t flags = spinlock_acquire_irqsave(&shell_lock);
         running = shell_initialized;
         dirty = shell_dirty;
         if (dirty) {
