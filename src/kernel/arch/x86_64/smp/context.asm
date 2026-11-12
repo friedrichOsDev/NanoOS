@@ -10,7 +10,6 @@
 
         global switch_context
         global thread_entry_stub
-        extern scheduler_release_initial_lock
         extern thread_exit
 
 ; ==============================================================================
@@ -71,17 +70,15 @@ switch_context:
 ; R13 = Argument passed to the function (void *arg)
 ; ==============================================================================
 thread_entry_stub:
-; 0. Release initial scheduling synchronization lock
-        call scheduler_release_initial_lock
-
-; 1. Enable interrupts for the running thread
+; 0. Enable interrupts for the running thread. The scheduler lock has
+;    already been released by sched_schedule(); never release it here.
         sti
 
-; 2. Pass argument in RDI and invoke the thread routine
+; 1. Pass argument in RDI and invoke the thread routine
         mov rdi, r13
         call r12
 
-; 3. Clean up thread gracefully if the main function returns
+; 2. Clean up thread gracefully if the main function returns
         call thread_exit
 
 .hang:
