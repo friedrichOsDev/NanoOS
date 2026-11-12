@@ -11,10 +11,6 @@ static uint8_t packet[4];
 static uint8_t packet_index;
 static uint8_t packet_size = 3;
 static uint8_t buttons;
-static volatile uint64_t mouse_packet_count;
-static volatile uint64_t mouse_sync_discard_count;
-static volatile uint64_t mouse_move_event_count;
-static volatile uint64_t mouse_zero_delta_count;
 
 /**
  * @brief Set the mouse packet size based on the detected device identification byte.
@@ -31,20 +27,6 @@ void ps2_mouse_reset_parser() {
     packet_index = 0;
     packet_size = 3;
     buttons = 0;
-    mouse_packet_count = 0U;
-    mouse_sync_discard_count = 0U;
-    mouse_move_event_count = 0U;
-    mouse_zero_delta_count = 0U;
-}
-
-/**
- * @brief Log cumulative mouse packet synchronization and movement diagnostics.
- */
-void ps2_mouse_log_diagnostics() {
-    log_trace("PS/2 mouse stats: packet_size=%u packets=%llu sync_discards=%llu move_events=%llu zero_delta=%llu",
-              (unsigned)packet_size, mouse_packet_count,
-              mouse_sync_discard_count, mouse_move_event_count,
-              mouse_zero_delta_count);
 }
 
 /**
@@ -53,15 +35,12 @@ void ps2_mouse_log_diagnostics() {
  * @param[in] byte The byte to parse.
  */
 void ps2_mouse_byte(uint8_t byte) {
-    if (packet_index == 0 && !(byte & 0x08)) {
-        mouse_sync_discard_count++;
+    if (packet_index == 0 && !(byte & 0x08))
         return;
-    }
     packet[packet_index++] = byte;
     if (packet_index < packet_size)
         return;
     packet_index = 0;
-    mouse_packet_count++;
 
     /*
      * Bytes 1 and 2 are already signed 8-bit two's-complement values.
@@ -85,11 +64,7 @@ void ps2_mouse_byte(uint8_t byte) {
         hid_event_t event = {.type = HID_EVENT_MOUSE_MOVE, .timestamp = hpet_get_timestamp()};
         event.mouse_move.dx = dx;
         event.mouse_move.dy = -(int64_t)dy;
-        if (k_succeeded(hid_push_event(&event))) {
-            mouse_move_event_count++;
-        }
-    } else {
-        mouse_zero_delta_count++;
+        (void)hid_push_event(&event);
     }
 
     uint8_t next = packet[0] & 0x07;

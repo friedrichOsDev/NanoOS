@@ -70,4 +70,3 @@ const keyboard_layout_t *keyboard_get_layout();
 uint32_t keyboard_translate_key(hid_keycode_t key, bool shift, bool altgr);
 kerr_t keyboard_get_state(keyboard_state_t *out);
 kerr_t mouse_get_state(mouse_state_t *out);
-void input_log_diagnostics();

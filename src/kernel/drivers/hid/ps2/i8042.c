@@ -30,12 +30,6 @@ static bool controller_ready;
 static bool keyboard_ready;
 static bool mouse_ready;
 static uint8_t controller_config;
-static volatile uint64_t keyboard_irq_count;
-static volatile uint64_t mouse_irq_count;
-static volatile uint64_t keyboard_byte_count;
-static volatile uint64_t mouse_byte_count;
-static volatile uint64_t ps2_error_byte_count;
-static volatile uint64_t ps2_unclaimed_byte_count;
 
 /**
  * @brief Wait until the 8042 controller input buffer is empty and ready for a command or data write.
@@ -201,20 +195,14 @@ static kerr_t device_command(bool auxiliary, uint8_t command) {
  *
  * @param[in] regs Interrupt register state.
  */
-static void keyboard_irq(struct registers *regs) {
-    keyboard_irq_count++;
-    ps2_irq_handler(regs);
-}
+static void keyboard_irq(struct registers *regs) { ps2_irq_handler(regs); }
 
 /**
  * @brief Dispatch the mouse IRQ to the shared PS/2 handler.
  *
  * @param[in] regs Interrupt register state.
  */
-static void mouse_irq(struct registers *regs) {
-    mouse_irq_count++;
-    ps2_irq_handler(regs);
-}
+static void mouse_irq(struct registers *regs) { ps2_irq_handler(regs); }
 
 /**
  * @brief Handle incoming PS/2 controller hardware interrupts and route bytes to keyboard or mouse parsers.
@@ -229,38 +217,15 @@ void ps2_irq_handler(struct registers *regs) {
         if (!(status & PS2_STATUS_OUTPUT_FULL))
             break;
         uint8_t byte = inb(PS2_DATA_PORT);
-        if (status & (PS2_STATUS_TIMEOUT | PS2_STATUS_PARITY)) {
-            ps2_error_byte_count++;
+        if (status & (PS2_STATUS_TIMEOUT | PS2_STATUS_PARITY))
             continue;
-        }
         if (status & PS2_STATUS_AUXILIARY) {
-            mouse_byte_count++;
-            if (mouse_ready) {
+            if (mouse_ready)
                 ps2_mouse_byte(byte);
-            } else {
-                ps2_unclaimed_byte_count++;
-            }
-        } else {
-            keyboard_byte_count++;
-            if (keyboard_ready) {
-                ps2_keyboard_byte(byte);
-            } else {
-                ps2_unclaimed_byte_count++;
-            }
+        } else if (keyboard_ready) {
+            ps2_keyboard_byte(byte);
         }
     }
-}
-
-/**
- * @brief Log cumulative PS/2 interrupt and controller-byte diagnostics outside interrupt context.
- */
-void ps2_log_diagnostics() {
-    uint8_t status = inb(PS2_STATUS_PORT);
-    log_trace("PS/2 stats: irq1=%llu irq12=%llu bytes(k/m)=%llu/%llu errors=%llu unclaimed=%llu ready(k/m)=%u/%u cfg=%02x status=%02x",
-              keyboard_irq_count, mouse_irq_count, keyboard_byte_count,
-              mouse_byte_count, ps2_error_byte_count,
-              ps2_unclaimed_byte_count, keyboard_ready ? 1U : 0U,
-              mouse_ready ? 1U : 0U, controller_config, status);
 }
 
 /**
@@ -285,7 +250,6 @@ kerr_t ps2_controller_init() {
 
     /* Controller self-test may reset the command byte. Read it only now. */
     K_TRY(read_config(&controller_config));
-    log_debug("i8042 initial config=%02x", controller_config);
     controller_config &= (uint8_t) ~(I8042_CFG_IRQ_A | I8042_CFG_IRQ_B | I8042_CFG_TRANSLATE);
     controller_config |= I8042_CFG_CLOCK_A | I8042_CFG_CLOCK_B;
     K_TRY(write_config(controller_config));
@@ -304,9 +268,6 @@ kerr_t ps2_controller_init() {
                      !k_failed(controller_command(I8042_CMD_TEST_B)) &&
                      !k_failed(controller_read(&response)) && response == 0;
 
-    log_debug("i8042 port tests: keyboard=%s mouse=%s second_channel=%s",
-              first_ok ? "pass" : "fail", second_ok ? "pass" : "fail",
-              second_channel ? "yes" : "no");
     if (!first_ok && !second_ok)
         return E_NOPROBE;
 
@@ -376,18 +337,14 @@ kerr_t ps2_controller_init() {
     irq_install_handler(1, keyboard_irq);
     irq_install_handler(12, mouse_irq);
     uint32_t destination = lapic_get_id();
-    log_debug("i8042 IRQ handlers installed: irq1=yes irq12=yes destination_apic=%u",
-              destination);
     if (keyboard_ready)
         ioapic_route_irq(1, 33, (uint8_t)destination);
     if (mouse_ready)
         ioapic_route_irq(12, 44, (uint8_t)destination);
 
     controller_ready = true;
-    log_info("i8042 initialized: keyboard=%s mouse=%s config=%02x",
-             keyboard_ready ? "yes" : "no", mouse_ready ? "yes" : "no",
-             controller_config);
-    ps2_log_diagnostics();
+    log_info("i8042 initialized: keyboard=%s mouse=%s",
+             keyboard_ready ? "yes" : "no", mouse_ready ? "yes" : "no");
     return E_OK;
 }
 
