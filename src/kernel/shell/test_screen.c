@@ -7,6 +7,7 @@
 #include <drivers/gfx/compositor.h>
 #include <shell/renderer.h>
 #include <shell/screen.h>
+#include <shell/test_screen.h>
 
 /**
  * @brief Create and render a static shell screen model for renderer testing.
@@ -15,7 +16,7 @@
  *
  * @return E_OK on success or an error code.
  */
-kerr_t shell_test_screen_show() {
+kerr_t shell_test_screen_show(void) {
     rect_size_t size = compositor_get_size();
     if (size.width < 8U || size.height < 16U) {
         return E_NOTAVAIL;
