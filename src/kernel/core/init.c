@@ -24,7 +24,7 @@
 
 /**
  * @brief Handle kernel-wide input shortcuts.
- * 
+ *
  * @param[in] event Translated input event.
  * @param[in] context Unused callback context.
  */
