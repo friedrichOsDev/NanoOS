@@ -56,7 +56,7 @@ static kerr_t shell_rebuild_screen(size_t *cursor_index) {
 
     size_t columns = shell_screen.columns;
     size_t rows = shell_screen.rows;
-    size_t cell_count = columns * rows;
+    cell_count = columns * rows;
     size_t absolute_cursor = shell_input_start_index + shell_input_cursor;
     size_t cursor_row = absolute_cursor / columns;
     size_t view_start_row = (cursor_row >= rows) ? cursor_row - rows + 1U : 0U;
@@ -278,7 +278,7 @@ static void shell_cursor_vertical(int direction) {
 static kerr_t shell_newline() {
     shell_input_cursor = shell_input_length;
 
-    size_t cursor_index = 0U;
+    cursor_index = 0U;
     K_TRY(shell_rebuild_screen(&cursor_index));
 
     size_t columns = shell_screen.columns;
@@ -340,7 +340,7 @@ static void shell_renderer_thread(void *arg) {
         bool running;
         bool dirty;
 
-        irq_flags_t flags = spinlock_acquire_irqsave(&shell_lock);
+        flags = spinlock_acquire_irqsave(&shell_lock);
         running = shell_initialized;
         dirty = shell_dirty;
         if (dirty) {
@@ -472,17 +472,28 @@ static void shell_input_handler(const input_event_t *event, void *context) {
  * @return E_OK on success or an error code.
  */
 kerr_t shell_init() {
+    rect_size_t size = {0};
+    size_t columns = 0U;
+    size_t rows = 0U;
+    size_t cell_count = 0U;
+    memory = 0U;
+    kerr_t err = E_OK;
+    size_t prompt_start = 0U;
+    size_t cursor_index = 0U;
+    irq_flags_t flags = 0U;
+    thread_t *render_thread = NULL;
+
     if (shell_initialized) {
         return E_OK;
     }
 
-    rect_size_t size = compositor_get_size();
+    size = compositor_get_size();
     if (size.width < 8U || size.height < 16U) {
         return E_NOTAVAIL;
     }
 
-    size_t columns = (size_t)(size.width / 8U);
-    size_t rows = (size_t)(size.height / 16U);
+    columns = (size_t)(size.width / 8U);
+    rows = (size_t)(size.height / 16U);
     if (rows <= SHELL_PROMPT_ROW ||
         columns > SIZE_MAX / rows ||
         columns * rows > SIZE_MAX / sizeof(uint32_t) - 1U) {
@@ -496,7 +507,7 @@ kerr_t shell_init() {
     }
 
     K_TRY(shell_screen_init(&shell_screen, columns, rows));
-    kerr_t err = shell_screen_init(&shell_render_screen, columns, rows);
+    err = shell_screen_init(&shell_render_screen, columns, rows);
     if (k_failed(err)) {
         shell_screen_destroy(&shell_screen);
         return err;
@@ -535,7 +546,7 @@ kerr_t shell_init() {
     memcpy(shell_history_cells, shell_screen.cells,
            cell_count * sizeof(uint32_t));
 
-    size_t prompt_start = SHELL_PROMPT_ROW * columns;
+    prompt_start = SHELL_PROMPT_ROW * columns;
     err = shell_history_write_prompt(prompt_start);
     if (k_failed(err)) {
         goto fail_input;
@@ -570,7 +581,6 @@ kerr_t shell_init() {
     shell_dirty = false;
     spinlock_release_irqrestore(&shell_lock, flags);
 
-    thread_t *render_thread = NULL;
     err = thread_create(proc_get_kernel_proc(), shell_renderer_thread,
                         NULL, "shell_renderer", &render_thread);
     if (k_failed(err)) {
