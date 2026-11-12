@@ -476,7 +476,7 @@ kerr_t shell_init() {
     size_t columns = 0U;
     size_t rows = 0U;
     size_t cell_count = 0U;
-    memory = 0U;
+    virt_addr_t memory = 0U;
     kerr_t err = E_OK;
     size_t prompt_start = 0U;
     size_t cursor_index = 0U;
@@ -500,7 +500,7 @@ kerr_t shell_init() {
         return E_NOTAVAIL;
     }
 
-    size_t cell_count = columns * rows;
+    cell_count = columns * rows;
     if (cell_count <= SHELL_PROMPT_ROW * columns +
                           (sizeof(shell_prompt) - 1U) + 1U) {
         return E_NOTAVAIL;
@@ -513,7 +513,6 @@ kerr_t shell_init() {
         return err;
     }
 
-    virt_addr_t memory = 0U;
     err = kzalloc(cell_count * sizeof(uint32_t), &memory);
     if (k_failed(err)) {
         goto fail_screens;
@@ -557,7 +556,7 @@ kerr_t shell_init() {
     shell_preferred_column = 0U;
     shell_preferred_column_valid = false;
 
-    size_t cursor_index = 0U;
+    cursor_index = 0U;
     err = shell_rebuild_screen(&cursor_index);
     if (k_failed(err)) {
         goto fail_input;
@@ -576,7 +575,7 @@ kerr_t shell_init() {
         goto fail_input;
     }
 
-    irq_flags_t flags = spinlock_acquire_irqsave(&shell_lock);
+    flags = spinlock_acquire_irqsave(&shell_lock);
     shell_initialized = true;
     shell_dirty = false;
     spinlock_release_irqrestore(&shell_lock, flags);
