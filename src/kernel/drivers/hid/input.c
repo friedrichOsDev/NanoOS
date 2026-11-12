@@ -356,6 +356,33 @@ kerr_t input_poll_event(input_event_t *event) {
     return E_OK;
 }
 
+// /**
+//  * @brief Retrieve a string representation of the input event.
+//  *
+//  * @param[in] event The event pointer to stringify.
+//  * @return The string representation of the event.
+//  */
+// const char *input_event_str(const input_event_t *event) {
+//     switch (event->hid.type) {
+//         case HID_EVENT_KEY_PRESS:
+//             return "KEY_PRESS";
+//         case HID_EVENT_KEY_RELEASE:
+//             return "KEY_RELEASE";
+//         case HID_EVENT_MOUSE_MOVE:
+//             return "MOUSE_MOVE";
+//         case HID_EVENT_MOUSE_BUTTON_PRESS:
+//             return "MOUSE_BUTTON_PRESS";
+//         case HID_EVENT_MOUSE_BUTTON_RELEASE:
+//             return "MOUSE_BUTTON_RELEASE";
+//         case HID_EVENT_MOUSE_SCROLL:
+//             return "MOUSE_SCROLL";
+//         case HID_EVENT_NONE:
+//             return "NONE";
+//         default:
+//             return "UNKNOWN";
+//     }
+// }
+
 /**
  * @brief Retrieve a copy of the current keyboard state.
  *
