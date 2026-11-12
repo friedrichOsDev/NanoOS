@@ -11,9 +11,7 @@
 
 /**
  * @brief Create and render a static shell screen model for renderer testing.
- *
- * No input is polled and no command execution is provided in this stage.
- *
+ * 
  * @return E_OK on success or an error code.
  */
 kerr_t shell_test_screen_show() {

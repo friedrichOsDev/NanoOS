@@ -26,7 +26,7 @@
 
 /**
  * @brief Handle kernel-wide input shortcuts.
- *
+ * 
  * @param[in] event Translated input event.
  * @param[in] context Unused callback context.
  */
@@ -44,7 +44,7 @@ static void kernel_input_handler(const input_event_t *event, void *context) {
 
 /**
  * @brief Initialize kernel drivers and start input dispatch.
- *
+ * 
  * @param[in] arg Unused argument.
  */
 static void kernel_init_thread(void *arg) {
@@ -107,7 +107,7 @@ static void kernel_init_thread(void *arg) {
 
 /**
  * @brief Initialize the kernel and start the scheduler.
- *
+ * 
  * @param[in] magic Multiboot2 magic number.
  * @param[in] info_ptr Pointer to the multiboot2 information structure.
  */

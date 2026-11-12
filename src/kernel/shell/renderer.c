@@ -24,7 +24,7 @@ static bool renderer_initialized;
 
 /**
  * @brief Encode one Unicode scalar value as UTF-8.
- *
+ * 
  * @param[in] codepoint Unicode codepoint.
  * @param[out] output Buffer with at least five bytes.
  * @return Number of encoded bytes.
@@ -59,7 +59,7 @@ static size_t renderer_encode_utf8(uint32_t codepoint, char output[5]) {
 
 /**
  * @brief Return the character currently visible at a screen cell.
- *
+ * 
  * @param[in] screen Character-cell screen.
  * @param[in] index Linear cell index.
  * @param[in] cursor_index Cursor overlay position.
@@ -78,10 +78,7 @@ static uint32_t renderer_visible_cell(const shell_screen_t *screen,
 
 /**
  * @brief Draw one changed horizontal run of cells.
- *
- * The old pixels are cleared before drawing so spaces and deleted characters
- * correctly erase their previous glyphs.
- *
+ * 
  * @param[in] canvas Target shell layer canvas.
  * @param[in] screen Current screen model.
  * @param[in] row Row to update.
@@ -130,7 +127,7 @@ static kerr_t renderer_draw_run(canvas_t *canvas,
 
 /**
  * @brief Initialize the fullscreen shell layer and its diff buffers.
- *
+ * 
  * @return E_OK on success or an error code.
  */
 kerr_t shell_renderer_init() {
@@ -194,11 +191,7 @@ fail:
 
 /**
  * @brief Update only cells whose visible character differs from the last frame.
- *
- * The screen is scanned in memory, but graphics operations are issued only for
- * contiguous changed runs. The cursor is a renderer overlay and is not stored
- * in the caller-owned screen model.
- *
+ * 
  * @param[in] screen Character-cell screen model.
  * @param[in] cursor_index Linear cursor position; SIZE_MAX disables the cursor overlay.
  * @return E_OK on success or an error code.
@@ -276,7 +269,7 @@ kerr_t shell_renderer_render(const shell_screen_t *screen, size_t cursor_index) 
 
 /**
  * @brief Destroy the shell layer and all renderer-owned buffers.
- *
+ * 
  * @return E_OK on success or an error code.
  */
 kerr_t shell_renderer_deinit() {
