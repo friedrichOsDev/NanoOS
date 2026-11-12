@@ -6,7 +6,11 @@
 
 #include <drivers/gfx/compositor.h>
 #include <drivers/hid/input.h>
+#include <kernel/sync.h>
 #include <lib/util/mem.h>
+#include <sched/process.h>
+#include <sched/sched.h>
+#include <sched/thread.h>
 #include <shell/renderer.h>
 #include <shell/screen.h>
 #include <shell/shell.h>
@@ -15,13 +19,17 @@
 #define SHELL_INFO_ROW 1U
 #define SHELL_STATUS_ROW 2U
 #define SHELL_PROMPT_ROW 4U
+#define SHELL_RENDER_INTERVAL_MS 16U
 
 static const char shell_prompt[] = "nanoos> ";
 
 static shell_screen_t shell_screen;
+static shell_screen_t shell_render_screen;
 static size_t shell_cursor_index;
 static size_t shell_input_start_index;
+static spinlock_t shell_lock = SPINLOCK_INIT;
 static bool shell_initialized;
+static bool shell_dirty;
 
 /**
  * @brief Scroll the shell screen up by one character row.
@@ -68,23 +76,64 @@ static void shell_cursor_normalize(void) {
 }
 
 /**
- * @brief Render the screen and temporarily draw an underscore cursor.
+ * @brief Render a previously copied screen snapshot with a cursor overlay.
  *
- * The cursor glyph is only a rendering overlay; it is not stored in the
- * terminal contents and therefore cannot corrupt typed text.
- *
+ * @param[in] cursor_index Cursor position in the snapshot.
  * @return E_OK on success or the renderer error.
  */
-static kerr_t shell_render(void) {
-    shell_cursor_normalize();
+static kerr_t shell_render_snapshot(size_t cursor_index) {
+    size_t total_cells = shell_render_screen.columns * shell_render_screen.rows;
+    if (cursor_index >= total_cells) {
+        return E_INVAL;
+    }
 
-    uint32_t *cursor_cell = &shell_screen.cells[shell_cursor_index];
+    uint32_t *cursor_cell = &shell_render_screen.cells[cursor_index];
     uint32_t previous_cell = *cursor_cell;
     *cursor_cell = (uint32_t)'_';
 
-    kerr_t err = shell_renderer_render(&shell_screen);
+    kerr_t err = shell_renderer_render(&shell_render_screen);
     *cursor_cell = previous_cell;
     return err;
+}
+
+/**
+ * @brief Render dirty shell snapshots without blocking the input dispatcher.
+ *
+ * @param[in] arg Unused thread argument.
+ */
+static void shell_renderer_thread(void *arg) {
+    (void)arg;
+
+    for (;;) {
+        size_t cursor_index = 0U;
+        bool running;
+        bool dirty;
+
+        irq_flags_t flags = spinlock_acquire_irqsave(&shell_lock);
+        running = shell_initialized;
+        dirty = shell_dirty;
+        if (dirty) {
+            size_t total_cells = shell_screen.columns * shell_screen.rows;
+            memcpy(shell_render_screen.cells, shell_screen.cells,
+                   total_cells * sizeof(uint32_t));
+            cursor_index = shell_cursor_index;
+            shell_dirty = false;
+        }
+        spinlock_release_irqrestore(&shell_lock, flags);
+
+        if (!running) {
+            thread_exit();
+        }
+
+        if (dirty) {
+            kerr_t err = shell_render_snapshot(cursor_index);
+            if (k_failed(err)) {
+                log_warn("shell render failed (%s)", kerr_str(err));
+            }
+        }
+
+        thread_sleep_ms(SHELL_RENDER_INTERVAL_MS);
+    }
 }
 
 /**
@@ -172,20 +221,33 @@ static kerr_t shell_newline(void) {
 static void shell_input_handler(const input_event_t *event, void *context) {
     (void)context;
 
-    if (!shell_initialized || !event ||
-        (event->hid.type != HID_EVENT_KEY_PRESS) ||
+    if (!event || event->hid.type != HID_EVENT_KEY_PRESS ||
         (event->key_action != INPUT_KEY_ACTION_PRESSED &&
          event->key_action != INPUT_KEY_ACTION_REPEATED)) {
         return;
     }
 
     hid_keycode_t key = event->hid.key.keycode;
+    if (event->unicode_count == 0U && key != KEY_RETURN && key != KEY_BACK) {
+        return;
+    }
+
+    keyboard_state_t keyboard;
+    if (k_failed(keyboard_get_state(&keyboard)) ||
+        keyboard.control || keyboard.alt) {
+        return;
+    }
+
+    kerr_t input_err = E_OK;
+    irq_flags_t flags = spinlock_acquire_irqsave(&shell_lock);
+    if (!shell_initialized) {
+        spinlock_release_irqrestore(&shell_lock, flags);
+        return;
+    }
+
     if (key == KEY_RETURN) {
         if (event->key_action == INPUT_KEY_ACTION_PRESSED) {
-            kerr_t err = shell_newline();
-            if (k_failed(err)) {
-                log_warn("shell newline failed (%s)", kerr_str(err));
-            }
+            input_err = shell_newline();
         }
     } else if (key == KEY_BACK) {
         shell_backspace();
@@ -202,9 +264,11 @@ static void shell_input_handler(const input_event_t *event, void *context) {
         }
     }
 
-    kerr_t err = shell_render();
-    if (k_failed(err)) {
-        log_warn("shell render failed after input (%s)", kerr_str(err));
+    shell_dirty = true;
+    spinlock_release_irqrestore(&shell_lock, flags);
+
+    if (k_failed(input_err)) {
+        log_warn("shell newline failed (%s)", kerr_str(input_err));
     }
 }
 
@@ -212,7 +276,8 @@ static void shell_input_handler(const input_event_t *event, void *context) {
  * @brief Initialize and display the interactive kernel shell.
  *
  * The shell registers itself with the central input dispatcher only after
- * its screen model and initial frame are fully initialized.
+ * its screen model and initial frame are fully initialized. Input callbacks
+ * only update the model; a dedicated worker performs graphics rendering.
  *
  * @return E_OK on success or an error code.
  */
@@ -233,8 +298,15 @@ kerr_t shell_init(void) {
     }
 
     K_TRY(shell_screen_init(&shell_screen, columns, rows));
-    kerr_t err = shell_screen_clear(&shell_screen);
+    kerr_t err = shell_screen_init(&shell_render_screen, columns, rows);
     if (k_failed(err)) {
+        shell_screen_destroy(&shell_screen);
+        return err;
+    }
+
+    err = shell_screen_clear(&shell_screen);
+    if (k_failed(err)) {
+        shell_screen_destroy(&shell_render_screen);
         shell_screen_destroy(&shell_screen);
         return err;
     }
@@ -250,6 +322,7 @@ kerr_t shell_init(void) {
                                  "Keyboard layout: de-DE");
     }
     if (k_failed(err)) {
+        shell_screen_destroy(&shell_render_screen);
         shell_screen_destroy(&shell_screen);
         return err;
     }
@@ -257,28 +330,53 @@ kerr_t shell_init(void) {
     shell_cursor_index = SHELL_PROMPT_ROW * columns;
     err = shell_write_prompt();
     if (k_failed(err)) {
+        shell_screen_destroy(&shell_render_screen);
         shell_screen_destroy(&shell_screen);
         return err;
     }
 
     err = shell_renderer_init();
     if (k_failed(err)) {
+        shell_screen_destroy(&shell_render_screen);
         shell_screen_destroy(&shell_screen);
         return err;
     }
 
-    err = shell_render();
+    memcpy(shell_render_screen.cells, shell_screen.cells,
+           columns * rows * sizeof(uint32_t));
+    err = shell_render_snapshot(shell_cursor_index);
     if (k_failed(err)) {
         shell_renderer_deinit();
+        shell_screen_destroy(&shell_render_screen);
         shell_screen_destroy(&shell_screen);
         return err;
     }
 
+    irq_flags_t flags = spinlock_acquire_irqsave(&shell_lock);
     shell_initialized = true;
+    shell_dirty = false;
+    spinlock_release_irqrestore(&shell_lock, flags);
+
+    thread_t *render_thread = NULL;
+    err = thread_create(proc_get_kernel_proc(), shell_renderer_thread,
+                        NULL, "shell_renderer", &render_thread);
+    if (k_failed(err)) {
+        flags = spinlock_acquire_irqsave(&shell_lock);
+        shell_initialized = false;
+        spinlock_release_irqrestore(&shell_lock, flags);
+        shell_renderer_deinit();
+        shell_screen_destroy(&shell_render_screen);
+        shell_screen_destroy(&shell_screen);
+        return err;
+    }
+
     err = input_register_handler(shell_input_handler, NULL);
     if (k_failed(err)) {
+        flags = spinlock_acquire_irqsave(&shell_lock);
         shell_initialized = false;
+        spinlock_release_irqrestore(&shell_lock, flags);
         shell_renderer_deinit();
+        shell_screen_destroy(&shell_render_screen);
         shell_screen_destroy(&shell_screen);
         return err;
     }
