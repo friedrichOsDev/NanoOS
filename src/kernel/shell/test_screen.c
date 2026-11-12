@@ -1,19 +1,6 @@
 /**
- * @file test_screen.c
  * @brief Static renderer test screen for the kernel shell.
- * @author friedrichOsDev
- */
-
-#include <drivers/gfx/compositor.h>
-#include <shell/renderer.h>
-#include <shell/screen.h>
-#include <shell/test_screen.h>
-
-/**
- * @brief Create and render a static shell screen model for renderer testing.
- *
- * No input is polled and no command execution is provided in this stage.
- *
+ * 
  * @return E_OK on success or an error code.
  */
 kerr_t shell_test_screen_show() {

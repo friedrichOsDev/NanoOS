@@ -1,32 +1,6 @@
 /**
- * @file init.c
  * @brief Kernel initialization
- * @author friedrichOsDev
- */
-
-#include <arch/arch.h>
-#include <arch/multiboot2.h>
-#include <drivers/gfx/compositor.h>
-#include <drivers/gfx/gfx.h>
-#include <drivers/gfx/version_splash.h>
-#include <drivers/hid/hid.h>
-#include <drivers/hid/input.h>
-#include <drivers/hid/ps2/ps2.h>
-#include <drivers/pci.h>
-#include <drivers/rtc.h>
-#include <kernel/panic.h>
-#include <lib/util/str.h>
-#include <mm/memory.h>
-#include <pch.h>
-#include <sched/process.h>
-#include <sched/sched.h>
-#include <sched/taskmgr.h>
-#include <sched/thread.h>
-#include <shell/shell.h>
-
-/**
- * @brief Handle kernel-wide input shortcuts.
- *
+ * 
  * @param[in] event Translated input event.
  * @param[in] context Unused callback context.
  */
@@ -44,7 +18,7 @@ static void kernel_input_handler(const input_event_t *event, void *context) {
 
 /**
  * @brief Initialize kernel drivers and start input dispatch.
- *
+ * 
  * @param[in] arg Unused argument.
  */
 static void kernel_init_thread(void *arg) {
@@ -107,7 +81,7 @@ static void kernel_init_thread(void *arg) {
 
 /**
  * @brief Initialize the kernel and start the scheduler.
- *
+ * 
  * @param[in] magic Multiboot2 magic number.
  * @param[in] info_ptr Pointer to the multiboot2 information structure.
  */

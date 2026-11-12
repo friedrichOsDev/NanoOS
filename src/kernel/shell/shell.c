@@ -1,37 +1,4 @@
-/**
- * @file shell.c
- * @brief Interactive character input for the kernel shell.
- * @author friedrichOsDev
- */
-
-#include <drivers/gfx/compositor.h>
-#include <drivers/hid/input.h>
-#include <kernel/sync.h>
-#include <lib/util/mem.h>
-#include <sched/process.h>
-#include <sched/sched.h>
-#include <sched/thread.h>
-#include <shell/renderer.h>
-#include <shell/screen.h>
-#include <shell/shell.h>
-
-#define SHELL_HEADER_ROW 0U
-#define SHELL_INFO_ROW 1U
-#define SHELL_STATUS_ROW 2U
-#define SHELL_PROMPT_ROW 4U
-#define SHELL_RENDER_INTERVAL_MS 16U
-
-static const char shell_prompt[] = "nanoos> ";
-
-static shell_screen_t shell_screen;
-static shell_screen_t shell_render_screen;
-static size_t shell_cursor_index;
-static size_t shell_input_start_index;
-static spinlock_t shell_lock = SPINLOCK_INIT;
-static bool shell_initialized;
-static bool shell_dirty;
-
-/** @brief Scroll the shell screen up by one character row. */
+/** @brief Interactive character input for the kernel shell. */
 static void shell_scroll() {
     size_t columns = shell_screen.columns;
     size_t total_cells = columns * shell_screen.rows;
@@ -69,7 +36,7 @@ static void shell_cursor_normalize() {
 
 /**
  * @brief Render the copied shell model and cursor overlay.
- *
+ * 
  * @param[in] cursor_index Cursor position in the copied model.
  * @return E_OK on success or the renderer error.
  */
@@ -79,7 +46,7 @@ static kerr_t shell_render_snapshot(size_t cursor_index) {
 
 /**
  * @brief Render dirty shell snapshots without blocking the input dispatcher.
- *
+ * 
  * @param[in] arg Unused thread argument.
  */
 static void shell_renderer_thread(void *arg) {
@@ -119,7 +86,7 @@ static void shell_renderer_thread(void *arg) {
 
 /**
  * @brief Write the shell prompt at the current cursor position.
- *
+ * 
  * @return E_OK on success or an error code.
  */
 static kerr_t shell_write_prompt() {
@@ -139,7 +106,7 @@ static kerr_t shell_write_prompt() {
 
 /**
  * @brief Insert one printable Unicode codepoint at the current cursor.
- *
+ * 
  * @param[in] codepoint Unicode scalar value to insert.
  */
 static void shell_insert_codepoint(uint32_t codepoint) {
@@ -174,9 +141,7 @@ static void shell_backspace() {
 
 /**
  * @brief Finish the current input line and display another prompt.
- *
- * This stage deliberately does not parse or execute the entered text.
- *
+ * 
  * @return E_OK on success or an error code.
  */
 static kerr_t shell_newline() {
@@ -191,7 +156,7 @@ static kerr_t shell_newline() {
 
 /**
  * @brief Process translated keyboard events for the interactive shell.
- *
+ * 
  * @param[in] event Translated input event from the input dispatcher.
  * @param[in] context Unused callback context.
  */
@@ -251,11 +216,7 @@ static void shell_input_handler(const input_event_t *event, void *context) {
 
 /**
  * @brief Initialize and display the interactive kernel shell.
- *
- * The shell registers itself with the central input dispatcher only after
- * its screen model and initial frame are fully initialized. Input callbacks
- * only update the model; a dedicated worker performs graphics rendering.
- *
+ * 
  * @return E_OK on success or an error code.
  */
 kerr_t shell_init() {

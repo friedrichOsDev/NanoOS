@@ -1,37 +1,9 @@
 /**
- * @file input_dispatch.c
  * @brief Central input event dispatch and handler registration.
- * @author friedrichOsDev
- */
-
-#include <drivers/hid/input.h>
-#include <kernel/sync.h>
-#include <sched/process.h>
-#include <sched/thread.h>
-
-#define INPUT_MAX_HANDLERS 16
-
-typedef struct {
-    input_event_handler_t callback;
-    void *context;
-} input_handler_entry_t;
-
-static input_handler_entry_t handlers[INPUT_MAX_HANDLERS];
-static size_t handler_count;
-static spinlock_t handler_lock = SPINLOCK_INIT;
-static bool dispatcher_started;
-
-/**
- * @brief Register a callback for translated input events.
- *
- * Handlers must remain valid for the lifetime of the kernel. Callbacks are
- * invoked by the input dispatcher thread and never while the registry lock
- * is held.
- *
+ * 
  * @param[in] handler Event callback.
  * @param[in] context Opaque callback context.
  * @return E_OK on success, E_INVAL for an invalid callback, or E_NOMEM
- *         when the handler registry is full.
  */
 kerr_t input_register_handler(input_event_handler_t handler, void *context) {
     if (!handler) {
@@ -60,7 +32,7 @@ kerr_t input_register_handler(input_event_handler_t handler, void *context) {
 
 /**
  * @brief Pull input events and distribute them to registered kernel handlers.
- *
+ * 
  * @param[in] arg Unused thread argument.
  */
 static void input_dispatcher_thread(void *arg) {
@@ -97,9 +69,8 @@ static void input_dispatcher_thread(void *arg) {
 
 /**
  * @brief Start the central input dispatcher thread.
- *
+ * 
  * @return E_OK on success, E_INVAL if input is not initialized, or an
- *         error returned by the thread subsystem.
  */
 kerr_t input_dispatcher_start() {
     static thread_t *dispatcher_thread;
