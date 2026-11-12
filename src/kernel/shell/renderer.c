@@ -1,6 +1,6 @@
 /**
  * @file renderer.c
- * @brief Render a character-cell shell screen through the compositor.
+ * @brief Render changed character cells through the shell compositor layer.
  * @author friedrichOsDev
  */
 
@@ -15,9 +15,11 @@
 
 static layer_t *shell_layer;
 static char *row_utf8;
+static uint32_t *previous_cells;
 static size_t row_buffer_size;
 static size_t renderer_columns;
 static size_t renderer_rows;
+static bool renderer_cache_valid;
 static bool renderer_initialized;
 
 /**
@@ -56,11 +58,82 @@ static size_t renderer_encode_utf8(uint32_t codepoint, char output[5]) {
 }
 
 /**
- * @brief Initialize the fullscreen shell rendering layer and row conversion buffer.
+ * @brief Return the character currently visible at a screen cell.
  *
- * @return E_OK on success or an error code if graphics are unavailable.
+ * @param[in] screen Character-cell screen.
+ * @param[in] index Linear cell index.
+ * @param[in] cursor_index Cursor overlay position.
+ * @return Visible Unicode codepoint.
  */
-kerr_t shell_renderer_init() {
+static uint32_t renderer_visible_cell(const shell_screen_t *screen,
+                                      size_t index,
+                                      size_t cursor_index) {
+    if (index == cursor_index) {
+        return (uint32_t)'_';
+    }
+
+    uint32_t codepoint = screen->cells[index];
+    return (codepoint == 0U) ? (uint32_t)' ' : codepoint;
+}
+
+/**
+ * @brief Draw one changed horizontal run of cells.
+ *
+ * The old pixels are cleared before drawing so spaces and deleted characters
+ * correctly erase their previous glyphs.
+ *
+ * @param[in] canvas Target shell layer canvas.
+ * @param[in] screen Current screen model.
+ * @param[in] row Row to update.
+ * @param[in] first_column First column in the run.
+ * @param[in] column_count Number of cells in the run.
+ * @param[in] cursor_index Cursor overlay position.
+ * @return E_OK on success or an error code.
+ */
+static kerr_t renderer_draw_run(canvas_t *canvas,
+                                const shell_screen_t *screen,
+                                size_t row,
+                                size_t first_column,
+                                size_t column_count,
+                                size_t cursor_index) {
+    size_t offset = 0U;
+    size_t row_start = row * screen->columns;
+
+    for (size_t column = 0U; column < column_count; column++) {
+        size_t index = row_start + first_column + column;
+        uint32_t codepoint = renderer_visible_cell(screen, index, cursor_index);
+        char encoded[5] = {0};
+        size_t encoded_length = renderer_encode_utf8(codepoint, encoded);
+
+        if (offset + encoded_length >= row_buffer_size) {
+            return E_BADSIZE;
+        }
+
+        for (size_t i = 0U; i < encoded_length; i++) {
+            row_utf8[offset++] = encoded[i];
+        }
+    }
+    row_utf8[offset] = '\0';
+
+    point_t position = {
+        .x = (int64_t)(first_column * SHELL_FONT_WIDTH),
+        .y = (int64_t)(row * SHELL_FONT_HEIGHT)};
+    rect_size_t run_size = {
+        .width = column_count * SHELL_FONT_WIDTH,
+        .height = SHELL_FONT_HEIGHT};
+
+    K_TRY(canvas_draw_rectangle(canvas, position, run_size,
+                                COLOR_BLACK, true, 0U));
+    return canvas_draw_text(canvas, position, row_utf8,
+                            MAKE_COLOR(224, 228, 234), 1U);
+}
+
+/**
+ * @brief Initialize the fullscreen shell layer and its diff buffers.
+ *
+ * @return E_OK on success or an error code.
+ */
+kerr_t shell_renderer_init(void) {
     if (renderer_initialized) {
         return E_OK;
     }
@@ -72,73 +145,126 @@ kerr_t shell_renderer_init() {
 
     renderer_columns = (size_t)(size.width / SHELL_FONT_WIDTH);
     renderer_rows = (size_t)(size.height / SHELL_FONT_HEIGHT);
-    if (renderer_columns > (SIZE_MAX - 1U) / 4U) {
+    if (renderer_columns > (SIZE_MAX - 1U) / 4U ||
+        renderer_columns > SIZE_MAX / renderer_rows ||
+        renderer_columns * renderer_rows > SIZE_MAX / sizeof(uint32_t)) {
         return E_INVAL;
     }
 
+    size_t cell_count = renderer_columns * renderer_rows;
     row_buffer_size = (renderer_columns * 4U) + 1U;
-    virt_addr_t memory = 0;
-    K_TRY(kzalloc(row_buffer_size, &memory));
+
+    virt_addr_t memory = 0U;
+    kerr_t err = kzalloc(row_buffer_size, &memory);
+    if (k_failed(err)) {
+        goto fail;
+    }
     row_utf8 = (char *)memory;
 
-    kerr_t err = layer_create(size, SHELL_RENDER_LAYER_Z, &shell_layer);
+    memory = 0U;
+    err = kzalloc(cell_count * sizeof(uint32_t), &memory);
     if (k_failed(err)) {
-        kfree((virt_addr_t)row_utf8);
-        row_utf8 = NULL;
-        row_buffer_size = 0U;
-        return err;
+        goto fail;
+    }
+    previous_cells = (uint32_t *)memory;
+
+    err = layer_create(size, SHELL_RENDER_LAYER_Z, &shell_layer);
+    if (k_failed(err)) {
+        goto fail;
     }
 
+    renderer_cache_valid = false;
     renderer_initialized = true;
     return E_OK;
+
+fail:
+    if (previous_cells) {
+        (void)kfree((virt_addr_t)previous_cells);
+        previous_cells = NULL;
+    }
+    if (row_utf8) {
+        (void)kfree((virt_addr_t)row_utf8);
+        row_utf8 = NULL;
+    }
+    row_buffer_size = 0U;
+    renderer_columns = 0U;
+    renderer_rows = 0U;
+    return err;
 }
 
 /**
- * @brief Render the supplied screen model as a fullscreen terminal.
+ * @brief Update only cells whose visible character differs from the last frame.
  *
- * The renderer is deliberately stateless with respect to terminal contents:
- * every visible character comes from the caller-owned screen data structure.
+ * The screen is scanned in memory, but graphics operations are issued only for
+ * contiguous changed runs. The cursor is a renderer overlay and is not stored
+ * in the caller-owned screen model.
  *
  * @param[in] screen Character-cell screen model.
+ * @param[in] cursor_index Linear cursor position.
  * @return E_OK on success or an error code.
  */
-kerr_t shell_renderer_render(const shell_screen_t *screen) {
+kerr_t shell_renderer_render(const shell_screen_t *screen, size_t cursor_index) {
+    size_t cell_count = renderer_columns * renderer_rows;
+
     if (!renderer_initialized || !shell_layer || !screen || !screen->cells ||
-        screen->columns != renderer_columns || screen->rows != renderer_rows) {
+        screen->columns != renderer_columns || screen->rows != renderer_rows ||
+        cursor_index >= cell_count) {
         return E_INVAL;
     }
 
     K_TRY(layer_draw_begin(shell_layer));
     canvas_t *canvas = &shell_layer->canvas;
-    kerr_t err = canvas_clear(canvas, COLOR_BLACK);
-    const color_t foreground = MAKE_COLOR(224, 228, 234);
+    kerr_t err = E_OK;
 
-    for (size_t row = 0U; row < screen->rows && !k_failed(err); row++) {
-        size_t offset = 0U;
-        for (size_t column = 0U; column < screen->columns; column++) {
-            uint32_t codepoint = screen->cells[(row * screen->columns) + column];
-            if (codepoint == 0U) {
-                codepoint = (uint32_t)' ';
+    if (!renderer_cache_valid) {
+        err = canvas_clear(canvas, COLOR_BLACK);
+    }
+
+    for (size_t row = 0U; row < renderer_rows && !k_failed(err); row++) {
+        size_t column = 0U;
+        size_t row_start = row * renderer_columns;
+
+        while (column < renderer_columns && !k_failed(err)) {
+            size_t index = row_start + column;
+            uint32_t visible = renderer_visible_cell(screen, index, cursor_index);
+            bool changed = !renderer_cache_valid ||
+                           visible != previous_cells[index];
+
+            if (!changed) {
+                column++;
+                continue;
             }
 
-            char encoded[5] = {0};
-            size_t encoded_length = renderer_encode_utf8(codepoint, encoded);
-            if (offset + encoded_length >= row_buffer_size) {
-                err = E_BADSIZE;
-                break;
-            }
-            for (size_t i = 0U; i < encoded_length; i++) {
-                row_utf8[offset++] = encoded[i];
+            size_t run_start = column;
+            do {
+                index = row_start + column;
+                visible = renderer_visible_cell(screen, index, cursor_index);
+                changed = !renderer_cache_valid ||
+                          visible != previous_cells[index];
+                if (!changed) {
+                    break;
+                }
+                column++;
+            } while (column < renderer_columns);
+
+            size_t run_length = column - run_start;
+            err = renderer_draw_run(canvas, screen, row, run_start,
+                                    run_length, cursor_index);
+            if (!k_failed(err)) {
+                for (size_t i = 0U; i < run_length; i++) {
+                    size_t changed_index = row_start + run_start + i;
+                    previous_cells[changed_index] =
+                        renderer_visible_cell(screen, changed_index, cursor_index);
+                }
             }
         }
+    }
 
-        if (!k_failed(err)) {
-            row_utf8[offset] = '\0';
-            point_t position = {
-                .x = 0,
-                .y = (int64_t)(row * SHELL_FONT_HEIGHT)};
-            err = canvas_draw_text(canvas, position, row_utf8, foreground, 1U);
-        }
+    if (!k_failed(err)) {
+        renderer_cache_valid = true;
+    } else {
+        /* Force a complete repaint next time after any partial failure. */
+        renderer_cache_valid = false;
     }
 
     kerr_t end_err = layer_draw_end(shell_layer);
@@ -149,14 +275,18 @@ kerr_t shell_renderer_render(const shell_screen_t *screen) {
 }
 
 /**
- * @brief Destroy the shell rendering layer and conversion buffer.
+ * @brief Destroy the shell layer and all renderer-owned buffers.
  *
  * @return E_OK on success or an error code.
  */
-kerr_t shell_renderer_deinit() {
+kerr_t shell_renderer_deinit(void) {
     if (shell_layer) {
         K_TRY(layer_destroy(shell_layer));
         shell_layer = NULL;
+    }
+    if (previous_cells) {
+        K_TRY(kfree((virt_addr_t)previous_cells));
+        previous_cells = NULL;
     }
     if (row_utf8) {
         K_TRY(kfree((virt_addr_t)row_utf8));
@@ -166,6 +296,7 @@ kerr_t shell_renderer_deinit() {
     row_buffer_size = 0U;
     renderer_columns = 0U;
     renderer_rows = 0U;
+    renderer_cache_valid = false;
     renderer_initialized = false;
     return E_OK;
 }

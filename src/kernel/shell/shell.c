@@ -76,24 +76,13 @@ static void shell_cursor_normalize(void) {
 }
 
 /**
- * @brief Render a previously copied screen snapshot with a cursor overlay.
+ * @brief Render the copied shell model and cursor overlay.
  *
- * @param[in] cursor_index Cursor position in the snapshot.
+ * @param[in] cursor_index Cursor position in the copied model.
  * @return E_OK on success or the renderer error.
  */
 static kerr_t shell_render_snapshot(size_t cursor_index) {
-    size_t total_cells = shell_render_screen.columns * shell_render_screen.rows;
-    if (cursor_index >= total_cells) {
-        return E_INVAL;
-    }
-
-    uint32_t *cursor_cell = &shell_render_screen.cells[cursor_index];
-    uint32_t previous_cell = *cursor_cell;
-    *cursor_cell = (uint32_t)'_';
-
-    kerr_t err = shell_renderer_render(&shell_render_screen);
-    *cursor_cell = previous_cell;
-    return err;
+    return shell_renderer_render(&shell_render_screen, cursor_index);
 }
 
 /**
