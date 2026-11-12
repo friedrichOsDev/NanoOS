@@ -42,7 +42,7 @@ static void kernel_input_handler(const input_event_t *event, void *context) {
 }
 
 /**
- * @brief Initialize kernel drivers and process input events.
+ * @brief Initialize kernel drivers and start input dispatch.
  *
  * @param[in] arg Unused argument.
  */
@@ -94,9 +94,7 @@ static void kernel_init_thread(void *arg) {
 
     version_splash_show("0.0.3", 10000);
 
-    for (;;) {
-        thread_yield();
-    }
+    thread_exit();
 }
 
 /**
