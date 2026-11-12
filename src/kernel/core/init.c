@@ -21,6 +21,7 @@
 #include <sched/sched.h>
 #include <sched/taskmgr.h>
 #include <sched/thread.h>
+#include <shell/shell.h>
 
 /**
  * @brief Handle kernel-wide input shortcuts.
@@ -90,6 +91,12 @@ static void kernel_init_thread(void *arg) {
         }
     }
     log_info("input dispatcher started");
+
+    err = shell_init();
+    if (k_failed(err)) {
+        log_error("failed to initialize shell (%s)", kerr_str(err));
+    }
+    log_info("shell initialized");
 
     for (;;) {
         thread_yield();
