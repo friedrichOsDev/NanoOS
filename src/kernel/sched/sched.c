@@ -22,10 +22,6 @@ static spinlock_t sched_lock = SPINLOCK_INIT;
 static volatile uint64_t system_ticks = 0;
 static bool scheduler_enabled = false;
 
-/** @brief Releases the initial scheduler lock after starting a thread. */
-void scheduler_release_initial_lock(); // prevent -Wmissing-prototypes
-void scheduler_release_initial_lock() { spinlock_release(&sched_lock); }
-
 /**
  * @brief Idle thread routine executed when no other threads are ready.
  *
@@ -304,8 +300,18 @@ void sched_schedule() {
          * could block forever trying to schedule. All shared scheduler state
          * has already been updated, so it is safe to release the lock here.
          */
-        spinlock_release_irqrestore(&sched_lock, flags);
+        /*
+         * Keep local interrupts disabled until the stack switch is complete.
+         * Restoring IF before switch_context() leaves a window in which a
+         * timer interrupt can recursively enter the scheduler on the outgoing
+         * thread's stack while current_thread already points at the incoming
+         * thread. The incoming fresh thread enables interrupts in
+         * thread_entry_stub(); a previously suspended thread restores its
+         * saved flags when this call to switch_context() eventually returns.
+         */
+        spinlock_release(&sched_lock);
         switch_context(&prev->rsp, next->rsp, prev->fpu_state, next->fpu_state);
+        arch_irq_restore(flags);
         return;
     }
 
