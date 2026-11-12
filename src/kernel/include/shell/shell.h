@@ -8,4 +8,4 @@
 
 #include <pch.h>
 
-kerr_t shell_init(void);
+kerr_t shell_init();

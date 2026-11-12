@@ -8,6 +8,6 @@
 
 #include <shell/screen.h>
 
-kerr_t shell_renderer_init(void);
+kerr_t shell_renderer_init();
 kerr_t shell_renderer_render(const shell_screen_t *screen, size_t cursor_index);
-kerr_t shell_renderer_deinit(void);
+kerr_t shell_renderer_deinit();

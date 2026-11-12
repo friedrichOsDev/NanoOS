@@ -16,7 +16,7 @@
  *
  * @return E_OK on success or an error code.
  */
-kerr_t shell_test_screen_show(void) {
+kerr_t shell_test_screen_show() {
     rect_size_t size = compositor_get_size();
     if (size.width < 8U || size.height < 16U) {
         return E_NOTAVAIL;

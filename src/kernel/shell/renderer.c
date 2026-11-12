@@ -133,7 +133,7 @@ static kerr_t renderer_draw_run(canvas_t *canvas,
  *
  * @return E_OK on success or an error code.
  */
-kerr_t shell_renderer_init(void) {
+kerr_t shell_renderer_init() {
     if (renderer_initialized) {
         return E_OK;
     }
@@ -200,7 +200,7 @@ fail:
  * in the caller-owned screen model.
  *
  * @param[in] screen Character-cell screen model.
- * @param[in] cursor_index Linear cursor position.
+ * @param[in] cursor_index Linear cursor position; SIZE_MAX disables the cursor overlay.
  * @return E_OK on success or an error code.
  */
 kerr_t shell_renderer_render(const shell_screen_t *screen, size_t cursor_index) {
@@ -279,7 +279,7 @@ kerr_t shell_renderer_render(const shell_screen_t *screen, size_t cursor_index) 
  *
  * @return E_OK on success or an error code.
  */
-kerr_t shell_renderer_deinit(void) {
+kerr_t shell_renderer_deinit() {
     if (shell_layer) {
         K_TRY(layer_destroy(shell_layer));
         shell_layer = NULL;
