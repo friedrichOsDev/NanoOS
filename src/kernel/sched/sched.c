@@ -154,17 +154,14 @@ thread_t *pop_next_ready_thread_for_cpu(int cpu_id) {
     return NULL;
 }
 
-/** @brief Reaps and cleans up resources of terminated (dead) threads. */
-static void cleanup_dead_threads() {
-    thread_t *curr = dead_queue_head;
-    dead_queue_head = NULL;
-
-    while (curr) {
-        thread_t *next = curr->next;
-        thread_destroy(curr);
-        curr = next;
-    }
-}
+/*
+ * Dead threads are deliberately retained for now. A thread is put on this
+ * queue immediately before its CPU switches away from its stack. Another CPU
+ * must not free that stack in the interval between queue insertion and the
+ * actual switch. Reclamation needs a post-switch handoff/quiescent-state
+ * mechanism; until that exists, leaking terminated TCBs/stacks is safer than
+ * a cross-CPU use-after-free.
+ */
 
 /**
  * @brief Initializes the scheduler subsystem and creates the BSP's main and idle threads.
@@ -227,8 +224,6 @@ void sched_schedule() {
         return;
 
     irq_flags_t flags = spinlock_acquire_irqsave(&sched_lock);
-
-    cleanup_dead_threads();
 
     cpu_local_t *my_cpu = smp_get_current_cpu();
     if (!my_cpu) {
