@@ -157,9 +157,7 @@ static bool is_numpad_key(hid_keycode_t key) {
            key == KEY_NUMLOCK_DELETE;
 }
 
-/**
- * @brief Update modifier states based on current key presses.
- */
+/** @brief Update modifier states based on current key presses. */
 static void update_modifiers() {
     key_state.shift = key_state.pressed[KEY_LSHIFT] || key_state.pressed[KEY_RSHIFT];
     key_state.control = key_state.pressed[KEY_LCONTROL] || key_state.pressed[KEY_RCONTROL];

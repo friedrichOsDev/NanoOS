@@ -31,9 +31,7 @@ static spinlock_t shell_lock = SPINLOCK_INIT;
 static bool shell_initialized;
 static bool shell_dirty;
 
-/**
- * @brief Scroll the shell screen up by one character row.
- */
+/** @brief Scroll the shell screen up by one character row. */
 static void shell_scroll() {
     size_t columns = shell_screen.columns;
     size_t total_cells = columns * shell_screen.rows;
@@ -60,9 +58,7 @@ static void shell_scroll() {
     }
 }
 
-/**
- * @brief Keep the cursor inside the allocated screen model.
- */
+/** @brief Keep the cursor inside the allocated screen model. */
 static void shell_cursor_normalize() {
     size_t total_cells = shell_screen.columns * shell_screen.rows;
 
@@ -159,18 +155,14 @@ static void shell_insert_codepoint(uint32_t codepoint) {
     shell_cursor_normalize();
 }
 
-/**
- * @brief Insert a translated tab as four spaces.
- */
+/** @brief Insert a translated tab as four spaces. */
 static void shell_insert_tab() {
     for (size_t i = 0U; i < 4U; i++) {
         shell_insert_codepoint((uint32_t)' ');
     }
 }
 
-/**
- * @brief Remove the character immediately before the cursor.
- */
+/** @brief Remove the character immediately before the cursor. */
 static void shell_backspace() {
     if (shell_cursor_index <= shell_input_start_index) {
         return;
