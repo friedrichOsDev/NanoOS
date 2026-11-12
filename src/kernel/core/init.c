@@ -63,6 +63,7 @@ static void kernel_init_thread(void *arg) {
     version_splash_show("0.0.3", 10000);
 
     for (;;) {
+        // TODO: move input pulling to a better place so the kernel subsystems can register their handlers
         input_event_t event;
         err = input_poll_event(&event);
         if (err == E_NOTAVAIL) {
