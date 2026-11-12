@@ -365,8 +365,8 @@ kerr_t ps2_controller_init() {
     irq_install_handler(1, keyboard_irq);
     irq_install_handler(12, mouse_irq);
     uint32_t destination = lapic_get_id();
-    log_debug("i8042 IRQ handlers installed: irq1=%p irq12=%p destination_apic=%u",
-              keyboard_irq, mouse_irq, destination);
+    log_debug("i8042 IRQ handlers installed: irq1=yes irq12=yes destination_apic=%u",
+              destination);
     if (keyboard_ready)
         ioapic_route_irq(1, 33, (uint8_t)destination);
     if (mouse_ready)

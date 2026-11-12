@@ -93,22 +93,30 @@ static void input_dispatcher_thread(void *arg) {
             }
             spinlock_release_irqrestore(&handler_lock, flags);
 
-            if (event.hid.type != HID_EVENT_MOUSE_MOVE) {
-                log_trace("input event: type=%u key=%u scan=%02x action=%u unicode=%u handlers=%u",
+            if (event.hid.type == HID_EVENT_KEY_PRESS ||
+                event.hid.type == HID_EVENT_KEY_RELEASE) {
+                log_trace("input key event: type=%u key=%u scan=%02x action=%u unicode=%u handlers=%u",
                           (unsigned)event.hid.type,
                           (unsigned)event.hid.key.keycode,
                           event.hid.key.scancode,
                           (unsigned)event.key_action,
                           event.unicode_count ? event.unicode : 0U,
                           (unsigned)snapshot_count);
+            } else if (event.hid.type != HID_EVENT_MOUSE_MOVE) {
+                log_trace("input pointer event: type=%u handlers=%u",
+                          (unsigned)event.hid.type, (unsigned)snapshot_count);
             }
 
             for (size_t i = 0; i < snapshot_count; i++) {
-                log_trace("input dispatch callback %u/%u begin",
-                          (unsigned)(i + 1U), (unsigned)snapshot_count);
+                if (event.hid.type != HID_EVENT_MOUSE_MOVE) {
+                    log_trace("input dispatch callback %u/%u begin",
+                              (unsigned)(i + 1U), (unsigned)snapshot_count);
+                }
                 snapshot[i].callback(&event, snapshot[i].context);
-                log_trace("input dispatch callback %u/%u end",
-                          (unsigned)(i + 1U), (unsigned)snapshot_count);
+                if (event.hid.type != HID_EVENT_MOUSE_MOVE) {
+                    log_trace("input dispatch callback %u/%u end",
+                              (unsigned)(i + 1U), (unsigned)snapshot_count);
+                }
             }
         }
 
