@@ -14,6 +14,9 @@
 static hid_driver_t *driver_list = NULL;
 static ringbuffer_t *event_queue = NULL;
 static bool hid_initialized = false;
+static volatile uint64_t hid_events_enqueued;
+static volatile uint64_t hid_events_dropped;
+static volatile uint64_t hid_events_dequeued;
 
 /**
  * @brief Initializes the HID subsystem and event ring buffer.
@@ -104,10 +107,12 @@ kerr_t hid_push_event(const hid_event_t *event) {
 
     size_t written = ringbuffer_write(event_queue, event, sizeof(hid_event_t));
     if (written != sizeof(hid_event_t)) {
+        hid_events_dropped++;
         log_warn("hid event queue full, dropping event type %d", event->type);
         return E_NOMEM;
     }
 
+    hid_events_enqueued++;
     return E_OK;
 }
 
@@ -127,5 +132,18 @@ kerr_t hid_poll_event(hid_event_t *out_event) {
         return E_NOTAVAIL;
     }
 
+    hid_events_dequeued++;
     return E_OK;
+}
+
+/**
+ * @brief Log HID event queue counters and current backlog outside interrupt context.
+ */
+void hid_log_diagnostics() {
+    size_t pending = event_queue ? ringbuffer_available(event_queue) /
+                                       sizeof(hid_event_t)
+                                 : 0U;
+    log_trace("HID queue stats: enqueued=%llu dequeued=%llu dropped=%llu pending=%u",
+              hid_events_enqueued, hid_events_dequeued, hid_events_dropped,
+              (unsigned)pending);
 }

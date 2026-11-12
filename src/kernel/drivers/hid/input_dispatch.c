@@ -4,7 +4,9 @@
  * @author friedrichOsDev
  */
 
+#include <arch/arch.h>
 #include <drivers/hid/input.h>
+#include <drivers/hid/ps2/ps2.h>
 #include <kernel/sync.h>
 #include <sched/process.h>
 #include <sched/thread.h>
@@ -50,7 +52,10 @@ kerr_t input_register_handler(input_event_handler_t handler, void *context) {
     handlers[handler_count].callback = handler;
     handlers[handler_count].context = context;
     handler_count++;
+    size_t registered_count = handler_count;
     spinlock_release_irqrestore(&handler_lock, flags);
+    log_trace("input handler registered: callback=%p context=%p count=%u",
+              handler, context, (unsigned)registered_count);
     return E_OK;
 }
 
@@ -62,31 +67,58 @@ kerr_t input_register_handler(input_event_handler_t handler, void *context) {
 static void input_dispatcher_thread(void *arg) {
     (void)arg;
 
+    uint64_t dispatched_events = 0U;
+    uint64_t idle_polls = 0U;
+    uint64_t last_report_ms = hpet_get_timestamp();
+    log_info("input dispatcher thread online");
+
     for (;;) {
         input_event_t event;
         kerr_t err = input_poll_event(&event);
         if (err == E_NOTAVAIL) {
+            idle_polls++;
             thread_yield();
-            continue;
-        }
-        if (k_failed(err)) {
+        } else if (k_failed(err)) {
             log_warn("input dispatcher polling failed (%s)", kerr_str(err));
             thread_yield();
-            continue;
+        } else {
+            dispatched_events++;
+            input_handler_entry_t snapshot[INPUT_MAX_HANDLERS];
+            size_t snapshot_count;
+
+            irq_flags_t flags = spinlock_acquire_irqsave(&handler_lock);
+            snapshot_count = handler_count;
+            for (size_t i = 0; i < snapshot_count; i++) {
+                snapshot[i] = handlers[i];
+            }
+            spinlock_release_irqrestore(&handler_lock, flags);
+
+            if (event.hid.type != HID_EVENT_MOUSE_MOVE) {
+                log_trace("input event: type=%u key=%u scan=%02x action=%u unicode=%u handlers=%u",
+                          (unsigned)event.hid.type,
+                          (unsigned)event.hid.key.keycode,
+                          event.hid.key.scancode,
+                          (unsigned)event.key_action,
+                          event.unicode_count ? event.unicode : 0U,
+                          (unsigned)snapshot_count);
+            }
+
+            for (size_t i = 0; i < snapshot_count; i++) {
+                log_trace("input dispatch callback %u/%u begin",
+                          (unsigned)(i + 1U), (unsigned)snapshot_count);
+                snapshot[i].callback(&event, snapshot[i].context);
+                log_trace("input dispatch callback %u/%u end",
+                          (unsigned)(i + 1U), (unsigned)snapshot_count);
+            }
         }
 
-        input_handler_entry_t snapshot[INPUT_MAX_HANDLERS];
-        size_t snapshot_count;
-
-        irq_flags_t flags = spinlock_acquire_irqsave(&handler_lock);
-        snapshot_count = handler_count;
-        for (size_t i = 0; i < snapshot_count; i++) {
-            snapshot[i] = handlers[i];
-        }
-        spinlock_release_irqrestore(&handler_lock, flags);
-
-        for (size_t i = 0; i < snapshot_count; i++) {
-            snapshot[i].callback(&event, snapshot[i].context);
+        uint64_t now_ms = hpet_get_timestamp();
+        if (now_ms - last_report_ms >= 1000U) {
+            log_trace("input dispatcher alive: dispatched=%llu idle_polls=%llu handlers=%u",
+                      dispatched_events, idle_polls, (unsigned)handler_count);
+            hid_log_diagnostics();
+            ps2_log_diagnostics();
+            last_report_ms = now_ms;
         }
     }
 }
@@ -116,5 +148,6 @@ kerr_t input_dispatcher_start() {
         return err;
     }
 
+    log_info("input dispatcher thread created");
     return E_OK;
 }
