@@ -53,7 +53,8 @@ kerr_t shell_test_screen_show(void) {
         err = shell_renderer_init();
     }
     if (!k_failed(err)) {
-        err = shell_renderer_render(&screen);
+        /* One-past-the-end disables the cursor overlay for this static screen. */
+        err = shell_renderer_render(&screen, screen.columns * screen.rows);
     }
 
     shell_screen_destroy(&screen);
