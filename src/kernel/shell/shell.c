@@ -36,7 +36,8 @@ static size_t shell_preferred_column;
 static bool shell_preferred_column_valid;
 static spinlock_t shell_lock = SPINLOCK_INIT;
 static bool shell_initialized;
-static bool shell_dirty;
+static uint64_t shell_model_generation;
+static uint64_t shell_rendered_generation;
 
 /**
  * @brief Copy committed screen contents and overlay the visible portion of active input.
@@ -65,7 +66,9 @@ static kerr_t shell_rebuild_screen(size_t *cursor_index) {
     memcpy(shell_screen.cells, shell_history_cells,
            cell_count * sizeof(uint32_t));
 
-    if (view_start_row > 0U) {
+    if (view_start_cell >= cell_count) {
+        memset32(shell_screen.cells, 0U, cell_count);
+    } else if (view_start_cell > 0U) {
         size_t removed_cells = view_start_cell;
         memmove(shell_screen.cells, shell_screen.cells + removed_cells,
                 (cell_count - removed_cells) * sizeof(uint32_t));
@@ -276,22 +279,45 @@ static void shell_cursor_vertical(int direction) {
  * @return E_OK on success or an error code when the next prompt cannot be placed.
  */
 static kerr_t shell_newline() {
-    shell_input_cursor = shell_input_length;
-
-    size_t cursor_index = 0U;
-    K_TRY(shell_rebuild_screen(&cursor_index));
+    if (shell_input_cursor > shell_input_length ||
+        shell_input_length > SHELL_INPUT_MAX_CODEPOINTS ||
+        shell_input_start_index > SIZE_MAX - shell_input_length) {
+        return E_INVAL;
+    }
 
     size_t columns = shell_screen.columns;
-    size_t cell_count = columns * shell_screen.rows;
+    size_t rows = shell_screen.rows;
+    size_t cell_count = columns * rows;
+    if (columns == 0U || rows == 0U || !shell_history_cells ||
+        !shell_input_buffer) {
+        return E_INVAL;
+    }
+
+    shell_input_cursor = shell_input_length;
+
     size_t end_index = shell_input_start_index + shell_input_length;
     size_t end_row = end_index / columns;
-    size_t view_start_row = (end_row >= shell_screen.rows)
-                                ? end_row - shell_screen.rows + 1U
-                                : 0U;
+    size_t view_start_row = (end_row >= rows) ? end_row - rows + 1U : 0U;
     size_t view_start_cell = view_start_row * columns;
 
-    memcpy(shell_history_cells, shell_screen.cells,
-           cell_count * sizeof(uint32_t));
+    if (view_start_cell >= cell_count) {
+        memset32(shell_history_cells, 0U, cell_count);
+    } else if (view_start_cell > 0U) {
+        size_t removed_cells = view_start_cell;
+        memmove(shell_history_cells, shell_history_cells + removed_cells,
+                (cell_count - removed_cells) * sizeof(uint32_t));
+        memset32(shell_history_cells + cell_count - removed_cells, 0U,
+                 removed_cells);
+    }
+
+    for (size_t i = 0U; i < shell_input_length; i++) {
+        size_t absolute_index = shell_input_start_index + i;
+        if (absolute_index >= view_start_cell &&
+            absolute_index - view_start_cell < cell_count) {
+            shell_history_cells[absolute_index - view_start_cell] =
+                shell_input_buffer[i];
+        }
+    }
 
     size_t next_prompt = end_index - view_start_cell;
     size_t column = next_prompt % columns;
@@ -337,27 +363,30 @@ static void shell_renderer_thread(void *arg) {
 
     for (;;) {
         size_t cursor_index = 0U;
+        uint64_t snapshot_generation = 0U;
         bool running;
         bool dirty;
+        kerr_t snapshot_err = E_OK;
 
         irq_flags_t flags = spinlock_acquire_irqsave(&shell_lock);
         running = shell_initialized;
-        dirty = shell_dirty;
+        dirty = shell_model_generation != shell_rendered_generation;
         if (dirty) {
-            size_t total_cells = shell_screen.columns * shell_screen.rows;
-            memcpy(shell_render_screen.cells, shell_screen.cells,
-                   total_cells * sizeof(uint32_t));
-
-            size_t absolute_cursor = shell_input_start_index + shell_input_cursor;
-            size_t cursor_row = absolute_cursor / shell_screen.columns;
-            size_t view_start_row = (cursor_row >= shell_screen.rows)
-                                        ? cursor_row - shell_screen.rows + 1U
-                                        : 0U;
-            cursor_index = absolute_cursor -
-                           (view_start_row * shell_screen.columns);
-            shell_dirty = false;
+            snapshot_err = shell_rebuild_screen(&cursor_index);
+            if (!k_failed(snapshot_err)) {
+                size_t total_cells = shell_screen.columns * shell_screen.rows;
+                memcpy(shell_render_screen.cells, shell_screen.cells,
+                       total_cells * sizeof(uint32_t));
+                snapshot_generation = shell_model_generation;
+            } else {
+                dirty = false;
+            }
         }
         spinlock_release_irqrestore(&shell_lock, flags);
+
+        if (k_failed(snapshot_err)) {
+            log_warn("shell snapshot failed (%s)", kerr_str(snapshot_err));
+        }
 
         if (!running) {
             thread_exit();
@@ -367,6 +396,12 @@ static void shell_renderer_thread(void *arg) {
             kerr_t err = shell_render_snapshot(cursor_index);
             if (k_failed(err)) {
                 log_warn("shell render failed (%s)", kerr_str(err));
+            } else {
+                flags = spinlock_acquire_irqsave(&shell_lock);
+                if (shell_model_generation == snapshot_generation) {
+                    shell_rendered_generation = snapshot_generation;
+                }
+                spinlock_release_irqrestore(&shell_lock, flags);
             }
         }
 
@@ -451,12 +486,12 @@ static void shell_input_handler(const input_event_t *event, void *context) {
         }
     }
 
-    size_t cursor_index = 0U;
-    kerr_t render_err = shell_rebuild_screen(&cursor_index);
-    if (!k_failed(render_err)) {
-        shell_dirty = true;
-    } else if (!k_failed(input_err)) {
-        input_err = render_err;
+    if (!k_failed(input_err)) {
+        shell_model_generation++;
+        if (shell_model_generation == 0U) {
+            shell_model_generation = 1U;
+            shell_rendered_generation = 0U;
+        }
     }
 
     spinlock_release_irqrestore(&shell_lock, flags);
@@ -577,7 +612,8 @@ kerr_t shell_init() {
 
     flags = spinlock_acquire_irqsave(&shell_lock);
     shell_initialized = true;
-    shell_dirty = false;
+    shell_model_generation = 1U;
+    shell_rendered_generation = 1U;
     spinlock_release_irqrestore(&shell_lock, flags);
 
     err = thread_create(proc_get_kernel_proc(), shell_renderer_thread,
