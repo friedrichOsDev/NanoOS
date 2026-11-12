@@ -57,8 +57,15 @@ typedef struct {
     input_key_action_t key_action; /**< Classified key action state. */
 } input_event_t;
 
+/** @brief Input event callback registered by a kernel subsystem. */
+typedef void (*input_event_handler_t)(const input_event_t *event, void *context);
+
 kerr_t input_init();
 kerr_t input_poll_event(input_event_t *event);
+// const char *input_event_str(const input_event_t *event);
+kerr_t input_register_handler(input_event_handler_t handler, void *context);
+kerr_t input_dispatcher_start();
+bool input_dispatcher_started();
 kerr_t keyboard_register_layout(const keyboard_layout_t *layout);
 kerr_t keyboard_set_layout(const char *name);
 const keyboard_layout_t *keyboard_get_layout();

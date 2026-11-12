@@ -8,7 +8,6 @@
 #include <arch/multiboot2.h>
 #include <drivers/gfx/compositor.h>
 #include <drivers/gfx/gfx.h>
-#include <drivers/gfx/version_splash.h>
 #include <drivers/hid/hid.h>
 #include <drivers/hid/input.h>
 #include <drivers/hid/ps2/ps2.h>
@@ -22,6 +21,24 @@
 #include <sched/sched.h>
 #include <sched/taskmgr.h>
 #include <sched/thread.h>
+
+/**
+ * @brief Handle kernel-wide input shortcuts.
+ * 
+ * @param[in] event Translated input event.
+ * @param[in] context Unused callback context.
+ */
+static void kernel_input_handler(const input_event_t *event, void *context) {
+    (void)context;
+
+    if (event->hid.type == HID_EVENT_KEY_PRESS &&
+        event->hid.key.keycode == KEY_ESC &&
+        event->key_action == INPUT_KEY_ACTION_PRESSED) {
+        log_info("ESC pressed, shutting down");
+        acpi_power_off();
+        log_warn("ACPI shutdown request returned");
+    }
+}
 
 /**
  * @brief Initialize kernel drivers and process input events.
@@ -60,29 +77,25 @@ static void kernel_init_thread(void *arg) {
     }
     log_info("input initialization done");
 
-    version_splash_show("0.0.3", 10000);
+    err = input_register_handler(kernel_input_handler, NULL);
+    if (k_failed(err)) {
+        log_error("failed to register kernel input handler (%s)", kerr_str(err));
+    }
 
-    for (;;) {
-        input_event_t event;
-        err = input_poll_event(&event);
-        if (err == E_NOTAVAIL) {
+    err = input_dispatcher_start();
+    if (k_failed(err)) {
+        log_error("failed to start input dispatcher (%s)", kerr_str(err));
+        for (;;) {
             thread_yield();
-            continue;
-        }
-        if (k_failed(err)) {
-            log_warn("input event polling failed (%s)", kerr_str(err));
-            thread_yield();
-            continue;
-        }
-
-        if (event.hid.type == HID_EVENT_KEY_PRESS &&
-            event.hid.key.keycode == KEY_ESC &&
-            event.key_action == INPUT_KEY_ACTION_PRESSED) {
-            log_info("ESC pressed, shutting down");
-            acpi_power_off();
-            log_warn("ACPI shutdown request returned");
         }
     }
+    log_info("input dispatcher started");
+
+    for (;;) {
+        thread_yield();
+    }
+
+    thread_exit();
 }
 
 /**

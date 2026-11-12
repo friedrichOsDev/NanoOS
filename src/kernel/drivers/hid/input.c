@@ -230,7 +230,7 @@ const keyboard_layout_t *keyboard_get_layout() { return active_layout; }
 /**
  * @brief Translate a HID keycode to a Unicode codepoint using the active layout and modifier states.
  *
- * @param[in] key The HID keycode to translate.
+ * @param[in] key The HID keycode.
  * @param[in] shift True if the shift modifier is active.
  * @param[in] altgr True if the AltGr modifier is active.
  * @return The translated Unicode codepoint, or 0 if translation is not available.
@@ -277,16 +277,14 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
             if (down && !was_down && key == KEY_NUMLOCK)
                 key_state.num_lock = !key_state.num_lock;
             update_modifiers();
-            if (down && out->key_action != INPUT_KEY_ACTION_REPEATED) {
+            if (down && out->key_action != INPUT_KEY_ACTION_NONE) {
                 bool shift = key_state.shift;
                 if (is_letter(key) && key_state.caps_lock)
                     shift = !shift;
 
-                uint32_t codepoint = (is_numpad_key(key) && !key_state.num_lock)
-                                         ? 0
-                                         : keyboard_translate_key(key, shift, key_state.altgr);
+                uint32_t codepoint = (is_numpad_key(key) && !key_state.num_lock) ? 0 : keyboard_translate_key(key, shift, key_state.altgr);
 
-                if (codepoint != 0) {
+                if (codepoint != 0 && (out->key_action != INPUT_KEY_ACTION_REPEATED || !is_dead_key(codepoint))) {
                     if (is_dead_key(codepoint)) {
                         out->dead_key_accent = codepoint;
                         /*
@@ -357,6 +355,33 @@ kerr_t input_poll_event(input_event_t *event) {
     spinlock_release_irqrestore(&input_lock, flags);
     return E_OK;
 }
+
+// /**
+//  * @brief Retrieve a string representation of the input event.
+//  *
+//  * @param[in] event The event pointer to stringify.
+//  * @return The string representation of the event.
+//  */
+// const char *input_event_str(const input_event_t *event) {
+//     switch (event->hid.type) {
+//         case HID_EVENT_KEY_PRESS:
+//             return "KEY_PRESS";
+//         case HID_EVENT_KEY_RELEASE:
+//             return "KEY_RELEASE";
+//         case HID_EVENT_MOUSE_MOVE:
+//             return "MOUSE_MOVE";
+//         case HID_EVENT_MOUSE_BUTTON_PRESS:
+//             return "MOUSE_BUTTON_PRESS";
+//         case HID_EVENT_MOUSE_BUTTON_RELEASE:
+//             return "MOUSE_BUTTON_RELEASE";
+//         case HID_EVENT_MOUSE_SCROLL:
+//             return "MOUSE_SCROLL";
+//         case HID_EVENT_NONE:
+//             return "NONE";
+//         default:
+//             return "UNKNOWN";
+//     }
+// }
 
 /**
  * @brief Retrieve a copy of the current keyboard state.

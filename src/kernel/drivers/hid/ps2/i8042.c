@@ -7,6 +7,7 @@
 #include "../../../arch/x86_64/apic/apic.h"
 #include <arch/arch.h>
 #include <drivers/hid/ps2/ps2.h>
+#include <drivers/hid/input.h>
 
 #define I8042_WAIT_LIMIT 1000000U
 #define I8042_CMD_READ_CONFIG 0x20
@@ -212,6 +213,7 @@ static void mouse_irq(struct registers *regs) { ps2_irq_handler(regs); }
 void ps2_irq_handler(struct registers *regs) {
     (void)regs;
     /* IRQ1 and IRQ12 share the data port: route by the controller AUX status bit. */
+    if (!input_dispatcher_started()) return;
     for (uint32_t i = 0; i < 16; i++) {
         uint8_t status = inb(PS2_STATUS_PORT);
         if (!(status & PS2_STATUS_OUTPUT_FULL))
