@@ -22,6 +22,7 @@
 #include <sched/sched.h>
 #include <sched/taskmgr.h>
 #include <sched/thread.h>
+#include <shell/test_screen.h>
 
 /**
  * @brief Handle kernel-wide input shortcuts.
@@ -93,6 +94,13 @@ static void kernel_init_thread(void *arg) {
     log_info("input dispatcher started");
 
     version_splash_show("0.0.3", 10000);
+
+    err = shell_test_screen_show();
+    if (k_failed(err)) {
+        log_error("shell renderer test screen failed (%s)", kerr_str(err));
+    } else {
+        log_info("shell renderer test screen displayed");
+    }
 
     thread_exit();
 }
