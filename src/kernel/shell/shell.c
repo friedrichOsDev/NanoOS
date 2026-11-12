@@ -8,6 +8,7 @@
 #include <drivers/hid/input.h>
 #include <kernel/sync.h>
 #include <lib/util/mem.h>
+#include <mm/memory.h>
 #include <sched/process.h>
 #include <sched/sched.h>
 #include <sched/thread.h>
@@ -25,67 +26,271 @@ static const char shell_prompt[] = "nanoos> ";
 
 static shell_screen_t shell_screen;
 static shell_screen_t shell_render_screen;
-static size_t shell_cursor_index;
+static uint32_t *shell_history_cells;
+static uint32_t *shell_input_buffer;
+static size_t shell_input_capacity;
+static size_t shell_input_length;
+static size_t shell_input_cursor;
 static size_t shell_input_start_index;
-static size_t shell_input_end_index;
+static size_t shell_preferred_column;
+static bool shell_preferred_column_valid;
 static spinlock_t shell_lock = SPINLOCK_INIT;
 static bool shell_initialized;
 static bool shell_dirty;
-static uint64_t shell_key_last_repeat_ms[INPUT_KEY_COUNT];
-static bool shell_key_repeat_seen[INPUT_KEY_COUNT];
 
-#define SHELL_KEY_REPEAT_INTERVAL_MS 45U
+/**
+ * @brief Copy committed screen contents into the visible screen and overlay active input.
+ *
+ * @param[out] cursor_index Current cursor position in the visible screen.
+ * @return E_OK on success or E_INVAL when the screen state is invalid.
+ */
+static kerr_t shell_rebuild_screen(size_t *cursor_index) {
+    if (!cursor_index || !shell_screen.cells || !shell_history_cells ||
+        !shell_input_buffer || shell_screen.columns == 0U ||
+        shell_screen.rows == 0U) {
+        return E_INVAL;
+    }
 
-/** @brief Scroll the shell screen up by one character row. */
-static void shell_scroll() {
+    size_t cell_count = shell_screen.columns * shell_screen.rows;
+    if (shell_input_start_index >= cell_count ||
+        shell_input_length > shell_input_capacity ||
+        shell_input_start_index + shell_input_length >= cell_count) {
+        return E_BADSIZE;
+    }
+
+    memcpy(shell_screen.cells, shell_history_cells,
+           cell_count * sizeof(uint32_t));
+
+    for (size_t i = 0U; i < shell_input_length; i++) {
+        shell_screen.cells[shell_input_start_index + i] = shell_input_buffer[i];
+    }
+
+    *cursor_index = shell_input_start_index + shell_input_cursor;
+    return E_OK;
+}
+
+/**
+ * @brief Scroll committed shell history upward by a number of rows.
+ *
+ * @param[in] rows Number of rows to remove from the top of the screen.
+ */
+static void shell_history_scroll(size_t rows) {
     size_t columns = shell_screen.columns;
     size_t total_cells = columns * shell_screen.rows;
 
-    if (columns == 0U || shell_screen.rows == 0U) {
+    if (rows == 0U || rows >= shell_screen.rows) {
         return;
     }
 
-    memmove(shell_screen.cells,
-            shell_screen.cells + columns,
-            (total_cells - columns) * sizeof(uint32_t));
-    memset32(shell_screen.cells + (total_cells - columns), 0U, columns);
+    size_t removed_cells = rows * columns;
+    memmove(shell_history_cells, shell_history_cells + removed_cells,
+            (total_cells - removed_cells) * sizeof(uint32_t));
+    memset32(shell_history_cells + total_cells - removed_cells, 0U,
+             removed_cells);
+}
 
-    if (shell_cursor_index >= columns) {
-        shell_cursor_index -= columns;
-    } else {
-        shell_cursor_index = 0U;
+/**
+ * @brief Draw the shell prompt into committed screen contents.
+ *
+ * @param[in] start_index First cell of the prompt.
+ * @return E_OK on success or E_BADSIZE when the prompt does not fit.
+ */
+static kerr_t shell_history_write_prompt(size_t start_index) {
+    size_t prompt_length = sizeof(shell_prompt) - 1U;
+    size_t cell_count = shell_screen.columns * shell_screen.rows;
+
+    if (start_index >= cell_count ||
+        prompt_length >= cell_count - start_index) {
+        return E_BADSIZE;
     }
 
-    if (shell_input_start_index >= columns) {
-        shell_input_start_index -= columns;
-    } else {
-        shell_input_start_index = 0U;
+    for (size_t i = 0U; i < prompt_length; i++) {
+        shell_history_cells[start_index + i] = (uint32_t)shell_prompt[i];
     }
 
-    if (shell_input_end_index >= columns) {
-        shell_input_end_index -= columns;
-    } else {
-        shell_input_end_index = 0U;
+    shell_input_start_index = start_index + prompt_length;
+    shell_input_capacity = cell_count - shell_input_start_index - 1U;
+    return E_OK;
+}
+
+/**
+ * @brief Insert one printable Unicode codepoint at the logical cursor position.
+ *
+ * @param[in] codepoint Unicode scalar value to insert.
+ */
+static void shell_insert_codepoint(uint32_t codepoint) {
+    if (codepoint < 0x20U || codepoint == 0x7FU ||
+        codepoint > 0x10FFFFU ||
+        (codepoint >= 0xD800U && codepoint <= 0xDFFFU) ||
+        shell_input_length >= shell_input_capacity) {
+        return;
+    }
+
+    size_t trailing = shell_input_length - shell_input_cursor;
+    if (trailing > 0U) {
+        memmove(&shell_input_buffer[shell_input_cursor + 1U],
+                &shell_input_buffer[shell_input_cursor],
+                trailing * sizeof(uint32_t));
+    }
+
+    shell_input_buffer[shell_input_cursor] = codepoint;
+    shell_input_cursor++;
+    shell_input_length++;
+    shell_preferred_column_valid = false;
+}
+
+/** @brief Insert a translated tab as four spaces. */
+static void shell_insert_tab() {
+    for (size_t i = 0U; i < 4U; i++) {
+        shell_insert_codepoint((uint32_t)' ');
     }
 }
 
-/** @brief Keep the cursor inside the allocated screen model. */
-static void shell_cursor_normalize() {
-    size_t total_cells = shell_screen.columns * shell_screen.rows;
-
-    if (total_cells == 0U) {
+/** @brief Remove the codepoint immediately before the logical cursor. */
+static void shell_backspace() {
+    if (shell_input_cursor == 0U) {
         return;
     }
 
-    while (shell_cursor_index >= total_cells ||
-           shell_input_end_index >= total_cells) {
-        shell_scroll();
+    size_t trailing = shell_input_length - shell_input_cursor;
+    if (trailing > 0U) {
+        memmove(&shell_input_buffer[shell_input_cursor - 1U],
+                &shell_input_buffer[shell_input_cursor],
+                trailing * sizeof(uint32_t));
+    }
+
+    shell_input_cursor--;
+    shell_input_length--;
+    shell_input_buffer[shell_input_length] = 0U;
+    shell_preferred_column_valid = false;
+}
+
+/** @brief Delete the codepoint at the logical cursor without moving the cursor. */
+static void shell_delete() {
+    if (shell_input_cursor >= shell_input_length) {
+        return;
+    }
+
+    size_t trailing = shell_input_length - shell_input_cursor - 1U;
+    if (trailing > 0U) {
+        memmove(&shell_input_buffer[shell_input_cursor],
+                &shell_input_buffer[shell_input_cursor + 1U],
+                trailing * sizeof(uint32_t));
+    }
+
+    shell_input_length--;
+    shell_input_buffer[shell_input_length] = 0U;
+    shell_preferred_column_valid = false;
+}
+
+/** @brief Move the logical cursor one codepoint to the left. */
+static void shell_cursor_left() {
+    if (shell_input_cursor > 0U) {
+        shell_input_cursor--;
+    }
+    shell_preferred_column_valid = false;
+}
+
+/** @brief Move the logical cursor one codepoint to the right. */
+static void shell_cursor_right() {
+    if (shell_input_cursor < shell_input_length) {
+        shell_input_cursor++;
+    }
+    shell_preferred_column_valid = false;
+}
+
+/** @brief Move the logical cursor to the start of the input buffer. */
+static void shell_cursor_home() {
+    shell_input_cursor = 0U;
+    shell_preferred_column_valid = false;
+}
+
+/** @brief Move the logical cursor to the end of the input buffer. */
+static void shell_cursor_end() {
+    shell_input_cursor = shell_input_length;
+    shell_preferred_column_valid = false;
+}
+
+/**
+ * @brief Move the cursor vertically while retaining its preferred visual column.
+ *
+ * @param[in] direction -1 for the previous row or 1 for the next row.
+ */
+static void shell_cursor_vertical(int direction) {
+    size_t columns = shell_screen.columns;
+    if (columns == 0U || (direction != -1 && direction != 1)) {
+        return;
+    }
+
+    size_t absolute_index = shell_input_start_index + shell_input_cursor;
+    size_t current_row = absolute_index / columns;
+    size_t current_column = absolute_index % columns;
+
+    if (!shell_preferred_column_valid) {
+        shell_preferred_column = current_column;
+        shell_preferred_column_valid = true;
+    }
+
+    if (direction < 0) {
+        if (current_row == 0U) {
+            return;
+        }
+        current_row--;
+    } else {
+        current_row++;
+    }
+
+    size_t target = current_row * columns + shell_preferred_column;
+    if (target <= shell_input_start_index) {
+        shell_input_cursor = 0U;
+    } else if (target >= shell_input_start_index + shell_input_length) {
+        shell_input_cursor = shell_input_length;
+    } else {
+        shell_input_cursor = target - shell_input_start_index;
     }
 }
 
 /**
- * @brief Render the copied shell model and cursor overlay.
- * 
+ * @brief Commit the current input and append a fresh prompt on the next screen row.
+ *
+ * @return E_OK on success or an error code when the next prompt cannot be placed.
+ */
+static kerr_t shell_newline() {
+    size_t cursor_index = 0U;
+    K_TRY(shell_rebuild_screen(&cursor_index));
+
+    size_t columns = shell_screen.columns;
+    size_t cell_count = columns * shell_screen.rows;
+    memcpy(shell_history_cells, shell_screen.cells,
+           cell_count * sizeof(uint32_t));
+
+    size_t next_prompt = shell_input_start_index + shell_input_length;
+    size_t column = next_prompt % columns;
+    if (column != 0U) {
+        next_prompt += columns - column;
+    }
+
+    while (next_prompt + (sizeof(shell_prompt) - 1U) >= cell_count) {
+        shell_history_scroll(1U);
+        if (next_prompt < columns) {
+            return E_BADSIZE;
+        }
+        next_prompt -= columns;
+    }
+
+    K_TRY(shell_history_write_prompt(next_prompt));
+
+    memset32(shell_input_buffer, 0U, shell_input_capacity + 1U);
+    shell_input_length = 0U;
+    shell_input_cursor = 0U;
+    shell_preferred_column = 0U;
+    shell_preferred_column_valid = false;
+    return E_OK;
+}
+
+/**
+ * @brief Render a copied shell screen and cursor position.
+ *
  * @param[in] cursor_index Cursor position in the copied model.
  * @return E_OK on success or the renderer error.
  */
@@ -95,7 +300,7 @@ static kerr_t shell_render_snapshot(size_t cursor_index) {
 
 /**
  * @brief Render dirty shell snapshots without blocking the input dispatcher.
- * 
+ *
  * @param[in] arg Unused thread argument.
  */
 static void shell_renderer_thread(void *arg) {
@@ -113,7 +318,7 @@ static void shell_renderer_thread(void *arg) {
             size_t total_cells = shell_screen.columns * shell_screen.rows;
             memcpy(shell_render_screen.cells, shell_screen.cells,
                    total_cells * sizeof(uint32_t));
-            cursor_index = shell_cursor_index;
+            cursor_index = shell_input_start_index + shell_input_cursor;
             shell_dirty = false;
         }
         spinlock_release_irqrestore(&shell_lock, flags);
@@ -134,201 +339,29 @@ static void shell_renderer_thread(void *arg) {
 }
 
 /**
- * @brief Write the shell prompt at the current cursor position.
- * 
- * @return E_OK on success or an error code.
- */
-static kerr_t shell_write_prompt() {
-    shell_cursor_normalize();
-
-    size_t columns = shell_screen.columns;
-    size_t row = shell_cursor_index / columns;
-    size_t column = shell_cursor_index % columns;
-
-    K_TRY(shell_screen_write(&shell_screen, column, row, shell_prompt));
-
-    shell_cursor_index += sizeof(shell_prompt) - 1U;
-    shell_cursor_normalize();
-    shell_input_start_index = shell_cursor_index;
-    shell_input_end_index = shell_cursor_index;
-    return E_OK;
-}
-
-/**
- * @brief Insert one printable Unicode codepoint at the current cursor.
- * 
- * @param[in] codepoint Unicode scalar value to insert.
- */
-static void shell_insert_codepoint(uint32_t codepoint) {
-    if (codepoint < 0x20U || codepoint == 0x7FU ||
-        codepoint > 0x10FFFFU ||
-        (codepoint >= 0xD800U && codepoint <= 0xDFFFU)) {
-        return;
-    }
-
-    shell_cursor_normalize();
-
-    size_t total_cells = shell_screen.columns * shell_screen.rows;
-    while (shell_input_end_index >= total_cells - 1U) {
-        shell_scroll();
-    }
-
-    size_t trailing_cells = shell_input_end_index - shell_cursor_index;
-    if (trailing_cells > 0U) {
-        memmove(&shell_screen.cells[shell_cursor_index + 1U],
-                &shell_screen.cells[shell_cursor_index],
-                trailing_cells * sizeof(uint32_t));
-    }
-
-    shell_screen.cells[shell_cursor_index] = codepoint;
-    shell_cursor_index++;
-    shell_input_end_index++;
-    shell_cursor_normalize();
-}
-
-/** @brief Insert a translated tab as four spaces. */
-static void shell_insert_tab() {
-    for (size_t i = 0U; i < 4U; i++) {
-        shell_insert_codepoint((uint32_t)' ');
-    }
-}
-
-/** @brief Remove the character immediately before the cursor. */
-static void shell_backspace() {
-    if (shell_cursor_index <= shell_input_start_index) {
-        return;
-    }
-
-    size_t trailing_cells = shell_input_end_index - shell_cursor_index;
-    memmove(&shell_screen.cells[shell_cursor_index - 1U],
-            &shell_screen.cells[shell_cursor_index],
-            trailing_cells * sizeof(uint32_t));
-    shell_cursor_index--;
-    shell_input_end_index--;
-    shell_screen.cells[shell_input_end_index] = 0U;
-}
-
-/** @brief Delete the character at the cursor without moving the cursor. */
-static void shell_delete() {
-    if (shell_cursor_index >= shell_input_end_index) {
-        return;
-    }
-
-    size_t trailing_cells = shell_input_end_index - shell_cursor_index - 1U;
-    memmove(&shell_screen.cells[shell_cursor_index],
-            &shell_screen.cells[shell_cursor_index + 1U],
-            trailing_cells * sizeof(uint32_t));
-    shell_input_end_index--;
-    shell_screen.cells[shell_input_end_index] = 0U;
-}
-
-/** @brief Move the cursor one cell to the left within the current input. */
-static void shell_cursor_left() {
-    if (shell_cursor_index > shell_input_start_index) {
-        shell_cursor_index--;
-    }
-}
-
-/** @brief Move the cursor one cell to the right within the current input. */
-static void shell_cursor_right() {
-    if (shell_cursor_index < shell_input_end_index) {
-        shell_cursor_index++;
-    }
-}
-
-/** @brief Move the cursor up one visual row within the current input. */
-static void shell_cursor_up() {
-    size_t columns = shell_screen.columns;
-    if (columns > 0U && shell_cursor_index >= shell_input_start_index + columns) {
-        shell_cursor_index -= columns;
-    }
-}
-
-/** @brief Move the cursor down one visual row within the current input. */
-static void shell_cursor_down() {
-    size_t columns = shell_screen.columns;
-    if (columns > 0U && shell_cursor_index < shell_input_end_index) {
-        size_t target = shell_cursor_index + columns;
-        shell_cursor_index = (target <= shell_input_end_index)
-                                 ? target
-                                 : shell_input_end_index;
-    }
-}
-
-/** @brief Move the cursor to the beginning of the current input line. */
-static void shell_cursor_home() {
-    shell_cursor_index = shell_input_start_index;
-}
-
-/** @brief Move the cursor to the end of the current input line. */
-static void shell_cursor_end() {
-    shell_cursor_index = shell_input_end_index;
-}
-
-/**
- * @brief Finish the current input line and display another prompt.
- * 
- * @return E_OK on success or an error code.
- */
-static kerr_t shell_newline() {
-    shell_cursor_index = shell_input_end_index;
-    size_t column = shell_cursor_index % shell_screen.columns;
-    if (column != 0U) {
-        shell_cursor_index += shell_screen.columns - column;
-    }
-
-    shell_cursor_normalize();
-    return shell_write_prompt();
-}
-
-/**
  * @brief Process translated keyboard events for the interactive shell.
- * 
+ *
  * @param[in] event Translated input event from the input dispatcher.
  * @param[in] context Unused callback context.
  */
 static void shell_input_handler(const input_event_t *event, void *context) {
     (void)context;
 
-    if (!event) {
-        return;
-    }
-
-    if (event->hid.type == HID_EVENT_KEY_RELEASE) {
-        hid_keycode_t released_key = event->hid.key.keycode;
-        if ((size_t)released_key < INPUT_KEY_COUNT) {
-            shell_key_repeat_seen[released_key] = false;
-        }
-        return;
-    }
-
-    if (event->hid.type != HID_EVENT_KEY_PRESS) {
-        return;
-    }
-
-    hid_keycode_t key = event->hid.key.keycode;
-    if ((size_t)key >= INPUT_KEY_COUNT ||
+    if (!event || event->hid.type != HID_EVENT_KEY_PRESS ||
         (event->key_action != INPUT_KEY_ACTION_PRESSED &&
          event->key_action != INPUT_KEY_ACTION_REPEATED)) {
         return;
     }
 
-    /*
-     * PS/2 typematic events can arrive faster than a shell can usefully
-     * process them. Keep the initial press immediate and cap held-key repeats
-     * to a deterministic interval using the driver's millisecond timestamp.
-     */
-    if (event->key_action == INPUT_KEY_ACTION_REPEATED) {
-        uint64_t last_repeat_ms = shell_key_last_repeat_ms[key];
-        if (shell_key_repeat_seen[key] &&
-            (event->hid.timestamp < last_repeat_ms ||
-             event->hid.timestamp - last_repeat_ms < SHELL_KEY_REPEAT_INTERVAL_MS)) {
-            return;
-        }
+    hid_keycode_t key = event->hid.key.keycode;
+    if ((size_t)key >= INPUT_KEY_COUNT) {
+        return;
     }
 
-    shell_key_last_repeat_ms[key] = event->hid.timestamp;
-    shell_key_repeat_seen[key] = true;
+    if (key == KEY_RETURN &&
+        event->key_action != INPUT_KEY_ACTION_PRESSED) {
+        return;
+    }
 
     if (event->unicode_count == 0U &&
         key != KEY_RETURN && key != KEY_BACK && key != KEY_DELETE &&
@@ -343,17 +376,16 @@ static void shell_input_handler(const input_event_t *event, void *context) {
         return;
     }
 
-    kerr_t input_err = E_OK;
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_lock);
     if (!shell_initialized) {
         spinlock_release_irqrestore(&shell_lock, flags);
         return;
     }
 
+    kerr_t input_err = E_OK;
+
     if (key == KEY_RETURN) {
-        if (event->key_action == INPUT_KEY_ACTION_PRESSED) {
-            input_err = shell_newline();
-        }
+        input_err = shell_newline();
     } else if (key == KEY_BACK) {
         shell_backspace();
     } else if (key == KEY_DELETE) {
@@ -363,9 +395,9 @@ static void shell_input_handler(const input_event_t *event, void *context) {
     } else if (key == KEY_RIGHT) {
         shell_cursor_right();
     } else if (key == KEY_UP) {
-        shell_cursor_up();
+        shell_cursor_vertical(-1);
     } else if (key == KEY_DOWN) {
-        shell_cursor_down();
+        shell_cursor_vertical(1);
     } else if (key == KEY_HOME) {
         shell_cursor_home();
     } else if (key == KEY_END) {
@@ -383,17 +415,24 @@ static void shell_input_handler(const input_event_t *event, void *context) {
         }
     }
 
-    shell_dirty = true;
+    size_t cursor_index = 0U;
+    kerr_t render_err = shell_rebuild_screen(&cursor_index);
+    if (!k_failed(render_err)) {
+        shell_dirty = true;
+    } else if (!k_failed(input_err)) {
+        input_err = render_err;
+    }
+
     spinlock_release_irqrestore(&shell_lock, flags);
 
     if (k_failed(input_err)) {
-        log_warn("shell newline failed (%s)", kerr_str(input_err));
+        log_warn("shell input update failed (%s)", kerr_str(input_err));
     }
 }
 
 /**
  * @brief Initialize and display the interactive kernel shell.
- * 
+ *
  * @return E_OK on success or an error code.
  */
 kerr_t shell_init() {
@@ -408,7 +447,15 @@ kerr_t shell_init() {
 
     size_t columns = (size_t)(size.width / 8U);
     size_t rows = (size_t)(size.height / 16U);
-    if (rows <= SHELL_PROMPT_ROW) {
+    if (rows <= SHELL_PROMPT_ROW ||
+        columns > SIZE_MAX / rows ||
+        columns * rows >= SIZE_MAX / sizeof(uint32_t)) {
+        return E_NOTAVAIL;
+    }
+
+    size_t cell_count = columns * rows;
+    if (cell_count <= SHELL_PROMPT_ROW * columns +
+                          (sizeof(shell_prompt) - 1U) + 1U) {
         return E_NOTAVAIL;
     }
 
@@ -419,13 +466,21 @@ kerr_t shell_init() {
         return err;
     }
 
-    err = shell_screen_clear(&shell_screen);
+    virt_addr_t memory = 0U;
+    err = kzalloc(cell_count * sizeof(uint32_t), &memory);
     if (k_failed(err)) {
-        shell_screen_destroy(&shell_render_screen);
-        shell_screen_destroy(&shell_screen);
-        return err;
+        goto fail_screens;
     }
+    shell_history_cells = (uint32_t *)memory;
 
+    memory = 0U;
+    err = kzalloc((cell_count + 1U) * sizeof(uint32_t), &memory);
+    if (k_failed(err)) {
+        goto fail_history;
+    }
+    shell_input_buffer = (uint32_t *)memory;
+
+    memset32(shell_history_cells, 0U, cell_count);
     err = shell_screen_write(&shell_screen, 0U, SHELL_HEADER_ROW,
                              "NanoOS Kernel Shell");
     if (!k_failed(err)) {
@@ -437,34 +492,40 @@ kerr_t shell_init() {
                                  "Keyboard layout: de-DE");
     }
     if (k_failed(err)) {
-        shell_screen_destroy(&shell_render_screen);
-        shell_screen_destroy(&shell_screen);
-        return err;
+        goto fail_input;
     }
 
-    shell_cursor_index = SHELL_PROMPT_ROW * columns;
-    err = shell_write_prompt();
+    memcpy(shell_history_cells, shell_screen.cells,
+           cell_count * sizeof(uint32_t));
+
+    size_t prompt_start = SHELL_PROMPT_ROW * columns;
+    err = shell_history_write_prompt(prompt_start);
     if (k_failed(err)) {
-        shell_screen_destroy(&shell_render_screen);
-        shell_screen_destroy(&shell_screen);
-        return err;
+        goto fail_input;
+    }
+
+    shell_input_length = 0U;
+    shell_input_cursor = 0U;
+    shell_preferred_column = 0U;
+    shell_preferred_column_valid = false;
+
+    size_t cursor_index = 0U;
+    err = shell_rebuild_screen(&cursor_index);
+    if (k_failed(err)) {
+        goto fail_input;
     }
 
     err = shell_renderer_init();
     if (k_failed(err)) {
-        shell_screen_destroy(&shell_render_screen);
-        shell_screen_destroy(&shell_screen);
-        return err;
+        goto fail_input;
     }
 
     memcpy(shell_render_screen.cells, shell_screen.cells,
-           columns * rows * sizeof(uint32_t));
-    err = shell_render_snapshot(shell_cursor_index);
+           cell_count * sizeof(uint32_t));
+    err = shell_render_snapshot(cursor_index);
     if (k_failed(err)) {
         shell_renderer_deinit();
-        shell_screen_destroy(&shell_render_screen);
-        shell_screen_destroy(&shell_screen);
-        return err;
+        goto fail_input;
     }
 
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_lock);
@@ -480,9 +541,7 @@ kerr_t shell_init() {
         shell_initialized = false;
         spinlock_release_irqrestore(&shell_lock, flags);
         shell_renderer_deinit();
-        shell_screen_destroy(&shell_render_screen);
-        shell_screen_destroy(&shell_screen);
-        return err;
+        goto fail_input;
     }
 
     err = input_register_handler(shell_input_handler, NULL);
@@ -491,11 +550,28 @@ kerr_t shell_init() {
         shell_initialized = false;
         spinlock_release_irqrestore(&shell_lock, flags);
         shell_renderer_deinit();
-        shell_screen_destroy(&shell_render_screen);
-        shell_screen_destroy(&shell_screen);
-        return err;
+        goto fail_input;
     }
 
     log_info("interactive shell input handler registered");
     return E_OK;
+
+fail_input:
+    if (shell_input_buffer) {
+        (void)kfree((virt_addr_t)shell_input_buffer);
+        shell_input_buffer = NULL;
+    }
+fail_history:
+    if (shell_history_cells) {
+        (void)kfree((virt_addr_t)shell_history_cells);
+        shell_history_cells = NULL;
+    }
+fail_screens:
+    (void)shell_screen_destroy(&shell_render_screen);
+    (void)shell_screen_destroy(&shell_screen);
+    shell_input_capacity = 0U;
+    shell_input_length = 0U;
+    shell_input_cursor = 0U;
+    shell_input_start_index = 0U;
+    return err;
 }
