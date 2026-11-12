@@ -230,7 +230,7 @@ const keyboard_layout_t *keyboard_get_layout() { return active_layout; }
 /**
  * @brief Translate a HID keycode to a Unicode codepoint using the active layout and modifier states.
  *
- * @param[in] key The HID keycode to translate.
+ * @param[in] key The HID keycode.
  * @param[in] shift True if the shift modifier is active.
  * @param[in] altgr True if the AltGr modifier is active.
  * @return The translated Unicode codepoint, or 0 if translation is not available.
@@ -277,7 +277,7 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
             if (down && !was_down && key == KEY_NUMLOCK)
                 key_state.num_lock = !key_state.num_lock;
             update_modifiers();
-            if (down && out->key_action != INPUT_KEY_ACTION_REPEATED) {
+            if (down && out->key_action != INPUT_KEY_ACTION_NONE) {
                 bool shift = key_state.shift;
                 if (is_letter(key) && key_state.caps_lock)
                     shift = !shift;
@@ -286,7 +286,9 @@ static void update_state(const hid_event_t *event, input_event_t *out) {
                                          ? 0
                                          : keyboard_translate_key(key, shift, key_state.altgr);
 
-                if (codepoint != 0) {
+                if (codepoint != 0 &&
+                    (out->key_action != INPUT_KEY_ACTION_REPEATED ||
+                     !is_dead_key(codepoint))) {
                     if (is_dead_key(codepoint)) {
                         out->dead_key_accent = codepoint;
                         /*
