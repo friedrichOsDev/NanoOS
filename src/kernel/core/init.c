@@ -93,7 +93,7 @@ static void kernel_init_thread(void *arg) {
     }
     log_info("input dispatcher started");
 
-    version_splash_show("0.0.3", 10000);
+    version_splash_show("0.0.3", 1000);
 
     err = shell_init();
     if (k_failed(err)) {
@@ -111,6 +111,7 @@ static void kernel_init_thread(void *arg) {
  * @param[in] magic Multiboot2 magic number.
  * @param[in] info_ptr Pointer to the multiboot2 information structure.
  */
+void kernel_init(const uint64_t magic, const uint64_t info_ptr); // first declaration
 void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     serial_init();
     log_info("start");

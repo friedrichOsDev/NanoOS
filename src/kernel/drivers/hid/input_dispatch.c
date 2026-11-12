@@ -8,6 +8,7 @@
 #include <kernel/sync.h>
 #include <sched/process.h>
 #include <sched/thread.h>
+#include <sched/sched.h>
 
 #define INPUT_MAX_HANDLERS 16
 
