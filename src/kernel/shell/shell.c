@@ -31,6 +31,10 @@ static size_t shell_input_end_index;
 static spinlock_t shell_lock = SPINLOCK_INIT;
 static bool shell_initialized;
 static bool shell_dirty;
+static uint64_t shell_key_last_repeat_ms[INPUT_KEY_COUNT];
+static bool shell_key_repeat_seen[INPUT_KEY_COUNT];
+
+#define SHELL_KEY_REPEAT_INTERVAL_MS 45U
 
 /** @brief Scroll the shell screen up by one character row. */
 static void shell_scroll() {
@@ -286,13 +290,46 @@ static kerr_t shell_newline() {
 static void shell_input_handler(const input_event_t *event, void *context) {
     (void)context;
 
-    if (!event || event->hid.type != HID_EVENT_KEY_PRESS ||
+    if (!event) {
+        return;
+    }
+
+    if (event->hid.type == HID_EVENT_KEY_RELEASE) {
+        hid_keycode_t released_key = event->hid.key.keycode;
+        if ((size_t)released_key < INPUT_KEY_COUNT) {
+            shell_key_repeat_seen[released_key] = false;
+        }
+        return;
+    }
+
+    if (event->hid.type != HID_EVENT_KEY_PRESS) {
+        return;
+    }
+
+    hid_keycode_t key = event->hid.key.keycode;
+    if ((size_t)key >= INPUT_KEY_COUNT ||
         (event->key_action != INPUT_KEY_ACTION_PRESSED &&
          event->key_action != INPUT_KEY_ACTION_REPEATED)) {
         return;
     }
 
-    hid_keycode_t key = event->hid.key.keycode;
+    /*
+     * PS/2 typematic events can arrive faster than a shell can usefully
+     * process them. Keep the initial press immediate and cap held-key repeats
+     * to a deterministic interval using the driver's millisecond timestamp.
+     */
+    if (event->key_action == INPUT_KEY_ACTION_REPEATED) {
+        uint64_t last_repeat_ms = shell_key_last_repeat_ms[key];
+        if (shell_key_repeat_seen[key] &&
+            (event->hid.timestamp < last_repeat_ms ||
+             event->hid.timestamp - last_repeat_ms < SHELL_KEY_REPEAT_INTERVAL_MS)) {
+            return;
+        }
+    }
+
+    shell_key_last_repeat_ms[key] = event->hid.timestamp;
+    shell_key_repeat_seen[key] = true;
+
     if (event->unicode_count == 0U &&
         key != KEY_RETURN && key != KEY_BACK && key != KEY_DELETE &&
         key != KEY_LEFT && key != KEY_RIGHT && key != KEY_UP &&

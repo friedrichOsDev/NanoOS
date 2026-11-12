@@ -62,7 +62,6 @@ static size_t renderer_encode_utf8(uint32_t codepoint, char output[5]) {
  * 
  * @param[in] screen Character-cell screen.
  * @param[in] index Linear cell index.
- * @param[in] cursor_index Cursor overlay position.
  * @return Visible Unicode codepoint.
  */
 static uint32_t renderer_visible_cell(const shell_screen_t *screen,
@@ -84,7 +83,6 @@ static uint32_t renderer_visible_cell(const shell_screen_t *screen,
  * @param[in] row Row to update.
  * @param[in] first_column First column in the run.
  * @param[in] column_count Number of cells in the run.
- * @param[in] cursor_index Cursor overlay position.
  * @return E_OK on success or an error code.
  */
 static kerr_t renderer_draw_run(canvas_t *canvas,
