@@ -1,6 +1,19 @@
 /**
+ * @file screen.c
  * @brief Character-cell screen model and UTF-8 text placement.
- * 
+ * @author friedrichOsDev
+ */
+
+#include <lib/util/mem.h>
+#include <shell/screen.h>
+
+#include <mm/memory.h>
+
+/**
+ * @brief Decode one UTF-8 codepoint.
+ *
+ * Invalid sequences are consumed as U+FFFD to keep the screen model valid.
+ *
  * @param[in,out] input Current input pointer.
  * @return Decoded Unicode codepoint.
  */
@@ -49,7 +62,7 @@ static uint32_t screen_decode_utf8(const uint8_t **input) {
 
 /**
  * @brief Initialize a character-cell screen.
- * 
+ *
  * @param[out] screen Screen model to initialize.
  * @param[in] columns Number of character columns.
  * @param[in] rows Number of character rows.
@@ -76,7 +89,7 @@ kerr_t shell_screen_init(shell_screen_t *screen, size_t columns, size_t rows) {
 
 /**
  * @brief Clear all cells to spaces.
- * 
+ *
  * @param[in,out] screen Screen model.
  * @return E_OK on success or E_INVAL for an invalid screen.
  */
@@ -91,7 +104,10 @@ kerr_t shell_screen_clear(shell_screen_t *screen) {
 
 /**
  * @brief Write UTF-8 text into the screen model, wrapping at the right edge.
- * 
+ *
+ * Newline moves to the first column of the next row. Text outside the screen
+ * is clipped. This function only updates character data; it does not render.
+ *
  * @param[in,out] screen Target screen model.
  * @param[in] column Starting column.
  * @param[in] row Starting row.
@@ -144,7 +160,7 @@ kerr_t shell_screen_write(shell_screen_t *screen, size_t column, size_t row, con
 
 /**
  * @brief Release the screen cell buffer.
- * 
+ *
  * @param[in,out] screen Screen model to destroy.
  * @return E_OK on success or E_INVAL for a NULL model.
  */
