@@ -4,8 +4,7 @@
     "runArgs": [
         "-e", "DISPLAY=${env:DISPLAY}",
         "-v", "/tmp/.X11-unix:/tmp/.X11-unix:rw",
-        "--ipc=host",
-        "--userns=keep-id"
+        "--ipc=host"
     ],
     "containerEnv": {
         "DISPLAY": "${env:DISPLAY}"
