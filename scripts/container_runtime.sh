@@ -105,7 +105,7 @@ nanoos_run_make() {
     else
         # Docker has no portable equivalent of Podman's keep-id user namespace.
         # Run with the host numeric IDs to avoid root-owned build artifacts.
-        run_args+=(--user "$(id -u):$(id -g)")
+        run_args+=(--user "$(id -u):$(id -g)" --env HOME=/tmp)
     fi
 
     if [[ -t 0 && -t 1 ]]; then
