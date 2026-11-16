@@ -236,7 +236,7 @@ NanoOS uses a Docker-based development environment to provide a reproducible cro
 ### Host Requirements
 
 - Git
-- Docker Engine or Docker Desktop
+- Docker Engine / Docker Desktop, or Podman
 - Visual Studio Code
 - Visual Studio Code Dev Containers extension
 
@@ -276,7 +276,7 @@ cd NanoOS
 
 ### 2. Build the Development Container
 
-NanoOS provides separate scripts for building the development container on Linux and macOS.
+NanoOS provides shared Docker/Podman runtime detection and separate scripts for building the development container on Linux and macOS.
 
 **Linux:**
 
@@ -290,7 +290,7 @@ NanoOS provides separate scripts for building the development container on Linux
 ./scripts/mac/build_docker.sh
 ```
 
-These scripts build the Docker image named `nano-cross`, which is used by the VS Code development container.
+These scripts build the development image named `nano-cross`, which is used by the VS Code development container. Docker is preferred when available; if its daemon is unavailable, the scripts automatically try Podman. You can force a runtime with `NANOOS_CONTAINER_ENGINE=docker` or `NANOOS_CONTAINER_ENGINE=podman`.
 
 ### 3. Open the Project in VS Code
 
@@ -308,7 +308,7 @@ Then execute:
 Dev Containers: Reopen in Container
 ```
 
-VS Code will use the existing `nano-cross` image.
+VS Code will use the existing `nano-cross` image. For Podman, use `.devcontainer/devcontainer.podman.json` so the container gets the appropriate `keep-id` user namespace setting. The default `.devcontainer/devcontainer.json` is compatible with Docker.
 
 After the container has started, the cross-compiler and development tools should be available.
 
@@ -318,7 +318,7 @@ After the container has started, the cross-compiler and development tools should
 
 NanoOS uses GNU Make for compiling the kernel and generating bootable ISO images.
 
-All commands below are intended to be executed inside the development container.
+All commands below are intended to be executed inside the development container. The host-side run scripts automatically build `nano-cross` if the image is missing. Running a script without Make arguments uses the Makefile's default target (`iso`); it no longer forces a clean rebuild. Pass `clean iso` explicitly when you want a clean build.
 
 ### Release Build
 
