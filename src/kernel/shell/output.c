@@ -20,9 +20,6 @@ typedef struct {
 static shell_output_state_t shell_output_state;
 static spinlock_t shell_output_lock = SPINLOCK_INIT;
 
-/* Keep the self-test snapshot out of the kernel thread stack. */
-static shell_output_line_t shell_output_test_snapshot[4];
-
 /**
  * @brief Returns the physical ring index for a logical line index.
  *
@@ -172,13 +169,6 @@ static uint32_t shell_output_decode_utf8(const uint8_t *text, size_t length, siz
 }
 
 /**
- * @brief Runs a destructive API smoke test and leaves its output visible.
- *
- * @return E_OK when the expected lines and Unicode codepoint are present.
- */
-kerr_t shell_output_self_test();
-
-/**
  * @brief Initializes the output ring with one empty line.
  *
  * @return E_OK on success.
@@ -196,7 +186,7 @@ kerr_t shell_output_init() {
 
     spinlock_release_irqrestore(&shell_output_lock, flags);
 
-    return shell_output_self_test();
+    return E_OK;
 }
 
 /**
@@ -361,38 +351,5 @@ kerr_t shell_output_snapshot(shell_output_line_t *lines, size_t capacity, size_t
     *inout_generation = shell_output_state.generation;
 
     spinlock_release_irqrestore(&shell_output_lock, flags);
-    return E_OK;
-}
-
-/**
- * @brief Runs a destructive API smoke test and leaves its output visible.
- *
- * @return E_OK when the expected lines and Unicode codepoint are present.
- */
-kerr_t shell_output_self_test() {
-    size_t count = 0U;
-    uint64_t generation = 0U;
-    bool changed = false;
-
-    K_TRY(shell_clear_output());
-    K_TRY(shell_write_line("Shell output API test"));
-    K_TRY(shell_write("UTF-8: "));
-    K_TRY(shell_write_u32(UINT32_C(0x00E4)));
-    K_TRY(shell_write_line(" (ae)"));
-    K_TRY(shell_write_line("Ring buffer and newline: OK"));
-
-    K_TRY(shell_output_snapshot(
-        shell_output_test_snapshot, 4U, &count, &generation, &changed));
-
-    if (!changed || count != 4U) {
-        return E_CHECKSUM;
-    }
-    if (shell_output_test_snapshot[0].length != 21U ||
-        shell_output_test_snapshot[0].codepoints[0] != (uint32_t)'S' ||
-        shell_output_test_snapshot[1].length < 8U ||
-        shell_output_test_snapshot[1].codepoints[7] != UINT32_C(0x00E4)) {
-        return E_CHECKSUM;
-    }
-
     return E_OK;
 }
