@@ -32,23 +32,23 @@ typedef struct {
 
 /** @brief Virtual Screen representation (the renderer draws the shell screen every frame) */
 typedef struct {
-    uint8_t font_scale;   /**< The font scale (between 1U and 255U, but who would ever use 255U ;) ) */
-    uint64_t lines;       /**< Vertical line count (screen height / font height at the scale) */
-    uint64_t columns;     /**< Horizontal column count (screen width / font width at the scale) */
-    uint64_t buffer_size; /**< The screen buffer size (lines * columns) */
-    shell_cell_t *buffer; /**< Heap allocated screen buffer (buffer size * sizeof(shell_cell_t)) */
-    bool is_dirty;        /**< Global fast-check flag: true if at least one line changed */
-    bool *dirty_lines;    /**< Heap allocated array of size (lines * sizeof(bool)) */
-    uint64_t pixel_width; /**< Current screen width in pixels */
-    uint64_t pixel_height; /**< Current screen height in pixels */
-    uint64_t glyph_width; /**< Unscaled glyph width in pixels */
-    uint64_t glyph_height; /**< Unscaled glyph height in pixels */
-    uint64_t input_scroll; /**< First input codepoint currently visible */
+    uint8_t font_scale;           /**< The font scale (between 1U and 255U, but who would ever use 255U ;) ) */
+    uint64_t lines;               /**< Vertical line count (screen height / font height at the scale) */
+    uint64_t columns;             /**< Horizontal column count (screen width / font width at the scale) */
+    uint64_t buffer_size;         /**< The screen buffer size (lines * columns) */
+    shell_cell_t *buffer;         /**< Heap allocated screen buffer (buffer size * sizeof(shell_cell_t)) */
+    bool is_dirty;                /**< Global fast-check flag: true if at least one line changed */
+    bool *dirty_lines;            /**< Heap allocated array of size (lines * sizeof(bool)) */
+    uint64_t pixel_width;         /**< Current screen width in pixels */
+    uint64_t pixel_height;        /**< Current screen height in pixels */
+    uint64_t glyph_width;         /**< Unscaled glyph width in pixels */
+    uint64_t glyph_height;        /**< Unscaled glyph height in pixels */
+    uint64_t input_scroll;        /**< First input codepoint currently visible */
     uint64_t input_visible_count; /**< Number of visible input codepoints */
-    uint64_t prompt_columns; /**< Number of prompt cells currently visible */
-    uint64_t cursor_column; /**< Cursor column in the screen grid */
-    uint64_t cursor_line; /**< Cursor line in the screen grid */
-    bool cursor_visible; /**< Whether the cursor is inside the visible grid */
+    uint64_t prompt_columns;      /**< Number of prompt cells currently visible */
+    uint64_t cursor_column;       /**< Cursor column in the screen grid */
+    uint64_t cursor_line;         /**< Cursor line in the screen grid */
+    bool cursor_visible;          /**< Whether the cursor is inside the visible grid */
 } shell_screen_t;
 
 extern bool shell_initialized;

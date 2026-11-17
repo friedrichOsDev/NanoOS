@@ -16,13 +16,9 @@ bool shell_initialized = false;
  */
 kerr_t shell_init(void) {
     K_TRY(shell_input_init());
-    shell_initialized = true;
+    K_TRY(shell_init_renderer());
 
-    kerr_t err = shell_init_renderer();
-    if (k_failed(err)) {
-        shell_initialized = false;
-        return err;
-    }
+    shell_initialized = true;
 
     log_info("shell renderer initialized");
     return E_OK;

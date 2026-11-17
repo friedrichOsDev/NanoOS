@@ -13,8 +13,8 @@
 
 #define SHELL_FONT_SCALE 1U
 #define SHELL_RENDER_INTERVAL_MS 16U
-#define SHELL_PROMPT "> "
-#define SHELL_PROMPT_LENGTH 2U
+#define SHELL_PROMPT "friedrichOsDev@nanoOS> "
+#define SHELL_PROMPT_LENGTH 23U
 #define SHELL_INPUT_TEXT_CAPACITY (SHELL_INPUT_BUFFER_SIZE * 4U + 1U)
 
 static shell_screen_t shell_screen;
@@ -169,12 +169,8 @@ static kerr_t shell_screen_configure(uint64_t width, uint64_t height) {
     return E_OK;
 }
 
-/**
- * @brief Composes the visible prompt and input into the bottom screen row.
- *
- * The prompt remains fixed while the input viewport follows the logical cursor.
- */
-static void compose_frame(void) {
+/** @brief Composes the visible prompt and input into the bottom screen row. */
+static void compose_frame() {
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_render_lock);
     if (!shell_screen.buffer || !shell_screen.dirty_lines ||
         shell_screen.lines == 0U || shell_screen.columns == 0U) {
@@ -251,10 +247,8 @@ static void compose_frame(void) {
     spinlock_release_irqrestore(&shell_render_lock, flags);
 }
 
-/**
- * @brief Renders the composed bottom input row into the shell compositor layer.
- */
-static void render_frame(void) {
+/** @brief Renders the composed bottom input row into the shell compositor layer. */
+static void render_frame() {
     char prompt_text[SHELL_PROMPT_LENGTH + 1U];
     uint64_t input_length = 0U;
     uint64_t prompt_columns = 0U;
@@ -381,8 +375,6 @@ static void render_frame(void) {
 /**
  * @brief Main shell renderer thread.
  *
- * It only snapshots and displays input state; it never handles keyboard events.
- *
  * @param[in] arg Unused thread argument.
  */
 void shell_render_thread(void *arg) {
@@ -425,7 +417,7 @@ void shell_render_thread(void *arg) {
  *
  * @return E_OK on success, or an error code.
  */
-kerr_t shell_init_renderer(void) {
+kerr_t shell_init_renderer() {
     if (shell_renderer_initialized) {
         return E_OK;
     }
