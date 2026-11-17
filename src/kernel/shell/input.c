@@ -14,7 +14,7 @@ static bool shell_input_dirty = true;
 
 /** @brief Clear input buffer. */
 static void shell_input_clear() {
-    if (shell_shell_input_buffer.size == 0 && shell_shell_input_buffer.cursor_pos == 0)
+    if (shell_input_buffer.size == 0 && shell_input_buffer.cursor_pos == 0)
         return;
     shell_input_buffer.size = 0;
     shell_input_buffer.cursor_pos = 0;
@@ -74,16 +74,16 @@ static void shell_cursor_right() {
 
 /** @brief Handle cursor home pressed. */
 static void shell_cursor_home() {
-    if (shell_shell_input_buffer.cursor_pos != 0) {
-        shell_shell_input_buffer.cursor_pos = 0;
+    if (shell_input_buffer.cursor_pos != 0) {
+        shell_input_buffer.cursor_pos = 0;
         shell_input_dirty = true;
     }
 }
 
 /** @brief Handle cursor end pressed. */
 static void shell_cursor_end() {
-    if (shell_shell_input_buffer.cursor_pos != shell_shell_input_buffer.size) {
-        shell_shell_input_buffer.cursor_pos = shell_shell_input_buffer.size;
+    if (shell_input_buffer.cursor_pos != shell_input_buffer.size) {
+        shell_input_buffer.cursor_pos = shell_input_buffer.size;
         shell_input_dirty = true;
     }
 }
@@ -99,17 +99,17 @@ static void shell_tab() {
  * @param[in] value Character to insert.
  */
 static void shell_insert_u32(uint32_t value) {
-    if (shell_shell_input_buffer.size >= SHELL_INPUT_BUFFER_SIZE) {
+    if (shell_input_buffer.size >= SHELL_INPUT_BUFFER_SIZE) {
         return;
     }
 
-    for (uint64_t i = shell_shell_input_buffer.size; i > shell_shell_input_buffer.cursor_pos; i--) {
-        shell_shell_input_buffer.buffer[i] = shell_shell_input_buffer.buffer[i - 1];
+    for (uint64_t i = shell_input_buffer.size; i > shell_input_buffer.cursor_pos; i--) {
+        shell_input_buffer.buffer[i] = shell_input_buffer.buffer[i - 1];
     }
 
-    shell_shell_input_buffer.buffer[shell_shell_input_buffer.cursor_pos] = value;
-    shell_shell_input_buffer.cursor_pos++;
-    shell_shell_input_buffer.size++;
+    shell_input_buffer.buffer[shell_input_buffer.cursor_pos] = value;
+    shell_input_buffer.cursor_pos++;
+    shell_input_buffer.size++;
     shell_input_dirty = true;
 }
 
@@ -227,10 +227,10 @@ bool shell_sync_input_buffer(shell_input_buffer_t *out_buffer) {
         return false;
     }
 
-    out_buffer->size = shell_shell_input_buffer.size;
-    out_buffer->cursor_pos = shell_shell_input_buffer.cursor_pos;
-    for (uint64_t i = 0; i < shell_shell_input_buffer.size; i++) {
-        out_buffer->buffer[i] = shell_shell_input_buffer.buffer[i];
+    out_buffer->size = shell_input_buffer.size;
+    out_buffer->cursor_pos = shell_input_buffer.cursor_pos;
+    for (uint64_t i = 0; i < shell_input_buffer.size; i++) {
+        out_buffer->buffer[i] = shell_input_buffer.buffer[i];
     }
 
     shell_input_dirty = false;
