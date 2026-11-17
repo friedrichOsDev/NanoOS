@@ -61,7 +61,7 @@ The kernel is built as a freestanding executable using a custom `x86_64-elf` cro
 | Build system | GNU Make |
 | Virtualization | QEMU |
 | Firmware emulation | OVMF |
-| Development environment | Docker / VS Code Dev Containers |
+| Development environment | Docker / Podman / VSCodium Dev Containers OSS |
 | Documentation | Doxygen |
 
 ---
@@ -236,9 +236,9 @@ NanoOS uses a Docker-based development environment to provide a reproducible cro
 ### Host Requirements
 
 - Git
-- Docker Engine or Docker Desktop
-- Visual Studio Code
-- Visual Studio Code Dev Containers extension
+- Docker Engine / Docker Desktop, or Podman
+- VSCodium
+- Dev Containers OSS extension
 
 ### Development Container
 
@@ -276,7 +276,7 @@ cd NanoOS
 
 ### 2. Build the Development Container
 
-NanoOS provides separate scripts for building the development container on Linux and macOS.
+NanoOS provides shared Docker/Podman runtime detection and separate scripts for building the development container on Linux and macOS.
 
 **Linux:**
 
@@ -290,25 +290,23 @@ NanoOS provides separate scripts for building the development container on Linux
 ./scripts/mac/build_docker.sh
 ```
 
-These scripts build the Docker image named `nano-cross`, which is used by the VS Code development container.
+These scripts build the development image named `nano-cross`, which is used by the VS Code development container. Docker is preferred when available; if its daemon is unavailable, the scripts automatically try Podman. You can force a runtime with `NANOOS_CONTAINER_ENGINE=docker` or `NANOOS_CONTAINER_ENGINE=podman`.
 
-### 3. Open the Project in VS Code
+### 3. Open the Project in VSCodium
 
-Open the repository:
+NanoOS includes a launcher for **VSCodium with Dev Containers OSS**. It detects the available runtime, selects the matching configuration, prepares the container image if needed, and opens the repository:
 
 ```bash
-code .
+bash ./scripts/devcontainer.sh
 ```
 
-Make sure the VS Code Dev Containers extension is installed.
+Make sure the **Dev Containers OSS** extension is installed. After VSCodium opens, run **Dev Containers: Reopen Folder in Container** from the Command Palette to start or attach to the selected development container.
 
-Then execute:
+The launcher supports Docker and rootless Podman on Linux. For Podman, Dev Containers OSS communicates through the Docker-compatible Podman API socket, so a Docker-compatible `docker` CLI is required (for example, the `podman-docker` package). The launcher activates the user Podman socket and sets `DOCKER_HOST` for the VSCodium process.
 
-```text
-Dev Containers: Reopen in Container
-```
+The runtime-specific templates are stored in `.devcontainer/devcontainer.docker.json` and `.devcontainer/devcontainer.podman.json`. The launcher generates the standard `.devcontainer/devcontainer.json` from the selected template because Dev Containers OSS expects that canonical filename.
 
-VS Code will use the existing `nano-cross` image.
+**Important:** Completely close existing VSCodium windows before switching between Docker and Podman. An already-running VSCodium process keeps its original environment, including `DOCKER_HOST`; launching another window cannot reliably change that process environment.
 
 After the container has started, the cross-compiler and development tools should be available.
 
@@ -318,7 +316,7 @@ After the container has started, the cross-compiler and development tools should
 
 NanoOS uses GNU Make for compiling the kernel and generating bootable ISO images.
 
-All commands below are intended to be executed inside the development container.
+All commands below are intended to be executed inside the development container. The host-side run scripts automatically build `nano-cross` if the image is missing. Running a script without Make arguments uses the Makefile's default target (`iso`); it no longer forces a clean rebuild. Pass `clean iso` explicitly when you want a clean build.
 
 ### Release Build
 

@@ -68,13 +68,13 @@ RUN wget https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.gz \
 # ==========================================
 # STAGE 2: ASM Formatters Builder
 # ==========================================
-FROM golang:1.22-alpine AS builder
+FROM golang:1.22.12-alpine3.21 AS builder
 
 RUN apk add --no-cache git
 ENV GOPATH=/go
 
-RUN go install github.com/klauspost/asmfmt/cmd/asmfmt@latest
-RUN go install github.com/yamnikov-oleg/nasmfmt@latest
+RUN go install github.com/klauspost/asmfmt/cmd/asmfmt@v1.3.2
+RUN go install github.com/yamnikov-oleg/nasmfmt@e010ffea9224f500c3d18e64329e079cf71f0e85
 
 RUN ls -la /go/bin/
 
