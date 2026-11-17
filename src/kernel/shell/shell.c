@@ -5,7 +5,7 @@
  */
 
 #include "_shell.h"
-#include <shell/shell.h>
+#include <shell/shell.h>\n#include <shell/output.h>
 
 bool shell_initialized = false;
 
@@ -19,7 +19,7 @@ kerr_t shell_init() {
         return E_OK;
     }
 
-    K_TRY(shell_input_init());
+    K_TRY(shell_output_init());\n\n    kerr_t input_err = shell_input_init();\n    if (k_failed(input_err)) {\n        (void)shell_output_deinit();\n        return input_err;\n    }
 
     kerr_t err = shell_init_renderer();
     if (k_failed(err)) {
@@ -45,5 +45,5 @@ kerr_t shell_deinit() {
 
     (void)shell_input_deinit();
 
-    return shell_deinit_renderer();
+    kerr_t err = shell_deinit_renderer();\n    if (k_failed(err)) {\n        return err;\n    }\n\n    return shell_output_deinit();
 }
