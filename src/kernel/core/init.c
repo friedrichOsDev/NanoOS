@@ -107,8 +107,33 @@ static void kernel_init_thread(void *arg) {
     err = shell_init();
     if (k_failed(err)) {
         log_error("failed to initialize shell (%s)", kerr_str(err));
+    } else {
+        log_info("shell initialized");
+
+        /*
+         * Exercise the output API after the renderer has started.
+         * The lines should appear above the fixed input prompt.
+         */
+        kerr_t output_test_err = shell_write_line("NanoOS shell output renderer");
+        if (!k_failed(output_test_err)) {
+            output_test_err = shell_write_line("Compositor integration: OK");
+        }
+        if (!k_failed(output_test_err)) {
+            output_test_err = shell_write("UTF-8 test: ");
+        }
+        if (!k_failed(output_test_err)) {
+            output_test_err = shell_write_u32(UINT32_C(0x00E4));
+        }
+        if (!k_failed(output_test_err)) {
+            output_test_err = shell_write_line(" / ");
+        }
+
+        if (k_failed(output_test_err)) {
+            log_error("shell output rendering test failed (%s)", kerr_str(output_test_err));
+        } else {
+            log_info("shell output rendering test queued");
+        }
     }
-    log_info("shell initialized");
 
     for (;;) {
         thread_yield();
