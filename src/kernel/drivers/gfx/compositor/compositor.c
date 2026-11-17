@@ -1213,6 +1213,25 @@ double compositor_get_delta_time() {
 }
 
 /**
+ * @brief Retrieves the unscaled dimensions of the active embedded font glyph.
+ *
+ * @param[out] out Destination for the glyph dimensions.
+ * @return E_OK on success, or an error code if the font is unavailable.
+ */
+kerr_t compositor_get_font_size(rect_size_t *out) {
+    if (!out) {
+        return E_INVAL;
+    }
+    if (!font_init()) {
+        return E_NOINIT;
+    }
+
+    out->width = builtin_font.width;
+    out->height = builtin_font.height;
+    return E_OK;
+}
+
+/**
  * @brief Retrieves the screen width of the active compositor video mode.
  *
  * @return Width in pixels.

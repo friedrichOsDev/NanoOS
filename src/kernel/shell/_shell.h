@@ -39,6 +39,19 @@ typedef struct {
     shell_cell_t *buffer; /**< Heap allocated screen buffer (buffer size * sizeof(shell_cell_t)) */
     bool is_dirty;        /**< Global fast-check flag: true if at least one line changed */
     bool *dirty_lines;    /**< Heap allocated array of size (lines * sizeof(bool)) */
+    uint64_t pixel_width; /**< Current screen width in pixels */
+    uint64_t pixel_height; /**< Current screen height in pixels */
+    uint64_t glyph_width; /**< Unscaled glyph width in pixels */
+    uint64_t glyph_height; /**< Unscaled glyph height in pixels */
+    uint64_t input_scroll; /**< First input codepoint currently visible */
+    uint64_t input_visible_count; /**< Number of visible input codepoints */
+    uint64_t prompt_columns; /**< Number of prompt cells currently visible */
+    uint64_t cursor_column; /**< Cursor column in the screen grid */
+    uint64_t cursor_line; /**< Cursor line in the screen grid */
+    bool cursor_visible; /**< Whether the cursor is inside the visible grid */
 } shell_screen_t;
 
 extern bool shell_initialized;
+
+kerr_t shell_init_renderer();
+void shell_render_thread(void *arg);
