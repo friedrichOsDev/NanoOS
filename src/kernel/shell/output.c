@@ -20,6 +20,9 @@ typedef struct {
 static shell_output_state_t shell_output_state;
 static spinlock_t shell_output_lock = SPINLOCK_INIT;
 
+/* Keep the self-test snapshot out of the kernel thread stack. */
+static shell_output_line_t shell_output_test_snapshot[4];
+
 /**
  * @brief Returns the physical ring index for a logical line index.
  *
@@ -186,8 +189,11 @@ static uint32_t shell_output_decode_utf8(
 kerr_t shell_output_init(void) {
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_output_lock);
 
-    shell_output_state = (shell_output_state_t){0};
+    shell_output_state.first_line = 0U;
     shell_output_state.line_count = 1U;
+    for (size_t i = 0U; i < SHELL_OUTPUT_MAX_LINES; i++) {
+        shell_output_state.lines[i].length = 0U;
+    }
     shell_output_state.generation = 1U;
     shell_output_state.initialized = true;
 
@@ -306,7 +312,7 @@ kerr_t shell_clear_output(void) {
 
     shell_output_state.first_line = 0U;
     shell_output_state.line_count = 1U;
-    shell_output_state.lines[0] = (shell_output_line_t){0};
+    shell_output_state.lines[0].length = 0U;
     shell_output_mark_changed();
 
     spinlock_release_irqrestore(&shell_output_lock, flags);
@@ -371,7 +377,6 @@ kerr_t shell_output_snapshot(
  * @return E_OK when the expected lines and Unicode codepoint are present.
  */
 kerr_t shell_output_self_test(void) {
-    shell_output_line_t snapshot[4] = {0};
     size_t count = 0U;
     uint64_t generation = 0U;
     bool changed = false;
@@ -384,15 +389,15 @@ kerr_t shell_output_self_test(void) {
     K_TRY(shell_write_line("Ring buffer and newline: OK"));
 
     K_TRY(shell_output_snapshot(
-        snapshot, 4U, &count, &generation, &changed));
+        shell_output_test_snapshot, 4U, &count, &generation, &changed));
 
     if (!changed || count != 4U) {
         return E_CHECKSUM;
     }
-    if (snapshot[0].length != 21U ||
-        snapshot[0].codepoints[0] != (uint32_t)'S' ||
-        snapshot[1].length < 8U ||
-        snapshot[1].codepoints[7] != UINT32_C(0x00E4)) {
+    if (shell_output_test_snapshot[0].length != 21U ||
+        shell_output_test_snapshot[0].codepoints[0] != (uint32_t)'S' ||
+        shell_output_test_snapshot[1].length < 8U ||
+        shell_output_test_snapshot[1].codepoints[7] != UINT32_C(0x00E4)) {
         return E_CHECKSUM;
     }
 
