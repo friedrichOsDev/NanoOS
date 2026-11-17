@@ -142,7 +142,7 @@ static void shell_input_handler(const input_event_t *event, void *context) {
 
     bool is_no_repeat_key =
         key == KEY_RETURN || key == KEY_NUMLOCK_RETURN ||
-        key == KEY_NUMLOCK_CLEAR ||
+        (numpad_nav_active && key == KEY_NUMLOCK_CLEAR) ||
         key == KEY_HOME || key == KEY_END ||
         (numpad_nav_active && (key == KEY_NUMLOCK_HOME || key == KEY_NUMLOCK_END));
 
@@ -151,7 +151,7 @@ static void shell_input_handler(const input_event_t *event, void *context) {
 
     bool is_control_key =
         key == KEY_RETURN || key == KEY_NUMLOCK_RETURN ||
-        key == KEY_NUMLOCK_CLEAR ||
+        (numpad_nav_active && key == KEY_NUMLOCK_CLEAR) ||
         key == KEY_BACK || key == KEY_DELETE ||
         key == KEY_LEFT || key == KEY_RIGHT ||
         key == KEY_UP || key == KEY_DOWN ||
