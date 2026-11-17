@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include <pch.h>\n#include <shell/output.h>
+#include <pch.h>
+#include <shell/output.h>
 
-kerr_t shell_init();
-kerr_t shell_deinit();
+kerr_t shell_init(void);
+kerr_t shell_deinit(void);
