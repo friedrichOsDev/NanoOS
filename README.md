@@ -61,7 +61,7 @@ The kernel is built as a freestanding executable using a custom `x86_64-elf` cro
 | Build system | GNU Make |
 | Virtualization | QEMU |
 | Firmware emulation | OVMF |
-| Development environment | Docker / VS Code Dev Containers |
+| Development environment | Docker / Podman / VSCodium Dev Containers OSS |
 | Documentation | Doxygen |
 
 ---
@@ -237,8 +237,8 @@ NanoOS uses a Docker-based development environment to provide a reproducible cro
 
 - Git
 - Docker Engine / Docker Desktop, or Podman
-- Visual Studio Code
-- Visual Studio Code Dev Containers extension
+- VSCodium
+- Dev Containers OSS extension
 
 ### Development Container
 
@@ -292,23 +292,19 @@ NanoOS provides shared Docker/Podman runtime detection and separate scripts for 
 
 These scripts build the development image named `nano-cross`, which is used by the VS Code development container. Docker is preferred when available; if its daemon is unavailable, the scripts automatically try Podman. You can force a runtime with `NANOOS_CONTAINER_ENGINE=docker` or `NANOOS_CONTAINER_ENGINE=podman`.
 
-### 3. Open the Project in VS Code
+### 3. Open the Project in VSCodium
 
-Open the repository:
+NanoOS includes a launcher for **VSCodium with Dev Containers OSS**. It detects the available runtime, selects the matching configuration, prepares the container image if needed, and opens the repository:
 
 ```bash
-code .
+./scripts/devcontainer.sh
 ```
 
-Make sure the VS Code Dev Containers extension is installed.
+The launcher supports Docker and rootless Podman on Linux. For Podman, Dev Containers OSS communicates through the Docker-compatible Podman API socket, so install the `podman-docker` compatibility package (or provide a Docker CLI that honors `DOCKER_HOST`). The launcher activates the user Podman socket and sets `DOCKER_HOST` for the VSCodium process.
 
-Then execute:
+The runtime-specific templates are stored in `.devcontainer/devcontainer.docker.json` and `.devcontainer/devcontainer.podman.json`. The launcher generates the standard `.devcontainer/devcontainer.json` from the selected template because Dev Containers OSS expects that canonical filename.
 
-```text
-Dev Containers: Reopen in Container
-```
-
-VS Code will use the existing `nano-cross` image. For Podman, use `.devcontainer/devcontainer.podman.json` so the container gets the appropriate `keep-id` user namespace setting. The default `.devcontainer/devcontainer.json` is compatible with Docker.
+**Important:** Completely close existing VSCodium windows before switching between Docker and Podman. An already-running VSCodium process keeps its original environment, including `DOCKER_HOST`; launching another window cannot reliably change that process environment.
 
 After the container has started, the cross-compiler and development tools should be available.
 
