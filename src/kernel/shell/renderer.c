@@ -6,6 +6,7 @@
 
 #include "_shell.h"
 #include <drivers/gfx/compositor.h>
+#include <shell/output.h>
 #include <kernel/sync.h>
 #include <mm/memory.h>
 #include <sched/sched.h>
@@ -16,6 +17,7 @@
 #define SHELL_PROMPT "friedrichOsDev@nanoOS> "
 #define SHELL_PROMPT_LENGTH 23U
 #define SHELL_INPUT_TEXT_CAPACITY (SHELL_INPUT_BUFFER_SIZE * 4U + 1U)
+#define SHELL_OUTPUT_TEXT_CAPACITY (SHELL_OUTPUT_MAX_LINE_LENGTH * 4U + 1U)
 
 static shell_screen_t shell_screen;
 static layer_t *shell_layer = NULL;
@@ -25,6 +27,11 @@ static volatile bool shell_renderer_initialized = false;
 static volatile bool shell_renderer_stop_requested = false;
 static volatile bool shell_renderer_stopped = true;
 static char shell_input_text[SHELL_INPUT_TEXT_CAPACITY];
+static char shell_output_text[SHELL_OUTPUT_TEXT_CAPACITY];
+static shell_output_line_t *shell_output_snapshot_buffer = NULL;
+static size_t shell_output_snapshot_capacity = 0U;
+static size_t shell_output_snapshot_count = 0U;
+static uint64_t shell_output_snapshot_generation = 0U;
 
 /**
  * @brief Encodes one Unicode codepoint as UTF-8.
@@ -121,6 +128,22 @@ static kerr_t shell_screen_configure(uint64_t width, uint64_t height) {
         return err;
     }
 
+    size_t output_capacity = (lines > 1U) ? (size_t)(lines - 1U) : 0U;
+    virt_addr_t output_mem = 0U;
+    if (output_capacity > 0U) {
+        if (output_capacity > SIZE_MAX / sizeof(shell_output_line_t)) {
+            kfree(buffer_mem);
+            kfree(dirty_mem);
+            return E_NOTAVAIL;
+        }
+        err = kzalloc(output_capacity * sizeof(shell_output_line_t), &output_mem);
+        if (k_failed(err)) {
+            kfree(buffer_mem);
+            kfree(dirty_mem);
+            return err;
+        }
+    }
+
     shell_screen_t new_screen = {
         .font_scale = SHELL_FONT_SCALE,
         .lines = lines,
@@ -160,6 +183,9 @@ static kerr_t shell_screen_configure(uint64_t width, uint64_t height) {
             shell_layer = NULL;
         }
         shell_screen_release(&new_screen);
+        if (output_mem != 0U) {
+            kfree(output_mem);
+        }
         return err;
     }
 
@@ -168,6 +194,15 @@ static kerr_t shell_screen_configure(uint64_t width, uint64_t height) {
     shell_screen = new_screen;
     spinlock_release_irqrestore(&shell_render_lock, flags);
     shell_screen_release(&old_screen);
+
+    shell_output_line_t *old_output_snapshot = shell_output_snapshot_buffer;
+    shell_output_snapshot_buffer = (shell_output_line_t *)output_mem;
+    shell_output_snapshot_capacity = output_capacity;
+    shell_output_snapshot_count = 0U;
+    shell_output_snapshot_generation = 0U;
+    if (old_output_snapshot) {
+        kfree((virt_addr_t)old_output_snapshot);
+    }
     return E_OK;
 }
 
@@ -324,6 +359,42 @@ static void render_frame() {
     uint64_t line_y = pixel_height - scaled_height;
 
     canvas_clear(&shell_layer->canvas, COLOR_TRANSPARENT);
+
+    /*
+     * Output is bottom-aligned in the area above the fixed input row.
+     * The snapshot already contains only the newest lines that fit.
+     */
+    uint64_t output_rows = (pixel_height / scaled_height);
+    if (output_rows > 0U) {
+        output_rows--;
+    }
+    size_t visible_output_count = shell_output_snapshot_count;
+    if (visible_output_count > output_rows) {
+        visible_output_count = (size_t)output_rows;
+    }
+    size_t first_output_row = (size_t)output_rows - visible_output_count;
+
+    for (size_t i = 0U; i < visible_output_count; i++) {
+        const shell_output_line_t *line = &shell_output_snapshot_buffer[i];
+        size_t text_length = 0U;
+
+        for (uint16_t j = 0U; j < line->length; j++) {
+            text_length += shell_encode_utf8(
+                line->codepoints[j], &shell_output_text[text_length]);
+        }
+        shell_output_text[text_length] = '\0';
+
+        if (text_length > 0U) {
+            uint64_t output_y = ((uint64_t)first_output_row + i) * scaled_height;
+            canvas_draw_text(
+                &shell_layer->canvas,
+                (point_t){0, (int64_t)output_y},
+                shell_output_text,
+                COLOR_LIGHT_GRAY,
+                (uint32_t)scale);
+        }
+    }
+
     canvas_draw_rectangle(
         &shell_layer->canvas,
         (point_t){0, (int64_t)line_y},
@@ -387,6 +458,15 @@ static void shell_renderer_cleanup() {
     spinlock_release_irqrestore(&shell_render_lock, flags);
 
     shell_screen_release(&old_screen);
+
+    if (shell_output_snapshot_buffer) {
+        kfree((virt_addr_t)shell_output_snapshot_buffer);
+        shell_output_snapshot_buffer = NULL;
+    }
+    shell_output_snapshot_capacity = 0U;
+    shell_output_snapshot_count = 0U;
+    shell_output_snapshot_generation = 0U;
+
     __atomic_store_n(&shell_renderer_stopped, true, __ATOMIC_RELEASE);
 }
 
@@ -409,7 +489,20 @@ void shell_render_thread(void *arg) {
         }
 
         bool input_changed = shell_sync_input_buffer(&shell_input_snapshot);
-        if (resized || input_changed) {
+        bool output_changed = false;
+        size_t output_count = 0U;
+        kerr_t output_err = shell_output_snapshot(
+            shell_output_snapshot_buffer,
+            shell_output_snapshot_capacity,
+            &output_count,
+            &shell_output_snapshot_generation,
+            &output_changed);
+
+        if (!k_failed(output_err) && output_changed) {
+            shell_output_snapshot_count = output_count;
+        }
+
+        if (resized || input_changed || output_changed) {
             compose_frame();
         }
 
@@ -453,6 +546,13 @@ kerr_t shell_init_renderer() {
         }
         shell_screen_release(&shell_screen);
         shell_screen = (shell_screen_t){0};
+        if (shell_output_snapshot_buffer) {
+            kfree((virt_addr_t)shell_output_snapshot_buffer);
+            shell_output_snapshot_buffer = NULL;
+        }
+        shell_output_snapshot_capacity = 0U;
+        shell_output_snapshot_count = 0U;
+        shell_output_snapshot_generation = 0U;
         return err;
     }
 
