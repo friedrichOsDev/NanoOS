@@ -297,10 +297,12 @@ These scripts build the development image named `nano-cross`, which is used by t
 NanoOS includes a launcher for **VSCodium with Dev Containers OSS**. It detects the available runtime, selects the matching configuration, prepares the container image if needed, and opens the repository:
 
 ```bash
-./scripts/devcontainer.sh
+bash ./scripts/devcontainer.sh
 ```
 
-The launcher supports Docker and rootless Podman on Linux. For Podman, Dev Containers OSS communicates through the Docker-compatible Podman API socket, so install the `podman-docker` compatibility package (or provide a Docker CLI that honors `DOCKER_HOST`). The launcher activates the user Podman socket and sets `DOCKER_HOST` for the VSCodium process.
+Make sure the **Dev Containers OSS** extension is installed. After VSCodium opens, run **Dev Containers: Reopen Folder in Container** from the Command Palette to start or attach to the selected development container.
+
+The launcher supports Docker and rootless Podman on Linux. For Podman, Dev Containers OSS communicates through the Docker-compatible Podman API socket, so a Docker-compatible `docker` CLI is required (for example, the `podman-docker` package). The launcher activates the user Podman socket and sets `DOCKER_HOST` for the VSCodium process.
 
 The runtime-specific templates are stored in `.devcontainer/devcontainer.docker.json` and `.devcontainer/devcontainer.podman.json`. The launcher generates the standard `.devcontainer/devcontainer.json` from the selected template because Dev Containers OSS expects that canonical filename.
 
