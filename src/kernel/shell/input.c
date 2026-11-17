@@ -9,45 +9,110 @@
 #include <kernel/sync.h>
 
 static spinlock_t shell_input_lock = SPINLOCK_INIT;
+static shell_input_buffer_t input_buffer = {0};
+static bool shell_input_dirty = true;
 
-static void shell_newline() {
-    log_debug("Newline pressed");
-}
-
-static void shell_backspace() {
-    log_debug("Backspace pressed");
-}
-
-static void shell_delete() {
-    log_debug("Delete pressed");
-}
-
+/** @brief Clear input buffer. */
 static void shell_input_clear() {
-    log_debug("Input clear pressed");
+    if (shell_input_buffer.size == 0 && shell_input_buffer.cursor_pos == 0)
+        return;
+    input_buffer.size = 0;
+    input_buffer.cursor_pos = 0;
+    shell_input_dirty = true;
 }
 
+/** @brief Handles enter pressed. */
+static void shell_newline() {
+    // TODO: forward the input buffer to the command parser and shell logic
+    log_debug("Newline pressed");
+    shell_input_clear();
+}
+
+/** @brief Delete the character before the current cursor position. */
+static void shell_backspace() {
+    if (input_buffer.cursor_pos == 0) {
+        return;
+    }
+
+    for (uint64_t i = input_buffer.cursor_pos - 1; i < input_buffer.size - 1; i++) {
+        input_buffer.buffer[i] = input_buffer.buffer[i + 1];
+    }
+
+    input_buffer.cursor_pos--;
+    input_buffer.size--;
+    shell_input_dirty = true;
+}
+
+/** @brief Delete the character at the current cursor position. */
+static void shell_delete() {
+    if (input_buffer.cursor_pos >= input_buffer.size) {
+        return;
+    }
+
+    for (uint64_t i = input_buffer.cursor_pos; i < input_buffer.size - 1; i++) {
+        input_buffer.buffer[i] = input_buffer.buffer[i + 1];
+    }
+
+    input_buffer.size--;
+    shell_input_dirty = true;
+}
+
+/** @brief Handle cursor left pressed. */
 static void shell_cursor_left() {
-    log_debug("Cursor left pressed");
+    if (input_buffer.cursor_pos > 0) {
+        input_buffer.cursor_pos--;
+        shell_input_dirty = true;
+    }
 }
 
+/** @brief Handle cursor right pressed. */
 static void shell_cursor_right() {
-    log_debug("Cursor right pressed");
+    if (input_buffer.cursor_pos < input_buffer.size) {
+        input_buffer.cursor_pos++;
+        shell_input_dirty = true;
+    }
 }
 
+/** @brief Handle cursor home pressed. */
 static void shell_cursor_home() {
-    log_debug("Cursor home pressed");
+    if (shell_input_buffer.cursor_pos != 0) {
+        shell_input_buffer.cursor_pos = 0;
+        shell_input_dirty = true;
+    }
 }
 
+/** @brief Handle cursor end pressed. */
 static void shell_cursor_end() {
-    log_debug("Cursor end pressed");
+    if (shell_input_buffer.cursor_pos != shell_input_buffer.size) {
+        shell_input_buffer.cursor_pos = shell_input_buffer.size;
+        shell_input_dirty = true;
+    }
 }
 
+/** @brief Handle tab pressed. */
 static void shell_tab() {
+    // TODO: impl auto-completion
     log_debug("Tab pressed");
 }
 
+/**
+ * @brief Insert a character into the shell input buffer.
+ *
+ * @param[in] value Character to insert.
+ */
 static void shell_insert_u32(uint32_t value) {
-    log_var(value);
+    if (shell_input_buffer.size >= SHELL_INPUT_BUFFER_SIZE) {
+        return;
+    }
+
+    for (uint64_t i = shell_input_buffer.size; i > shell_input_buffer.cursor_pos; i--) {
+        shell_input_buffer.buffer[i] = shell_input_buffer.buffer[i - 1];
+    }
+
+    shell_input_buffer.buffer[shell_input_buffer.cursor_pos] = value;
+    shell_input_buffer.cursor_pos++;
+    shell_input_buffer.size++;
+    shell_input_dirty = true;
 }
 
 /**
@@ -137,6 +202,41 @@ static void shell_input_handler(const input_event_t *event, void *context) {
     spinlock_release_irqrestore(&shell_input_lock, flags);
 }
 
+/**
+ * @brief Initialize the shell input handler.
+ *
+ * @return Error code.
+ */
 kerr_t shell_input_init() {
     return input_register_handler(shell_input_handler, NULL);
+}
+
+/**
+ * @brief Fetch a snapshot of the input buffer if it has changed since the last fetch.
+ *
+ * @param[out] out_buffer Destination buffer for the snapshot.
+ * @return true if the buffer was dirty and copied, false if unchanged.
+ */
+bool shell_sync_input_buffer(shell_input_buffer_t *out_buffer) {
+    if (!out_buffer) {
+        return false;
+    }
+
+    irq_flags_t flags = spinlock_acquire_irqsave(&shell_input_lock);
+
+    if (!shell_input_dirty) {
+        spinlock_release_irqrestore(&shell_input_lock, flags);
+        return false;
+    }
+
+    out_buffer->size = shell_input_buffer.size;
+    out_buffer->cursor_pos = shell_input_buffer.cursor_pos;
+    for (uint64_t i = 0; i < shell_input_buffer.size; i++) {
+        out_buffer->buffer[i] = shell_input_buffer.buffer[i];
+    }
+
+    shell_input_dirty = false;
+
+    spinlock_release_irqrestore(&shell_input_lock, flags);
+    return true;
 }
