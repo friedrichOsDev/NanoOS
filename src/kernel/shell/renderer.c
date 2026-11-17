@@ -387,7 +387,21 @@ static void render_frame(void) {
  */
 void shell_render_thread(void *arg) {
     (void)arg;
+
+    uint64_t last_heartbeat_tick = sched_get_ticks();
+    uint64_t render_loop_count = 0U;
+
     while (true) {
+        uint64_t current_tick = sched_get_ticks();
+        render_loop_count++;
+
+        /* LAPIC is configured for 1000 Hz: emit one heartbeat every 5 seconds. */
+        if (current_tick - last_heartbeat_tick >= 5000U) {
+            log_debug("[heartbeat] shell_renderer alive ticks=%llu loops=%llu",
+                      current_tick, render_loop_count);
+            last_heartbeat_tick = current_tick;
+        }
+
         rect_size_t screen_size = compositor_get_size();
         bool resized = false;
         if (screen_size.width != shell_screen.pixel_width ||
