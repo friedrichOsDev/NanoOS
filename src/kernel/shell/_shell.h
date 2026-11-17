@@ -20,7 +20,8 @@ typedef struct {
 
 extern shell_input_buffer_t shell_input_buffer; // Global shell input buffer
 
-kerr_t shell_input_init();
+kerr_t shell_input_init(void);
+kerr_t shell_input_deinit(void);
 bool shell_sync_input_buffer(shell_input_buffer_t *out_buffer);
 
 /** @brief Shell cell representation (used for rendering the shell screen)  */
@@ -53,5 +54,6 @@ typedef struct {
 
 extern bool shell_initialized;
 
-kerr_t shell_init_renderer();
+kerr_t shell_init_renderer(void);
+kerr_t shell_deinit_renderer(void);
 void shell_render_thread(void *arg);
