@@ -265,6 +265,8 @@ static void render_frame(void) {
     uint64_t pixel_width = 0U;
     uint64_t pixel_height = 0U;
     bool cursor_visible = false;
+    bool cursor_has_character = false;
+    char cursor_text[5] = {0};
 
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_render_lock);
     if (!shell_screen.is_dirty || !shell_screen.buffer ||
@@ -292,6 +294,15 @@ static void render_frame(void) {
 
     cursor_column = shell_screen.cursor_column;
     cursor_visible = shell_screen.cursor_visible;
+    if (cursor_visible && cursor_column >= prompt_columns) {
+        uint64_t input_column = cursor_column - prompt_columns;
+        if (input_column < shell_screen.input_visible_count) {
+            uint32_t cursor_codepoint =
+                shell_screen.buffer[row_offset + cursor_column].unicode;
+            (void)shell_encode_utf8(cursor_codepoint, cursor_text);
+            cursor_has_character = true;
+        }
+    }
     glyph_width = shell_screen.glyph_width;
     glyph_height = shell_screen.glyph_height;
     scale = shell_screen.font_scale;
@@ -342,12 +353,27 @@ static void render_frame(void) {
             (uint32_t)scale);
     }
     if (cursor_visible) {
-        canvas_draw_text(
+        point_t cursor_position = {
+            (int64_t)(cursor_column * scaled_width),
+            (int64_t)line_y};
+
+        /* Draw a solid cursor cell, then redraw its character with inverted colors. */
+        canvas_draw_rectangle(
             &shell_layer->canvas,
-            (point_t){(int64_t)(cursor_column * scaled_width), (int64_t)line_y},
-            "|",
-            COLOR_GREEN,
-            (uint32_t)scale);
+            cursor_position,
+            (rect_size_t){scaled_width, scaled_height},
+            COLOR_WHITE,
+            true,
+            0U);
+
+        if (cursor_has_character) {
+            canvas_draw_text(
+                &shell_layer->canvas,
+                cursor_position,
+                cursor_text,
+                COLOR_BLACK,
+                (uint32_t)scale);
+        }
     }
     layer_draw_end(shell_layer);
 }
