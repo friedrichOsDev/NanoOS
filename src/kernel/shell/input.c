@@ -142,16 +142,14 @@ static void shell_input_handler(const input_event_t *event, void *context) {
 
     bool is_no_repeat_key =
         key == KEY_RETURN || key == KEY_NUMLOCK_RETURN ||
-        (numpad_nav_active && key == KEY_NUMLOCK_CLEAR) ||
         key == KEY_HOME || key == KEY_END ||
-        (numpad_nav_active && (key == KEY_NUMLOCK_HOME || key == KEY_NUMLOCK_END));
+        (numpad_nav_active && (key == KEY_NUMLOCK_HOME || key == KEY_NUMLOCK_END || key == KEY_NUMLOCK_CLEAR));
 
     if (is_no_repeat_key && event->key_action != INPUT_KEY_ACTION_PRESSED)
         return;
 
     bool is_control_key =
         key == KEY_RETURN || key == KEY_NUMLOCK_RETURN ||
-        (numpad_nav_active && key == KEY_NUMLOCK_CLEAR) ||
         key == KEY_BACK || key == KEY_DELETE ||
         key == KEY_LEFT || key == KEY_RIGHT ||
         key == KEY_UP || key == KEY_DOWN ||
@@ -159,7 +157,7 @@ static void shell_input_handler(const input_event_t *event, void *context) {
         (numpad_nav_active && (key == KEY_NUMLOCK_DELETE ||
                                key == KEY_NUMLOCK_LEFT || key == KEY_NUMLOCK_RIGHT ||
                                key == KEY_NUMLOCK_UP || key == KEY_NUMLOCK_DOWN ||
-                               key == KEY_NUMLOCK_HOME || key == KEY_NUMLOCK_END));
+                               key == KEY_NUMLOCK_HOME || key == KEY_NUMLOCK_END || key == KEY_NUMLOCK_CLEAR));
 
     if (event->unicode_count == 0U && !is_control_key)
         return;
@@ -174,7 +172,7 @@ static void shell_input_handler(const input_event_t *event, void *context) {
 
     if (key == KEY_RETURN || key == KEY_NUMLOCK_RETURN) {
         shell_newline();
-    } else if (key == KEY_NUMLOCK_CLEAR) {
+    } else if (numpad_nav_active && key == KEY_NUMLOCK_CLEAR) {
         shell_input_clear();
     } else if (key == KEY_BACK) {
         shell_backspace();
