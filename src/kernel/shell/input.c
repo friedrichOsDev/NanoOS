@@ -211,7 +211,7 @@ static void shell_input_handler(const input_event_t *event, void *context) {
  *
  * @return Error code.
  */
-kerr_t shell_input_init(void) {
+kerr_t shell_input_init() {
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_input_lock);
     shell_input_buffer.size = 0U;
     shell_input_buffer.cursor_pos = 0U;
@@ -226,7 +226,7 @@ kerr_t shell_input_init(void) {
  *
  * @return E_OK if the callback was removed, or an error code.
  */
-kerr_t shell_input_deinit(void) {
+kerr_t shell_input_deinit() {
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_input_lock);
     shell_input_buffer.size = 0U;
     shell_input_buffer.cursor_pos = 0U;

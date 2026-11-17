@@ -14,7 +14,7 @@ bool shell_initialized = false;
  *
  * @return E_OK on success, or an error code on failure.
  */
-kerr_t shell_init(void) {
+kerr_t shell_init() {
     if (__atomic_load_n(&shell_initialized, __ATOMIC_ACQUIRE)) {
         return E_OK;
     }
@@ -41,19 +41,10 @@ kerr_t shell_init(void) {
  *
  * @return E_OK when shutdown is complete, E_NOTAVAIL while it is pending.
  */
-kerr_t shell_deinit(void) {
+kerr_t shell_deinit() {
     __atomic_store_n(&shell_initialized, false, __ATOMIC_RELEASE);
 
     (void)shell_input_deinit();
 
     return shell_deinit_renderer();
-}
-
-/**
- * @brief Alias for shell_deinit().
- *
- * @return E_OK when shutdown is complete, E_NOTAVAIL while it is pending.
- */
-kerr_t shell_destroy(void) {
-    return shell_deinit();
 }

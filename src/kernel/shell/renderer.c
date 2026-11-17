@@ -374,18 +374,8 @@ static void render_frame() {
     layer_draw_end(shell_layer);
 }
 
-/**
- * @brief Main shell renderer thread.
- *
- * @param[in] arg Unused thread argument.
- */
-/**
- * @brief Releases renderer-owned resources after the render loop stops.
- *
- * This function is only called by the renderer thread, so no other thread can
- * still be using its layer or screen buffers through the shell renderer.
- */
-static void shell_renderer_cleanup(void) {
+/** @brief Releases renderer-owned resources after the render loop stops. */
+static void shell_renderer_cleanup() {
     if (shell_layer) {
         (void)layer_destroy(shell_layer);
         shell_layer = NULL;
@@ -402,9 +392,6 @@ static void shell_renderer_cleanup(void) {
 
 /**
  * @brief Main shell renderer thread.
- *
- * The thread checks its stop request once per iteration and never waits for
- * input. Its cleanup is performed by the thread itself before thread_exit().
  *
  * @param[in] arg Unused thread argument.
  */
@@ -439,7 +426,7 @@ void shell_render_thread(void *arg) {
  *
  * @return E_OK on success, or an error code.
  */
-kerr_t shell_init_renderer(void) {
+kerr_t shell_init_renderer() {
     if (__atomic_load_n(&shell_renderer_initialized, __ATOMIC_ACQUIRE)) {
         return E_OK;
     }
@@ -480,7 +467,7 @@ kerr_t shell_init_renderer(void) {
  *
  * @return E_OK when stopped, E_NOTAVAIL while shutdown is pending.
  */
-kerr_t shell_deinit_renderer(void) {
+kerr_t shell_deinit_renderer() {
     if (!__atomic_load_n(&shell_renderer_initialized, __ATOMIC_ACQUIRE)) {
         return __atomic_load_n(&shell_renderer_stopped, __ATOMIC_ACQUIRE)
                    ? E_OK
