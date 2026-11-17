@@ -126,7 +126,7 @@ static void shell_input_handler(const input_event_t *event, void *context) {
         (event->key_action != INPUT_KEY_ACTION_PRESSED && event->key_action != INPUT_KEY_ACTION_REPEATED))
         return;
 
-    if (!shell_initialized)
+    if (!__atomic_load_n(&shell_initialized, __ATOMIC_ACQUIRE))
         return;
 
     hid_keycode_t key = event->hid.key.keycode;
@@ -205,8 +205,30 @@ static void shell_input_handler(const input_event_t *event, void *context) {
  *
  * @return Error code.
  */
-kerr_t shell_input_init() {
+kerr_t shell_input_init(void) {
+    irq_flags_t flags = spinlock_acquire_irqsave(&shell_input_lock);
+    shell_input_buffer.size = 0U;
+    shell_input_buffer.cursor_pos = 0U;
+    shell_input_dirty = true;
+    spinlock_release_irqrestore(&shell_input_lock, flags);
+
     return input_register_handler(shell_input_handler, NULL);
+}
+
+/**
+ * @brief Disables and unregisters the shell input callback.
+ *
+ * @return E_OK if the callback was removed, or an error code.
+ */
+kerr_t shell_input_deinit(void) {
+    irq_flags_t flags = spinlock_acquire_irqsave(&shell_input_lock);
+    shell_input_buffer.size = 0U;
+    shell_input_buffer.cursor_pos = 0U;
+    shell_input_dirty = true;
+    spinlock_release_irqrestore(&shell_input_lock, flags);
+
+    kerr_t err = input_unregister_handler(shell_input_handler, NULL);
+    return (err == E_INVAL) ? E_OK : err;
 }
 
 /**
