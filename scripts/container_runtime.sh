@@ -30,8 +30,8 @@ nanoos_select_container_runtime() {
 
     case "$requested" in
         auto)
-            # Prefer Docker when it is actually usable, not merely installed.
-            for candidate in docker podman; do
+            # Prefer Podman whenever it is installed and usable. Docker is the fallback.
+            for candidate in podman docker; do
                 if nanoos_runtime_is_ready "$candidate"; then
                     NANOOS_CONTAINER_CLI="$candidate"
                     echo "Using container engine: $NANOOS_CONTAINER_CLI"
