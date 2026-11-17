@@ -81,4 +81,8 @@ echo "Starting NanoOS in VSCodium..."
 # development container from it.
 nanoos_ensure_image
 
-exec codium --new-window "$@" "$REPO_ROOT"
+# VSCodium may print Chromium option warnings when desktop launch flags are
+# injected through environment variables. Those warnings are unrelated to
+# NanoOS or the container runtime; launch the normal CLI without forwarding
+# unrelated desktop flags from this wrapper.
+exec codium --new-window "$REPO_ROOT" "$@"
