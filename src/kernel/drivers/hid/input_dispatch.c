@@ -63,7 +63,22 @@ kerr_t input_register_handler(input_event_handler_t handler, void *context) {
 static void input_dispatcher_thread(void *arg) {
     (void)arg;
 
+    uint64_t last_heartbeat_tick = sched_get_ticks();
+    uint64_t poll_count = 0U;
+    uint64_t event_count = 0U;
+    uint64_t callback_count = 0U;
+
     for (;;) {
+        uint64_t current_tick = sched_get_ticks();
+        poll_count++;
+
+        /* LAPIC is configured for 1000 Hz: emit one heartbeat every 5 seconds. */
+        if (current_tick - last_heartbeat_tick >= 5000U) {
+            log_debug("[heartbeat] input_dispatcher alive ticks=%llu polls=%llu events=%llu callbacks=%llu",
+                      current_tick, poll_count, event_count, callback_count);
+            last_heartbeat_tick = current_tick;
+        }
+
         input_event_t event;
         kerr_t err = input_poll_event(&event);
         if (err == E_NOTAVAIL) {
@@ -75,6 +90,8 @@ static void input_dispatcher_thread(void *arg) {
             thread_yield();
             continue;
         }
+
+        event_count++;
 
         input_handler_entry_t snapshot[INPUT_MAX_HANDLERS];
         size_t snapshot_count;
@@ -88,6 +105,7 @@ static void input_dispatcher_thread(void *arg) {
 
         for (size_t i = 0; i < snapshot_count; i++) {
             snapshot[i].callback(&event, snapshot[i].context);
+            callback_count++;
         }
     }
 }
