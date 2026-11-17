@@ -22,6 +22,7 @@ static layer_t *shell_layer = NULL;
 static spinlock_t shell_render_lock = SPINLOCK_INIT;
 static shell_input_buffer_t shell_input_snapshot;
 static bool shell_renderer_initialized = false;
+static char shell_input_text[SHELL_INPUT_TEXT_CAPACITY];
 
 /**
  * @brief Encodes one Unicode codepoint as UTF-8.
@@ -254,7 +255,6 @@ static void compose_frame(void) {
  * @brief Renders the composed bottom input row into the shell compositor layer.
  */
 static void render_frame(void) {
-    char input_text[SHELL_INPUT_TEXT_CAPACITY];
     char prompt_text[SHELL_PROMPT_LENGTH + 1U];
     uint64_t input_length = 0U;
     uint64_t prompt_columns = 0U;
@@ -286,9 +286,9 @@ static void render_frame(void) {
 
     for (uint64_t i = 0U; i < shell_screen.input_visible_count; i++) {
         uint32_t codepoint = shell_screen.buffer[row_offset + prompt_columns + i].unicode;
-        input_length += shell_encode_utf8(codepoint, &input_text[input_length]);
+        input_length += shell_encode_utf8(codepoint, &shell_input_text[input_length]);
     }
-    input_text[input_length] = '\0';
+    shell_input_text[input_length] = '\0';
 
     cursor_column = shell_screen.cursor_column;
     cursor_visible = shell_screen.cursor_visible;
@@ -337,7 +337,7 @@ static void render_frame(void) {
         canvas_draw_text(
             &shell_layer->canvas,
             (point_t){(int64_t)(prompt_columns * scaled_width), (int64_t)line_y},
-            input_text,
+            shell_input_text,
             COLOR_WHITE,
             (uint32_t)scale);
     }
