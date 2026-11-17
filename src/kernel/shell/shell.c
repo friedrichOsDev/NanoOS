@@ -5,12 +5,13 @@
  */
 
 #include "_shell.h"
-#include <shell/shell.h>\n#include <shell/output.h>
+#include <shell/shell.h>
+#include <shell/output.h>
 
 bool shell_initialized = false;
 
 /**
- * @brief Initializes shell input handling and the asynchronous input renderer.
+ * @brief Initializes shell output, input handling, and the asynchronous renderer.
  *
  * @return E_OK on success, or an error code on failure.
  */
@@ -19,11 +20,18 @@ kerr_t shell_init() {
         return E_OK;
     }
 
-    K_TRY(shell_output_init());\n\n    kerr_t input_err = shell_input_init();\n    if (k_failed(input_err)) {\n        (void)shell_output_deinit();\n        return input_err;\n    }
+    K_TRY(shell_output_init());
 
-    kerr_t err = shell_init_renderer();
+    kerr_t err = shell_input_init();
+    if (k_failed(err)) {
+        (void)shell_output_deinit();
+        return err;
+    }
+
+    err = shell_init_renderer();
     if (k_failed(err)) {
         (void)shell_input_deinit();
+        (void)shell_output_deinit();
         return err;
     }
 
@@ -45,5 +53,10 @@ kerr_t shell_deinit() {
 
     (void)shell_input_deinit();
 
-    kerr_t err = shell_deinit_renderer();\n    if (k_failed(err)) {\n        return err;\n    }\n\n    return shell_output_deinit();
+    kerr_t err = shell_deinit_renderer();
+    if (k_failed(err)) {
+        return err;
+    }
+
+    return shell_output_deinit();
 }
