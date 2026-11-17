@@ -138,8 +138,9 @@ static kerr_t shell_screen_configure(uint64_t width, uint64_t height) {
         .cursor_visible = false};
 
     for (uint64_t line = 0U; line < lines; line++) {
-        new_screen.dirty_lines[line] = true;
+        new_screen.dirty_lines[line] = false;
     }
+    new_screen.dirty_lines[lines - 1U] = true;
 
     if (shell_layer) {
         err = layer_set_size(shell_layer, (rect_size_t){width, height});
@@ -341,13 +342,12 @@ static void render_frame(void) {
             (uint32_t)scale);
     }
     if (cursor_visible) {
-        canvas_draw_rectangle(
+        canvas_draw_text(
             &shell_layer->canvas,
             (point_t){(int64_t)(cursor_column * scaled_width), (int64_t)line_y},
-            (rect_size_t){scale, scaled_height},
+            "|",
             COLOR_GREEN,
-            true,
-            0U);
+            (uint32_t)scale);
     }
     layer_draw_end(shell_layer);
 }
