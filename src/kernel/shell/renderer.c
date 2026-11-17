@@ -21,7 +21,9 @@ static shell_screen_t shell_screen;
 static layer_t *shell_layer = NULL;
 static spinlock_t shell_render_lock = SPINLOCK_INIT;
 static shell_input_buffer_t shell_input_snapshot;
-static bool shell_renderer_initialized = false;
+static volatile bool shell_renderer_initialized = false;
+static volatile bool shell_renderer_stop_requested = false;
+static volatile bool shell_renderer_stopped = true;
 static char shell_input_text[SHELL_INPUT_TEXT_CAPACITY];
 
 /**
@@ -377,23 +379,39 @@ static void render_frame() {
  *
  * @param[in] arg Unused thread argument.
  */
+/**
+ * @brief Releases renderer-owned resources after the render loop stops.
+ *
+ * This function is only called by the renderer thread, so no other thread can
+ * still be using its layer or screen buffers through the shell renderer.
+ */
+static void shell_renderer_cleanup(void) {
+    if (shell_layer) {
+        (void)layer_destroy(shell_layer);
+        shell_layer = NULL;
+    }
+
+    irq_flags_t flags = spinlock_acquire_irqsave(&shell_render_lock);
+    shell_screen_t old_screen = shell_screen;
+    shell_screen = (shell_screen_t){0};
+    spinlock_release_irqrestore(&shell_render_lock, flags);
+
+    shell_screen_release(&old_screen);
+    __atomic_store_n(&shell_renderer_stopped, true, __ATOMIC_RELEASE);
+}
+
+/**
+ * @brief Main shell renderer thread.
+ *
+ * The thread checks its stop request once per iteration and never waits for
+ * input. Its cleanup is performed by the thread itself before thread_exit().
+ *
+ * @param[in] arg Unused thread argument.
+ */
 void shell_render_thread(void *arg) {
     (void)arg;
 
-    uint64_t last_heartbeat_tick = sched_get_ticks();
-    uint64_t render_loop_count = 0U;
-
-    while (true) {
-        uint64_t current_tick = sched_get_ticks();
-        render_loop_count++;
-
-        /* LAPIC is configured for 1000 Hz: emit one heartbeat every 5 seconds. */
-        if (current_tick - last_heartbeat_tick >= 5000U) {
-            log_debug("[heartbeat] shell_renderer alive ticks=%llu loops=%llu",
-                      current_tick, render_loop_count);
-            last_heartbeat_tick = current_tick;
-        }
-
+    while (!__atomic_load_n(&shell_renderer_stop_requested, __ATOMIC_ACQUIRE)) {
         rect_size_t screen_size = compositor_get_size();
         bool resized = false;
         if (screen_size.width != shell_screen.pixel_width ||
@@ -407,9 +425,13 @@ void shell_render_thread(void *arg) {
         if (resized || input_changed) {
             compose_frame();
         }
+
         render_frame();
         thread_sleep_ms(SHELL_RENDER_INTERVAL_MS);
     }
+
+    shell_renderer_cleanup();
+    thread_exit();
 }
 
 /**
@@ -417,26 +439,61 @@ void shell_render_thread(void *arg) {
  *
  * @return E_OK on success, or an error code.
  */
-kerr_t shell_init_renderer() {
-    if (shell_renderer_initialized) {
+kerr_t shell_init_renderer(void) {
+    if (__atomic_load_n(&shell_renderer_initialized, __ATOMIC_ACQUIRE)) {
         return E_OK;
+    }
+    if (!__atomic_load_n(&shell_renderer_stopped, __ATOMIC_ACQUIRE)) {
+        return E_NOTAVAIL;
     }
 
     rect_size_t screen_size = compositor_get_size();
     K_TRY(shell_screen_configure(screen_size.width, screen_size.height));
 
-    shell_renderer_initialized = true;
+    __atomic_store_n(&shell_renderer_stop_requested, false, __ATOMIC_RELEASE);
+    __atomic_store_n(&shell_renderer_stopped, false, __ATOMIC_RELEASE);
+    __atomic_store_n(&shell_renderer_initialized, true, __ATOMIC_RELEASE);
+
     thread_t *renderer_thread = NULL;
-    kerr_t err = thread_create(NULL, shell_render_thread, NULL, "shell_renderer", &renderer_thread);
+    kerr_t err = thread_create(NULL, shell_render_thread, NULL,
+                               "shell_renderer", &renderer_thread);
     if (k_failed(err)) {
-        shell_renderer_initialized = false;
+        __atomic_store_n(&shell_renderer_initialized, false, __ATOMIC_RELEASE);
+        __atomic_store_n(&shell_renderer_stopped, true, __ATOMIC_RELEASE);
         if (shell_layer) {
-            layer_destroy(shell_layer);
+            (void)layer_destroy(shell_layer);
             shell_layer = NULL;
         }
         shell_screen_release(&shell_screen);
         shell_screen = (shell_screen_t){0};
         return err;
     }
+
+    return E_OK;
+}
+
+/**
+ * @brief Requests renderer shutdown without waiting for the renderer thread.
+ *
+ * The renderer thread releases its own layer and screen buffers. This function
+ * must be called again after that cleanup has completed to finish deinit.
+ *
+ * @return E_OK when stopped, E_NOTAVAIL while shutdown is pending.
+ */
+kerr_t shell_deinit_renderer(void) {
+    if (!__atomic_load_n(&shell_renderer_initialized, __ATOMIC_ACQUIRE)) {
+        return __atomic_load_n(&shell_renderer_stopped, __ATOMIC_ACQUIRE)
+                   ? E_OK
+                   : E_NOTAVAIL;
+    }
+
+    __atomic_store_n(&shell_renderer_stop_requested, true, __ATOMIC_RELEASE);
+
+    if (!__atomic_load_n(&shell_renderer_stopped, __ATOMIC_ACQUIRE)) {
+        return E_NOTAVAIL;
+    }
+
+    __atomic_store_n(&shell_renderer_initialized, false, __ATOMIC_RELEASE);
+    __atomic_store_n(&shell_renderer_stop_requested, false, __ATOMIC_RELEASE);
     return E_OK;
 }
