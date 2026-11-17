@@ -1,20 +1,21 @@
 /**
  * @file output.c
- * @brief Thread-safe shell output buffer and UTF-8 writer.
+ * @brief Shell input buffering.
  * @author friedrichOsDev
  */
 
-#include <shell/output.h>
 #include <kernel/sync.h>
+#include <shell/output.h>
 
 #define SHELL_OUTPUT_TAB_WIDTH 4U
 
+/** @brief Internal state of the shell output ring buffer. */
 typedef struct {
-    shell_output_line_t lines[SHELL_OUTPUT_MAX_LINES];
-    size_t first_line;
-    size_t line_count;
-    uint64_t generation;
-    bool initialized;
+    shell_output_line_t lines[SHELL_OUTPUT_MAX_LINES]; /**< Fixed-size array containing the stored output lines. */
+    size_t first_line;                                 /**< Physical index of the oldest line in the ring buffer. */
+    size_t line_count;                                 /**< Number of currently stored lines. */
+    uint64_t generation;                               /**< Incremented whenever the output content changes. */
+    bool initialized;                                  /**< Indicates whether the output buffer is initialized and available. */
 } shell_output_state_t;
 
 static shell_output_state_t shell_output_state;
