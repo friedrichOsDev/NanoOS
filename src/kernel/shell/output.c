@@ -30,20 +30,16 @@ static size_t shell_output_ring_index(size_t logical_index) {
     return (shell_output_state.first_line + logical_index) % SHELL_OUTPUT_MAX_LINES;
 }
 
-/**
- * @brief Marks the output as changed.
- */
-static void shell_output_mark_changed(void) {
+/** @brief Marks the output as changed. */
+static void shell_output_mark_changed() {
     shell_output_state.generation++;
     if (shell_output_state.generation == 0U) {
         shell_output_state.generation = 1U;
     }
 }
 
-/**
- * @brief Appends a new empty line, dropping the oldest line when full.
- */
-static void shell_output_push_line(void) {
+/** @brief Appends a new empty line, dropping the oldest line when full. */
+static void shell_output_push_line() {
     size_t next_index;
 
     if (shell_output_state.line_count < SHELL_OUTPUT_MAX_LINES) {
@@ -116,18 +112,12 @@ static void shell_output_append_locked(uint32_t codepoint) {
 /**
  * @brief Decodes one UTF-8 codepoint, replacing malformed sequences.
  *
- * Invalid leading or continuation bytes consume one byte so subsequent input
- * remains recoverable.
- *
  * @param[in] text Input byte array.
  * @param[in] length Total input length.
  * @param[in,out] offset Current byte offset; advanced by consumed bytes.
  * @return Decoded Unicode codepoint or U+FFFD.
  */
-static uint32_t shell_output_decode_utf8(
-    const uint8_t *text,
-    size_t length,
-    size_t *offset) {
+static uint32_t shell_output_decode_utf8(const uint8_t *text, size_t length, size_t *offset) {
     uint8_t first = text[*offset];
     uint32_t codepoint;
     size_t needed;
@@ -179,11 +169,46 @@ static uint32_t shell_output_decode_utf8(
 }
 
 /**
+ * @brief Runs a destructive API smoke test and leaves its output visible.
+ *
+ * @return E_OK when the expected lines and Unicode codepoint are present.
+ */
+kerr_t shell_output_self_test();
+kerr_t shell_output_self_test() {
+    shell_output_line_t snapshot[4] = {0};
+    size_t count = 0U;
+    uint64_t generation = 0U;
+    bool changed = false;
+
+    K_TRY(shell_clear_output());
+    K_TRY(shell_write_line("Shell output API test"));
+    K_TRY(shell_write("UTF-8: "));
+    K_TRY(shell_write_u32(UINT32_C(0x00E4)));
+    K_TRY(shell_write_line(" (ae)"));
+    K_TRY(shell_write_line("Ring buffer and newline: OK"));
+
+    K_TRY(shell_output_snapshot(
+        snapshot, 4U, &count, &generation, &changed));
+
+    if (!changed || count != 4U) {
+        return E_CHECKSUM;
+    }
+    if (snapshot[0].length != 21U ||
+        snapshot[0].codepoints[0] != (uint32_t)'S' ||
+        snapshot[1].length < 8U ||
+        snapshot[1].codepoints[7] != UINT32_C(0x00E4)) {
+        return E_CHECKSUM;
+    }
+
+    return E_OK;
+}
+
+/**
  * @brief Initializes the output ring with one empty line.
  *
  * @return E_OK on success.
  */
-kerr_t shell_output_init(void) {
+kerr_t shell_output_init() {
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_output_lock);
 
     shell_output_state = (shell_output_state_t){0};
@@ -192,7 +217,8 @@ kerr_t shell_output_init(void) {
     shell_output_state.initialized = true;
 
     spinlock_release_irqrestore(&shell_output_lock, flags);
-    return E_OK;
+
+    return shell_output_self_test();
 }
 
 /**
@@ -200,7 +226,7 @@ kerr_t shell_output_init(void) {
  *
  * @return E_OK on success.
  */
-kerr_t shell_output_deinit(void) {
+kerr_t shell_output_deinit() {
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_output_lock);
 
     shell_output_state.initialized = false;
@@ -297,7 +323,7 @@ kerr_t shell_write_line(const char *text) {
  *
  * @return E_OK on success, or E_NOINIT.
  */
-kerr_t shell_clear_output(void) {
+kerr_t shell_clear_output() {
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_output_lock);
     if (!shell_output_state.initialized) {
         spinlock_release_irqrestore(&shell_output_lock, flags);
@@ -323,12 +349,7 @@ kerr_t shell_clear_output(void) {
  * @param[out] out_changed Whether a new snapshot was copied.
  * @return E_OK, E_BADADDR, or E_NOINIT.
  */
-kerr_t shell_output_snapshot(
-    shell_output_line_t *lines,
-    size_t capacity,
-    size_t *out_count,
-    uint64_t *inout_generation,
-    bool *out_changed) {
+kerr_t shell_output_snapshot(shell_output_line_t *lines, size_t capacity, size_t *out_count, uint64_t *inout_generation, bool *out_changed) {
     if (!out_count || !inout_generation || !out_changed ||
         (capacity > 0U && !lines)) {
         return E_BADADDR;
@@ -362,39 +383,5 @@ kerr_t shell_output_snapshot(
     *inout_generation = shell_output_state.generation;
 
     spinlock_release_irqrestore(&shell_output_lock, flags);
-    return E_OK;
-}
-
-/**
- * @brief Runs a destructive API smoke test and leaves its output visible.
- *
- * @return E_OK when the expected lines and Unicode codepoint are present.
- */
-kerr_t shell_output_self_test(void) {
-    shell_output_line_t snapshot[4] = {0};
-    size_t count = 0U;
-    uint64_t generation = 0U;
-    bool changed = false;
-
-    K_TRY(shell_clear_output());
-    K_TRY(shell_write_line("Shell output API test"));
-    K_TRY(shell_write("UTF-8: "));
-    K_TRY(shell_write_u32(UINT32_C(0x00E4)));
-    K_TRY(shell_write_line(" (ae)"));
-    K_TRY(shell_write_line("Ring buffer and newline: OK"));
-
-    K_TRY(shell_output_snapshot(
-        snapshot, 4U, &count, &generation, &changed));
-
-    if (!changed || count != 4U) {
-        return E_CHECKSUM;
-    }
-    if (snapshot[0].length != 21U ||
-        snapshot[0].codepoints[0] != (uint32_t)'S' ||
-        snapshot[1].length < 8U ||
-        snapshot[1].codepoints[7] != UINT32_C(0x00E4)) {
-        return E_CHECKSUM;
-    }
-
     return E_OK;
 }

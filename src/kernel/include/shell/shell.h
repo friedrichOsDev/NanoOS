@@ -9,5 +9,5 @@
 #include <pch.h>
 #include <shell/output.h>
 
-kerr_t shell_init(void);
-kerr_t shell_deinit(void);
+kerr_t shell_init();
+kerr_t shell_deinit();
