@@ -23,6 +23,18 @@
 #include <sched/thread.h>
 #include <shell/shell.h>
 
+/** @brief Kernel shutdown procedure. */
+static void kernel_shutdown() {
+    while (shell_deinit() == E_NOTAVAIL) {
+        log_debug("Shell destroy is busy, waiting...");
+        thread_yield();
+    }
+
+    log_debug("Shell destroyed");
+
+    acpi_power_off();
+}
+
 /**
  * @brief Handle kernel-wide input shortcuts.
  *
@@ -36,8 +48,8 @@ static void kernel_input_handler(const input_event_t *event, void *context) {
         event->hid.key.keycode == KEY_ESC &&
         event->key_action == INPUT_KEY_ACTION_PRESSED) {
         log_info("ESC pressed, shutting down");
-        acpi_power_off();
-        log_warn("ACPI shutdown request returned");
+        kernel_shutdown();
+        log_warn("Kernel shutdown returned");
     }
 }
 

@@ -28,7 +28,6 @@ kerr_t shell_init() {
     }
 
     __atomic_store_n(&shell_initialized, true, __ATOMIC_RELEASE);
-    log_info("shell initialized");
     return E_OK;
 }
 
