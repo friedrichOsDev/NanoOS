@@ -28,6 +28,7 @@ static layer_t *layer_head = NULL;
 
 static mutex_t compositor_mutex;
 static spinlock_t layer_list_lock = SPINLOCK_INIT;
+static mutex_t layer_compose_lock = MUTEX_INIT("compositor_layer_iteration");
 static spinlock_t state_lock = SPINLOCK_INIT;
 
 static uint64_t target_fps = 60;
@@ -799,6 +800,11 @@ kerr_t layer_destroy(layer_t *layer) {
         return E_INVAL;
     }
 
+    /*
+     * Wait until the compositor has finished every traversal that could still
+     * hold a pointer to this layer before unlinking and freeing it.
+     */
+    mutex_lock(&layer_compose_lock);
     remove_layer_ordered(layer);
 
     mutex_lock(&layer->lock);
@@ -809,6 +815,7 @@ kerr_t layer_destroy(layer_t *layer) {
     mutex_unlock(&layer->lock);
 
     kfree((virt_addr_t)layer);
+    mutex_unlock(&layer_compose_lock);
     return E_OK;
 }
 
@@ -885,11 +892,13 @@ kerr_t layer_set_zindex(layer_t *layer, int32_t z_index) {
     if (!layer) {
         return E_INVAL;
     }
+    mutex_lock(&layer_compose_lock);
     remove_layer_ordered(layer);
     mutex_lock(&layer->lock);
     layer->z_index = z_index;
     mutex_unlock(&layer->lock);
     insert_layer_ordered(layer);
+    mutex_unlock(&layer_compose_lock);
     return E_OK;
 }
 
@@ -971,11 +980,14 @@ static void composite_layer(layer_t *layer) {
 
 /** @brief Composites all visible layers according to their Z-index into the backbuffer. */
 static void compositor_compose() {
+    mutex_lock(&layer_compose_lock);
+
     irq_flags_t sflags = spinlock_acquire_irqsave(&state_lock);
     bool enabled = rendering_enabled;
     spinlock_release_irqrestore(&state_lock, sflags);
 
     if (!enabled || !backbuffer) {
+        mutex_unlock(&layer_compose_lock);
         return;
     }
 
@@ -998,6 +1010,7 @@ static void compositor_compose() {
         current = next;
     }
     spinlock_release_irqrestore(&layer_list_lock, rflags);
+    mutex_unlock(&layer_compose_lock);
 }
 
 /** @brief Flushes the backbuffer to the physical framebuffer via the active video driver. */
