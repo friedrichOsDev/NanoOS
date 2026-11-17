@@ -166,6 +166,12 @@ static void shell_input_handler(const input_event_t *event, void *context) {
 
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_input_lock);
 
+    /* Re-check after taking the lock so shutdown cannot race an in-flight callback. */
+    if (!__atomic_load_n(&shell_initialized, __ATOMIC_ACQUIRE)) {
+        spinlock_release_irqrestore(&shell_input_lock, flags);
+        return;
+    }
+
     if (key == KEY_RETURN || key == KEY_NUMLOCK_RETURN) {
         shell_newline();
     } else if (key == KEY_NUMLOCK_CLEAR) {
