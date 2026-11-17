@@ -125,3 +125,4 @@ double compositor_get_delta_time();
 uint64_t compositor_get_width();
 uint64_t compositor_get_height();
 rect_size_t compositor_get_size();
+kerr_t compositor_get_font_size(rect_size_t *out);

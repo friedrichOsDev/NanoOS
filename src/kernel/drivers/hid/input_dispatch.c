@@ -56,6 +56,34 @@ kerr_t input_register_handler(input_event_handler_t handler, void *context) {
 }
 
 /**
+ * @brief Unregister a previously registered input event handler.
+ *
+ * @param[in] handler Event callback to remove.
+ * @param[in] context Context pointer used during registration.
+ * @return E_OK if removed, or E_INVAL if no matching handler exists.
+ */
+kerr_t input_unregister_handler(input_event_handler_t handler, void *context) {
+    if (!handler) {
+        return E_INVAL;
+    }
+
+    irq_flags_t flags = spinlock_acquire_irqsave(&handler_lock);
+    for (size_t i = 0; i < handler_count; i++) {
+        if (handlers[i].callback == handler && handlers[i].context == context) {
+            for (size_t j = i; j + 1U < handler_count; j++) {
+                handlers[j] = handlers[j + 1U];
+            }
+            handler_count--;
+            handlers[handler_count] = (input_handler_entry_t){0};
+            spinlock_release_irqrestore(&handler_lock, flags);
+            return E_OK;
+        }
+    }
+    spinlock_release_irqrestore(&handler_lock, flags);
+    return E_INVAL;
+}
+
+/**
  * @brief Pull input events and distribute them to registered kernel handlers.
  *
  * @param[in] arg Unused thread argument.

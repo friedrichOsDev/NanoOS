@@ -64,6 +64,7 @@ kerr_t input_init();
 kerr_t input_poll_event(input_event_t *event);
 // const char *input_event_str(const input_event_t *event);
 kerr_t input_register_handler(input_event_handler_t handler, void *context);
+kerr_t input_unregister_handler(input_event_handler_t handler, void *context);
 kerr_t input_dispatcher_start();
 bool input_dispatcher_started();
 kerr_t keyboard_register_layout(const keyboard_layout_t *layout);
