@@ -31,7 +31,6 @@ static void kernel_shutdown() {
     }
 
     log_debug("Shell destroyed");
-
     acpi_power_off();
 }
 
@@ -107,8 +106,9 @@ static void kernel_init_thread(void *arg) {
     err = shell_init();
     if (k_failed(err)) {
         log_error("failed to initialize shell (%s)", kerr_str(err));
+    } else {
+        log_info("shell initialized");
     }
-    log_info("shell initialized");
 
     for (;;) {
         thread_yield();
