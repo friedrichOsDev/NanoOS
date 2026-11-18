@@ -5,12 +5,17 @@
  */
 
 #include "_shell.h"
+#include "command/_command.h"
+
 #include <drivers/hid/input.h>
 #include <kernel/sync.h>
+#include <shell/output.h>
 
 static spinlock_t shell_input_lock = SPINLOCK_INIT;
 shell_input_buffer_t shell_input_buffer = {0};
 static bool shell_input_dirty = true;
+static bool shell_input_submission_pending = false;
+static uint32_t shell_input_submission_snapshot[SHELL_INPUT_BUFFER_SIZE];
 
 /** @brief Clear input buffer. */
 static void shell_input_clear() {
@@ -19,12 +24,6 @@ static void shell_input_clear() {
     shell_input_buffer.size = 0;
     shell_input_buffer.cursor_pos = 0;
     shell_input_dirty = true;
-}
-
-/** @brief Handles enter pressed. */
-static void shell_newline() {
-    /* TODO: forward the input buffer to the command parser and shell logic. */
-    shell_input_clear();
 }
 
 /** @brief Delete the character before the current cursor position. */
@@ -162,16 +161,27 @@ static void shell_input_handler(const input_event_t *event, void *context) {
     if (event->unicode_count == 0U && !is_control_key)
         return;
 
+    bool submit_command = false;
+    size_t submit_length = 0U;
+
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_input_lock);
 
     /* Re-check after taking the lock so shutdown cannot race an in-flight callback. */
-    if (!__atomic_load_n(&shell_initialized, __ATOMIC_ACQUIRE)) {
+    if (!__atomic_load_n(&shell_initialized, __ATOMIC_ACQUIRE) ||
+        shell_input_submission_pending) {
         spinlock_release_irqrestore(&shell_input_lock, flags);
         return;
     }
 
     if (key == KEY_RETURN || key == KEY_NUMLOCK_RETURN) {
-        shell_newline();
+        if (shell_input_buffer.size > 0U) {
+            shell_input_submission_pending = true;
+            submit_length = (size_t)shell_input_buffer.size;
+            for (size_t i = 0U; i < submit_length; i++) {
+                shell_input_submission_snapshot[i] = shell_input_buffer.buffer[i];
+            }
+            submit_command = true;
+        }
     } else if (numpad_nav_active && key == KEY_NUMLOCK_CLEAR) {
         shell_input_clear();
     } else if (key == KEY_BACK) {
@@ -202,6 +212,23 @@ static void shell_input_handler(const input_event_t *event, void *context) {
     }
 
     spinlock_release_irqrestore(&shell_input_lock, flags);
+
+    if (submit_command) {
+        kerr_t err = shell_command_submit(shell_input_submission_snapshot, submit_length);
+
+        flags = spinlock_acquire_irqsave(&shell_input_lock);
+        if (err == E_OK) {
+            shell_input_clear();
+        }
+        shell_input_submission_pending = false;
+        spinlock_release_irqrestore(&shell_input_lock, flags);
+
+        if (err == E_NOMEM) {
+            (void)shell_write_line("Command queue full; input retained.");
+        } else if (k_failed(err)) {
+            (void)shell_write_line("Command system is unavailable; input retained.");
+        }
+    }
 }
 
 /**
@@ -211,8 +238,14 @@ static void shell_input_handler(const input_event_t *event, void *context) {
  */
 kerr_t shell_input_init() {
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_input_lock);
+    if (shell_input_submission_pending) {
+        spinlock_release_irqrestore(&shell_input_lock, flags);
+        return E_NOTAVAIL;
+    }
+
     shell_input_buffer.size = 0U;
     shell_input_buffer.cursor_pos = 0U;
+    shell_input_submission_pending = false;
     shell_input_dirty = true;
     spinlock_release_irqrestore(&shell_input_lock, flags);
 
@@ -222,17 +255,26 @@ kerr_t shell_input_init() {
 /**
  * @brief Disables and unregisters the shell input callback.
  *
- * @return E_OK if the callback was removed, or an error code.
+ * @return E_OK when no callback is in flight, E_NOTAVAIL while one is submitting.
  */
 kerr_t shell_input_deinit() {
+    kerr_t err = input_unregister_handler(shell_input_handler, NULL);
+    if (k_failed(err) && err != E_INVAL) {
+        return err;
+    }
+
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_input_lock);
+    if (shell_input_submission_pending) {
+        spinlock_release_irqrestore(&shell_input_lock, flags);
+        return E_NOTAVAIL;
+    }
+
     shell_input_buffer.size = 0U;
     shell_input_buffer.cursor_pos = 0U;
     shell_input_dirty = true;
     spinlock_release_irqrestore(&shell_input_lock, flags);
 
-    kerr_t err = input_unregister_handler(shell_input_handler, NULL);
-    return (err == E_INVAL) ? E_OK : err;
+    return E_OK;
 }
 
 /**

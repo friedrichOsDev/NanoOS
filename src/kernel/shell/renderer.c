@@ -445,6 +445,11 @@ static void render_frame() {
     layer_draw_end(shell_layer);
 }
 
+/** @brief Report whether renderer-owned resources have been released. */
+bool shell_renderer_is_stopped(void) {
+    return __atomic_load_n(&shell_renderer_stopped, __ATOMIC_ACQUIRE);
+}
+
 /** @brief Releases renderer-owned resources after the render loop stops. */
 static void shell_renderer_cleanup() {
     if (shell_layer) {
