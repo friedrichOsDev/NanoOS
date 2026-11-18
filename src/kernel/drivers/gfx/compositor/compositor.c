@@ -940,9 +940,14 @@ static void composite_layer(layer_t *layer) {
         return;
     }
 
-    if (!mutex_trylock(&layer->lock)) {
-        return;
-    }
+    /*
+     * compositor_compose() clears the backbuffer before visiting the layers.
+     * Skipping a busy layer would therefore erase it from this entire frame.
+     * Wait for the short drawing critical section instead of silently
+     * dropping the layer. Lock ordering is layer_compose_lock -> layer->lock;
+     * layer update/destruction paths use the same order where both are needed.
+     */
+    mutex_lock(&layer->lock);
 
     if (!layer->visible || !layer->canvas.buffer) {
         mutex_unlock(&layer->lock);

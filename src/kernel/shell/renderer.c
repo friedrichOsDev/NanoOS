@@ -284,7 +284,7 @@ static void compose_frame() {
     spinlock_release_irqrestore(&shell_render_lock, flags);
 }
 
-/** @brief Renders the composed bottom input row into the shell compositor layer. */
+/** @brief Renders the composed input/output frame into the shell layer. */
 static void render_frame() {
     char prompt_text[SHELL_PROMPT_LENGTH + 1U];
     uint64_t input_length = 0U;
@@ -298,6 +298,7 @@ static void render_frame() {
     bool cursor_visible = false;
     bool cursor_has_character = false;
     char cursor_text[5] = {0};
+    static kerr_t last_draw_error = E_OK;
 
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_render_lock);
     if (!shell_screen.is_dirty || !shell_screen.buffer ||
@@ -307,11 +308,17 @@ static void render_frame() {
     }
 
     uint64_t row = shell_screen.cursor_line;
+    if (row >= shell_screen.lines) {
+        spinlock_release_irqrestore(&shell_render_lock, flags);
+        return;
+    }
+
     uint64_t row_offset = row * shell_screen.columns;
     prompt_columns = shell_screen.prompt_columns;
     if (prompt_columns > SHELL_PROMPT_LENGTH) {
         prompt_columns = SHELL_PROMPT_LENGTH;
     }
+
     for (uint64_t i = 0U; i < prompt_columns; i++) {
         prompt_text[i] = SHELL_PROMPT[i];
     }
@@ -334,37 +341,33 @@ static void render_frame() {
             cursor_has_character = true;
         }
     }
+
     glyph_width = shell_screen.glyph_width;
     glyph_height = shell_screen.glyph_height;
     scale = shell_screen.font_scale;
     pixel_width = shell_screen.pixel_width;
     pixel_height = shell_screen.pixel_height;
-
-    shell_screen.dirty_lines[row] = false;
-    shell_screen.is_dirty = false;
     spinlock_release_irqrestore(&shell_render_lock, flags);
 
-    if (k_failed(layer_draw_begin(shell_layer))) {
-        flags = spinlock_acquire_irqsave(&shell_render_lock);
-        shell_screen.is_dirty = true;
-        if (row < shell_screen.lines) {
-            shell_screen.dirty_lines[row] = true;
-        }
-        spinlock_release_irqrestore(&shell_render_lock, flags);
-        return;
+    /*
+     * Do not clear is_dirty before drawing. If any operation fails, the next
+     * renderer iteration must retry instead of silently losing the update.
+     */
+    kerr_t draw_err = layer_draw_begin(shell_layer);
+    if (k_failed(draw_err)) {
+        goto render_failed;
+    }
+
+    draw_err = canvas_clear(&shell_layer->canvas, COLOR_TRANSPARENT);
+    if (k_failed(draw_err)) {
+        goto render_unlock;
     }
 
     uint64_t scaled_width = glyph_width * scale;
     uint64_t scaled_height = glyph_height * scale;
     uint64_t line_y = pixel_height - scaled_height;
 
-    canvas_clear(&shell_layer->canvas, COLOR_TRANSPARENT);
-
-    /*
-     * Output is bottom-aligned in the area above the fixed input row.
-     * The snapshot already contains only the newest lines that fit.
-     */
-    uint64_t output_rows = (pixel_height / scaled_height);
+    uint64_t output_rows = pixel_height / scaled_height;
     if (output_rows > 0U) {
         output_rows--;
     }
@@ -386,63 +389,115 @@ static void render_frame() {
 
         if (text_length > 0U) {
             uint64_t output_y = ((uint64_t)first_output_row + i) * scaled_height;
-            canvas_draw_text(
+            draw_err = canvas_draw_text(
                 &shell_layer->canvas,
                 (point_t){0, (int64_t)output_y},
                 shell_output_text,
                 COLOR_LIGHT_GRAY,
                 (uint32_t)scale);
+            if (k_failed(draw_err)) {
+                goto render_unlock;
+            }
         }
     }
 
-    canvas_draw_rectangle(
+    draw_err = canvas_draw_rectangle(
         &shell_layer->canvas,
         (point_t){0, (int64_t)line_y},
         (rect_size_t){pixel_width, scaled_height},
         MAKE_COLOR_ALPHA(12, 16, 24, 232),
         true,
         0U);
+    if (k_failed(draw_err)) {
+        goto render_unlock;
+    }
 
     if (prompt_columns > 0U) {
-        canvas_draw_text(
+        draw_err = canvas_draw_text(
             &shell_layer->canvas,
             (point_t){0, (int64_t)line_y},
             prompt_text,
             COLOR_LIGHT_GRAY,
             (uint32_t)scale);
+        if (k_failed(draw_err)) {
+            goto render_unlock;
+        }
     }
+
     if (input_length > 0U) {
-        canvas_draw_text(
+        draw_err = canvas_draw_text(
             &shell_layer->canvas,
             (point_t){(int64_t)(prompt_columns * scaled_width), (int64_t)line_y},
             shell_input_text,
             COLOR_WHITE,
             (uint32_t)scale);
+        if (k_failed(draw_err)) {
+            goto render_unlock;
+        }
     }
+
     if (cursor_visible) {
         point_t cursor_position = {
             (int64_t)(cursor_column * scaled_width),
             (int64_t)line_y};
 
-        /* Draw a solid cursor cell, then redraw its character with inverted colors. */
-        canvas_draw_rectangle(
+        draw_err = canvas_draw_rectangle(
             &shell_layer->canvas,
             cursor_position,
             (rect_size_t){scaled_width, scaled_height},
             COLOR_WHITE,
             true,
             0U);
+        if (k_failed(draw_err)) {
+            goto render_unlock;
+        }
 
         if (cursor_has_character) {
-            canvas_draw_text(
+            draw_err = canvas_draw_text(
                 &shell_layer->canvas,
                 cursor_position,
                 cursor_text,
                 COLOR_BLACK,
                 (uint32_t)scale);
+            if (k_failed(draw_err)) {
+                goto render_unlock;
+            }
         }
     }
-    layer_draw_end(shell_layer);
+
+render_unlock:
+    {
+        kerr_t unlock_err = layer_draw_end(shell_layer);
+        if (!k_failed(draw_err) && k_failed(unlock_err)) {
+            draw_err = unlock_err;
+        }
+    }
+    if (k_failed(draw_err)) {
+        goto render_failed;
+    }
+
+    flags = spinlock_acquire_irqsave(&shell_render_lock);
+    if (row < shell_screen.lines && shell_screen.dirty_lines) {
+        shell_screen.dirty_lines[row] = false;
+    }
+    shell_screen.is_dirty = false;
+    spinlock_release_irqrestore(&shell_render_lock, flags);
+
+    last_draw_error = E_OK;
+    return;
+
+render_failed:
+    flags = spinlock_acquire_irqsave(&shell_render_lock);
+    shell_screen.is_dirty = true;
+    if (row < shell_screen.lines && shell_screen.dirty_lines) {
+        shell_screen.dirty_lines[row] = true;
+    }
+    spinlock_release_irqrestore(&shell_render_lock, flags);
+
+    if (draw_err != last_draw_error) {
+        log_error("shell renderer failed to draw frame (%s)", kerr_str(draw_err));
+        last_draw_error = draw_err;
+    }
 }
 
 /** @brief Report whether renderer-owned resources have been released. */
