@@ -14,19 +14,26 @@ typedef struct {
     size_t length;
 } shell_command_request_t;
 
+/*
+ * The queue is deliberately SPSC:
+ * - producer: the single input_dispatcher_thread callback
+ * - consumer: the single shell_command worker
+ *
+ * Monotonic head/tail counters make all four slots usable. Release/acquire
+ * publication guarantees the slot contents are visible before the consumer
+ * observes the updated tail. No spinlock is needed in the input path.
+ */
 typedef struct {
     shell_command_request_t requests[SHELL_COMMAND_QUEUE_SIZE];
-    size_t read_index;
-    size_t write_index;
-    size_t count;
-    spinlock_t lock;
+    size_t head;
+    size_t tail;
     bool accepting;
 } shell_command_queue_t;
 
 _Static_assert(SHELL_INPUT_BUFFER_SIZE == SHELL_COMMAND_MAX_LINE_CODEPOINTS,
                "Shell input and command parser limits must match");
 
-static shell_command_queue_t command_queue = {.lock = SPINLOCK_INIT};
+static shell_command_queue_t command_queue;
 /* Scratch storage is static so the worker does not consume most of its 16 KiB stack. */
 static uint32_t worker_input[SHELL_INPUT_BUFFER_SIZE];
 static size_t worker_input_length = 0U;
@@ -40,47 +47,52 @@ bool shell_command_is_stopped(void) {
     return __atomic_load_n(&command_worker_stopped, __ATOMIC_ACQUIRE);
 }
 
-/** @brief Submit an immutable input snapshot to the fixed-size FIFO. */
+/**
+ * @brief Submit an immutable line snapshot to the non-blocking SPSC FIFO.
+ *
+ * This function must be called by the single input-dispatcher producer only.
+ * It performs no allocation, lock acquisition, parsing, or command execution.
+ */
 kerr_t shell_command_submit(const uint32_t *input, size_t length) {
     if (!input && length != 0U) return E_BADADDR;
     if (length > SHELL_INPUT_BUFFER_SIZE) return E_BADSIZE;
     if (!__atomic_load_n(&command_initialized, __ATOMIC_ACQUIRE)) return E_NOINIT;
     if (length == 0U) return E_OK;
+    if (!__atomic_load_n(&command_queue.accepting, __ATOMIC_ACQUIRE)) return E_NOINIT;
 
-    irq_flags_t flags = spinlock_acquire_irqsave(&command_queue.lock);
-    if (!command_queue.accepting) {
-        spinlock_release_irqrestore(&command_queue.lock, flags);
-        return E_NOINIT;
-    }
-    if (command_queue.count >= SHELL_COMMAND_QUEUE_SIZE) {
-        spinlock_release_irqrestore(&command_queue.lock, flags);
+    size_t tail = __atomic_load_n(&command_queue.tail, __ATOMIC_RELAXED);
+    size_t head = __atomic_load_n(&command_queue.head, __ATOMIC_ACQUIRE);
+
+    if ((tail - head) >= SHELL_COMMAND_QUEUE_SIZE) {
         return E_NOMEM;
     }
 
-    shell_command_request_t *request = &command_queue.requests[command_queue.write_index];
+    shell_command_request_t *request =
+        &command_queue.requests[tail % SHELL_COMMAND_QUEUE_SIZE];
     for (size_t i = 0U; i < length; i++) request->input[i] = input[i];
     request->length = length;
-    command_queue.write_index = (command_queue.write_index + 1U) % SHELL_COMMAND_QUEUE_SIZE;
-    command_queue.count++;
-    spinlock_release_irqrestore(&command_queue.lock, flags);
+
+    /* Publish the complete slot only after its contents have been copied. */
+    __atomic_store_n(&command_queue.tail, tail + 1U, __ATOMIC_RELEASE);
     return E_OK;
 }
 
 /** @brief Dequeue one request into worker-private storage. */
 static bool shell_command_queue_dequeue(void) {
-    irq_flags_t flags = spinlock_acquire_irqsave(&command_queue.lock);
-    if (command_queue.count == 0U) {
-        spinlock_release_irqrestore(&command_queue.lock, flags);
-        return false;
+    size_t head = __atomic_load_n(&command_queue.head, __ATOMIC_RELAXED);
+    size_t tail = __atomic_load_n(&command_queue.tail, __ATOMIC_ACQUIRE);
+
+    if (head == tail) return false;
+
+    const shell_command_request_t *request =
+        &command_queue.requests[head % SHELL_COMMAND_QUEUE_SIZE];
+    worker_input_length = request->length;
+    for (size_t i = 0U; i < worker_input_length; i++) {
+        worker_input[i] = request->input[i];
     }
 
-    const shell_command_request_t *request = &command_queue.requests[command_queue.read_index];
-    worker_input_length = request->length;
-    for (size_t i = 0U; i < worker_input_length; i++) worker_input[i] = request->input[i];
-
-    command_queue.read_index = (command_queue.read_index + 1U) % SHELL_COMMAND_QUEUE_SIZE;
-    command_queue.count--;
-    spinlock_release_irqrestore(&command_queue.lock, flags);
+    /* Release the slot only after the request has been copied locally. */
+    __atomic_store_n(&command_queue.head, head + 1U, __ATOMIC_RELEASE);
     return true;
 }
 
@@ -155,13 +167,9 @@ kerr_t shell_command_init(void) {
     if (!shell_command_is_stopped()) return E_NOTAVAIL;
     K_TRY(shell_command_registry_init());
 
-    irq_flags_t flags = spinlock_acquire_irqsave(&command_queue.lock);
-    command_queue.read_index = 0U;
-    command_queue.write_index = 0U;
-    command_queue.count = 0U;
-    command_queue.accepting = true;
-    spinlock_release_irqrestore(&command_queue.lock, flags);
-
+    __atomic_store_n(&command_queue.head, 0U, __ATOMIC_RELAXED);
+    __atomic_store_n(&command_queue.tail, 0U, __ATOMIC_RELAXED);
+    __atomic_store_n(&command_queue.accepting, true, __ATOMIC_RELEASE);
     __atomic_store_n(&command_stop_requested, false, __ATOMIC_RELEASE);
     __atomic_store_n(&command_worker_stopped, false, __ATOMIC_RELEASE);
     __atomic_store_n(&command_initialized, true, __ATOMIC_RELEASE);
@@ -170,14 +178,11 @@ kerr_t shell_command_init(void) {
     kerr_t err = thread_create(NULL, shell_command_worker, NULL, "shell_command", &worker);
     if (k_failed(err)) {
         __atomic_store_n(&command_initialized, false, __ATOMIC_RELEASE);
+        __atomic_store_n(&command_queue.accepting, false, __ATOMIC_RELEASE);
         __atomic_store_n(&command_stop_requested, false, __ATOMIC_RELEASE);
         __atomic_store_n(&command_worker_stopped, true, __ATOMIC_RELEASE);
-        flags = spinlock_acquire_irqsave(&command_queue.lock);
-        command_queue.accepting = false;
-        command_queue.count = 0U;
-        command_queue.read_index = 0U;
-        command_queue.write_index = 0U;
-        spinlock_release_irqrestore(&command_queue.lock, flags);
+        __atomic_store_n(&command_queue.head, 0U, __ATOMIC_RELAXED);
+        __atomic_store_n(&command_queue.tail, 0U, __ATOMIC_RELAXED);
         shell_command_registry_deinit();
         return err;
     }
@@ -187,25 +192,20 @@ kerr_t shell_command_init(void) {
 
 /**
  * @brief Stop accepting, drain the FIFO and finish registry cleanup.
- * Caller retries while the worker is still executing.
+ * shell_input_deinit() must have completed before this is called.
  */
 kerr_t shell_command_deinit(void) {
     if (__atomic_load_n(&command_initialized, __ATOMIC_ACQUIRE)) {
         __atomic_store_n(&command_initialized, false, __ATOMIC_RELEASE);
-        irq_flags_t flags = spinlock_acquire_irqsave(&command_queue.lock);
-        command_queue.accepting = false;
-        spinlock_release_irqrestore(&command_queue.lock, flags);
+        __atomic_store_n(&command_queue.accepting, false, __ATOMIC_RELEASE);
         __atomic_store_n(&command_stop_requested, true, __ATOMIC_RELEASE);
     }
     if (!shell_command_is_stopped()) return E_NOTAVAIL;
 
     shell_command_registry_deinit();
-    irq_flags_t flags = spinlock_acquire_irqsave(&command_queue.lock);
-    command_queue.accepting = false;
-    command_queue.read_index = 0U;
-    command_queue.write_index = 0U;
-    command_queue.count = 0U;
-    spinlock_release_irqrestore(&command_queue.lock, flags);
+    __atomic_store_n(&command_queue.head, 0U, __ATOMIC_RELAXED);
+    __atomic_store_n(&command_queue.tail, 0U, __ATOMIC_RELAXED);
+    __atomic_store_n(&command_queue.accepting, false, __ATOMIC_RELEASE);
     __atomic_store_n(&command_stop_requested, false, __ATOMIC_RELEASE);
     return E_OK;
 }
