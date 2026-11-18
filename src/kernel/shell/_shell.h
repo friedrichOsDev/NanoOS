@@ -7,7 +7,9 @@
 #include <drivers/gfx/compositor.h>
 #include <pch.h>
 
-#define SHELL_INPUT_BUFFER_SIZE 1024
+#define SHELL_INPUT_BUFFER_SIZE 1024U
+
+/** @brief Logical shell input representation. */
 typedef struct {
     uint32_t buffer[SHELL_INPUT_BUFFER_SIZE];
     uint64_t size;
@@ -19,12 +21,14 @@ kerr_t shell_input_init();
 kerr_t shell_input_deinit();
 bool shell_sync_input_buffer(shell_input_buffer_t *out_buffer);
 
+/** @brief Shell cell representation used by the renderer. */
 typedef struct {
     uint32_t unicode;
     color_t fg;
     color_t bg;
 } shell_cell_t;
 
+/** @brief Virtual screen representation used by the shell renderer. */
 typedef struct {
     uint8_t font_scale;
     uint64_t lines;
