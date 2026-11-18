@@ -216,7 +216,7 @@ static void compose_frame() {
     }
 
     uint64_t row = shell_screen.lines - 1U;
-    row_offset = row * shell_screen.columns;
+    uint64_t row_offset = row * shell_screen.columns;
     uint64_t prompt_columns = SHELL_PROMPT_LENGTH;
     if (prompt_columns > shell_screen.columns) {
         prompt_columns = shell_screen.columns;
@@ -326,7 +326,7 @@ static void render_frame() {
         return;
     }
 
-    uint64_t row_offset = row * shell_screen.columns;
+    row_offset = row * shell_screen.columns;
     prompt_columns = shell_screen.prompt_columns;
     if (prompt_columns > SHELL_PROMPT_LENGTH) {
         prompt_columns = SHELL_PROMPT_LENGTH;
