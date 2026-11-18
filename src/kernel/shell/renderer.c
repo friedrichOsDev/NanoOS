@@ -216,7 +216,7 @@ static void compose_frame() {
     }
 
     uint64_t row = shell_screen.lines - 1U;
-    uint64_t row_offset = row * shell_screen.columns;
+    row_offset = row * shell_screen.columns;
     uint64_t prompt_columns = SHELL_PROMPT_LENGTH;
     if (prompt_columns > shell_screen.columns) {
         prompt_columns = shell_screen.columns;
@@ -287,6 +287,8 @@ static void compose_frame() {
 /** @brief Renders the composed input/output frame into the shell layer. */
 static void render_frame() {
     char prompt_text[SHELL_PROMPT_LENGTH + 1U];
+    char cursor_text[5] = {0};
+
     uint64_t input_length = 0U;
     uint64_t prompt_columns = 0U;
     uint64_t cursor_column = 0U;
@@ -295,9 +297,20 @@ static void render_frame() {
     uint64_t scale = 1U;
     uint64_t pixel_width = 0U;
     uint64_t pixel_height = 0U;
+    uint64_t row = 0U;
+    uint64_t row_offset = 0U;
+    uint64_t scaled_width = 0U;
+    uint64_t scaled_height = 0U;
+    uint64_t line_y = 0U;
+    uint64_t output_rows = 0U;
+
+    size_t visible_output_count = 0U;
+    size_t first_output_row = 0U;
+
     bool cursor_visible = false;
     bool cursor_has_character = false;
-    char cursor_text[5] = {0};
+
+    kerr_t draw_err = E_OK;
     static kerr_t last_draw_error = E_OK;
 
     irq_flags_t flags = spinlock_acquire_irqsave(&shell_render_lock);
@@ -307,7 +320,7 @@ static void render_frame() {
         return;
     }
 
-    uint64_t row = shell_screen.cursor_line;
+    row = shell_screen.cursor_line;
     if (row >= shell_screen.lines) {
         spinlock_release_irqrestore(&shell_render_lock, flags);
         return;
@@ -353,7 +366,7 @@ static void render_frame() {
      * Do not clear is_dirty before drawing. If any operation fails, the next
      * renderer iteration must retry instead of silently losing the update.
      */
-    kerr_t draw_err = layer_draw_begin(shell_layer);
+    draw_err = layer_draw_begin(shell_layer);
     if (k_failed(draw_err)) {
         goto render_failed;
     }
@@ -363,19 +376,19 @@ static void render_frame() {
         goto render_unlock;
     }
 
-    uint64_t scaled_width = glyph_width * scale;
-    uint64_t scaled_height = glyph_height * scale;
-    uint64_t line_y = pixel_height - scaled_height;
+    scaled_width = glyph_width * scale;
+    scaled_height = glyph_height * scale;
+    line_y = pixel_height - scaled_height;
 
-    uint64_t output_rows = pixel_height / scaled_height;
+    output_rows = pixel_height / scaled_height;
     if (output_rows > 0U) {
         output_rows--;
     }
-    size_t visible_output_count = shell_output_snapshot_count;
+    visible_output_count = shell_output_snapshot_count;
     if (visible_output_count > output_rows) {
         visible_output_count = (size_t)output_rows;
     }
-    size_t first_output_row = (size_t)output_rows - visible_output_count;
+    first_output_row = (size_t)output_rows - visible_output_count;
 
     for (size_t i = 0U; i < visible_output_count; i++) {
         const shell_output_line_t *line = &shell_output_snapshot_buffer[i];
