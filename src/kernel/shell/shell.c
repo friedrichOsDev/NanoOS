@@ -14,11 +14,21 @@ bool shell_initialized = false;
 kerr_t shell_init() {
     if (__atomic_load_n(&shell_initialized, __ATOMIC_ACQUIRE)) return E_OK;
 
-    /* Never reset shared state while a previous renderer/worker is still exiting. */
+    /*
+     * Shutdown is asynchronous. Do not reset shared state while a previous
+     * renderer/worker is still exiting. Once both have stopped, finalize their
+     * state flags before reinitializing them.
+     */
     if (!shell_command_is_stopped() || !shell_renderer_is_stopped()) return E_NOTAVAIL;
 
+    kerr_t err = shell_command_deinit();
+    if (k_failed(err)) return err;
+
+    err = shell_deinit_renderer();
+    if (k_failed(err)) return err;
+
     K_TRY(shell_output_init());
-    kerr_t err = shell_input_init();
+    err = shell_input_init();
     if (k_failed(err)) {
         (void)shell_output_deinit();
         return err;
