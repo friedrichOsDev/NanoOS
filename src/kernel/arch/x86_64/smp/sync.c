@@ -66,13 +66,16 @@ void mutex_lock(mutex_t *mux) {
         return;
     irq_flags_t flags = spinlock_acquire_irqsave(&mux->lock);
 
+    thread_t *current = sched_get_current_thread();
+    thread_t *owner = mux->owner;
+    bool recursive = current && owner == current;
+
     if (!mux->locked) {
         mux->locked = true;
+        mux->owner = current;
         spinlock_release_irqrestore(&mux->lock, flags);
         return;
     }
-
-    thread_t *current = sched_get_current_thread();
     if (!current) {
         spinlock_release_irqrestore(&mux->lock, flags);
         return;
@@ -93,7 +96,18 @@ void mutex_lock(mutex_t *mux) {
 
     spinlock_release_irqrestore(&mux->lock, flags);
 
+    if (recursive) {
+        log_error("mutex recursive lock: %s (tid=%lu)",
+                  mux->name ? mux->name : "<unnamed>", current->tid);
+    }
+    log_debug("mutex contention: %s waiter=%s(tid=%lu) owner=%s(tid=%lu)",
+              mux->name ? mux->name : "<unnamed>", current->name, current->tid,
+              owner ? owner->name : "<unknown>", owner ? owner->tid : 0UL);
+    log_debug("mutex blocked: %s thread=%s(tid=%lu)",
+              mux->name ? mux->name : "<unnamed>", current->name, current->tid);
     sched_schedule();
+    log_debug("mutex resumed: %s thread=%s(tid=%lu)",
+              mux->name ? mux->name : "<unnamed>", current->name, current->tid);
 }
 
 /**
@@ -104,21 +118,40 @@ void mutex_lock(mutex_t *mux) {
 void mutex_unlock(mutex_t *mux) {
     if (!mux)
         return;
+    thread_t *current = sched_get_current_thread();
+    thread_t *waiter = NULL;
+    thread_t *owner = NULL;
+    bool non_owner = false;
     irq_flags_t flags = spinlock_acquire_irqsave(&mux->lock);
 
-    if (mux->wait_queue != NULL) {
-        thread_t *waiter = (thread_t *)mux->wait_queue;
-        mux->wait_queue = (struct thread *)waiter->next;
+    owner = mux->owner;
+    non_owner = current && owner && owner != current;
 
+    if (mux->wait_queue != NULL) {
+        waiter = (thread_t *)mux->wait_queue;
+        mux->wait_queue = (struct thread *)waiter->next;
         waiter->next = NULL;
         waiter->state = THREAD_READY;
-
-        sched_add_thread(waiter);
+        mux->owner = waiter; /* direct handoff; lock remains held */
     } else {
         mux->locked = false;
+        mux->owner = NULL;
     }
 
     spinlock_release_irqrestore(&mux->lock, flags);
+
+    if (non_owner) {
+        log_error("mutex unlock by non-owner: %s caller=%s(tid=%lu) owner=%s(tid=%lu)",
+                  mux->name ? mux->name : "<unnamed>", current->name, current->tid,
+                  owner->name, owner->tid);
+    }
+
+    /* Avoid acquiring sched_lock while holding mux->lock. */
+    if (waiter) {
+        log_debug("mutex handoff: %s -> %s(tid=%lu)",
+                  mux->name ? mux->name : "<unnamed>", waiter->name, waiter->tid);
+        sched_add_thread(waiter);
+    }
 }
 
 /**
@@ -135,6 +168,7 @@ bool mutex_trylock(mutex_t *mux) {
 
     if (!mux->locked) {
         mux->locked = true;
+        mux->owner = sched_get_current_thread();
         spinlock_release_irqrestore(&mux->lock, flags);
         return true;
     }
