@@ -280,6 +280,7 @@ static void kernel_init_thread(void *arg) {
     uint64_t loop_frames = 0;
 
     for (;;) {
+        log_debug("step 0");
         orb_x += orb_dx;
         orb_y += orb_dy;
         if (orb_x <= 10 || orb_x + 44 >= (int64_t)screen_w - 10) {
@@ -292,6 +293,7 @@ static void kernel_init_thread(void *arg) {
 
         loop_frames++;
         if ((loop_frames % 4) == 0) {
+            log_debug("step 1");
             layer_draw_begin(fps_layer);
             canvas_clear(&fps_layer->canvas, COLOR_TRANSPARENT);
             canvas_draw_rectangle(&fps_layer->canvas, (point_t){0, 0}, (rect_size_t){215, 95}, MAKE_COLOR_ALPHA(12, 16, 26, 230), true, 0);
@@ -299,22 +301,26 @@ static void kernel_init_thread(void *arg) {
 
             canvas_draw_text(&fps_layer->canvas, (point_t){12, 8}, "PERFORMANCE HUD", COLOR_WHITE, 1);
 
+            log_debug("step 2");
             char buf[32];
             uint64_t fps = compositor_get_current_fps();
             snprintf(buf, sizeof(buf), "FPS:   %llu", (unsigned long long)fps);
             canvas_draw_text(&fps_layer->canvas, (point_t){12, 28}, buf, COLOR_GREEN, 1);
 
+            log_debug("step 3");
             double dt_ms = compositor_get_delta_time() * 1000.0;
             snprintf(buf, sizeof(buf), "Delta: %.2f ms", dt_ms);
             canvas_draw_text(&fps_layer->canvas, (point_t){12, 48}, buf, COLOR_YELLOW, 1);
 
+            log_debug("step 4");
             snprintf(buf, sizeof(buf), "Frame: %llu", (unsigned long long)loop_frames);
             canvas_draw_text(&fps_layer->canvas, (point_t){12, 68}, buf, COLOR_CYAN, 1);
 
+            log_debug("step 5");
             layer_draw_end(fps_layer);
         }
 
-        log_debug("wait 16ms");
+        log_debug("step 6");
         thread_sleep_ms(16);
     }
 

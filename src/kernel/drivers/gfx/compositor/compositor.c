@@ -1680,7 +1680,7 @@ static void compositor_thread(void *arg) {
         delta_time = (double)frame_delta_ms / 1000.0;
         spinlock_release_irqrestore(&state_lock, sflags);
 
-        log_debug("Frame start: %llu, Delta time: %f, Target time: %f", frame_start, frame_delta_ms, target_frame_time_ms);
+        log_debug("Frame start: %llu, Delta time: %f", frame_start, frame_delta_ms);
         compositor_compose();
         compositor_swap();
 
