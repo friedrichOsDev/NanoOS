@@ -322,9 +322,11 @@ void thread_sleep_ms(uint64_t ms) {
     }
 
     thread_t *thread = my_cpu->current_thread;
+    uint64_t wake_tick = system_ticks + ms;
+    uint32_t cpu_id = my_cpu->cpu_id;
 
     thread->state = THREAD_SLEEPING;
-    thread->sleep_until_tick = system_ticks + ms;
+    thread->sleep_until_tick = wake_tick;
 
     thread->next = sleep_queue_head;
     thread->prev = NULL;
@@ -335,7 +337,11 @@ void thread_sleep_ms(uint64_t ms) {
 
     spinlock_release_irqrestore(&sched_lock, flags);
 
+    log_debug("[sched] sleep cpu=%u thread=%s(tid=%lu) duration=%llu wake_tick=%llu",
+              cpu_id, thread->name, thread->tid, ms, wake_tick);
     sched_schedule();
+    log_debug("[sched] sleep-resume cpu=%u thread=%s(tid=%lu) ticks=%llu",
+              cpu_id, thread->name, thread->tid, system_ticks);
 }
 
 /** @brief Timer interrupt handler for the scheduler to update ticks and time slices. */
@@ -346,9 +352,15 @@ void sched_tick() {
     irq_flags_t flags = spinlock_acquire_irqsave(&sched_lock);
 
     cpu_local_t *my_cpu = smp_get_current_cpu();
+    uint32_t woke_count = 0;
+    uint64_t last_woken_tid = 0;
+    uint64_t tick_snapshot = system_ticks;
+    bool tick_heartbeat = false;
 
     if (my_cpu && my_cpu->cpu_id == 0) {
         system_ticks++;
+        tick_snapshot = system_ticks;
+        tick_heartbeat = (system_ticks % 250U) == 0U;
 
         thread_t *curr_sleep = sleep_queue_head;
         while (curr_sleep) {
@@ -376,6 +388,9 @@ void sched_tick() {
                     ready_queue_head = curr_sleep;
                     ready_queue_tail = curr_sleep;
                 }
+
+                woke_count++;
+                last_woken_tid = curr_sleep->tid;
             }
             curr_sleep = next_sleep;
         }
@@ -394,7 +409,22 @@ void sched_tick() {
 
     spinlock_release_irqrestore(&sched_lock, flags);
 
-    if (need_reschedule) {
+    if (tick_heartbeat) {
+        log_debug("[sched] tick heartbeat cpu=0 ticks=%llu", tick_snapshot);
+    }
+
+    if (woke_count > 0) {
+        log_debug("[sched] wake cpu=0 ticks=%llu count=%u last_tid=%lu",
+                  tick_snapshot, woke_count, last_woken_tid);
+
+        /* Wakeups must notify other CPUs; the broadcast excludes the sender. */
+        if (smp_get_cpu_count() > 1) {
+            arch_ipi_reschedule();
+        }
+    }
+
+    /* Also reschedule locally: arch_ipi_reschedule() excludes the current CPU. */
+    if (need_reschedule || woke_count > 0) {
         sched_schedule();
     }
 }
