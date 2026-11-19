@@ -108,8 +108,11 @@ void irq_handler(struct registers *regs) {
  */
 void reschedule_ipi_handler(struct registers *regs) {
     (void)regs;
-    sched_schedule();
+
+    /* Acknowledge before scheduling: sched_schedule() may context-switch away
+     * from this interrupt frame and otherwise defer the EOI indefinitely. */
     lapic_eoi();
+    sched_schedule();
 }
 
 /**
@@ -145,6 +148,9 @@ void tlb_shootdown_ipi_handler(struct registers *regs) {
  */
 void lapic_timer_handler(struct registers *regs) {
     (void)regs;
-    sched_tick();
+
+    /* sched_tick() may invoke sched_schedule(), which can suspend this
+     * interrupt frame. EOI must be sent before that possible context switch. */
     lapic_eoi();
+    sched_tick();
 }
