@@ -284,6 +284,17 @@ void sched_schedule() {
     }
 
     if (prev != next && prev != NULL) {
+        log_debug("[sched] switch cpu=%u %s(tid=%lu,state=%d) -> %s(tid=%lu,state=%d)",
+                  my_cpu->cpu_id,
+                  prev->name, prev->tid, prev->state,
+                  next ? next->name : "<NULL>",
+                  next ? next->tid : 0UL,
+                  next ? next->state : -1);
+        if (!next) {
+            log_error("[sched] no next thread while switching away from %s", prev->name);
+            spinlock_release_irqrestore(&sched_lock, flags);
+            return;
+        }
         if ((uintptr_t)next->fpu_state % 16 != 0) {
             panic();
         }
