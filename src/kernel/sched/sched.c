@@ -289,7 +289,7 @@ void sched_schedule() {
                   prev->name, prev->tid, prev->state,
                   next ? next->name : "<NULL>",
                   next ? next->tid : 0UL,
-                  next ? next->state : -1);
+                  next ? (int)next->state : -1);
         if (!next) {
             log_error("[sched] no next thread while switching away from %s", prev->name);
             spinlock_release_irqrestore(&sched_lock, flags);
