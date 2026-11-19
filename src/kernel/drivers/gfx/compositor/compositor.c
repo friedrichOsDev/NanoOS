@@ -1680,9 +1680,14 @@ static void compositor_thread(void *arg) {
         delta_time = (double)frame_delta_ms / 1000.0;
         spinlock_release_irqrestore(&state_lock, sflags);
 
-        log_debug("Frame start: %llu, Delta time: %f", frame_start, frame_delta_ms);
+        log_debug("[compositor] frame #%llu start t=%llu ms dt=%llu ms",
+                  frame_count, frame_start, frame_delta_ms);
+        log_debug("[compositor] frame #%llu compose begin", frame_count);
         compositor_compose();
+        log_debug("[compositor] frame #%llu compose end", frame_count);
+        log_debug("[compositor] frame #%llu swap begin", frame_count);
         compositor_swap();
+        log_debug("[compositor] frame #%llu swap end", frame_count);
 
         frame_count++;
         uint64_t current_time = hpet_uptime_ms();
@@ -1695,12 +1700,20 @@ static void compositor_thread(void *arg) {
         }
 
         uint64_t frame_duration = hpet_uptime_ms() - frame_start;
+        log_debug("[compositor] frame #%llu done duration=%llu ms fps=%llu",
+                  frame_count - 1, frame_duration, current_fps);
         if ((double)frame_duration < current_target_time) {
             uint64_t remaining_ms = (uint64_t)(current_target_time - (double)frame_duration);
             if (remaining_ms > 0) {
+                log_debug("[compositor] frame #%llu sleeping %llu ms",
+                          frame_count - 1, remaining_ms);
                 thread_sleep_ms(remaining_ms);
+                log_debug("[compositor] frame #%llu woke from sleep",
+                          frame_count - 1);
             }
         } else {
+            log_debug("[compositor] frame #%llu yielding (over budget)",
+                      frame_count - 1);
             thread_yield();
         }
     }
