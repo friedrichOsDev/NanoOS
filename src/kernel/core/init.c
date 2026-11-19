@@ -22,6 +22,8 @@
 #include <sched/taskmgr.h>
 #include <sched/thread.h>
 
+void kernel_shutdown();
+
 /**
  * @brief Handle kernel-wide input shortcuts.
  *
@@ -35,8 +37,8 @@ static void kernel_input_handler(const input_event_t *event, void *context) {
         event->hid.key.keycode == KEY_ESC &&
         event->key_action == INPUT_KEY_ACTION_PRESSED) {
         log_info("ESC pressed, shutting down");
-        acpi_power_off();
-        log_warn("ACPI shutdown request returned");
+        kernel_shutdown();
+        log_warn("shutdown request returned");
     }
 }
 
@@ -172,4 +174,9 @@ void kernel_init(const uint64_t magic, const uint64_t info_ptr) {
     while (1) {
         arch_hlt();
     }
+}
+
+/** @brief Clean kernel shutdown */
+void kernel_shutdown() {
+    acpi_power_off();
 }
