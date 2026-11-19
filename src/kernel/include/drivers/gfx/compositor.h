@@ -67,6 +67,14 @@ typedef struct {
 
 #pragma GCC diagnostic pop
 
+/** @brief Standard layer Z-index stacking order constants. */
+typedef enum {
+    LAYER_Z_BACKGROUND = 0,    /**< Desktop / background layer. */
+    LAYER_Z_WINDOW     = 100,  /**< Standard application windows. */
+    LAYER_Z_OVERLAY    = 1000, /**< Panels, taskbars, and modal popups. */
+    LAYER_Z_CURSOR     = 9999  /**< Hardware/software mouse cursor layer. */
+} layer_z_index_t;
+
 /** @brief Two-dimensional point / coordinate structure. */
 typedef struct {
     int64_t x; /**< X coordinate. */
@@ -79,21 +87,33 @@ typedef struct {
     uint64_t height; /**< Height in pixels. */
 } rect_size_t;
 
+/** @brief Two-dimensional rectangle descriptor with position and dimensions. */
+typedef struct {
+    point_t pos;      /**< Top-left corner position. */
+    rect_size_t size; /**< Dimensions of the rectangle. */
+} rect_t;
+
 /** @brief Drawing canvas structure representing an in-memory pixel buffer. */
 typedef struct {
-    uint32_t *buffer; /**< Pointer to 32-bit pixel memory buffer. */
-    rect_size_t size; /**< Dimensions of the canvas. */
-    uint64_t pitch;   /**< Scanline pitch in bytes. */
+    uint32_t *buffer;  /**< Pointer to 32-bit pixel memory buffer. */
+    rect_size_t size;  /**< Dimensions of the canvas. */
+    uint64_t pitch;    /**< Scanline pitch in bytes. */
+    rect_t clip_rect;  /**< Active clipping rectangle. */
+    bool clip_enabled; /**< Flag indicating whether clipping rectangle is enforced. */
 } canvas_t;
 
 /** @brief Represents a z-ordered rendering layer managed by the compositor. */
 typedef struct layer {
-    point_t pos;        /**< Layer position on screen. */
-    int32_t z_index;    /**< Stacking order index (higher values drawn on top). */
-    bool visible;       /**< Layer visibility toggle. */
-    canvas_t canvas;    /**< Associated canvas buffer. */
-    mutex_t lock;       /**< Mutex protecting layer rendering and updates. */
-    struct layer *next; /**< Pointer to next layer in linked list. */
+    point_t pos;            /**< Layer position on screen. */
+    int32_t z_index;        /**< Stacking order index (higher values drawn on top). */
+    bool visible;           /**< Layer visibility toggle. */
+    bool opaque;            /**< Fast-path flag indicating all pixels are fully opaque. */
+    canvas_t canvas;        /**< Associated canvas buffer. */
+    mutex_t lock;           /**< Mutex protecting layer rendering and updates. */
+    struct layer *next;     /**< Pointer to next layer in linked list. */
+    uint32_t ref_count;     /**< Reference count for safe lifecycle management. */
+    rect_t dirty_rect;      /**< Accumulated partial dirty rectangle in layer coordinates. */
+    bool has_partial_dirty; /**< True if caller explicitly marked a partial dirty rect. */
 } layer_t;
 
 kerr_t canvas_create(rect_size_t size, canvas_t **out);
@@ -105,6 +125,9 @@ kerr_t canvas_draw_triangle(canvas_t *canvas, point_t vertex1, point_t vertex2, 
 kerr_t canvas_draw_rectangle(canvas_t *canvas, point_t pos, rect_size_t size, color_t color, bool filled, uint64_t border_size);
 kerr_t canvas_draw_line(canvas_t *canvas, point_t start, point_t end, color_t color, uint64_t thickness);
 kerr_t canvas_draw_circle(canvas_t *canvas, point_t center, uint64_t radius, color_t color, bool filled, uint64_t border_size);
+kerr_t canvas_set_clip_rect(canvas_t *canvas, rect_t clip_rect);
+kerr_t canvas_reset_clip_rect(canvas_t *canvas);
+kerr_t canvas_get_clip_rect(const canvas_t *canvas, rect_t *out);
 
 kerr_t layer_create(rect_size_t size, int32_t z_index, layer_t **out);
 kerr_t layer_destroy(layer_t *layer);
@@ -112,8 +135,11 @@ kerr_t layer_set_position(layer_t *layer, point_t pos);
 kerr_t layer_set_size(layer_t *layer, rect_size_t size);
 kerr_t layer_set_visible(layer_t *layer, bool visible);
 kerr_t layer_set_zindex(layer_t *layer, int32_t z_index);
+kerr_t layer_set_opaque(layer_t *layer, bool opaque);
 kerr_t layer_draw_begin(layer_t *layer);
 kerr_t layer_draw_end(layer_t *layer);
+kerr_t layer_invalidate(layer_t *layer);
+kerr_t layer_invalidate_rect(layer_t *layer, rect_t rect);
 
 kerr_t compositor_init();
 kerr_t compositor_deinit();
@@ -125,3 +151,4 @@ double compositor_get_delta_time();
 uint64_t compositor_get_width();
 uint64_t compositor_get_height();
 rect_size_t compositor_get_size();
+kerr_t compositor_present();

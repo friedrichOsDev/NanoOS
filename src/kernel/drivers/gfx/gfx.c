@@ -173,6 +173,31 @@ void gfx_flush(const void *data, size_t size) {
 }
 
 /**
+ * @brief Flushes a rectangular subregion of the framebuffer through the current active driver.
+ *
+ * @param[in] data Pointer to framebuffer data to flush.
+ * @param[in] pitch Scanline pitch in bytes.
+ * @param[in] x Top-left X coordinate of the rectangle.
+ * @param[in] y Top-left Y coordinate of the rectangle.
+ * @param[in] width Width of the rectangle in pixels.
+ * @param[in] height Height of the rectangle in pixels.
+ */
+void gfx_flush_rect(const void *data, size_t pitch, uint64_t x, uint64_t y, uint64_t width, uint64_t height) {
+    if (!current_driver) {
+        return;
+    }
+
+    if (current_driver->flush_rect) {
+        current_driver->flush_rect(data, pitch, x, y, width, height);
+        return;
+    }
+
+    if (current_driver->flush) {
+        current_driver->flush(data, current_video_mode.framebuffer_size);
+    }
+}
+
+/**
  * @brief Retrieves the head of the registered video drivers list.
  *
  * @return Pointer to the first registered driver.

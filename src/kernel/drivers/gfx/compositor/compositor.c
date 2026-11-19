@@ -15,6 +15,8 @@
 #include <sched/sched.h>
 #include <sched/thread.h>
 
+#define MAX_COMPOSITOR_LAYERS 128
+
 static psf2_font_t builtin_font;
 static bool builtin_font_checked = false;
 static bool builtin_font_valid = false;
@@ -29,11 +31,126 @@ static layer_t *layer_head = NULL;
 static mutex_t compositor_mutex;
 static spinlock_t layer_list_lock = SPINLOCK_INIT;
 static spinlock_t state_lock = SPINLOCK_INIT;
+static spinlock_t compositor_dirty_lock = SPINLOCK_INIT;
+
+static volatile bool compositor_dirty = false;
+static rect_t global_dirty_rect = {0};
+static rect_t last_composed_rect = {0};
 
 static uint64_t target_fps = 60;
 static double target_frame_time_ms = 0.0;
 static uint64_t current_fps = 0;
 static double delta_time = 0.0;
+
+/**
+ * @brief Computes the integer square root of a 64-bit integer using bitwise operations.
+ *
+ * @param[in] val Value to take the square root of.
+ * @return Square root rounded down to the nearest integer.
+ */
+static inline uint64_t int_sqrt(uint64_t val) {
+    uint64_t res = 0;
+    uint64_t bit = 1ULL << 62;
+    while (bit > val) {
+        bit >>= 2;
+    }
+    while (bit != 0) {
+        if (val >= res + bit) {
+            val -= res + bit;
+            res = (res >> 1) + bit;
+        } else {
+            res >>= 1;
+        }
+        bit >>= 2;
+    }
+    return res;
+}
+
+/**
+ * @brief Computes the minimal bounding box containing both rectangles.
+ *
+ * @param[in] r1 First rectangle.
+ * @param[in] r2 Second rectangle.
+ * @return Union bounding box.
+ */
+static inline rect_t rect_union(rect_t r1, rect_t r2) {
+    if (r1.size.width == 0 || r1.size.height == 0) {
+        return r2;
+    }
+    if (r2.size.width == 0 || r2.size.height == 0) {
+        return r1;
+    }
+
+    int64_t x1 = (r1.pos.x < r2.pos.x) ? r1.pos.x : r2.pos.x;
+    int64_t y1 = (r1.pos.y < r2.pos.y) ? r1.pos.y : r2.pos.y;
+
+    int64_t r1_right = r1.pos.x + (int64_t)r1.size.width;
+    int64_t r2_right = r2.pos.x + (int64_t)r2.size.width;
+    int64_t x2 = (r1_right > r2_right) ? r1_right : r2_right;
+
+    int64_t r1_bottom = r1.pos.y + (int64_t)r1.size.height;
+    int64_t r2_bottom = r2.pos.y + (int64_t)r2.size.height;
+    int64_t y2 = (r1_bottom > r2_bottom) ? r1_bottom : r2_bottom;
+
+    return (rect_t){
+        .pos = {x1, y1},
+        .size = {(uint64_t)(x2 - x1), (uint64_t)(y2 - y1)}};
+}
+
+/**
+ * @brief Computes the intersection rectangle of two rectangles.
+ *
+ * @param[in] r1 First rectangle.
+ * @param[in] r2 Second rectangle.
+ * @param[out] out Intersection rectangle.
+ * @return True if the rectangles overlap, false otherwise.
+ */
+static inline bool rect_intersect(rect_t r1, rect_t r2, rect_t *out) {
+    int64_t x1 = (r1.pos.x > r2.pos.x) ? r1.pos.x : r2.pos.x;
+    int64_t y1 = (r1.pos.y > r2.pos.y) ? r1.pos.y : r2.pos.y;
+
+    int64_t r1_right = r1.pos.x + (int64_t)r1.size.width;
+    int64_t r2_right = r2.pos.x + (int64_t)r2.size.width;
+    int64_t x2 = (r1_right < r2_right) ? r1_right : r2_right;
+
+    int64_t r1_bottom = r1.pos.y + (int64_t)r1.size.height;
+    int64_t r2_bottom = r2.pos.y + (int64_t)r2.size.height;
+    int64_t y2 = (r1_bottom < r2_bottom) ? r1_bottom : r2_bottom;
+
+    if (x2 <= x1 || y2 <= y1) {
+        if (out) {
+            *out = (rect_t){0};
+        }
+        return false;
+    }
+
+    if (out) {
+        out->pos = (point_t){x1, y1};
+        out->size = (rect_size_t){(uint64_t)(x2 - x1), (uint64_t)(y2 - y1)};
+    }
+    return true;
+}
+
+/**
+ * @brief Marks a rectangular screen region dirty; the compositor thread polls this flag
+ *        and composites on the next frame boundary.
+ *
+ * @param[in] rect Screen-space rectangle requiring compositing.
+ */
+static void compositor_mark_dirty_rect(rect_t rect) {
+    if (rect.size.width == 0 || rect.size.height == 0) {
+        return;
+    }
+
+    irq_flags_t flags = spinlock_acquire_irqsave(&compositor_dirty_lock);
+    if (!compositor_dirty || global_dirty_rect.size.width == 0 || global_dirty_rect.size.height == 0) {
+        global_dirty_rect = rect;
+    } else {
+        global_dirty_rect = rect_union(global_dirty_rect, rect);
+    }
+    compositor_dirty = true;
+    spinlock_release_irqrestore(&compositor_dirty_lock, flags);
+}
 
 /**
  * @brief Packs a color_t structure into a 32-bit integer.
@@ -104,7 +221,34 @@ static inline color_t blend_color(color_t bg, color_t fg) {
  * @param[in] color Drawing color.
  */
 static inline void canvas_draw_hline(canvas_t *canvas, int64_t x1, int64_t x2, int64_t y, color_t color) {
-    if (!canvas || !canvas->buffer || y < 0 || (uint64_t)y >= canvas->size.height) {
+    if (!canvas || !canvas->buffer) {
+        return;
+    }
+
+    int64_t clip_x1 = 0;
+    int64_t clip_x2 = (int64_t)canvas->size.width - 1;
+    int64_t clip_y1 = 0;
+    int64_t clip_y2 = (int64_t)canvas->size.height - 1;
+
+    if (canvas->clip_enabled) {
+        if (canvas->clip_rect.pos.x > clip_x1) {
+            clip_x1 = canvas->clip_rect.pos.x;
+        }
+        int64_t r_x2 = canvas->clip_rect.pos.x + (int64_t)canvas->clip_rect.size.width - 1;
+        if (r_x2 < clip_x2) {
+            clip_x2 = r_x2;
+        }
+
+        if (canvas->clip_rect.pos.y > clip_y1) {
+            clip_y1 = canvas->clip_rect.pos.y;
+        }
+        int64_t r_y2 = canvas->clip_rect.pos.y + (int64_t)canvas->clip_rect.size.height - 1;
+        if (r_y2 < clip_y2) {
+            clip_y2 = r_y2;
+        }
+    }
+
+    if (clip_x1 > clip_x2 || clip_y1 > clip_y2 || y < clip_y1 || y > clip_y2) {
         return;
     }
 
@@ -113,15 +257,15 @@ static inline void canvas_draw_hline(canvas_t *canvas, int64_t x1, int64_t x2, i
         x1 = x2;
         x2 = t;
     }
-    if (x2 < 0 || x1 >= (int64_t)canvas->size.width) {
+    if (x2 < clip_x1 || x1 > clip_x2) {
         return;
     }
 
-    if (x1 < 0) {
-        x1 = 0;
+    if (x1 < clip_x1) {
+        x1 = clip_x1;
     }
-    if (x2 >= (int64_t)canvas->size.width) {
-        x2 = (int64_t)canvas->size.width - 1;
+    if (x2 > clip_x2) {
+        x2 = clip_x2;
     }
 
     size_t stride = (size_t)(canvas->pitch / sizeof(uint32_t));
@@ -157,6 +301,8 @@ kerr_t canvas_create(rect_size_t size, canvas_t **out) {
 
     canvas->size = size;
     canvas->pitch = size.width * sizeof(uint32_t);
+    canvas->clip_rect = (rect_t){.pos = {0, 0}, .size = size};
+    canvas->clip_enabled = false;
 
     virt_addr_t buf_mem = 0;
     size_t buffer_size = (size_t)(size.height * canvas->pitch);
@@ -192,7 +338,7 @@ kerr_t canvas_destroy(canvas_t *canvas) {
 }
 
 /**
- * @brief Clears the entire canvas using the specified color.
+ * @brief Clears the entire canvas (or active clipping region) using the specified color.
  *
  * @param[in,out] canvas Pointer to target canvas.
  * @param[in] color Fill color.
@@ -203,6 +349,23 @@ kerr_t canvas_clear(canvas_t *canvas, color_t color) {
         return E_INVAL;
     }
 
+    if (canvas->clip_enabled) {
+        rect_t canvas_bound = (rect_t){.pos = {0, 0}, .size = canvas->size};
+        rect_t clipped;
+        if (!rect_intersect(canvas->clip_rect, canvas_bound, &clipped)) {
+            return E_OK;
+        }
+
+        uint32_t color_val = pack_color(color);
+        size_t stride = (size_t)(canvas->pitch / sizeof(uint32_t));
+        for (uint64_t row = 0; row < clipped.size.height; row++) {
+            int64_t y = clipped.pos.y + (int64_t)row;
+            uint32_t *line = canvas->buffer + ((size_t)y * stride) + (size_t)clipped.pos.x;
+            memset32(line, color_val, (size_t)clipped.size.width);
+        }
+        return E_OK;
+    }
+
     uint32_t color_val = pack_color(color);
     size_t count = (size_t)(canvas->size.width * canvas->size.height);
     memset32(canvas->buffer, color_val, count);
@@ -210,7 +373,7 @@ kerr_t canvas_clear(canvas_t *canvas, color_t color) {
 }
 
 /**
- * @brief Draws a single pixel onto the canvas with alpha blending.
+ * @brief Draws a single pixel onto the canvas with clipping and alpha blending.
  *
  * @param[in,out] canvas Pointer to target canvas.
  * @param[in] pos Coordinate position.
@@ -218,16 +381,96 @@ kerr_t canvas_clear(canvas_t *canvas, color_t color) {
  * @return E_OK on success, or an error code on failure.
  */
 kerr_t canvas_draw_pixel(canvas_t *canvas, point_t pos, color_t color) {
-    if (!canvas || !canvas->buffer ||
-        pos.x < 0 || (uint64_t)pos.x >= canvas->size.width ||
-        pos.y < 0 || (uint64_t)pos.y >= canvas->size.height) {
+    if (!canvas || !canvas->buffer) {
         return E_INVAL;
+    }
+
+    int64_t clip_x1 = 0;
+    int64_t clip_x2 = (int64_t)canvas->size.width - 1;
+    int64_t clip_y1 = 0;
+    int64_t clip_y2 = (int64_t)canvas->size.height - 1;
+
+    if (canvas->clip_enabled) {
+        if (canvas->clip_rect.pos.x > clip_x1) {
+            clip_x1 = canvas->clip_rect.pos.x;
+        }
+        int64_t r_x2 = canvas->clip_rect.pos.x + (int64_t)canvas->clip_rect.size.width - 1;
+        if (r_x2 < clip_x2) {
+            clip_x2 = r_x2;
+        }
+
+        if (canvas->clip_rect.pos.y > clip_y1) {
+            clip_y1 = canvas->clip_rect.pos.y;
+        }
+        int64_t r_y2 = canvas->clip_rect.pos.y + (int64_t)canvas->clip_rect.size.height - 1;
+        if (r_y2 < clip_y2) {
+            clip_y2 = r_y2;
+        }
+    }
+
+    if (pos.x < clip_x1 || pos.x > clip_x2 || pos.y < clip_y1 || pos.y > clip_y2) {
+        return E_OK;
     }
 
     size_t pixels_per_row = (size_t)(canvas->pitch / sizeof(uint32_t));
     size_t offset = ((size_t)pos.y * pixels_per_row) + (size_t)pos.x;
     color_t bg_color = unpack_color(canvas->buffer[offset]);
     canvas->buffer[offset] = pack_color(blend_color(bg_color, color));
+    return E_OK;
+}
+
+/**
+ * @brief Configures an active clipping rectangle for the canvas.
+ *
+ * @param[in,out] canvas Target canvas.
+ * @param[in] clip_rect Clipping rectangle in canvas coordinates.
+ * @return E_OK on success, or an error code on failure.
+ */
+kerr_t canvas_set_clip_rect(canvas_t *canvas, rect_t clip_rect) {
+    if (!canvas) {
+        return E_INVAL;
+    }
+
+    rect_t canvas_rect = (rect_t){.pos = {0, 0}, .size = canvas->size};
+    rect_t clipped;
+    if (!rect_intersect(clip_rect, canvas_rect, &clipped)) {
+        canvas->clip_rect = (rect_t){0};
+    } else {
+        canvas->clip_rect = clipped;
+    }
+    canvas->clip_enabled = true;
+    return E_OK;
+}
+
+/**
+ * @brief Resets and disables the canvas clipping rectangle.
+ *
+ * @param[in,out] canvas Target canvas.
+ * @return E_OK on success, or an error code on failure.
+ */
+kerr_t canvas_reset_clip_rect(canvas_t *canvas) {
+    if (!canvas) {
+        return E_INVAL;
+    }
+
+    canvas->clip_rect = (rect_t){.pos = {0, 0}, .size = canvas->size};
+    canvas->clip_enabled = false;
+    return E_OK;
+}
+
+/**
+ * @brief Retrieves the active canvas clipping rectangle.
+ *
+ * @param[in] canvas Target canvas.
+ * @param[out] out Pointer to store the active clipping rectangle.
+ * @return E_OK on success, or an error code on failure.
+ */
+kerr_t canvas_get_clip_rect(const canvas_t *canvas, rect_t *out) {
+    if (!canvas || !out) {
+        return E_INVAL;
+    }
+
+    *out = canvas->clip_rect;
     return E_OK;
 }
 
@@ -403,7 +646,7 @@ static uint32_t font_find_glyph(uint32_t codepoint) {
 }
 
 /**
- * @brief Draws a UTF-8 string using the embedded PSF2 bitmap font.
+ * @brief Draws a UTF-8 string using the embedded PSF2 bitmap font with full clipping and opacity fast-path.
  *
  * @param[in,out] canvas Target canvas.
  * @param[in] pos Top-left position.
@@ -413,8 +656,7 @@ static uint32_t font_find_glyph(uint32_t codepoint) {
  * @return E_OK on success, or an error code.
  */
 kerr_t canvas_draw_text(canvas_t *canvas, point_t pos, const char *text, color_t color, uint32_t scale) {
-    if (!canvas || !canvas->buffer || !text || scale == 0U || scale > 16U ||
-        pos.x < 0 || pos.y < 0) {
+    if (!canvas || !canvas->buffer || !text || scale == 0U || scale > 16U) {
         return E_INVAL;
     }
     if (!font_init()) {
@@ -424,6 +666,34 @@ kerr_t canvas_draw_text(canvas_t *canvas, point_t pos, const char *text, color_t
         return E_OK;
     }
 
+    int64_t clip_x1 = 0;
+    int64_t clip_x2 = (int64_t)canvas->size.width - 1;
+    int64_t clip_y1 = 0;
+    int64_t clip_y2 = (int64_t)canvas->size.height - 1;
+
+    if (canvas->clip_enabled) {
+        if (canvas->clip_rect.pos.x > clip_x1) {
+            clip_x1 = canvas->clip_rect.pos.x;
+        }
+        int64_t r_x2 = canvas->clip_rect.pos.x + (int64_t)canvas->clip_rect.size.width - 1;
+        if (r_x2 < clip_x2) {
+            clip_x2 = r_x2;
+        }
+
+        if (canvas->clip_rect.pos.y > clip_y1) {
+            clip_y1 = canvas->clip_rect.pos.y;
+        }
+        int64_t r_y2 = canvas->clip_rect.pos.y + (int64_t)canvas->clip_rect.size.height - 1;
+        if (r_y2 < clip_y2) {
+            clip_y2 = r_y2;
+        }
+    }
+
+    if (clip_x1 > clip_x2 || clip_y1 > clip_y2) {
+        return E_OK;
+    }
+
+    uint32_t packed_color = pack_color(color);
     int64_t origin_x = pos.x;
     int64_t cursor_x = pos.x;
     int64_t cursor_y = pos.y;
@@ -483,19 +753,23 @@ kerr_t canvas_draw_text(canvas_t *canvas, point_t pos, const char *text, color_t
                 int64_t pixel_y = cursor_y + (int64_t)(gy * scale);
                 for (uint32_t sy = 0U; sy < scale; sy++) {
                     int64_t y = pixel_y + (int64_t)sy;
-                    if (y < 0 || (uint64_t)y >= canvas->size.height) {
+                    if (y < clip_y1 || y > clip_y2) {
                         continue;
                     }
                     size_t stride = (size_t)(canvas->pitch / sizeof(uint32_t));
                     uint32_t *row = canvas->buffer + ((size_t)y * stride);
                     for (uint32_t sx = 0U; sx < scale; sx++) {
                         int64_t px = pixel_x + (int64_t)sx;
-                        if (px < 0 || (uint64_t)px >= canvas->size.width) {
+                        if (px < clip_x1 || px > clip_x2) {
                             continue;
                         }
                         size_t offset = (size_t)px;
-                        color_t background = unpack_color(row[offset]);
-                        row[offset] = pack_color(blend_color(background, color));
+                        if (color.a == 255) {
+                            row[offset] = packed_color;
+                        } else {
+                            color_t background = unpack_color(row[offset]);
+                            row[offset] = pack_color(blend_color(background, color));
+                        }
                     }
                 }
             }
@@ -569,9 +843,7 @@ kerr_t canvas_draw_triangle(canvas_t *canvas, point_t v1, point_t v2, point_t v3
     }
 
     /* Rasterize bottom sub-triangle */
-    if (dy12 == 0) {
-        cur_x2 = v2.x << 16;
-    }
+    cur_x2 = v2.x << 16;
     for (int64_t y = v2.y; y <= v3.y; y++) {
         canvas_draw_hline(canvas, cur_x1 >> 16, cur_x2 >> 16, y, color);
         cur_x1 += dx13;
@@ -624,7 +896,7 @@ kerr_t canvas_draw_rectangle(canvas_t *canvas, point_t pos, rect_size_t size, co
 }
 
 /**
- * @brief Draws a line between two points using Bresenham's line algorithm.
+ * @brief Draws a line between two points using Bresenham algorithm or scanline polygon rasterization for thick lines.
  *
  * @param[in,out] canvas Pointer to target canvas.
  * @param[in] start Starting point coordinate.
@@ -638,41 +910,120 @@ kerr_t canvas_draw_line(canvas_t *canvas, point_t start, point_t end, color_t co
         return E_INVAL;
     }
 
-    int64_t dx = (end.x > start.x) ? (end.x - start.x) : (start.x - end.x);
-    int64_t dy = (end.y > start.y) ? (end.y - start.y) : (start.y - end.y);
-    int64_t sx = (start.x < end.x) ? 1 : -1;
-    int64_t sy = (start.y < end.y) ? 1 : -1;
-    int64_t err = dx - dy;
+    if (thickness == 1) {
+        int64_t dx = (end.x > start.x) ? (end.x - start.x) : (start.x - end.x);
+        int64_t dy = (end.y > start.y) ? (end.y - start.y) : (start.y - end.y);
+        int64_t sx = (start.x < end.x) ? 1 : -1;
+        int64_t sy = (start.y < end.y) ? 1 : -1;
+        int64_t err = dx - dy;
 
-    int64_t r = (int64_t)(thickness / 2);
-
-    while (1) {
-        if (thickness == 1) {
+        while (1) {
             canvas_draw_pixel(canvas, start, color);
+            if (start.x == end.x && start.y == end.y) {
+                break;
+            }
+            int64_t e2 = 2 * err;
+            if (e2 > -dy) {
+                err -= dy;
+                start.x += sx;
+            }
+            if (e2 < dx) {
+                err += dx;
+                start.y += sy;
+            }
+        }
+        return E_OK;
+    }
+
+    /* Single point thick line */
+    if (start.x == end.x && start.y == end.y) {
+        return canvas_draw_circle(canvas, start, thickness / 2, color, true, 0);
+    }
+
+    /* Scanline polygon rasterization for thick lines without overdraw */
+    int64_t dx = end.x - start.x;
+    int64_t dy = end.y - start.y;
+    uint64_t len_sq = (uint64_t)(dx * dx + dy * dy);
+    uint64_t len = int_sqrt(len_sq);
+    if (len == 0) {
+        len = 1;
+    }
+
+    int64_t half_th = (int64_t)thickness;
+    int64_t nx = (-dy * half_th) / (2 * (int64_t)len);
+    int64_t ny = (dx * half_th) / (2 * (int64_t)len);
+
+    if (nx == 0 && ny == 0) {
+        if ((dx >= 0 ? dx : -dx) >= (dy >= 0 ? dy : -dy)) {
+            ny = (dy >= 0) ? 1 : -1;
         } else {
-            for (int64_t ty = -r; ty <= r; ty++) {
-                canvas_draw_hline(canvas, start.x - r, start.x + r, start.y + ty, color);
+            nx = (dx >= 0) ? -1 : 1;
+        }
+    }
+
+    point_t poly[4] = {
+        {start.x + nx, start.y + ny},
+        {start.x - nx, start.y - ny},
+        {end.x - nx, end.y - ny},
+        {end.x + nx, end.y + ny}};
+
+    int64_t min_y = poly[0].y;
+    int64_t max_y = poly[0].y;
+    for (int i = 1; i < 4; i++) {
+        if (poly[i].y < min_y) {
+            min_y = poly[i].y;
+        }
+        if (poly[i].y > max_y) {
+            max_y = poly[i].y;
+        }
+    }
+
+    for (int64_t y = min_y; y <= max_y; y++) {
+        int64_t line_min_x = INT64_MAX;
+        int64_t line_max_x = INT64_MIN;
+
+        for (int i = 0; i < 4; i++) {
+            point_t p1 = poly[i];
+            point_t p2 = poly[(i + 1) % 4];
+
+            if (p1.y == p2.y) {
+                if (p1.y == y) {
+                    int64_t h_min = (p1.x < p2.x) ? p1.x : p2.x;
+                    int64_t h_max = (p1.x > p2.x) ? p1.x : p2.x;
+                    if (h_min < line_min_x) {
+                        line_min_x = h_min;
+                    }
+                    if (h_max > line_max_x) {
+                        line_max_x = h_max;
+                    }
+                }
+                continue;
+            }
+
+            int64_t y_low = (p1.y < p2.y) ? p1.y : p2.y;
+            int64_t y_high = (p1.y > p2.y) ? p1.y : p2.y;
+
+            if (y >= y_low && y <= y_high) {
+                int64_t inter_x = p1.x + ((y - p1.y) * (p2.x - p1.x)) / (p2.y - p1.y);
+                if (inter_x < line_min_x) {
+                    line_min_x = inter_x;
+                }
+                if (inter_x > line_max_x) {
+                    line_max_x = inter_x;
+                }
             }
         }
 
-        if (start.x == end.x && start.y == end.y) {
-            break;
-        }
-        int64_t e2 = 2 * err;
-        if (e2 > -dy) {
-            err -= dy;
-            start.x += sx;
-        }
-        if (e2 < dx) {
-            err += dx;
-            start.y += sy;
+        if (line_min_x <= line_max_x) {
+            canvas_draw_hline(canvas, line_min_x, line_max_x, y, color);
         }
     }
+
     return E_OK;
 }
 
 /**
- * @brief Draws a circle centered at a specific point.
+ * @brief Draws a circle centered at a specific point using pure integer midpoint scanlines.
  *
  * @param[in,out] canvas Pointer to target canvas.
  * @param[in] center Center coordinate of circle.
@@ -693,23 +1044,82 @@ kerr_t canvas_draw_circle(canvas_t *canvas, point_t center, uint64_t radius, col
     int64_t r_outer_sq = r_outer * r_outer;
     int64_t r_inner_sq = r_inner * r_inner;
 
-    for (int64_t y = -r_outer; y <= r_outer; y++) {
+    int64_t x_outer = r_outer;
+    int64_t x_inner = r_inner;
+
+    for (int64_t y = 0; y <= r_outer; y++) {
         int64_t y_sq = y * y;
-        if (y_sq > r_outer_sq) {
-            continue;
+
+        while (x_outer > 0 && (x_outer * x_outer + y_sq > r_outer_sq)) {
+            x_outer--;
         }
 
-        int64_t x_outer = (int64_t)sqrt((double)(r_outer_sq - y_sq));
+        if (r_inner > 0 && y < r_inner) {
+            while (x_inner > 0 && (x_inner * x_inner + y_sq >= r_inner_sq)) {
+                x_inner--;
+            }
+        } else {
+            x_inner = 0;
+        }
 
-        if (y_sq < r_inner_sq) {
-            int64_t x_inner = (int64_t)sqrt((double)(r_inner_sq - y_sq));
+        if (x_inner > 0) {
             canvas_draw_hline(canvas, center.x - x_outer, center.x - x_inner, center.y + y, color);
             canvas_draw_hline(canvas, center.x + x_inner, center.x + x_outer, center.y + y, color);
+            if (y > 0) {
+                canvas_draw_hline(canvas, center.x - x_outer, center.x - x_inner, center.y - y, color);
+                canvas_draw_hline(canvas, center.x + x_inner, center.x + x_outer, center.y - y, color);
+            }
         } else {
             canvas_draw_hline(canvas, center.x - x_outer, center.x + x_outer, center.y + y, color);
+            if (y > 0) {
+                canvas_draw_hline(canvas, center.x - x_outer, center.x + x_outer, center.y - y, color);
+            }
         }
     }
+
     return E_OK;
+}
+
+/**
+ * @brief Increments reference count of a layer.
+ *
+ * @param[in,out] layer Target layer.
+ */
+static void layer_ref(layer_t *layer) {
+    if (!layer) {
+        return;
+    }
+    __atomic_add_fetch(&layer->ref_count, 1, __ATOMIC_RELAXED);
+}
+
+/**
+ * @brief Releases internal canvas buffer and layer allocation.
+ *
+ * @param[in,out] layer Target layer to free.
+ */
+static void layer_free(layer_t *layer) {
+    if (!layer) {
+        return;
+    }
+    if (layer->canvas.buffer) {
+        kfree((virt_addr_t)layer->canvas.buffer);
+        layer->canvas.buffer = NULL;
+    }
+    kfree((virt_addr_t)layer);
+}
+
+/**
+ * @brief Decrements reference count of a layer and frees it when reaching zero.
+ *
+ * @param[in,out] layer Target layer.
+ */
+static void layer_unref(layer_t *layer) {
+    if (!layer) {
+        return;
+    }
+    if (__atomic_sub_fetch(&layer->ref_count, 1, __ATOMIC_ACQ_REL) == 0) {
+        layer_free(layer);
+    }
 }
 
 /**
@@ -780,10 +1190,16 @@ kerr_t layer_create(rect_size_t size, int32_t z_index, layer_t **out) {
     layer->pos = (point_t){0, 0};
     layer->z_index = z_index;
     layer->visible = true;
+    layer->opaque = false;
     layer->next = NULL;
+    layer->ref_count = 1;
+    layer->dirty_rect = (rect_t){0};
+    layer->has_partial_dirty = false;
     mutex_init(&layer->lock, "layer_mutex");
 
     insert_layer_ordered(layer);
+    compositor_mark_dirty_rect((rect_t){layer->pos, layer->canvas.size});
+
     *out = layer;
     return E_OK;
 }
@@ -799,21 +1215,21 @@ kerr_t layer_destroy(layer_t *layer) {
         return E_INVAL;
     }
 
+    rect_t dirty = (rect_t){layer->pos, layer->canvas.size};
+
     remove_layer_ordered(layer);
 
     mutex_lock(&layer->lock);
-    if (layer->canvas.buffer) {
-        kfree((virt_addr_t)layer->canvas.buffer);
-        layer->canvas.buffer = NULL;
-    }
+    layer->visible = false;
     mutex_unlock(&layer->lock);
 
-    kfree((virt_addr_t)layer);
+    compositor_mark_dirty_rect(dirty);
+    layer_unref(layer);
     return E_OK;
 }
 
 /**
- * @brief Sets the on-screen position of a layer.
+ * @brief Sets the on-screen position of a layer and marks the old and new areas dirty.
  *
  * @param[in,out] layer Pointer to layer.
  * @param[in] pos New top-left screen position.
@@ -823,9 +1239,20 @@ kerr_t layer_set_position(layer_t *layer, point_t pos) {
     if (!layer) {
         return E_INVAL;
     }
+
     mutex_lock(&layer->lock);
+    point_t old_pos = layer->pos;
+    rect_size_t size = layer->canvas.size;
     layer->pos = pos;
+    bool visible = layer->visible;
     mutex_unlock(&layer->lock);
+
+    if (visible) {
+        rect_t old_r = (rect_t){old_pos, size};
+        rect_t new_r = (rect_t){pos, size};
+        compositor_mark_dirty_rect(rect_union(old_r, new_r));
+    }
+
     return E_OK;
 }
 
@@ -846,13 +1273,25 @@ kerr_t layer_set_size(layer_t *layer, rect_size_t size) {
     K_TRY(kzalloc(new_size, &mem));
 
     mutex_lock(&layer->lock);
+    rect_size_t old_size = layer->canvas.size;
+    point_t pos = layer->pos;
+    bool visible = layer->visible;
+
     if (layer->canvas.buffer) {
         kfree((virt_addr_t)layer->canvas.buffer);
     }
     layer->canvas.buffer = (uint32_t *)mem;
     layer->canvas.size = size;
     layer->canvas.pitch = size.width * sizeof(uint32_t);
+    layer->canvas.clip_rect = (rect_t){.pos = {0, 0}, .size = size};
+    layer->canvas.clip_enabled = false;
     mutex_unlock(&layer->lock);
+
+    if (visible) {
+        rect_t old_r = (rect_t){pos, old_size};
+        rect_t new_r = (rect_t){pos, size};
+        compositor_mark_dirty_rect(rect_union(old_r, new_r));
+    }
 
     return E_OK;
 }
@@ -868,9 +1307,17 @@ kerr_t layer_set_visible(layer_t *layer, bool visible) {
     if (!layer) {
         return E_INVAL;
     }
+
     mutex_lock(&layer->lock);
+    bool changed = (layer->visible != visible);
     layer->visible = visible;
+    rect_t dirty = (rect_t){layer->pos, layer->canvas.size};
     mutex_unlock(&layer->lock);
+
+    if (changed) {
+        compositor_mark_dirty_rect(dirty);
+    }
+
     return E_OK;
 }
 
@@ -885,11 +1332,45 @@ kerr_t layer_set_zindex(layer_t *layer, int32_t z_index) {
     if (!layer) {
         return E_INVAL;
     }
+
     remove_layer_ordered(layer);
     mutex_lock(&layer->lock);
     layer->z_index = z_index;
+    rect_t dirty = (rect_t){layer->pos, layer->canvas.size};
+    bool visible = layer->visible;
     mutex_unlock(&layer->lock);
+
     insert_layer_ordered(layer);
+
+    if (visible) {
+        compositor_mark_dirty_rect(dirty);
+    }
+
+    return E_OK;
+}
+
+/**
+ * @brief Configures whether a layer is completely opaque for fast-path copying.
+ *
+ * @param[in,out] layer Pointer to layer.
+ * @param[in] opaque True if the layer contains only opaque pixels.
+ * @return E_OK on success, or an error code on failure.
+ */
+kerr_t layer_set_opaque(layer_t *layer, bool opaque) {
+    if (!layer) {
+        return E_INVAL;
+    }
+
+    mutex_lock(&layer->lock);
+    layer->opaque = opaque;
+    rect_t dirty = (rect_t){layer->pos, layer->canvas.size};
+    bool visible = layer->visible;
+    mutex_unlock(&layer->lock);
+
+    if (visible) {
+        compositor_mark_dirty_rect(dirty);
+    }
+
     return E_OK;
 }
 
@@ -904,11 +1385,13 @@ kerr_t layer_draw_begin(layer_t *layer) {
         return E_INVAL;
     }
     mutex_lock(&layer->lock);
+    layer->has_partial_dirty = false;
+    layer->dirty_rect = (rect_t){0};
     return E_OK;
 }
 
 /**
- * @brief Releases the layer lock after batch drawing operations.
+ * @brief Releases the layer lock and marks dirty areas for presentation.
  *
  * @param[in,out] layer Pointer to layer.
  * @return E_OK on success, or an error code on failure.
@@ -917,59 +1400,160 @@ kerr_t layer_draw_end(layer_t *layer) {
     if (!layer) {
         return E_INVAL;
     }
+
+    rect_t dirty;
+    if (layer->has_partial_dirty && layer->dirty_rect.size.width > 0 && layer->dirty_rect.size.height > 0) {
+        dirty = (rect_t){
+            .pos = {layer->pos.x + layer->dirty_rect.pos.x, layer->pos.y + layer->dirty_rect.pos.y},
+            .size = layer->dirty_rect.size};
+    } else {
+        dirty = (rect_t){layer->pos, layer->canvas.size};
+    }
+
+    bool visible = layer->visible;
+    layer->has_partial_dirty = false;
+    layer->dirty_rect = (rect_t){0};
     mutex_unlock(&layer->lock);
+
+    if (visible) {
+        compositor_mark_dirty_rect(dirty);
+    }
+
     return E_OK;
 }
 
 /**
- * @brief Blits a single layer into the compositor backbuffer with alpha blending.
+ * @brief Invalidates the entire layer, requesting a redraw by the compositor.
  *
- * @param[in,out] layer Pointer to layer to composite.
+ * @param[in,out] layer Target layer.
+ * @return E_OK on success, or an error code on failure.
  */
-static void composite_layer(layer_t *layer) {
+kerr_t layer_invalidate(layer_t *layer) {
     if (!layer) {
-        return;
+        return E_INVAL;
     }
 
-    if (!mutex_trylock(&layer->lock)) {
-        return;
+    mutex_lock(&layer->lock);
+    rect_t dirty = (rect_t){layer->pos, layer->canvas.size};
+    bool visible = layer->visible;
+    layer->has_partial_dirty = false;
+    layer->dirty_rect = (rect_t){0};
+    mutex_unlock(&layer->lock);
+
+    if (visible) {
+        compositor_mark_dirty_rect(dirty);
     }
 
-    if (!layer->visible || !layer->canvas.buffer) {
+    return E_OK;
+}
+
+/**
+ * @brief Invalidates a sub-rectangle within a layer, triggering partial compositing.
+ *
+ * @param[in,out] layer Target layer.
+ * @param[in] rect Sub-rectangle in layer-local coordinates.
+ * @return E_OK on success, or an error code on failure.
+ */
+kerr_t layer_invalidate_rect(layer_t *layer, rect_t rect) {
+    if (!layer) {
+        return E_INVAL;
+    }
+
+    mutex_lock(&layer->lock);
+    rect_t canvas_rect = (rect_t){.pos = {0, 0}, .size = layer->canvas.size};
+    rect_t clipped;
+    if (!rect_intersect(rect, canvas_rect, &clipped)) {
         mutex_unlock(&layer->lock);
+        return E_OK;
+    }
+
+    if (!layer->has_partial_dirty || layer->dirty_rect.size.width == 0) {
+        layer->dirty_rect = clipped;
+    } else {
+        layer->dirty_rect = rect_union(layer->dirty_rect, clipped);
+    }
+    layer->has_partial_dirty = true;
+
+    rect_t screen_dirty = (rect_t){
+        .pos = {layer->pos.x + clipped.pos.x, layer->pos.y + clipped.pos.y},
+        .size = clipped.size};
+    bool visible = layer->visible;
+    mutex_unlock(&layer->lock);
+
+    if (visible) {
+        compositor_mark_dirty_rect(screen_dirty);
+    }
+
+    return E_OK;
+}
+
+/**
+ * @brief Composites a single layer into the backbuffer clipped against a specific dirty region.
+ *
+ * @param[in,out] layer Layer to composite.
+ * @param[in] clip_dirty Dirty rectangle in screen coordinates.
+ */
+static void composite_layer_clipped(layer_t *layer, rect_t clip_dirty) {
+    if (!layer || !layer->visible || !layer->canvas.buffer) {
         return;
     }
 
     canvas_t *layer_canvas = &layer->canvas;
-    uint64_t screen_width = active_mode.width;
-    uint64_t screen_height = active_mode.height;
+    rect_t layer_screen_rect = (rect_t){.pos = layer->pos, .size = layer_canvas->size};
 
-    int64_t start_x = (layer->pos.x < 0) ? -layer->pos.x : 0;
-    int64_t start_y = (layer->pos.y < 0) ? -layer->pos.y : 0;
+    rect_t target_rect;
+    if (!rect_intersect(layer_screen_rect, clip_dirty, &target_rect)) {
+        return;
+    }
 
-    int64_t end_x = (layer->pos.x + (int64_t)layer_canvas->size.width > (int64_t)screen_width) ? ((int64_t)screen_width - layer->pos.x) : (int64_t)layer_canvas->size.width;
-    int64_t end_y = (layer->pos.y + (int64_t)layer_canvas->size.height > (int64_t)screen_height) ? ((int64_t)screen_height - layer->pos.y) : (int64_t)layer_canvas->size.height;
+    size_t dest_pitch_dwords = active_mode.pitch / sizeof(uint32_t);
+    size_t src_pitch_dwords = layer_canvas->pitch / sizeof(uint32_t);
+    uint32_t *bb32 = (uint32_t *)(void *)backbuffer;
 
-    if (start_x < end_x && start_y < end_y) {
-        for (int64_t ly = start_y; ly < end_y; ly++) {
-            int64_t dest_y = layer->pos.y + ly;
-            size_t dest_stride = (size_t)(dest_y * (int64_t)active_mode.pitch);
-            color_t *dest_row = (color_t *)(backbuffer + dest_stride);
+    int64_t lx_start = target_rect.pos.x - layer->pos.x;
+    int64_t ly_start = target_rect.pos.y - layer->pos.y;
 
-            size_t src_stride = (size_t)(ly * (int64_t)layer_canvas->pitch);
-            color_t *src_row = (color_t *)((uint8_t *)layer_canvas->buffer + src_stride);
+    if (layer->opaque) {
+        for (uint64_t row = 0; row < target_rect.size.height; row++) {
+            int64_t screen_y = target_rect.pos.y + (int64_t)row;
+            int64_t ly = ly_start + (int64_t)row;
 
-            for (int64_t lx = start_x; lx < end_x; lx++) {
-                int64_t dest_x = layer->pos.x + lx;
-                dest_row[dest_x] = blend_color(dest_row[dest_x], src_row[lx]);
+            uint32_t *dest_row = bb32 + ((size_t)screen_y * dest_pitch_dwords);
+            const uint32_t *src_row = layer_canvas->buffer + ((size_t)ly * src_pitch_dwords);
+
+            memcpy(&dest_row[target_rect.pos.x], &src_row[lx_start], (size_t)target_rect.size.width * sizeof(uint32_t));
+        }
+        return;
+    }
+
+    for (uint64_t row = 0; row < target_rect.size.height; row++) {
+        int64_t screen_y = target_rect.pos.y + (int64_t)row;
+        int64_t ly = ly_start + (int64_t)row;
+
+        uint32_t *dest_row = bb32 + ((size_t)screen_y * dest_pitch_dwords);
+        const uint32_t *src_row = layer_canvas->buffer + ((size_t)ly * src_pitch_dwords);
+
+        for (uint64_t col = 0; col < target_rect.size.width; col++) {
+            int64_t screen_x = target_rect.pos.x + (int64_t)col;
+            int64_t lx = lx_start + (int64_t)col;
+
+            uint32_t src_val = src_row[lx];
+            uint32_t alpha = (src_val >> 24) & 0xFF;
+
+            if (alpha == 255) {
+                dest_row[screen_x] = src_val;
+            } else if (alpha > 0) {
+                color_t bg = unpack_color(dest_row[screen_x]);
+                color_t fg = unpack_color(src_val);
+                dest_row[screen_x] = pack_color(blend_color(bg, fg));
             }
         }
     }
-
-    mutex_unlock(&layer->lock);
 }
 
-/** @brief Composites all visible layers according to their Z-index into the backbuffer. */
+/**
+ * @brief Composites all visible layers intersecting the active dirty bounding box into the backbuffer.
+ */
 static void compositor_compose() {
     irq_flags_t sflags = spinlock_acquire_irqsave(&state_lock);
     bool enabled = rendering_enabled;
@@ -979,42 +1563,92 @@ static void compositor_compose() {
         return;
     }
 
-    canvas_t backbuffer_canvas = {
-        .buffer = (uint32_t *)backbuffer,
-        .size = (rect_size_t){active_mode.width, active_mode.height},
-        .pitch = active_mode.pitch};
-    canvas_clear(&backbuffer_canvas, COLOR_BLACK);
+    irq_flags_t dflags = spinlock_acquire_irqsave(&compositor_dirty_lock);
+    if (!compositor_dirty) {
+        spinlock_release_irqrestore(&compositor_dirty_lock, dflags);
+        return;
+    }
+    rect_t dirty = global_dirty_rect;
+    global_dirty_rect = (rect_t){0};
+    compositor_dirty = false;
+    spinlock_release_irqrestore(&compositor_dirty_lock, dflags);
+
+    rect_t screen_rect = (rect_t){.pos = {0, 0}, .size = {active_mode.width, active_mode.height}};
+    rect_t clip_dirty;
+    if (!rect_intersect(dirty, screen_rect, &clip_dirty) || clip_dirty.size.width == 0 || clip_dirty.size.height == 0) {
+        return;
+    }
+
+    /* Clear only the dirty sub-rectangle in the backbuffer to background color */
+    size_t stride_dwords = active_mode.pitch / sizeof(uint32_t);
+    uint32_t *bb32 = (uint32_t *)(void *)backbuffer;
+    uint32_t black = pack_color(COLOR_BLACK);
+    for (uint64_t y = 0; y < clip_dirty.size.height; y++) {
+        int64_t screen_y = clip_dirty.pos.y + (int64_t)y;
+        uint32_t *row = bb32 + ((size_t)screen_y * stride_dwords) + (size_t)clip_dirty.pos.x;
+        memset32(row, black, (size_t)clip_dirty.size.width);
+    }
+
+    /* Snapshot layers with reference counting to prevent use-after-free */
+    layer_t *render_list[MAX_COMPOSITOR_LAYERS];
+    size_t render_count = 0;
 
     irq_flags_t rflags = spinlock_acquire_irqsave(&layer_list_lock);
-    layer_t *current = layer_head;
-
-    while (current != NULL) {
-        layer_t *next = current->next;
-        spinlock_release_irqrestore(&layer_list_lock, rflags);
-
-        composite_layer(current);
-
-        rflags = spinlock_acquire_irqsave(&layer_list_lock);
-        current = next;
+    for (layer_t *curr = layer_head; curr != NULL && render_count < MAX_COMPOSITOR_LAYERS; curr = curr->next) {
+        if (curr->visible) {
+            layer_ref(curr);
+            render_list[render_count++] = curr;
+        }
     }
     spinlock_release_irqrestore(&layer_list_lock, rflags);
+
+    /* Composite layers in ascending Z-order */
+    for (size_t i = 0; i < render_count; i++) {
+        layer_t *layer = render_list[i];
+
+        mutex_lock(&layer->lock);
+        if (layer->visible && layer->canvas.buffer) {
+            composite_layer_clipped(layer, clip_dirty);
+        }
+        mutex_unlock(&layer->lock);
+
+        layer_unref(layer);
+    }
+
+    last_composed_rect = clip_dirty;
 }
 
-/** @brief Flushes the backbuffer to the physical framebuffer via the active video driver. */
+/**
+ * @brief Flushes the composed backbuffer region to the physical framebuffer via the active video driver.
+ */
 static void compositor_swap() {
     irq_flags_t sflags = spinlock_acquire_irqsave(&state_lock);
     bool enabled = rendering_enabled;
     spinlock_release_irqrestore(&state_lock, sflags);
-    if (!enabled || !backbuffer)
+    if (!enabled || !backbuffer) {
         return;
+    }
 
     mutex_lock(&compositor_mutex);
-    gfx_flush(backbuffer, fb_size);
+    if (last_composed_rect.size.width > 0 && last_composed_rect.size.height > 0) {
+        gfx_flush_rect(backbuffer, active_mode.pitch,
+                       (uint64_t)last_composed_rect.pos.x,
+                       (uint64_t)last_composed_rect.pos.y,
+                       last_composed_rect.size.width,
+                       last_composed_rect.size.height);
+    } else {
+        gfx_flush(backbuffer, fb_size);
+    }
     mutex_unlock(&compositor_mutex);
 }
 
 /**
- * @brief Kernel thread function handling continuous compositing and frame rate limiting.
+ * @brief Kernel thread function handling polling-based compositing and frame rate pacing.
+ *
+ * The thread runs at a fixed frame rate (default: 60 FPS). It checks the dirty flag each
+ * iteration and composes + swaps only when content has changed. This avoids the scheduling
+ * races that arise from manually setting thread state to THREAD_BLOCKED outside the
+ * scheduler lock.
  *
  * @param[in] arg Unused argument pointer.
  */
@@ -1026,30 +1660,31 @@ static void compositor_thread(void *arg) {
     uint64_t last_frame_start = hpet_uptime_ms();
 
     while (1) {
-        uint64_t frame_start = hpet_uptime_ms();
-
-        uint64_t frame_delta_ms = frame_start - last_frame_start;
-        if (frame_delta_ms == 0) {
-            frame_delta_ms = 1;
-        }
-
         irq_flags_t sflags = spinlock_acquire_irqsave(&state_lock);
         bool initialized = compositor_initialized;
         double current_target_time = target_frame_time_ms;
-        delta_time = (double)frame_delta_ms / 1000.0;
         spinlock_release_irqrestore(&state_lock, sflags);
 
         if (!initialized) {
             thread_exit();
         }
 
+        uint64_t frame_start = hpet_uptime_ms();
+        uint64_t frame_delta_ms = frame_start - last_frame_start;
+        if (frame_delta_ms == 0) {
+            frame_delta_ms = 1;
+        }
         last_frame_start = frame_start;
 
+        sflags = spinlock_acquire_irqsave(&state_lock);
+        delta_time = (double)frame_delta_ms / 1000.0;
+        spinlock_release_irqrestore(&state_lock, sflags);
+
+        log_debug("Frame start: %llu, Delta time: %f, Target time: %f", frame_start, frame_delta_ms, target_frame_time_ms);
         compositor_compose();
         compositor_swap();
 
         frame_count++;
-
         uint64_t current_time = hpet_uptime_ms();
         if (current_time - last_fps_update >= 1000) {
             sflags = spinlock_acquire_irqsave(&state_lock);
@@ -1060,7 +1695,6 @@ static void compositor_thread(void *arg) {
         }
 
         uint64_t frame_duration = hpet_uptime_ms() - frame_start;
-
         if ((double)frame_duration < current_target_time) {
             uint64_t remaining_ms = (uint64_t)(current_target_time - (double)frame_duration);
             if (remaining_ms > 0) {
@@ -1122,6 +1756,8 @@ kerr_t compositor_init() {
         return err;
     }
 
+    compositor_present();
+
     log_debug("compositor initialized successfully");
     return E_OK;
 }
@@ -1136,6 +1772,8 @@ kerr_t compositor_deinit() {
     compositor_initialized = false;
     rendering_enabled = false;
     spinlock_release_irqrestore(&state_lock, sflags);
+
+    compositor_mark_dirty_rect((rect_t){.pos = {0, 0}, .size = {active_mode.width, active_mode.height}});
 
     if (backbuffer) {
         kfree((virt_addr_t)backbuffer);
@@ -1155,6 +1793,7 @@ kerr_t compositor_enable_rendering() {
     irq_flags_t sflags = spinlock_acquire_irqsave(&state_lock);
     rendering_enabled = true;
     spinlock_release_irqrestore(&state_lock, sflags);
+    compositor_present();
     return E_OK;
 }
 
@@ -1237,4 +1876,14 @@ uint64_t compositor_get_height() {
  */
 rect_size_t compositor_get_size() {
     return (rect_size_t){.width = active_mode.width, .height = active_mode.height};
+}
+
+/**
+ * @brief Requests immediate full-screen compositing and presentation.
+ *
+ * @return E_OK on success, or an error code on failure.
+ */
+kerr_t compositor_present() {
+    compositor_mark_dirty_rect((rect_t){.pos = {0, 0}, .size = {active_mode.width, active_mode.height}});
+    return E_OK;
 }

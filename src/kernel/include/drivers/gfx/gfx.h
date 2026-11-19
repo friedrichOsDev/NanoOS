@@ -51,6 +51,7 @@ typedef struct video_driver {
     kerr_t (*set_mode)(video_mode_t *mode);       /**< Set a specific video mode */
     kerr_t (*get_mode)(video_mode_t **out);       /**< Get driver's active video mode */
     void (*flush)(const void *data, size_t size); /**< Flush framebuffer changes (if needed) */
+    void (*flush_rect)(const void *data, size_t pitch, uint64_t x, uint64_t y, uint64_t width, uint64_t height); /**< Flush partial rectangular area */
     struct video_driver *next;                    /**< Pointer to the next registered driver */
 } video_driver_t;
 
@@ -63,3 +64,4 @@ kerr_t gfx_set_current_driver(video_driver_t *driver);
 video_driver_t *gfx_get_driver_list();
 video_driver_t *gfx_get_current_driver();
 void gfx_flush(const void *data, size_t size);
+void gfx_flush_rect(const void *data, size_t pitch, uint64_t x, uint64_t y, uint64_t width, uint64_t height);

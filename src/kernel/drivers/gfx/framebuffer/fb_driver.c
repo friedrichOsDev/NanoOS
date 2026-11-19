@@ -103,6 +103,49 @@ static void fb_flush(const void *data, size_t size) {
     }
 }
 
+/**
+ * @brief Flushes a partial rectangular region of the framebuffer to physical memory.
+ *
+ * @param[in] data Pointer to source framebuffer pixel data.
+ * @param[in] pitch Scanline pitch in bytes of source data.
+ * @param[in] x Top-left X coordinate.
+ * @param[in] y Top-left Y coordinate.
+ * @param[in] width Width in pixels to flush.
+ * @param[in] height Height in pixels to flush.
+ */
+static void fb_flush_rect(const void *data, size_t pitch, uint64_t x, uint64_t y, uint64_t width, uint64_t height) {
+    if (!data || !current_mode || !current_mode->framebuffer || !rendering) {
+        return;
+    }
+
+    if (x >= current_mode->width || y >= current_mode->height || width == 0 || height == 0) {
+        return;
+    }
+
+    if (x + width > current_mode->width) {
+        width = current_mode->width - x;
+    }
+    if (y + height > current_mode->height) {
+        height = current_mode->height - y;
+    }
+
+    const uint8_t *src_bytes = (const uint8_t *)data;
+    uint8_t *dest_bytes = (uint8_t *)current_mode->framebuffer;
+
+    for (uint64_t row = 0; row < height; row++) {
+        uint64_t cur_y = y + row;
+        size_t dest_offset = (size_t)(cur_y * current_mode->pitch + x * sizeof(uint32_t));
+        size_t src_offset = (size_t)(cur_y * pitch + x * sizeof(uint32_t));
+
+        volatile uint32_t *dest_row = (volatile uint32_t *)(void *)(dest_bytes + dest_offset);
+        const uint32_t *src_row = (const uint32_t *)(const void *)(src_bytes + src_offset);
+
+        for (size_t col = 0; col < width; col++) {
+            dest_row[col] = src_row[col];
+        }
+    }
+}
+
 /** @brief Static definition of the standard linear framebuffer driver. */
 static video_driver_t fb_driver = {
     .driver_name = "framebuffer-driver",
@@ -113,6 +156,7 @@ static video_driver_t fb_driver = {
     .set_mode = fb_set_mode,
     .get_mode = fb_get_mode,
     .flush = fb_flush,
+    .flush_rect = fb_flush_rect,
     .next = NULL};
 
 /**
